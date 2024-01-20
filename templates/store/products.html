@@ -1,0 +1,23 @@
+{% extends 'store/base.html' %}
+
+{% block content %}
+    <!-- Контент для страницы с продуктами -->
+    <h1>Наш ассортимент продуктов</h1>
+ <!-- Вывод списка продуктов или другого контента -->
+<div class="product-container">
+    {% for product in products %}
+    <div class="card">
+        <div class="product-image">
+            <img src="{{ product.image.url }}" alt="Product Image">
+        </div>
+        <div class="product-info">
+            <div class="product-name">{{ product.name }}</div>
+            <div class="product-description">{{ product.description }}</div>
+            <div class="product-price">${{ product.price }}</div>
+        </div>
+    </div>
+{% endfor %}
+</div>
+
+
+{% endblock %}
