@@ -11,6 +11,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    text-align: center
 }
 
 header {
@@ -22,6 +23,7 @@ header {
 }
 
 nav {
+    text-align: center;
     background-color: #1b1d59;
     overflow: hidden;
     border-radius: 20px; /* Радиус скругления углов */
@@ -110,4 +112,58 @@ footer {
     font-size: 16px;
     color: green;
     font-weight: bold;
+}
+
+/* Добавьте стили для ссылок категорий и подкатегорий при наведении */
+.category-link:hover, .subcategory-link:hover {
+    background-color: #ddd;
+    color: black;
+}
+.content-container {
+    text-align: center;
+}
+
+.categories {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px; /* Добавьте отступ снизу для разделения категорий и продуктов */
+}
+
+.category-link {
+    /* Ваши стили для ссылок категорий */
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 12px 14px;
+    text-decoration: none;
+    border-radius: 20px;
+    background-color: #1b1d59; /* Цвет фона для категорий (пример) */
+    margin: 5px; /* Внешний отступ между категориями (пример) */
+}
+
+.category-link:hover {
+    background-color: #ddd;
+    color: black;
+}
+.subcategory-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px; /* Добавьте отступ снизу для разделения подкатегорий и продуктов */
+}
+
+.subcategory-link {
+    /* Ваши стили для ссылок подкатегорий */
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 12px 14px;
+    text-decoration: none;
+    border-radius: 20px;
+    background-color: #1b1d59; /* Цвет фона для подкатегорий (пример) */
+    margin: 5px; /* Внешний отступ между подкатегориями (пример) */
+}
+
+.subcategory-link:hover {
+    background-color: #ddd;
+    color: black;
 }
