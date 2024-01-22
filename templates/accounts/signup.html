@@ -2,25 +2,30 @@
 
 {% block content %}
   <div class="transparent-container">
-    <h2>Sign Up</h2>
+    <h2>РЕГИСТРАЦИЯ</h2>
     <form method="post" action="{% url 'signup' %}">
       {% csrf_token %}
       <div class="input-container">
-        <label for="id_username">Username:</label>
+        <label for="id_username">Ник пользователя:</label>
         <input type="text" name="username" id="id_username" required>
       </div>
 
       <div class="input-container">
-        <label for="id_password1">Password:</label>
+        <label for="id_email">Email:</label>
+        <input type="email" name="email" id="id_email" required>
+      </div>
+
+      <div class="input-container">
+        <label for="id_password1">Пароль:</label>
         <input type="password" name="password1" id="id_password1" required>
       </div>
 
       <div class="input-container">
-        <label for="id_password2">Confirm Password:</label>
+        <label for="id_password2">Повторите пароль:</label>
         <input type="password" name="password2" id="id_password2" required>
       </div>
 
-      <button type="submit">Sign Up</button>
+      <button type="submit">Готово!</button>
     </form>
   </div>
 {% endblock %}

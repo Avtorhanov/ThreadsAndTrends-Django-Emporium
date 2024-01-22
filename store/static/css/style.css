@@ -215,9 +215,10 @@ footer {
     margin-top: 20px;
 }
 
-/* CSS-стили для шаблона регистрации */
+/* CSS-стили регистрации */
 
 .body-sign {
+
     font-family: Arial, sans-serif;
 }
 
@@ -225,9 +226,10 @@ footer {
     border: 1px solid #ddd; /* Оттененные контуры */
     border-radius: 8px; /* Закругленные углы */
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.8); /* Тень */
-    max-width: 700px; /* Максимальная ширина контейнера */
+    max-width: 500px; /* Максимальная ширина контейнера */
     margin: 50px auto; /* Центрирование по вертикали и горизонтали */
     padding: 20px; /* Внутренний отступ */
+
 }
 
 form {
@@ -240,8 +242,9 @@ label {
 }
 
 .input-container {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Два столбца с равными долями ширины */
+    gap: 0px; /* Расстояние между элементами в контейнере */
 }
 
 .input-container input {
@@ -263,4 +266,9 @@ button {
 
 button:hover {
     background-color: #45a049;
+}
+
+/* Стили для убирания маркера слева от сообщений */
+.messages li {
+    list-style-type: none; /* Убираем маркер */
 }
