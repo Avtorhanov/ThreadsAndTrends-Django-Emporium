@@ -1,4 +1,4 @@
-{% load static %}
+<!--{% load static %}-->
 
 <html lang="en">
 <head>
@@ -15,7 +15,7 @@
             <a href="{% url 'all-products' %}">Товары</a>
             <a href="{% url 'cart' %}">Корзина</a>
             <a href="{% url 'about-us' %}">О нас</a>
-            <a href="#">Регистрация</a>
+            <a href="{% url 'signup' %}">Регистрация</a>
         </nav>
 
     </header>
@@ -30,6 +30,9 @@
             <p>&copy; 2024 Мой Веб-Магазин. Все права защищены.</p>
         </div>
     </footer>
+
+
+    <script src="{% static 'js/main.js' %}"></script>
 
 </body>
 </html>

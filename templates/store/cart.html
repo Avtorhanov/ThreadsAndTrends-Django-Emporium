@@ -3,5 +3,26 @@
 {% block content %}
     <!-- Контент для страницы корзины -->
     <h1>Ваша корзина</h1>
-    <!-- Вывод содержимого корзины и оформление заказа -->
+
+    <title>Корзина</title>
+<div class="cart-body">
+    <div class="cart">
+        <div class="product">
+            <img src="product1.jpg" alt="Product 1">
+            <div class="product-info">
+                <h3>Продукт 1</h3>
+                <p>Описание продукта 1</p>
+                <p>Цена: $20</p>
+            </div>
+            <div class="counter">
+                <button onclick="decrementCount()">-</button>
+                <span id="count">1</span>
+                <button onclick="incrementCount()">+</button>
+            </div>
+        </div>
+
+        <div class="total">Общая стоимость: $50</div>
+    </div>
+</div>
+
 {% endblock %}

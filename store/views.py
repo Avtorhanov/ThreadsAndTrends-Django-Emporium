@@ -1,6 +1,5 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from store.models import Product, Category, SubCategory
-
 def home(request):
     # Логика для отображения главной страницы
     return render(request, 'store/home.html')
@@ -36,3 +35,4 @@ def subcategory_detail(request, subcategory_id):
     subcategory = get_object_or_404(SubCategory, id=subcategory_id)
     products = Product.objects.filter(subcategory=subcategory)
     return render(request, 'store/subcategory_detail.html', {'subcategory': subcategory, 'products': products})
+
