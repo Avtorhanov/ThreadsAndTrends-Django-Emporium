@@ -23,6 +23,9 @@
                             <div class="product-name">{{ product.name }}</div>
                             <div class="product-description">{{ product.description }}</div>
                             <div class="product-price">${{ product.price }}</div>
+                            <div class="counter">
+                                <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
+                            </div>
                         </div>
                     </div>
                 {% endfor %}
@@ -30,3 +33,4 @@
         </div>
     {% endblock %}
 {% endblock %}
+

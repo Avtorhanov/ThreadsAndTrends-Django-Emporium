@@ -4,12 +4,6 @@
 <div class="container">
     <h1>{{ category.name }}</h1>
 
-    <div class="categories">
-            {% for category in categories %}
-                <a href="{% url 'store:category_detail' category.id %}" class="category-link">{{ category.name }}</a>
-            {% endfor %}
-    </div>
-
     <!-- Отображение только подкатегорий -->
         <div class="subcategory-container">
             {% for subcategory in subcategories %}

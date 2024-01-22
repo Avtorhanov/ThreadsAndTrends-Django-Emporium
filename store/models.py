@@ -3,13 +3,11 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
-
 class Category(models.Model):
     name = models.CharField(max_length=100)
 
     def __str__(self):
         return self.name
-
 
 class SubCategory(models.Model):
     name = models.CharField(max_length=100)
@@ -17,7 +15,6 @@ class SubCategory(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class Product(models.Model):
     date = models.DateTimeField(auto_now_add=True)
@@ -33,12 +30,22 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
-
-class UserProfile(models.Model):
+class Cart(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    profile_image = models.ImageField(upload_to='profile_images', blank=True, null=True, verbose_name='Изображение профиля')
-    date_joined = models.DateTimeField(default=timezone.now, verbose_name='Дата присоединения')
-    bio = models.TextField(blank=True, null=True, verbose_name='О себе')
+    products = models.ManyToManyField(Product, through='CartItem')
 
     def __str__(self):
-        return str(self.user)
+        return f"Cart for {self.user.username}"
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name} in {self.cart.user.username}'s cart"
+
+    def total_price(self):
+        return self.quantity * self.product.price
+
+
