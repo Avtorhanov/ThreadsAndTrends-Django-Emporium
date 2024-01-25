@@ -1,22 +1,7 @@
 {% extends 'store/base.html' %}
 
 {% block content %}
-    <div class="content-container">
-        <h1>{{ subcategory.name }}</h1>
 
-        <div class="product-container">
-            {% for product in products %}
-                <div class="card">
-                    <div class="product-image">
-                        <img src="{{ product.image.url }}" alt="Product Image">
-                    </div>
-                    <div class="product-info">
-                        <div class="product-name">{{ product.name }}</div>
-                        <div class="product-description">{{ product.description }}</div>
-                        <div class="product-price">${{ product.price }}</div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
+<h1>{{ subcategory.name }}</h1>
+
 {% endblock %}

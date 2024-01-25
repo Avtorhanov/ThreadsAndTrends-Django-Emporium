@@ -1,7 +1,7 @@
 {% extends 'store/base.html' %}
 
 {% block content %}
-    {% block product %}
+
         <div class="content-container">
             <h1>Ассортимент продуктов</h1>
 
@@ -12,25 +12,6 @@
                 {% endfor %}
             </div>
 
-            <!-- Отображение продуктов -->
-            <div class="product-container">
-                {% for product in products %}
-                    <div class="card">
-                        <div class="product-image">
-                            <img src="{{ product.image.url }}" alt="Product Image">
-                        </div>
-                        <div class="product-info">
-                            <div class="product-name">{{ product.name }}</div>
-                            <div class="product-description">{{ product.description }}</div>
-                            <div class="product-price">${{ product.price }}</div>
-                            <div class="counter">
-                                <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-    {% endblock %}
+
 {% endblock %}
 
