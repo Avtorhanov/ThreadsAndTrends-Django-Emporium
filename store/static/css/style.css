@@ -37,6 +37,7 @@ nav a {
     padding: 12px 14px;
     text-decoration: none;
     border-radius: 20px; /* Радиус скругления углов для каждой ссылки */
+    transition: background-color 0.6s ease;
 }
 
 nav a:hover {
@@ -140,6 +141,7 @@ footer {
     border-radius: 20px;
     background-color: #1b1d59; /* Цвет фона для категорий (пример) */
     margin: 5px; /* Внешний отступ между категориями (пример) */
+    transition: background-color 0.6s ease;
 }
 
 .category-link:hover {
@@ -162,6 +164,7 @@ footer {
     border-radius: 20px;
     background-color: #1b1d59; /* Цвет фона для подкатегорий (пример) */
     margin: 5px; /* Внешний отступ между подкатегориями (пример) */
+    transition: background-color 0.6s ease;
 }
 
 .subcategory-link:hover {
@@ -256,19 +259,75 @@ label {
 }
 
 button {
-    padding: 10px;
-    background-color: #4caf50;
-    color: white;
+    display: inline-block;
+    padding: 12px 14px;
+    text-align: center;
     border: none;
-    border-radius: 4px;
+    border-radius: 20px;
+    background-color: #1b1d59; /* Цвет фона кнопки (пример) */
+    color: white; /* Цвет текста кнопки */
+    margin: 0 auto; /* Центрирование и отсутствие внешних отступов */
     cursor: pointer;
+    transition: background-color 0.6s ease; /* Плавное изменение цвета при наведении */
+    width: auto; /* Автоматическая ширина под текст */
+    font-size: 15px;
+
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: #ddd; /* Измененный цвет фона при наведении (пример) */
+    color: black; /* Измененный цвет текста при наведении */
 }
 
 /* Стили для убирания маркера слева от сообщений */
 .messages li {
     list-style-type: none; /* Убираем маркер */
 }
+
+/* кнопка добавить в корзину */
+.prod-counter button.add-to-cart {
+    padding: 12px 14px;
+    text-align: center;
+    border: none;
+    border-radius: 20px;
+    background-color: #1b1d59; /* Цвет фона кнопки (пример) */
+    color: white; /* Цвет текста кнопки */
+    margin: 5px; /* Внешний отступ между кнопками (пример) */
+    cursor: pointer;
+    transition: background-color 0.6s ease; /* Плавное изменение цвета при наведении */
+}
+
+.prod-counter button.add-to-cart:hover {
+    background-color: #ddd; /* Измененный цвет фона при наведении (пример) */
+    color: black; /* Измененный цвет текста при наведении */
+}
+
+/* инкремент дикремент в корзине */
+.decr-counter button {
+    padding: 12px 14px;
+    border-radius: 35px;
+    background-color: #1b1d59; /* Цвет фона кнопки (пример) */
+    color: white; /* Цвет текста кнопки */
+    margin: 5px; /* Внешний отступ между кнопками (пример) */
+    transition: background-color 0.6s ease; /* Плавное изменение цвета при наведении */
+}
+
+.decr-counter button:hover {
+    background-color: #ddd; /* Измененный цвет фона при наведении (пример) */
+    color: black; /* Измененный цвет текста при наведении */
+}
+
+/* заглавные тексты */
+h3.registration-title {
+    display: inline-block;
+    padding: 12px 14px;
+    font-size: 24px; /* Размер шрифта */
+    color: #1b1d59; /* Цвет текста (пример) */
+    margin-bottom: 20px; /* Нижний отступ */
+    text-align: center;
+    border-radius: 20px;
+    background-color: #1b1d59; /* Цвет фона кнопки (пример) */
+    color: white; /* Цвет текста кнопки */
+    margin: 30px;
+}
+

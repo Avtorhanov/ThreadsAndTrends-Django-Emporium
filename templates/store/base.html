@@ -1,4 +1,4 @@
-<!--{% load static %}-->
+{% load static %}
 
 <html lang="en">
 <head>
@@ -9,6 +9,7 @@
 </head>
 <body>
 
+    <!--Навбар-->
     <header>
         <nav>
             <a href="{% url 'home' %}">Главная</a>
@@ -22,21 +23,44 @@
                  <a href="{% url 'login' %}">Войти</a>
              {% endif %}
         </nav>
-
     </header>
 
+    <!--контент-->
     <main>
         {% block content %}
         {% endblock %}
     </main>
 
+
+    <!--продукт -->
+    {% block product %}
+    <div class="product-container">
+        {% for product in products %}
+        <div class="card">
+            <div class="product-image">
+                <img src="{{ product.image.url }}" alt="Product Image">
+            </div>
+            <div class="product-info">
+                <div class="product-name">{{ product.name }}</div>
+                <div class="product-description">{{ product.description }}</div>
+                <div class="product-price">${{ product.price }}</div>
+                <div class="prod-counter">
+                    <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endblock %}
+
+    <!--Подвал-->
     <footer>
         <div class="footer-content">
             <p>&copy; 2024 Мой Веб-Магазин. Все права защищены.</p>
         </div>
     </footer>
 
-
+    <!--скрипты-->
     <script src="{% static 'js/main.js' %}"></script>
 
 </body>
