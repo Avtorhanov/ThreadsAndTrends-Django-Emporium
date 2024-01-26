@@ -24,28 +24,27 @@ class Product(models.Model):
     image = models.ImageField(upload_to='product_images/')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, null=True, blank=True)
-    GENDER_CHOICES = [('M', 'Man'), ('W', 'Women')]
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, null=True, blank=True)
+    users = models.ManyToManyField(User, related_name='user_products')
 
     def __str__(self):
         return self.name
 
 class Cart(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    products = models.ManyToManyField(Product, through='CartItem')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    session_key = models.CharField(max_length=32, null=True, blank=True)  # Используется для неавторизованных пользователей
+    products = models.ManyToManyField('Product', through='CartItem')
 
     def __str__(self):
-        return f"Cart for {self.user.username}"
+        return f"Cart for {self.owner} ({self.session_key})"
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=0)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
 
     def __str__(self):
-        return f"{self.quantity} x {self.product.name} in {self.cart.user.username}'s cart"
+        return f"{self.quantity} of {self.product} in cart"
 
-    def total_price(self):
-        return self.quantity * self.product.price
 
 
