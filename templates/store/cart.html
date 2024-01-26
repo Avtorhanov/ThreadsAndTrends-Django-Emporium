@@ -4,25 +4,55 @@
     <!-- Контент для страницы корзины -->
     <h1>Ваша корзина</h1>
 
-    <title>Корзина</title>
-<div class="cart-body">
-    <div class="cart">
-        <div class="product">
-            <img src="product1.jpg" alt="Product 1">
-            <div class="product-info">
-                <h3>Продукт 1</h3>
-                <p>Описание продукта 1</p>
-                <p>Цена: $20</p>
-            </div>
-            <div class="decr-counter">
-                <button onclick="decrementCount()">-</button>
-                <span id="count">1</span>
-                <button onclick="incrementCount()">+</button>
-            </div>
+    <div class="cart-body">
+        <div class="cart">
+            {% for item in cart_items %}
+                <div class="product">
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                    <div class="product-info">
+                        <h3>{{ item.product.name }}</h3>
+                        <p>{{ item.product.description }}</p>
+                        <p>Цена: ${{ item.product.price }}</p>
+                    </div>
+                    <div class="decr-counter">
+                        <button onclick="decrementCount({{ item.id }})">-</button>
+                        <span id="count{{ item.id }}">{{ item.quantity }}</span>
+                        <button onclick="incrementCount({{ item.id }})">+</button>
+                    </div>
+                </div>
+            {% endfor %}
+
+            <div class="total">Общая стоимость: ${{ total_price }}</div>
         </div>
-
-        <div class="total">Общая стоимость: $50</div>
     </div>
-</div>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            function updateCount(itemId, newCount) {
+                // Отправить запрос на сервер для обновления количества товара
+                fetch(`/update_cart_item/${itemId}/${newCount}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Обновить отображение количества на странице
+                        document.getElementById(`count${itemId}`).innerText = newCount;
+                        // Обновить общую стоимость
+                        document.querySelector('.total').innerText = `Общая стоимость: $${data.total_price}`;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            }
+
+            function incrementCount(itemId) {
+                updateCount(itemId, parseInt(document.getElementById(`count${itemId}`).innerText) + 1);
+            }
+
+            function decrementCount(itemId) {
+                const currentCount = parseInt(document.getElementById(`count${itemId}`).innerText);
+                if (currentCount > 1) {
+                    updateCount(itemId, currentCount - 1);
+                }
+            }
+        });
+    </script>
 {% endblock %}

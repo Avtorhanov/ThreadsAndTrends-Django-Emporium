@@ -4,8 +4,7 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
-from .views import all_products, category_detail, subcategory_detail
-
+from .views import all_products, category_detail, subcategory_detail, cart_view, add_to_cart
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -14,7 +13,10 @@ urlpatterns = [
     path('product/<int:product_id>/', views.product_detail, name='product_detail'),
     path('about-us/', views.about_us, name='about-us'),
 
-    path('cart/', views.cart, name='cart'),
+    path('add_to_cart/<int:product_id>/', add_to_cart, name='add_to_cart'),
+
+    # Просмотр корзины пользователя
+    path('cart/', cart_view, name='cart'),
 
     path('category/<int:category_id>/', category_detail, name='category_detail'),
     path('subcategory/<int:subcategory_id>/', subcategory_detail, name='subcategory_detail'),
