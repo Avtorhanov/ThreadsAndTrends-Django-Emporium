@@ -2,16 +2,23 @@
 
 {% block content %}
 
-        <div class="content-container">
-            <h1>Ассортимент продуктов</h1>
+    <div class="content-container">
+        <h1>Ассортимент продуктов</h1>
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                {% if message.tags %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endif %}
 
-            <!-- Отображение только категорий -->
-            <div class="categories">
-                {% for category in categories %}
-                    <a href="{% url 'category_detail' category.id %}" class="category-link">{{ category.name }}</a>
-                {% endfor %}
-            </div>
-
-
+        <!-- Отображение только категорий -->
+        <div class="categories">
+            {% for category in categories %}
+                <a href="{% url 'category_detail' category.id %}" class="category-link">{{ category.name }}</a>
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}
-

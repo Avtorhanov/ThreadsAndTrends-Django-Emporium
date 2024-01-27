@@ -32,7 +32,10 @@
     </main>
 
     <!--продукт -->
+
+
     {% block product %}
+
     <div class="product-container">
         {% for product in products %}
         <div class="card">
@@ -61,6 +64,7 @@
 
     <!--скрипты-->
     <script src="{% static 'js/main.js' %}"></script>
+    <script src="{% static 'js/ajax.js' %}"></script>
 
 </body>
 </html>

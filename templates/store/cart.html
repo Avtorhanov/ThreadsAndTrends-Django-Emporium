@@ -4,30 +4,43 @@
     <!-- Контент для страницы корзины -->
     <h1>Ваша корзина</h1>
 
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        {% if message.tags %}
+          <li class="{{ message.tags }}">{{ message }}</li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+
     <div class="cart-body">
         <div class="cart">
-            {% for item in cart_items %}
-                <div class="product">
-                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
-                    <div class="product-info">
-                        <h3>{{ item.product.name }}</h3>
-                        <p>{{ item.product.description }}</p>
-                        <p>Цена: <span class="price">{{ item.product.price }}</span> ₽</p>
+            {% if cart_items %}
+                {% for item in cart_items %}
+                    <div class="product">
+                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                        <div class="product-info">
+                            <h3>{{ item.product.name }}</h3>
+                            <p>{{ item.product.description }}</p>
+                            <p>Цена: <span class="price">{{ item.product.price }}</span> ₽</p>
+                        </div>
+                        <div class="decr-counter">
+                            <button onclick="#">Оформить</button>
+                            <button onclick="decrementCount({{ item.id }})">-</button>
+                            <span id="count{{ item.id }}">{{ item.quantity }}</span>
+                            <button onclick="incrementCount({{ item.id }})">+</button>
+                            <input type="hidden" id="csrf_token" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                            <button onclick="removeFromCart({{ item.id }})">Удалить</button>
+                        </div>
                     </div>
-                    <div class="decr-counter">
-                        <button onclick="decrementCount({{ item.id }})">-</button>
-                        <span id="count{{ item.id }}">{{ item.quantity }}</span>
-                        <button onclick="incrementCount({{ item.id }})">+</button>
-                        <input type="hidden" id="csrf_token" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-                        <button onclick="removeFromCart({{ item.id }})">Удалить</button>
-                    </div>
-                </div>
-            {% endfor %}
-
-            <div class="total">Общая стоимость: {{ total_price }} ₽</div>
+                {% endfor %}
+                <div class="total">Общая стоимость: {{ total_price }} ₽</div>
+            {% else %}
+                <h2>Пуста!</h2>
+            {% endif %}
         </div>
     </div>
-
-
-
 {% endblock %}
+
+
