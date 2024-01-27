@@ -4,7 +4,7 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
-from .views import all_products, category_detail, subcategory_detail, cart_view, add_to_cart
+from .views import all_products, category_detail, subcategory_detail, cart_view, add_to_cart, update_cart, remove_from_cart
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -14,7 +14,8 @@ urlpatterns = [
     path('about-us/', views.about_us, name='about-us'),
 
     path('add_to_cart/<int:product_id>/', add_to_cart, name='add_to_cart'),
-
+    path('update_cart_item/<int:item_id>/<int:new_count>/', update_cart, name='update_cart_item'),
+    path('remove_from_cart/<int:item_id>/', remove_from_cart, name='remove_from_cart'),
     # Просмотр корзины пользователя
     path('cart/', cart_view, name='cart'),
 

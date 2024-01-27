@@ -35,7 +35,11 @@ class Cart(models.Model):
     products = models.ManyToManyField('Product', through='CartItem')
 
     def __str__(self):
-        return f"Cart for {self.owner} ({self.session_key})"
+        return f"Cart for {self.owner}"
+
+    def calculate_total_price(self):
+        total_price = sum(item.quantity * item.product.price for item in self.cartitem_set.all())
+        return total_price
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
