@@ -59,7 +59,17 @@ def cart_view(request):
 
     return render(request, 'store/cart.html', {'cart_items': cart_items, 'total_price': total_price})
 
+def update_cart(request, item_id, new_count):
+    cart_item = get_object_or_404(CartItem, id=item_id)
+    cart_item.quantity = new_count
+    cart_item.save()
+    total_price = cart_item.cart.calculate_total_price()  # Предполагается, что у вашей модели Cart есть метод calculate_total_price(), который возвращает общую стоимость корзины
+    return JsonResponse({'total_price': total_price})
 
+def remove_from_cart(request, item_id):
+    cart_item = get_object_or_404(CartItem, id=item_id)
+    cart_item.delete()
+    return JsonResponse({'status': 'success', 'message': 'Товар успешно удален из корзины'})
 # Добавьте представления для аутентификации, регистрации и т. д.
 def all_products(request):
     products = Product.objects.all()
