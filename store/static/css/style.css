@@ -71,7 +71,7 @@ footer {
     margin-bottom: 60px
 }
 .card {
-    border: 3px solid #1b1d59; /* Граница карточки */
+    border: 2px solid #1b1d59; /* Граница карточки */
     border-radius: 10px; /* Округление краев карточки */
     overflow: hidden; /* Скрывает любые превышающие размеры дочерние элементы */
     margin: 20px; /* Внешний отступ карточки */
@@ -182,12 +182,12 @@ footer {
 }
 
 .cart {
-    max-width: 600px;
+    max-width: 850px;
     margin: 20px auto;
     padding: 20px;
-    border: 1px solid #ccc;
+    border: 2px solid #1b1d59;
     border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 1.8);
 }
 .product {
     display: flex;
@@ -216,6 +216,13 @@ footer {
 .total {
     font-weight: bold;
     margin-top: 20px;
+}
+
+.product img {
+    width: 200px; /* Установите максимальную ширину изображения по вашему усмотрению */
+    height: 200px; /* Сохраняем пропорции изображения */
+    border-radius: 8px;
+    border: 2px solid #1b1d59;
 }
 
 /* CSS-стили регистрации */
@@ -279,10 +286,30 @@ button:hover {
     color: black; /* Измененный цвет текста при наведении */
 }
 
-/* Стили для убирания маркера слева от сообщений */
-.messages li {
-    list-style-type: none; /* Убираем маркер */
+/* Стили уведомлений*/
+@keyframes fadeOut {
+  10% { opacity: 1; }
+  100% { opacity: 0; }
 }
+.messages li {
+    list-style-type: none;
+    padding: 12px 14px;
+    text-align: center;
+    border-radius: 20px;
+    background-color: #20B2AA;
+    color: white;
+    display: inline-block;
+    font-size: 20px;
+    animation: fadeOut 1s forwards;
+    animation-delay: 0.6s;
+    position: fixed; /* Задаем фиксированное позиционирование */
+    top: 10%; /* Размещаем элемент по вертикали на 50% высоты страницы */
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+
+
 
 /* кнопка добавить в корзину */
 .prod-counter button.add-to-cart {
@@ -304,7 +331,7 @@ button:hover {
 
 /* инкремент дикремент в корзине */
 .decr-counter button {
-    padding: 12px 14px;
+    padding: 10px 16px;
     border-radius: 35px;
     background-color: #1b1d59; /* Цвет фона кнопки (пример) */
     color: white; /* Цвет текста кнопки */
@@ -330,4 +357,8 @@ h3.registration-title {
     color: white; /* Цвет текста кнопки */
     margin: 30px;
 }
+
+
+/* CSS для округления углов элементов в корзине */
+
 

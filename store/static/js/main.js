@@ -70,7 +70,6 @@
         }
 
 
-
         // код из блока продукта, добавление товара в корзину
 
         function getCookie(name) {
@@ -95,10 +94,12 @@
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken')
                 },
-                body: JSON.stringify({ product_price: productPrice })  // Передайте цену товара в теле запроса
+                body: JSON.stringify({ product_price: productPrice })
             })
             .then(response => response.json())
             .then(data => {
+                if (data.status === 'success')
+                location.reload();
                 console.log(data);
             })
             .catch(error => {

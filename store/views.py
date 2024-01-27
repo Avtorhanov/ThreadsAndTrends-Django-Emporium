@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
@@ -13,42 +14,36 @@ def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'store/product_detail.html', {'product': product})
 
+def all_products(request):
+    products = Product.objects.all()
+    categories = Category.objects.all()
+    subcategories = SubCategory.objects.all()
+
+    return render(request, 'store/products.html', {'products': products, 'categories': categories, 'subcategories': subcategories})
+
 def add_to_cart(request, product_id):
     # Получаем продукт
     product = Product.objects.get(pk=product_id)
 
-    # Проверяем, авторизован ли пользователь
     if request.user.is_authenticated:
         user = request.user
-
-        # Ищем корзину пользователя
         cart, created = Cart.objects.get_or_create(owner=user)
-
-        # Проверяем, есть ли такой товар уже в корзине
-        cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
-        if not item_created:
-            cart_item.quantity += 1
-            cart_item.save()
-
     else:
-        # Если пользователь не авторизован, используем session_key
         session_key = request.session.session_key
         if not session_key:
             request.session.create()
             session_key = request.session.session_key
 
-        # Ищем корзину по session_key
         cart, created = Cart.objects.get_or_create(session_key=session_key)
 
-        # Проверяем, есть ли такой товар уже в корзине
-        cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
-        if not item_created:
-            cart_item.quantity += 1
-            cart_item.save()
-    #
-    # return redirect('cart_view')
-    response_data = {'status': 'success', 'message': 'Товар успешно добавлен в корзину'}
-    return JsonResponse(response_data)
+    cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
+    if not item_created:
+        cart_item.quantity += 1
+        cart_item.save()
+
+    messages.success(request, 'Товар добавлен в корзину!')
+    return JsonResponse({'status': 'success', 'message': 'Товар добавлен в корзину'})
+
 
 @login_required
 def cart_view(request):
@@ -69,13 +64,9 @@ def update_cart(request, item_id, new_count):
 def remove_from_cart(request, item_id):
     cart_item = get_object_or_404(CartItem, id=item_id)
     cart_item.delete()
-    return JsonResponse({'status': 'success', 'message': 'Товар успешно удален из корзины'})
+    messages.success(request, f'Товар удален из корзины!')
+    return JsonResponse({'status': 'success', 'message': 'Товар удален из корзины'})
 # Добавьте представления для аутентификации, регистрации и т. д.
-def all_products(request):
-    products = Product.objects.all()
-    categories = Category.objects.all()
-    subcategories = SubCategory.objects.all()
-    return render(request, 'store/products.html', {'products': products, 'categories': categories, 'subcategories': subcategories})
 
 def about_us(request):
     return render(request, 'store/about-us.html')
