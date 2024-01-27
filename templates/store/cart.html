@@ -12,7 +12,7 @@
                     <div class="product-info">
                         <h3>{{ item.product.name }}</h3>
                         <p>{{ item.product.description }}</p>
-                        <p>Цена: ${{ item.product.price }}</p>
+                        <p>Цена: <span class="price">{{ item.product.price }}</span> ₽</p>
                     </div>
                     <div class="decr-counter">
                         <button onclick="decrementCount({{ item.id }})">-</button>
@@ -24,80 +24,10 @@
                 </div>
             {% endfor %}
 
-            <div class="total">Общая стоимость: ${{ total_price }}</div>
+            <div class="total">Общая стоимость: {{ total_price }} ₽</div>
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-        // После загрузки страницы инициализируем общую стоимость
-            updateTotalPrice();
-        });
 
-        function updateTotalPrice() {
-            const totalElement = document.querySelector('.total');
-            const items = document.querySelectorAll('.product');
-
-            let totalPrice = 0;
-
-            items.forEach(item => {
-                const quantity = parseInt(item.querySelector('.decr-counter span').innerText);
-                const price = parseFloat(item.querySelector('.product-info p:last-child').innerText.slice(7));
-                totalPrice += quantity * price;
-            });
-
-            totalElement.innerText = `Общая стоимость: $${totalPrice.toFixed(2)}`;
-        }
-
-        function updateCount(itemId, newCount) {
-            const csrfToken = document.getElementById('csrf_token').value;
-            fetch(`/update_cart_item/${itemId}/${newCount}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById(`count${itemId}`).innerText = newCount;
-                updateTotalPrice(); // Обновляем общую стоимость после изменения количества товаров
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        }
-
-        function incrementCount(itemId) {
-            const currentCount = parseInt(document.getElementById(`count${itemId}`).innerText);
-            updateCount(itemId, currentCount + 1);
-        }
-
-        function decrementCount(itemId) {
-            const currentCount = parseInt(document.getElementById(`count${itemId}`).innerText);
-            if (currentCount > 1) {
-                updateCount(itemId, currentCount - 1);
-            }
-        }
-
-        function removeFromCart(itemId) {
-            const csrfToken = document.getElementById('csrf_token').value;
-            fetch(`/remove_from_cart/${itemId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                location.reload(); // Перезагружаем страницу после успешного удаления товара из корзины
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        }
-
-    </script>
 
 {% endblock %}
