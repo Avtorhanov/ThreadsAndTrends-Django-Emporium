@@ -31,7 +31,6 @@
         {% endblock %}
     </main>
 
-
     <!--продукт -->
     {% block product %}
     <div class="product-container">
@@ -43,7 +42,7 @@
             <div class="product-info">
                 <div class="product-name">{{ product.name }}</div>
                 <div class="product-description">{{ product.description }}</div>
-                <div class="product-price">${{ product.price }}</div>
+                <div class="product-price">{{ product.price }} ₽</div>
                 <div class="prod-counter">
                     <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
                 </div>
@@ -51,41 +50,6 @@
         </div>
         {% endfor %}
     </div>
-
-    <script>
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.startsWith(name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    function addToCart(productId, productPrice) {
-        fetch(`/add_to_cart/${productId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({ product_price: productPrice })  // Передайте цену товара в теле запроса
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-    }
-    </script>
-
     {% endblock %}
 
     <!--Подвал-->
