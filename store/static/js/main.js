@@ -103,6 +103,7 @@
                 console.log(data);
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error:', error);пше
+
             });
         }
