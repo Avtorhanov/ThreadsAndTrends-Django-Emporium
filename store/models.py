@@ -23,7 +23,6 @@ class Product(models.Model):
     image = models.ImageField(upload_to='product_images/')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, null=True, blank=True)
-    users = models.ManyToManyField(User, related_name='user_products')
 
     def __str__(self):
         return self.name
