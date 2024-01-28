@@ -1,0 +1,14 @@
+
+/static_root/
+
+/db.sqlite3/
+
+/media/
+
+/product_images/
+
+/venv/
+
+/migrations/
+
+.env

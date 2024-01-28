@@ -20,6 +20,7 @@ header {
     text-align: center;
     padding: 1em;
     position: relative;
+    height: 40px;
 }
 
 nav {
@@ -27,7 +28,7 @@ nav {
     background-color: #1b1d59;
     overflow: hidden;
     border-radius: 20px; /* Радиус скругления углов */
-    margin: 0px 50px;
+    margin: 0.2px 50px;
 }
 
 nav a {
@@ -379,12 +380,15 @@ h3.registration-title {
     width: 200px; /* Ширина поля ввода */
     padding: 12px 14px; /* Внутренний отступ */
     color: #333; /* Цвет текста */
-    border: 1px solid #ccc; /* Граница поля ввода */
+    border: 2px solid #ccc; /* Граница поля ввода */
     border-radius: 20px; /* Скругление углов */
     background-color: #f8f8f8; /* Цвет фона */
     outline: none; /* Убираем подсветку при фокусе */
     margin-left: auto; /* Помещаем форму поиска вправо */
-    margin-right: 0px; /* Помещаем форму поиска влево */
+    margin-right: 1px; /* Помещаем форму поиска влево */
+    position: relative;
+    margin-top: 0.2px;
+    display: block;
 }
 /* Стили для плейсхолдера */
 .search-input::placeholder {
@@ -393,8 +397,10 @@ h3.registration-title {
 }
 /* Стили для подсветки при фокусе */
 .search-input:focus {
-    border-color: #5cb85c; /* Цвет границы при фокусе */
-    box-shadow: 0 0 10px rgba(92, 184, 92, 0.9); /* Тень при фокусе */
+    border-color: black; /* Цвет границы при фокусе */
+    box-shadow: 0 0 20px rgba(92, 184, 92, 0.9); /* Тень при фокусе */
+    transition: box-shadow 0.3s ease;
+    z-index: 2;
 }
 .search-form {
     margin: 0px 0; /* Устанавливаем отступы: сверху и снизу - 5px, слева и справа - 0 */
@@ -408,7 +414,6 @@ h3.registration-title {
     padding: 12px 14px !important;
     text-decoration: none !important;
     border-radius: 20px !important; /* Радиус скругления углов для каждой ссылки */
-    transition: background-color 0.6s ease !important;
     margin-top: -41px; /* Поднимаем кнопку вверх на 10px */
-    margin-right: 210px; /* Сдвигаем кнопку вправо на 10px */
+    margin-right: 200px; /* Сдвигаем кнопку вправо на 10px */
 }
