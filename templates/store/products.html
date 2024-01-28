@@ -4,15 +4,6 @@
 
     <div class="content-container">
         <h1>Ассортимент продуктов</h1>
-    {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-                {% if message.tags %}
-                    <li class="{{ message.tags }}">{{ message }}</li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-    {% endif %}
 
         <!-- Отображение только категорий -->
         <div class="categories">

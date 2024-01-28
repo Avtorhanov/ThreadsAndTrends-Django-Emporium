@@ -1,14 +1,16 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from store.models import Product, Category, SubCategory, Cart, CartItem
 
 
+# Главная
 def home(request):
-    # Логика для отображения главной страницы
     return render(request, 'store/home.html')
 
+# продукты
 def product_detail(request, product_id):
     # Логика для отображения страницы товара
     product = get_object_or_404(Product, id=product_id)
@@ -21,6 +23,8 @@ def all_products(request):
 
     return render(request, 'store/products.html', {'products': products, 'categories': categories, 'subcategories': subcategories})
 
+
+# логика корзины
 def add_to_cart(request, product_id):
     # Получаем продукт
     product = Product.objects.get(pk=product_id)
@@ -44,7 +48,6 @@ def add_to_cart(request, product_id):
     messages.success(request, 'Товар добавлен в корзину!')
     return JsonResponse({'status': 'success', 'message': 'Товар добавлен в корзину'})
 
-
 @login_required
 def cart_view(request):
     user = request.user
@@ -66,12 +69,13 @@ def remove_from_cart(request, item_id):
     cart_item.delete()
     messages.success(request, f'Товар удален из корзины!')
     return JsonResponse({'status': 'success', 'message': 'Товар удален из корзины'})
-# Добавьте представления для аутентификации, регистрации и т. д.
 
+
+# так чисто
 def about_us(request):
     return render(request, 'store/about-us.html')
 
-# Добавлены представления для категорий и подкатегорий
+# представления для категорий и подкатегорий
 def category_detail(request, category_id):
     category = get_object_or_404(Category, id=category_id)
     subcategories = SubCategory.objects.filter(category=category)
@@ -82,4 +86,20 @@ def subcategory_detail(request, subcategory_id):
     subcategory = get_object_or_404(SubCategory, id=subcategory_id)
     products = Product.objects.filter(subcategory=subcategory)
     return render(request, 'store/subcategory_detail.html', {'subcategory': subcategory, 'products': products})
+
+
+# логика поиска
+def search_products(request):
+    query = request.GET.get('q')
+    if query:
+        if query.isdigit() and len(query) <= 5:
+            # Если запрос состоит из цифр и его длина не превышает 5 символов, ищем товары по их ID
+            products = Product.objects.filter(id=int(query))
+        else:
+            # В противном случае выполняем простой поиск по полям name и description
+            products = Product.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+    else:
+        # Если запрос пустой, просто показываем все товары
+        products = Product.objects.all()
+    return render(request, 'store/search_results.html', {'products': products})
 

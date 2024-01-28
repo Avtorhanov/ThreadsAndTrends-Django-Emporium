@@ -22,6 +22,10 @@
                  <a href="{% url 'signup' %}">Регистрация</a>
                  <a href="{% url 'login' %}">Войти</a>
              {% endif %}
+            <form class="search-form" action="{% url 'search_products' %}" method="GET">
+                <input type="text" name="q" class="search-input" placeholder="Поиск...">
+                <button class="search-button" type="submit">Найти</button>
+            </form>
         </nav>
     </header>
 
@@ -32,10 +36,16 @@
     </main>
 
     <!--продукт -->
-
-
     {% block product %}
-
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    {% if message.tags %}
+                        <li class="{{ message.tags }}">{{ message }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        {% endif %}
     <div class="product-container">
         {% for product in products %}
         <div class="card">
@@ -53,6 +63,20 @@
         </div>
         {% endfor %}
     </div>
+    {% endblock %}
+
+    <!--Результаты поиска -->
+    {% block search_results %}
+        {% if search_results %}
+            <div class="search-results">
+                <h2>Результаты поиска:</h2>
+                <ul>
+                    {% for product in search_results %}
+                        <li>{{ product.name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
     {% endblock %}
 
     <!--Подвал-->
