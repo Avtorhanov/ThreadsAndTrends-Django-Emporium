@@ -1,5 +1,5 @@
 {% extends 'store/base.html' %}
-
+{% load static %}
 {% block content %}
     <!-- Контент для страницы корзины -->
     <h1>Ваша корзина</h1>
@@ -41,6 +41,12 @@
             {% endif %}
         </div>
     </div>
+
+{% block scripts %}
+    <script src="{% static 'js/main.js' %}"></script>
+{% endblock %}
+
+
 {% endblock %}
 
 
