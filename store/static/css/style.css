@@ -290,9 +290,15 @@ button:hover {
 
 /* Стили уведомлений*/
 @keyframes fadeOut {
-  10% { opacity: 1; }
+  0% { opacity: 1; }
   100% { opacity: 0; }
 }
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
 .messages li {
     list-style-type: none;
     padding: 12px 14px;
@@ -302,8 +308,7 @@ button:hover {
     color: white;
     display: inline-block;
     font-size: 20px;
-    animation: fadeOut 1s forwards;
-    animation-delay: 0.6s;
+    animation: fadeIn 0.9s ease-in-out, fadeOut 0.5s forwards 1.5s;
     position: fixed; /* Задаем фиксированное позиционирование */
     top: 10%; /* Размещаем элемент по вертикали на 50% высоты страницы */
     left: 50%;
@@ -397,7 +402,7 @@ h3.registration-title {
 }
 /* Стили для подсветки при фокусе */
 .search-input:focus {
-    border-color: black; /* Цвет границы при фокусе */
+    border-color: white; /* Цвет границы при фокусе */
     box-shadow: 0 0 20px rgba(92, 184, 92, 0.9); /* Тень при фокусе */
     transition: box-shadow 0.3s ease;
     z-index: 2;

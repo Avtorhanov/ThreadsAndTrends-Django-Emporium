@@ -1,23 +1,25 @@
 
         // корзина, инкремент, дикремент подсчет общей стоимости
 
-        document.addEventListener('DOMContentLoaded', function() {
-            updateTotalPrice();
-        });
-
-        function updateTotalPrice() {
-            const totalElement = document.querySelector('.total');
-            const items = document.querySelectorAll('.product');
-
-            let totalPrice = 0;
-
-            items.forEach(item => {
-                const quantity = parseInt(item.querySelector('.decr-counter span').innerText);
-                const price = parseFloat(item.querySelector('.product-info .price').innerText);
-                totalPrice += quantity * price;
+        if (document.querySelector('.total')) {
+            document.addEventListener('DOMContentLoaded', function() {
+                updateTotalPrice();
             });
 
-            totalElement.innerText = `Общая стоимость: ${totalPrice.toFixed(2)} ₽`;
+            function updateTotalPrice() {
+                const totalElement = document.querySelector('.total');
+                const items = document.querySelectorAll('.product');
+
+                let totalPrice = 0;
+
+                items.forEach(item => {
+                    const quantity = parseInt(item.querySelector('.decr-counter span').innerText);
+                    const price = parseFloat(item.querySelector('.product-info .price').innerText);
+                    totalPrice += quantity * price;
+                });
+
+                totalElement.innerText = `Общая стоимость: ${totalPrice.toFixed(1)} ₽`;
+            }
         }
 
         function updateCount(itemId, newCount) {
@@ -62,7 +64,8 @@
             })
             .then(response => response.json())
             .then(data => {
-                location.reload(); // Перезагружаем страницу после успешного удаления товара из корзины
+                console.log(data);
+                location.reload();
             })
             .catch(error => {
                 console.error('Error:', error);
