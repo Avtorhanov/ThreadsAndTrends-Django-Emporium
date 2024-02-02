@@ -1,0 +1,47 @@
+{% extends 'store/base.html' %}
+
+{% block content %}
+  <div class="container">
+    <h2>Оформление заказа</h2>
+    <div class="row">
+      <div class="transparent-container">
+        <div class="col-md-4">
+          <img src="{{ cart_item.product.image.url }}" class="img-fluid img-small">
+        </div>
+        <div class="col-md-6">
+          <h3>Ваш заказ</h3>
+          <ul class="list-group">
+            {% for cart_item in cart_items %}
+            <li class="list-group-item">
+            </li>
+            {% endfor %}
+          </ul>
+          {{ cart_item.product.name }} ({{ cart_item.quantity }} шт.)
+          <p>Общая сумма: {{ total_price }} руб.</p>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h3>Детали доставки</h3>
+        <form method="post" action="{% url 'checkout' item_id=cart_item.id %}">
+          {% csrf_token %}
+          <div class="transparent-container">
+              <div class="input-container">
+                  <label for="id_full_name">ФИО</label>
+                  <input type="text" class="form-control" id="id_full_name" name="full_name" required pattern="[A-Za-zА-Яа-яЁё\s\-]+" title="Пожалуйста, введите только буквы, пробелы и дефисы">
+              </div>
+
+              <div class="input-container">
+                <label for="id_address">Адрес</label>
+                <input type="text" class="form-control" id="id_address" name="address" required>
+              </div>
+              <div class="input-container">
+                <label for="id_phone_number">Номер телефона</label>
+                <input type="tel" class="form-control" id="id_phone_number" name="phone_number" required>
+              </div>
+            <button type="submit" class="btn btn-primary">Оформить заказ</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

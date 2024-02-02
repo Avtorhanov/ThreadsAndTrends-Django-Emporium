@@ -26,7 +26,7 @@
                             <p>Цена: <span class="price">{{ item.product.price }}</span> ₽</p>
                         </div>
                         <div class="decr-counter">
-                            <button onclick="#">Оформить</button>
+                            <a href="{% url 'checkout' item.id %}"><button>Оформить</button></a>
                             <button onclick="decrementCount({{ item.id }})">-</button>
                             <span id="count{{ item.id }}">{{ item.quantity }}</span>
                             <button onclick="incrementCount({{ item.id }})">+</button>
