@@ -422,3 +422,13 @@ h3.registration-title {
     margin-top: -41px; /* Поднимаем кнопку вверх на 10px */
     margin-right: 200px; /* Сдвигаем кнопку вправо на 10px */
 }
+
+.img-small {
+    border: 2px solid #1b1d59; /* Граница карточки */
+    border-radius: 10px; /* Округление краев карточки */
+    overflow: hidden; /* Скрывает любые превышающие размеры дочерние элементы */
+    margin: 20px; /* Внешний отступ карточки */
+    width: 250px; /* Ширина карточки */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7); /* Тень карточки */
+    background-color: white; /* Цвет карточки товара */
+}

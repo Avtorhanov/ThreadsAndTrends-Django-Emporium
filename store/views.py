@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
-from store.models import Product, Category, SubCategory, Cart, CartItem
+from store.models import Product, Category, SubCategory, Cart, CartItem, Order, OrderItem
 from store.utils import get_cart
 
 
@@ -100,3 +100,33 @@ def search_products(request):
         products = Product.objects.all()
     return render(request, 'store/search_results.html', {'products': products})
 
+
+@login_required
+def checkout(request, item_id):
+    username = request.user.username
+    cart_item = get_object_or_404(CartItem, id=item_id)
+    total_price = cart_item.product.price * cart_item.quantity
+
+    if request.method == 'POST':
+        full_name = request.POST.get('full_name')
+        # Проверка совпадения имени пользователя
+        if full_name != username:
+            messages.error(request, 'Пожалуйста, введите ваше имя правильно.')
+            return redirect('checkout', item_id=item_id)
+
+        # Обработка оформления заказа
+        order = Order.objects.create(owner=request.user, total_price=total_price)
+        OrderItem.objects.create(order=order, product=cart_item.product, quantity=cart_item.quantity, price=cart_item.price)
+        cart_item.delete()
+
+        messages.success(request, 'Заказ успешно оформлен!')
+        return redirect('order_detail', order_id=order.id)
+
+    return render(request, 'store/checkout.html', {'cart_item': cart_item, 'total_price': total_price})
+
+
+@login_required
+def order_detail(request, order_id):
+    order = get_object_or_404(Order, id=order_id, owner=request.user)
+    order_items = order.orderitem_set.all()
+    return render(request, 'store/order_detail.html', {'order': order, 'order_items': order_items})
