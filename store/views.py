@@ -139,3 +139,14 @@ def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id, owner=request.user)
     order_items = order.orderitem_set.all()
     return render(request, 'store/order_detail.html', {'order': order, 'order_items': order_items})
+
+@login_required
+def my_orders(request):
+    # Получить все успешно оформленные заказы текущего пользователя
+    orders = Order.objects.filter(owner=request.user, is_ordered=True)
+
+    # Добавляем проверку через print
+    print(orders)
+
+    # Передать список заказов в шаблон для отображения
+    return render(request, 'store/my_orders.html', {'orders': orders})

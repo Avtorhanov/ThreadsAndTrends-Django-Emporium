@@ -1,0 +1,26 @@
+{% extends 'store/base.html' %}
+
+{% block content %}
+  <div class="transparent-container">
+    <h2>Мои заказы</h2>
+    {% if orders %}
+      <ul>
+        {% for order in orders %}
+          <li>
+            <strong>Заказ №{{ order.id }}</strong>
+            <ul>
+              {% for order_item in order.orderitem_set.all %}
+                <li>{{ order_item.product.name }} ({{ order_item.quantity }} шт.) - {{ order_item.price }} руб.</li>
+              {% endfor %}
+            </ul>
+            <p>Дата заказа: {{ order.date_ordered }}</p>
+            <p>Общая сумма: {{ order.total_price }} руб.</p>
+            <!-- Дополнительные детали заказа: адрес, телефон, статус и т.д. -->
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>У вас нет оформленных заказов.</p>
+    {% endif %}
+  </div>
+{% endblock %}

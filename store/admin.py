@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Category, SubCategory, Product, Cart, Order, OrderItem, CartItem
-
+from django.db import models
 
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ['name']
@@ -30,16 +30,20 @@ class OrderItemInline(admin.TabularInline):
     extra = 0
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['owner', 'total_price', 'is_ordered', 'address', 'phone_number', 'full_name']
+    list_display = ['owner', 'total_price', 'is_ordered', 'address', 'phone_number', 'total_quantity']
     search_fields = ['owner__username']
     inlines = [OrderItemInline]
     fields = ['owner', 'total_price', 'is_ordered', 'address', 'phone_number', 'full_name']
 
-
+class OrderItemAdmin(admin.ModelAdmin):
+    model = OrderItem
+    list_display = ['order', 'product', 'quantity', 'price']
+    search_fields = ['order__id', 'product__name']
+    list_filter = ['order']
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(SubCategory, SubCategoryAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Cart, CartAdmin)
 admin.site.register(Order, OrderAdmin)
-admin.site.register(OrderItem)
+admin.site.register(OrderItem, OrderItemAdmin)
