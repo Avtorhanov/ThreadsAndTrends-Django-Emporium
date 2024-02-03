@@ -1,6 +1,5 @@
 from django.contrib import admin
 from .models import Category, SubCategory, Product, Cart, Order, OrderItem, CartItem
-from django.db import models
 
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ['name']
@@ -12,9 +11,9 @@ class SubCategoryAdmin(admin.ModelAdmin):
     list_filter = ['category']
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'subcategory', 'price']
+    list_display = ['name', 'category', 'subcategory', 'price', 'status']  # Добавлено поле 'status'
     search_fields = ['name']
-    list_filter = ['category', 'subcategory']
+    list_filter = ['category', 'subcategory', 'status']  # Добавлено поле 'status'
 
 class CartItemInline(admin.TabularInline):
     model = CartItem
@@ -30,10 +29,11 @@ class OrderItemInline(admin.TabularInline):
     extra = 0
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['owner', 'total_price', 'is_ordered', 'address', 'phone_number', 'total_quantity']
+    list_display = ['owner', 'total_price', 'is_ordered', 'address', 'phone_number', 'total_quantity', 'status']  # Добавлено поле 'status'
     search_fields = ['owner__username']
     inlines = [OrderItemInline]
-    fields = ['owner', 'total_price', 'is_ordered', 'address', 'phone_number', 'full_name']
+    fields = ['owner', 'total_price', 'is_ordered', 'address', 'phone_number', 'full_name', 'status']  # Добавлено поле 'status'
+    list_filter = ['status']  # Добавлено поле 'status'
 
 class OrderItemAdmin(admin.ModelAdmin):
     model = OrderItem
