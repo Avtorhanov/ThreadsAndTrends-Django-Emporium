@@ -109,13 +109,22 @@ def checkout(request, item_id):
 
     if request.method == 'POST':
         full_name = request.POST.get('full_name')
+        address = request.POST.get('address')  # Добавляем получение адреса и других данных доставки
+        phone_number = request.POST.get('phone_number')
+
         # Проверка совпадения имени пользователя
         if full_name != username:
             messages.error(request, 'Пожалуйста, введите ваше имя правильно.')
             return redirect('checkout', item_id=item_id)
 
-        # Обработка оформления заказа
-        order = Order.objects.create(owner=request.user, total_price=total_price)
+        # Обработка оформления заказа и сохранение данных о доставке в базе данных
+        order = Order.objects.create(
+            owner=request.user,
+            total_price=total_price,
+            address=address,  # Сохраняем данные о доставке в заказе
+            phone_number=phone_number,
+            full_name=full_name
+        )
         OrderItem.objects.create(order=order, product=cart_item.product, quantity=cart_item.quantity, price=cart_item.price)
         cart_item.delete()
 
