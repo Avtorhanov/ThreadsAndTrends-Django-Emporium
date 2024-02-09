@@ -1,7 +1,7 @@
 
 from django.contrib.auth.signals import user_logged_in
 
-from store.models import Product, CartItem, Cart
+from store.models import Product, CartItem, Cart, Order, OrderItem
 
 
 def get_cart(request):
@@ -53,3 +53,21 @@ def store_cart_in_session(sender, user, request, **kwargs):
 user_logged_in.connect(store_cart_in_session)
 
 
+# оформление заказа
+def validate_checkout_data(full_name, username):
+    if full_name != username:
+        return {'valid': False, 'message': 'Пожалуйста, введите ваше имя правильно.'}
+    return {'valid': True}
+
+def create_order(user, total_price, address, phone_number, full_name, cart_item):
+    order = Order.objects.create(
+        owner=user,
+        total_price=total_price,
+        address=address,
+        phone_number=phone_number,
+        full_name=full_name,
+        is_ordered=True
+    )
+    OrderItem.objects.create(order=order, product=cart_item.product, quantity=cart_item.quantity, price=cart_item.price)
+    cart_item.delete()
+    return order
