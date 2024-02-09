@@ -1,0 +1,25 @@
+{% extends 'store/base.html' %}
+
+{% block content %}
+  <h1>Мои заказы</h1>
+  <div class="order-list">
+        {% if orders %}
+            {% for order in orders %}
+                <div class="cart">
+                    <a href="{% url 'order_detail' order_id=order.id %}"><ul>Заказ №{{ order.id }}</ul></a>
+                    <div>Адрес доставки: {{ order.address }}</div>
+                    <div>Номер телефона: {{ order.phone_number }}</div>
+                    <div>Сумма заказа: {{ order.total_price }} ₽</div>
+                    <ul>
+                        {% for order_item in order.orderitem_set.all %}
+                            {{ order_item.product.description }}  {{ order_item.product.name }} - {{ order_item.quantity }} шт.
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>У вас пока нет заказов.</p>
+        {% endif %}
+    </div>
+
+{% endblock %}

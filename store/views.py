@@ -4,12 +4,12 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from store.models import Product, Category, SubCategory, Cart, CartItem, Order, OrderItem
-from store.utils import get_cart
+from store.utils import get_cart, validate_checkout_data, create_order
 
 
 # Главная
 def home(request):
-    return render(request, 'store/home.html')
+    return render(request, 'base/home.html')
 
 # продукты
 def product_detail(request, product_id):
@@ -36,7 +36,7 @@ def add_to_cart(request, product_id):
         # Если пользователь не аутентифицирован, сохраняем продукт в сессии
         session_cart_products = request.session.get('cart_products', [])
         session_cart_products.append(product_id)
-        request.session['cart_products'] = list(set(session_cart_products))  # Избавляемся от дубликатов
+        request.session['cart_products'] = list(set(session_cart_products))
         messages.success(request, 'Товар добавлен в воображаемую корзину!')
         return JsonResponse({'status': 'success', 'message': 'Товар добавлен в корзину'})
 
@@ -54,7 +54,7 @@ def cart_view(request):
     cart_items = cart.cartitem_set.all()
     total_price = sum(item.price * item.quantity for item in cart_items)
 
-    return render(request, 'store/cart.html', {'cart_items': cart_items, 'total_price': total_price})
+    return render(request, 'orders/cart.html', {'cart_items': cart_items, 'total_price': total_price})
 
 def update_cart(request, item_id, new_count):
     cart_item = get_object_or_404(CartItem, id=item_id)
@@ -71,7 +71,7 @@ def remove_from_cart(request, item_id):
 
 # так чисто
 def about_us(request):
-    return render(request, 'store/about-us.html')
+    return render(request, 'base/about-us.html')
 
 # представления для категорий и подкатегорий
 def category_detail(request, category_id):
@@ -98,8 +98,7 @@ def search_products(request):
     else:
         # Если запрос пустой, просто показываем все товары
         products = Product.objects.all()
-    return render(request, 'store/search_results.html', {'products': products})
-
+    return render(request, 'base/search_results.html', {'products': products})
 
 @login_required
 def checkout(request, item_id):
@@ -109,44 +108,27 @@ def checkout(request, item_id):
 
     if request.method == 'POST':
         full_name = request.POST.get('full_name')
-        address = request.POST.get('address')  # Добавляем получение адреса и других данных доставки
+        address = request.POST.get('address')
         phone_number = request.POST.get('phone_number')
 
-        # Проверка совпадения имени пользователя
-        if full_name != username:
-            messages.error(request, 'Пожалуйста, введите ваше имя правильно.')
+        validation_result = validate_checkout_data(full_name, username)
+        if not validation_result['valid']:
+            messages.error(request, validation_result['message'])
             return redirect('checkout', item_id=item_id)
 
-        # Обработка оформления заказа и сохранение данных о доставке в базе данных
-        order = Order.objects.create(
-            owner=request.user,
-            total_price=total_price,
-            address=address,  # Сохраняем данные о доставке в заказе
-            phone_number=phone_number,
-            full_name=full_name
-        )
-        OrderItem.objects.create(order=order, product=cart_item.product, quantity=cart_item.quantity, price=cart_item.price)
-        cart_item.delete()
-
+        order = create_order(request.user, total_price, address, phone_number, full_name, cart_item)
         messages.success(request, 'Заказ успешно оформлен!')
         return redirect('order_detail', order_id=order.id)
 
-    return render(request, 'store/checkout.html', {'cart_item': cart_item, 'total_price': total_price})
-
+    return render(request, 'orders/checkout.html', {'cart_item': cart_item, 'total_price': total_price})
 
 @login_required
 def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id, owner=request.user)
     order_items = order.orderitem_set.all()
-    return render(request, 'store/order_detail.html', {'order': order, 'order_items': order_items})
+    return render(request, 'orders/order_detail.html', {'order': order, 'order_items': order_items})
 
 @login_required
 def my_orders(request):
-    # Получить все успешно оформленные заказы текущего пользователя
     orders = Order.objects.filter(owner=request.user, is_ordered=True)
-
-    # Добавляем проверку через print
-    print(orders)
-
-    # Передать список заказов в шаблон для отображения
-    return render(request, 'store/my_orders.html', {'orders': orders})
+    return render(request, 'orders/my_orders.html', {'orders': orders})
