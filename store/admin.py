@@ -11,18 +11,31 @@ class SubCategoryAdmin(admin.ModelAdmin):
     list_filter = ['category']
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'subcategory', 'price', 'status']  # Добавлено поле 'status'
+    list_display = ['name', 'category', 'subcategory', 'price', 'status']
     search_fields = ['name']
-    list_filter = ['category', 'subcategory', 'status']  # Добавлено поле 'status'
+    list_filter = ['category', 'subcategory', 'status']
 
 class CartItemInline(admin.TabularInline):
     model = CartItem
     extra = 0
 
 class CartAdmin(admin.ModelAdmin):
-    list_display = ['owner']
+    list_display = ['owner', 'total_price', 'total_quantity']
     search_fields = ['owner__username']
     inlines = [CartItemInline]
+    fieldsets = (
+        (None, {
+            'fields': ('owner', 'session_key', 'total_price'),
+        }),
+    )
+    readonly_fields = ['total_price']
+    def total_price(self, obj):
+        return obj.calculate_total_price()
+    def total_quantity(self, obj):
+        return sum(item.quantity for item in obj.cartitem_set.all())
+
+    total_price.short_description = 'Total Price'
+    total_quantity.short_description = 'Total Quantity'
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
@@ -35,15 +48,10 @@ class OrderAdmin(admin.ModelAdmin):
     fields = ['owner', 'total_price', 'is_ordered', 'address', 'phone_number', 'full_name', 'status']
     list_filter = ['status']
 
-class OrderItemAdmin(admin.ModelAdmin):
-    model = OrderItem
-    list_display = ['order', 'product', 'quantity', 'price']
-    search_fields = ['order__id', 'product__name']
-    list_filter = ['order']
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(SubCategory, SubCategoryAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Cart, CartAdmin)
 admin.site.register(Order, OrderAdmin)
-admin.site.register(OrderItem, OrderItemAdmin)
+

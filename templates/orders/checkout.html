@@ -9,14 +9,17 @@
           <h3>Детали доставки</h3>
           <form method="post" action="{% url 'checkout' item_id=cart_item.id %}">
             {% csrf_token %}
+
             <div class="input-container">
-              <label for="id_full_name">ФИО</label>
-              <input type="text" class="form-control" id="id_full_name" name="full_name" required pattern="[A-Za-zА-Яа-яЁё\s\-]+" title="Пожалуйста, введите только буквы, пробелы и дефисы">
+            <label for="id_full_name">Имя пользователя</label>
+              <input type="text" class="form-control" id="id_full_name" name="full_name" required title="Пожалуйста, введите ваше имя пользователя">
             </div>
+
             <div class="input-container">
               <label for="id_address">Адрес</label>
               <input type="text" class="form-control" id="id_address" name="address" required>
             </div>
+
             <div class="input-container">
               <label for="id_phone_number">Номер телефона</label>
               <input type="tel" class="form-control" id="id_phone_number" name="phone_number" required>

@@ -1,21 +1,21 @@
-# accounts/views.py
 from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from .forms import StandardUserCreationForm
 
 
 def signup(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = StandardUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             auth_login(request, user)
-            messages.success(request, f'Приветствуем вас, {user.username}! вы успешно зарегистрированы.')
+            messages.success(request, f'Приветствуем вас, {user.username}! Вы успешно зарегистрированы.')
             return redirect('home')
     else:
-        form = UserCreationForm()
+        form = StandardUserCreationForm()
 
     return render(request, 'accounts/signup.html', {'form': form})
 

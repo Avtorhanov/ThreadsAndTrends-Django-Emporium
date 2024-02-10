@@ -68,6 +68,7 @@ def create_order(user, total_price, address, phone_number, full_name, cart_item)
         full_name=full_name,
         is_ordered=True
     )
-    OrderItem.objects.create(order=order, product=cart_item.product, quantity=cart_item.quantity, price=cart_item.price)
+    # Используем общую стоимость для установки цены в объект OrderItem
+    OrderItem.objects.create(order=order, product=cart_item.product, price=cart_item.product.price, description=cart_item.product.description, quantity=cart_item.quantity)
     cart_item.delete()
     return order
