@@ -30,10 +30,9 @@ def add_to_cart(request, product_id):
     cart = get_cart(request)
 
     if request.user.is_authenticated:
-        # Если пользователь аутентифицирован, добавляем продукт в его корзину
         cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
     else:
-        # Если пользователь не аутентифицирован, сохраняем продукт в сессии
+
         session_cart_products = request.session.get('cart_products', [])
         session_cart_products.append(product_id)
         request.session['cart_products'] = list(set(session_cart_products))
@@ -42,10 +41,12 @@ def add_to_cart(request, product_id):
 
     if not item_created:
         cart_item.quantity += 1
-        cart_item.save()
+    cart_item.price = product.price
+    cart_item.save()
 
     messages.success(request, 'Товар добавлен в корзину!')
     return JsonResponse({'status': 'success', 'message': 'Товар добавлен в корзину'})
+
 
 @login_required
 def cart_view(request):
