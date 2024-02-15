@@ -126,7 +126,7 @@ def checkout(request, item_id):
 @login_required
 def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id, owner=request.user)
-    order_items = order.orderitem_set.all()
+    order_items = order.orderitem_set.all()  # Обновляем эту строку, чтобы использовать новый связанный объект OrderItem
     return render(request, 'orders/order_detail.html', {'order': order, 'order_items': order_items})
 
 @login_required

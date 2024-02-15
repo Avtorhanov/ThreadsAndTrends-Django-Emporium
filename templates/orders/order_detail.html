@@ -2,7 +2,7 @@
 
 {% block content %}
   <div class="container">
-    <h2>Детали заказа №{{ order.id }}</h2>
+    <h2>Детали заказа №{{ order.order_number }}</h2> <!-- Используйте order_number вместо id -->
     <p>Дата заказа: {{ order.date_ordered }}</p>
     <div class="row">
       {% for order_item in order_items %}
@@ -12,12 +12,15 @@
           {% endif %}
         </div>
         <div class="col-md-8">
-          <p>{{ order_item.product.name }} {{ order_item.quantity }} шт. {{ order_item.product.description }}</p>
-          <p>{{ order.status }}</p>
+          <p>{{ order_item.product.name }} {{ order_item.quantity }} шт. {{ order_item.description }}</p> <!-- Используйте description вместо product.description -->
+          <p>{{ order_item.status }}</p> <!-- Добавьте статус товара -->
         </div>
       {% endfor %}
     </div>
     <p>Общая сумма заказа: {{ order.total_price }} руб.</p>
-    <!-- Здесь можно добавить другие детали заказа, например, информацию о доставке, статус заказа и т. д. -->
+    <p>Статус заказа: {{ order.status }}</p> <!-- Добавьте статус заказа -->
+    <p>Адрес доставки: {{ order.address }}</p> <!-- Добавьте адрес доставки -->
+    <p>Номер телефона: {{ order.phone_number }}</p> <!-- Добавьте номер телефона -->
+    <!-- Здесь можно добавить другие детали заказа, если необходимо -->
   </div>
 {% endblock %}

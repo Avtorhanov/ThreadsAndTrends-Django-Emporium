@@ -1,6 +1,6 @@
 from django.contrib.auth.signals import user_logged_in
 from store.models import Product, CartItem, Cart, Order, OrderItem
-
+from django.db import models
 
 def get_cart(request):
     if request.user.is_authenticated:
@@ -56,14 +56,34 @@ def validate_checkout_data(full_name, username):
     return {'valid': True}
 
 def create_order(user, total_price, address, phone_number, full_name, cart_item):
+    # Получаем максимальный номер заказа для данного пользователя
+    max_user_order_number = Order.objects.filter(owner=user).aggregate(models.Max('user_order_number'))['user_order_number__max']
+    # Если у пользователя уже есть заказы, увеличиваем номер на 1, иначе начинаем с 1
+    new_user_order_number = max_user_order_number + 1 if max_user_order_number is not None else 1
+
+    # Создаем уникальный номер заказа, включающий идентификатор пользователя
+    order_number = f"{new_user_order_number}"
+
     order = Order.objects.create(
         owner=user,
+        order_number=order_number,
         total_price=total_price,
         address=address,
         phone_number=phone_number,
         full_name=full_name,
         is_ordered=True
     )
-    OrderItem.objects.create(order=order, product=cart_item.product, price=cart_item.product.price, description=cart_item.product.description, quantity=cart_item.quantity)
+
+    # Создаем связанный объект OrderItem
+    OrderItem.objects.create(
+        order=order,
+        product=cart_item.product,
+        quantity=cart_item.quantity,
+        price=cart_item.product.price,
+        description=cart_item.product.description
+    )
+
+    # Удаляем товар из корзины
     cart_item.delete()
+
     return order
