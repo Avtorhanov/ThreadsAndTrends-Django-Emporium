@@ -1,6 +1,4 @@
-
 from django.contrib.auth.signals import user_logged_in
-
 from store.models import Product, CartItem, Cart, Order, OrderItem
 
 
@@ -43,8 +41,6 @@ def store_cart_in_session(sender, user, request, **kwargs):
         for product_id in session_cart_products:
             product = Product.objects.get(pk=product_id)
             cart_item, _ = CartItem.objects.get_or_create(cart=user_cart, product=product)
-            # Увеличиваем количество продуктов, если они уже есть в корзине пользователя
-            #cart_item.quantity -= 1
             cart_item.save()
 
         # Очищаем список продуктов в сессии
@@ -68,7 +64,6 @@ def create_order(user, total_price, address, phone_number, full_name, cart_item)
         full_name=full_name,
         is_ordered=True
     )
-    # Используем общую стоимость для установки цены в объект OrderItem
     OrderItem.objects.create(order=order, product=cart_item.product, price=cart_item.product.price, description=cart_item.product.description, quantity=cart_item.quantity)
     cart_item.delete()
     return order

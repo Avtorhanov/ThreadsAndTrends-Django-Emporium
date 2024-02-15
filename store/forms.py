@@ -14,6 +14,7 @@ class OrderForm(forms.Form):
     address = forms.CharField(max_length=255, label='Address')
     phone_number = forms.CharField(max_length=20, label='Phone Number')
 
+
 class ContactForm(forms.Form):
     name = forms.CharField(max_length=100, label='Your Name')
     email = forms.EmailField(label='Your Email')
