@@ -65,15 +65,15 @@ class Order(models.Model):
     address = models.CharField(max_length=255, default='')
     phone_number = models.CharField(max_length=20, default='')
     full_name = models.CharField(max_length=100, default='')
+    order_number = models.CharField(max_length=50, default='')  # Поле для уникального номера заказа
+    user_order_number = models.IntegerField(default=0)  # Поле для уникального номера заказа пользователя
 
-    # Допустимые варианты для статуса заказа
     STATUS_CHOICES = [
         ('processing', 'Processing'),
         ('shipped', 'Shipped'),
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     ]
-    # Поле выбора для статуса заказа
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='processing')
 
     def __str__(self):
@@ -81,6 +81,16 @@ class Order(models.Model):
 
     def total_quantity(self):
         return sum(item.quantity for item in self.orderitem_set.all())
+
+    def generate_user_order_number(self):
+        max_user_order_number = Order.objects.filter(owner=self.owner).aggregate(models.Max('user_order_number'))['user_order_number__max']
+        new_user_order_number = max_user_order_number + 1 if max_user_order_number is not None else 1
+        return new_user_order_number
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.user_order_number = self.generate_user_order_number()
+        super().save(*args, **kwargs)
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)

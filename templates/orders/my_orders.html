@@ -6,15 +6,19 @@
         {% if orders %}
             {% for order in orders %}
                 <div class="cart">
-                    <a href="{% url 'order_detail' order_id=order.id %}"><ul>Заказ №{{ order.id }}</ul></a>
-                    <div>Адрес доставки: {{ order.address }}</div>
-                    <div>Номер телефона: {{ order.phone_number }}</div>
-                    <div>Сумма заказа: {{ order.total_price }} ₽</div>
-                    <ul>
-                        {% for order_item in order.orderitem_set.all %}
-                            {{ order_item.product.description }}  {{ order_item.product.name }} - {{ order_item.quantity }} шт.
-                        {% endfor %}
-                    </ul>
+                    <div class="order-1">
+                        <a href="{% url 'order_detail' order_id=order.id %}" class="order-link">
+                            <span class="order-number">Заказ №{{ order.order_number }}</span>
+                        </a>
+                    </div>
+                        <div>Адрес доставки: {{ order.address }}</div>
+                        <div>Номер телефона: {{ order.phone_number }}</div>
+                        <div>Сумма заказа: {{ order.total_price }} ₽</div>
+                        <ul>
+                            {% for order_item in order.orderitem_set.all %}
+                                {{ order_item.product.description }}  {{ order_item.product.name }} - {{ order_item.quantity }} шт.
+                            {% endfor %}
+                        </ul>
                 </div>
             {% endfor %}
         {% else %}
