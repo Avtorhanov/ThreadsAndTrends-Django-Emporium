@@ -1,7 +1,32 @@
 {% extends 'store/base.html' %}
+{% load static %}
 
 {% block content %}
     <!-- Контент для страницы с деталями продукта -->
     <h1>Детали продукта</h1>
-    <!-- Вывод информации о конкретном продукте -->
+    <div class="product-detail">
+        <!-- Вывод информации о конкретном продукте -->
+        <div class="image-cont">
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" id="zoom-image">
+        </div>
+        <div class="product-info">
+            <h2>{{ product.name }}</h2>
+            <p>{{ product.description }}</p>
+            <p>Цена: {{ product.price }} ₽</p>
+            <div class="prod-counter">
+                <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
+            </div>
+        </div>
+    </div>
+
+
 {% endblock %}
+    <!-- Блок для написания отзыва -->
+<!--    <div class="review">-->
+<!--        <h2>Написать отзыв</h2>-->
+<!--        <form action="{% url 'add_review' product.id %}" method="post">-->
+<!--            {% csrf_token %}-->
+<!--            <textarea name="review_text" rows="4" cols="50"></textarea><br>-->
+<!--            <input type="submit" value="Отправить">-->
+<!--        </form>-->
+<!--    </div>-->

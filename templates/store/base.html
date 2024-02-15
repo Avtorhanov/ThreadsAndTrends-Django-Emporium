@@ -51,22 +51,25 @@
             </ul>
         {% endif %}
     <div class="product-container">
-        {% for product in products %}
-        <div class="card">
+    {% for product in products %}
+    <div class="card">
+        <a href="{% url 'product_detail' product_id=product.id %}">
             <div class="product-image">
                 <img src="{{ product.image.url }}" alt="Product Image">
             </div>
-            <div class="product-info">
-                <div class="product-name">{{ product.name }}</div>
-                <div class="product-description">{{ product.description }}</div>
-                <div class="product-price">{{ product.price }} ₽</div>
-                <div class="prod-counter">
-                    <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
-                </div>
+        </a>
+        <div class="product-info">
+            <div class="product-name">{{ product.name }}</div>
+            <div class="product-description">{{ product.description }}</div>
+            <div class="product-price">{{ product.price }} ₽</div>
+            <div class="prod-counter">
+                <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
             </div>
         </div>
-        {% endfor %}
     </div>
+    {% endfor %}
+</div>
+
     {% endblock %}
 
     <!--Результаты поиска -->
@@ -91,8 +94,7 @@
     </footer>
 
     <!--скрипты-->
-    <script src="{% static 'js/main.js' %}"></script>
-    <script src="{% static 'js/ajax.js' %}"></script>
 
+    <script src="{% static 'js/main.js' %}"></script>
 </body>
 </html>
