@@ -29,12 +29,12 @@ class Product(models.Model):
 
     # Допустимые варианты для статуса товара
     STATUS_CHOICES = [
-        ('available', 'Available'),
-        ('out_of_stock', 'Out of Stock'),
-        ('discontinued', 'Discontinued'),
+        ('В наличии', 'В наличии'),
+        ('Нет в наличии', 'Нет в наличии'),
+        ('Снято с поставок', 'Снято с поставок'),
     ]
     # Поле выбора для статуса товара
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='В наличии')
 
 class Cart(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
@@ -69,12 +69,12 @@ class Order(models.Model):
     user_order_number = models.IntegerField(default=0)  # Поле для уникального номера заказа пользователя
 
     STATUS_CHOICES = [
-        ('processing', 'Processing'),
-        ('shipped', 'Shipped'),
-        ('delivered', 'Delivered'),
-        ('cancelled', 'Cancelled'),
+        ('В обработке', 'В обработке'),
+        ('В пути', 'В пути'),
+        ('Доставлено', 'Доставлено'),
+        ('Отменен', 'Отменен'),
     ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='processing')
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Оформлен и находится в обработке')
 
     def __str__(self):
         return f"Order #{self.id} by {self.owner.username}"
@@ -101,12 +101,3 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} of {self.product} in order #{self.order.id}"
-
-    # Допустимые варианты для статуса товара
-    STATUS_CHOICES = [
-        ('available', 'Available'),
-        ('out_of_stock', 'Out of Stock'),
-        ('discontinued', 'Discontinued'),
-    ]
-    # Поле выбора для статуса товара
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')

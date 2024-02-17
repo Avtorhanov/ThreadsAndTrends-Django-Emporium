@@ -8,17 +8,27 @@
                 <div class="cart">
                     <div class="order-1">
                         <a href="{% url 'order_detail' order_id=order.id %}" class="order-link">
-                            <span class="order-number">Заказ №{{ order.order_number }}</span>
+                            <span class="order-number">Посмотреть заказ № {{ order.order_number }}</span>
                         </a>
                     </div>
-                        <div>Адрес доставки: {{ order.address }}</div>
-                        <div>Номер телефона: {{ order.phone_number }}</div>
-                        <div>Сумма заказа: {{ order.total_price }} ₽</div>
-                        <ul>
+                        <div class="order-info">
+                            <p><strong>Адрес доставки:</strong> {{ order.address }}</p>
+                            <p><strong>Номер телефона:</strong> {{ order.phone_number }}</p>
+                            <p><strong>Сумма заказа:</strong> {{ order.total_price }} ₽</p>
+                        </div>
+                        <ul class="order-items">
                             {% for order_item in order.orderitem_set.all %}
-                                {{ order_item.product.description }}  {{ order_item.product.name }} - {{ order_item.quantity }} шт.
+
+                                    <strong>{{ order_item.product.name }}</strong>
+                                    <span>{{ order_item.product.description }}</span>
+                                    <span>Количество: {{ order_item.quantity }} шт.</span>
+
                             {% endfor %}
                         </ul>
+                    <form action="{% url 'delete_order' order_id=order.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit">Удалить</button>
+                    </form>
                 </div>
             {% endfor %}
         {% else %}

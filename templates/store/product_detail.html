@@ -11,14 +11,14 @@
         </div>
         <div class="product-info">
             <h2>{{ product.name }}</h2>
-            <p>{{ product.description }}</p>
+            <p>Описание: {{ product.description }}</p>
+            <p>На складе: {{ product.status }}</p>
             <p>Цена: {{ product.price }} ₽</p>
             <div class="prod-counter">
                 <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
             </div>
         </div>
     </div>
-
 
 {% endblock %}
     <!-- Блок для написания отзыва -->

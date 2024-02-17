@@ -1,8 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
+
 from store.models import Product, Category, SubCategory, Cart, CartItem, Order, OrderItem
 from store.utils import get_cart, validate_checkout_data, create_order
 
@@ -131,5 +133,13 @@ def order_detail(request, order_id):
 
 @login_required
 def my_orders(request):
-    orders = Order.objects.filter(owner=request.user, is_ordered=True)
+    orders = Order.objects.filter(owner=request.user, is_ordered=True).order_by('-date_ordered')
     return render(request, 'orders/my_orders.html', {'orders': orders})
+
+
+@login_required
+def delete_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id, owner=request.user)
+    order.delete()
+    messages.success(request, 'Заказ успешно удален!')
+    return HttpResponseRedirect(reverse('my_orders'))
