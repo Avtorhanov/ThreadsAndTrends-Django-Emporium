@@ -12,7 +12,9 @@
           {% endif %}
         </div>
         <div class="col-md-8">
-          <p>{{ order_item.product.name }} {{ order_item.quantity }} шт. {{ order_item.description }}</p> <!-- Используйте description вместо product.description -->
+          <p><strong>{{ order_item.product.name }}</strong></p>
+          <p>Количество: {{ order_item.quantity }} шт.</p>
+          <p>{{ order_item.description }}</p> <!-- Используйте description вместо product.description -->
           <p>{{ order_item.status }}</p> <!-- Добавьте статус товара -->
         </div>
       {% endfor %}
