@@ -12,3 +12,7 @@ venv
 migrations
 
 .env
+
+fixtures
+
+assistant.py

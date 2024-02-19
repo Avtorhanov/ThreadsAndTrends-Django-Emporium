@@ -61,7 +61,6 @@ def create_order(user, total_price, address, phone_number, full_name, cart_item)
     # Если у пользователя уже есть заказы, увеличиваем номер на 1, иначе начинаем с 1
     new_user_order_number = max_user_order_number + 1 if max_user_order_number is not None else 1
 
-    # Создаем уникальный номер заказа, включающий идентификатор пользователя
     order_number = f"{new_user_order_number}"
 
     order = Order.objects.create(
