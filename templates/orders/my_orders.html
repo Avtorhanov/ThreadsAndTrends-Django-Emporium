@@ -3,37 +3,28 @@
 {% block content %}
   <h1>Мои заказы</h1>
   <div class="order-list">
-        {% if orders %}
-            {% for order in orders %}
-                <div class="cart">
-                    <div class="order-1">
-                        <a href="{% url 'order_detail' order_id=order.id %}" class="order-link">
-                            <span class="order-number">Посмотреть заказ № {{ order.order_number }}</span>
-                        </a>
-                    </div>
-                        <div class="order-info">
-                            <p><strong>Адрес доставки:</strong> {{ order.address }}</p>
-                            <p><strong>Номер телефона:</strong> {{ order.phone_number }}</p>
-                            <p><strong>Сумма заказа:</strong> {{ order.total_price }} ₽</p>
-                        </div>
-                        <ul class="order-items">
-                            {% for order_item in order.orderitem_set.all %}
-
-                                    <strong>{{ order_item.product.name }}</strong>
-                                    <span>{{ order_item.product.description }}</span>
-                                    <span>Количество: {{ order_item.quantity }} шт.</span>
-
-                            {% endfor %}
-                        </ul>
-                    <form action="{% url 'delete_order' order_id=order.id %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit">Удалить</button>
-                    </form>
-                </div>
-            {% endfor %}
-        {% else %}
-            <p>У вас пока нет заказов.</p>
-        {% endif %}
-    </div>
-
+    {% if orders %}
+      {% for order in orders %}
+        <div class="cart">
+          <div class="order-1">
+            <a href="{% url 'order_detail' order_id=order.id %}" class="order-link">
+              <span class="order-number">Посмотреть заказ № {{ order.order_number }}</span>
+            </a>
+          </div>
+          <div class="order-info">
+            <p><strong>Адрес доставки:</strong> {{ order.address }}</p>
+            <p><strong>Номер телефона:</strong> {{ order.phone_number }}</p>
+            <p><strong>Количество товаров в заказе:</strong> {{ order.orderitem_set.count }}</p>
+            <p><strong>Сумма заказа:</strong> {{ order.total_price }} ₽</p>
+          </div>
+          <form action="{% url 'delete_order' order_id=order.id %}" method="post">
+            {% csrf_token %}
+            <button type="submit">Удалить</button>
+          </form>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>У вас пока нет заказов.</p>
+    {% endif %}
+  </div>
 {% endblock %}

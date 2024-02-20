@@ -2,13 +2,15 @@
 
 {% block content %}
   <div class="container">
-    <h2>Детали заказа №{{ order.order_number }}</h2> <!-- Используйте order_number вместо id -->
+    <h2>Детали заказа №{{ order.order_number }}</h2>
     <p>Дата заказа: {{ order.date_ordered }}</p>
     <div class="row">
       {% for order_item in order_items %}
         <div class="col-md-4">
           {% if order_item.product.image %}
-            <img src="{{ order_item.product.image.url }}" alt="{{ order_item.product.name }}" class="img-fluid img-small">
+              <a href="{% url 'product_detail' product_id=order_item.product.id %}">
+                  <img src="{{ order_item.product.image.url }}" alt="{{ order_item.product.name }}" class="img-fluid img-small">
+              </a>
           {% endif %}
         </div>
         <div class="col-md-8">

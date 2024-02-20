@@ -19,7 +19,11 @@
             {% if cart_items %}
                 {% for item in cart_items %}
                     <div class="product">
-                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                        <a href="{% url 'product_detail' product_id=item.product.id %}">
+                            <div class="product-image">
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                            </div>
+                        </a>
                         <div class="product-info">
                             <h3>{{ item.product.name }}</h3>
                             <p>{{ item.product.description }}</p>
@@ -36,15 +40,12 @@
                     </div>
                 {% endfor %}
                 <div class="total">Общая стоимость: {{ total_price }} ₽</div>
+                <a href="{% url 'checkout_all' %}"><button>Купить все!</button></a>
             {% else %}
                 <h2>Пуста!</h2>
             {% endif %}
         </div>
     </div>
-
-{% block scripts %}
-    <script src="{% static 'js/main.js' %}"></script>
-{% endblock %}
 
 
 {% endblock %}
