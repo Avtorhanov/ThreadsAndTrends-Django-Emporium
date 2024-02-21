@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+  <div class="transparent-container">
+    <h3 class="profile-title">Ваши данные</h3>
+    <form method="post" id="profile-form">
+      {% csrf_token %}
+      <div class="input-container">
+        <label for="id_username">Ник:</label>
+        <input type="text" name="username" id="id_username" value="{{ user.username }}" required>
+      </div>
+
+      <div class="input-container">
+        <label for="id_first_name">Имя:</label>
+        <input type="text" name="first_name" id="id_first_name" value="{{ user.first_name }}" required>
+      </div>
+
+      <div class="input-container">
+        <label for="id_last_name">Фамилия:</label>
+        <input type="text" name="last_name" id="id_last_name" value="{{ user.last_name }}" required>
+      </div>
+
+      <div class="input-container">
+        <label for="id_email">Email:</label>
+        <input type="email" name="email" id="id_email" value="{{ user.email }}" required>
+      </div>
+
+      <div class="input-container">
+        <label for="id_new_password">Новый пароль:</label>
+        <div class="password-container">
+          <input type="password" name="new_password" id="id_new_password" placeholder="Введите новый пароль">
+          <button type="button" id="show-password" class="show-password-button" style="margin-bottom: 15px;">Показать</button>
+        </div>
+      </div>
+
+      <div class="input-container">
+          <label for="id_confirm_password">Подтвердите пароль:</label>
+        <div class="password-con">
+          <input type="password" name="confirm_password" id="id_confirm_password" placeholder="Подтвердите пароль" style="width: 100%;">
+        </div>
+      </div>
+
+      <button type="submit" class="update-profile" style="margin-top: 10px;">Обновить</button>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const passwordInput = document.getElementById('id_new_password');
+      const showPasswordButton = document.getElementById('show-password');
+
+      showPasswordButton.addEventListener('click', function() {
+        if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          showPasswordButton.textContent = 'Скрыть';
+        } else {
+          passwordInput.type = 'password';
+          showPasswordButton.textContent = 'Показать';
+        }
+      });
+    });
+  </script>
+{% endblock %}

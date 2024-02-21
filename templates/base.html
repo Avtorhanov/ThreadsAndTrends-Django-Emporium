@@ -17,8 +17,9 @@
             <a href="{% url 'cart' %}">Корзина</a>
             <a href="{% url 'about-us' %}">О нас</a>
              {% if user.is_authenticated %}
-                 <a href="{% url 'my_orders' %}">Мои заказы</a>
-                 <a href="{% url 'logout' %}">Выйти</a>
+                <a href="{% url 'profile' %}">Профиль</a>
+                <a href="{% url 'my_orders' %}">Мои заказы</a>
+                <a href="{% url 'logout' %}">Выйти</a>
                 {% if user.is_superuser %}
                     <a href="{% url 'admin:index' %}">Админ-панель</a>
                 {% endif %}
