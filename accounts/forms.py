@@ -1,5 +1,6 @@
 # accounts/forms.py
 from django import forms
+from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.models import User
 
 class StandardUserCreationForm(forms.ModelForm):
@@ -24,7 +25,6 @@ class StandardUserCreationForm(forms.ModelForm):
             user.save()
         return user
 
-
 # from django.contrib.auth.forms import UserCreationForm
 # from django import forms
 #
@@ -35,3 +35,25 @@ class StandardUserCreationForm(forms.ModelForm):
 #
 #     class Meta(UserCreationForm.Meta):
 #         fields = UserCreationForm.Meta.fields + ('full_name', 'address', 'phone_number')
+
+class ProfileUpdateForm(UserChangeForm):
+    new_password = forms.CharField(label='new_password', widget=forms.PasswordInput(), required=False)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name']
+
+    def clean_new_password(self):
+        new_password = self.cleaned_data.get('new_password')
+        if new_password:
+            return new_password
+        return None
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        new_password = self.cleaned_data.get('new_password')
+        if new_password:
+            user.set_password(new_password)
+        if commit:
+            user.save()
+        return user

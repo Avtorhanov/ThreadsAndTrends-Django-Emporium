@@ -20,7 +20,7 @@ def product_detail(request, product_id):
     return render(request, 'store/product_detail.html', {'product': product})
 
 def all_products(request):
-    products = Product.objects.all()
+    products = Product.objects.all().order_by('-date')
     categories = Category.objects.all()
     subcategories = SubCategory.objects.all()
 
