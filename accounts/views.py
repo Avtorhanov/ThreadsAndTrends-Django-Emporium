@@ -3,6 +3,8 @@ from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
+from store.models import Cart
 from .forms import StandardUserCreationForm, ProfileUpdateForm
 
 
@@ -44,6 +46,9 @@ def log_out_view(request):
 def profile(request):
     user = request.user
 
+    # Получаем данные о корзине для текущего пользователя
+    cart_items = Cart.objects.filter(owner=user)
+
     if request.method == 'POST':
         form = ProfileUpdateForm(request.POST, instance=user)
         if form.is_valid():
@@ -53,7 +58,7 @@ def profile(request):
                 user.set_password(new_password)
                 user.save()
                 update_session_auth_hash(request, user)
-                messages.success(request, 'пароль обновлен.')
+                messages.success(request, 'Пароль обновлен.')
             else:
                 messages.success(request, 'Данные обновлены.')
             return redirect('profile')
@@ -64,8 +69,7 @@ def profile(request):
     else:
         form = ProfileUpdateForm(instance=user)
 
-    return render(request, 'accounts/profile.html', {'form': form})
-
+    return render(request, 'accounts/profile.html', {'form': form, 'cart_items': cart_items})
 
 
 

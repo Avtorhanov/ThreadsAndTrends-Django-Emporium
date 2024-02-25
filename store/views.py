@@ -34,10 +34,10 @@ def add_to_cart(request, product_id):
     if request.user.is_authenticated:
         cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
     else:
-
         session_cart_products = request.session.get('cart_products', [])
         session_cart_products.append(product_id)
         request.session['cart_products'] = list(set(session_cart_products))
+        request.session['cart_items'] = len(session_cart_products)  # Обновление количества товаров в корзине
         messages.success(request, 'Товар добавлен в воображаемую корзину!')
         return JsonResponse({'status': 'success', 'message': 'Товар добавлен в корзину'})
 
@@ -48,7 +48,6 @@ def add_to_cart(request, product_id):
 
     messages.success(request, 'Товар добавлен в корзину!')
     return JsonResponse({'status': 'success', 'message': 'Товар добавлен в корзину'})
-
 
 @login_required
 def cart_view(request):

@@ -2,18 +2,85 @@
 
 {% block content %}
 
+<style>
+    /* CSS стили для увеличения шрифта и центрирования */
+    section {
+        text-align: center; /* Центрирование содержимого */
+        font-size: 15px; /* Увеличение размера шрифта */
+    }
+
+    /* Стиль для заголовка h1 */
+    h1 {
+        font-size: 30px; /* Увеличение размера шрифта заголовка */
+        font-weight: bold; /* Жирный шрифт */
+        color: #000; /* Цвет текста */
+    }
+
+    /* Стиль для описания */
+    .description-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    .descr {
+        display: inline-block;
+        padding: 12px 14px;
+        font-size: 15px;
+        border-radius: 20px;
+        margin-bottom: 10px;
+        background-color: #1b1d59;
+        color: white;
+        text-align: center;
+    }
+
+    .des {
+        width: 40%;
+        padding: 10px 12px;
+        font-size: 15px;
+        border-radius: 20px;
+        margin-bottom: 10px;
+        background-color: #20B2AA;
+        color: white;
+        text-align: center;
+    }
+</style>
+
 <section>
-        <h1>Добро пожаловать на мой веб-сайт!</h1>
+    <h1>Веб сервис DiDi - store!</h1>
+
+    <div class="description-container">
+        <div class="descr">
+            <strong>Каталог:</strong>
+        </div>
+        <div class="des">
+            Весь ассортимент продуктов, разделенный на категории и подкатегории для удобства поиска.<br>
+        </div>
+
+        <div class="descr">
+            <strong>Корзина:</strong>
+        </div>
+        <div class="des">
+            Регистрируйтесь и добавляйте товары в корзину, и заполните простую форму оформления.
+            До регистрации все ваши товары сохранятся в сессии для доступа после регистрации.<br>
+        </div>
+
+        <div class="descr">
+            <strong>Мои заказы:</strong>
+        </div>
+        <div class="des">
+            Детали ваших оформленных заказов, и статус доставки будет меняться после договоренности по оплате с продавцом.<br>
+        </div>
+    </div>
 </section>
 
 {% if messages %}
     <ul class="messages">
-      {% for message in messages %}
-        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-      {% endfor %}
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
     </ul>
 {% endif %}
-
-
 
 {% endblock %}

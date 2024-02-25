@@ -11,9 +11,10 @@
         </div>
         <div class="product-info">
             <h2>{{ product.name }}</h2>
-            <p>Описание: {{ product.description }}</p>
-            <p>На складе: {{ product.status }}</p>
-            <p>Цена: {{ product.price }} ₽</p>
+            <p><strong>Описание:</strong> {{ product.description }}</p>
+            <p><strong>На складе:</strong>  {{ product.status }}</p>
+            <p><strong>Айдишник товара:</strong>  {{ product.id }}</p>
+            <p><strong>Цена:</strong>  {{ product.price }} ₽</p>
             <div class="prod-counter">
                 <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
             </div>
