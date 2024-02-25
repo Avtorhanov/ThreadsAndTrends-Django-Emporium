@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block content %}
 
+{% block content %}
   <div class="transparent-container">
     <h3 class="profile-title">Ваши данные</h3>
     <form method="post" id="profile-form">
@@ -35,7 +35,7 @@
       </div>
 
       <div class="input-container">
-          <label for="id_confirm_password">Подтвердите пароль:</label>
+        <label for="id_confirm_password">Подтвердите пароль:</label>
         <div class="password-con">
           <input type="password" name="confirm_password" id="id_confirm_password" placeholder="Подтвердите пароль" style="width: 100%;">
         </div>
@@ -44,6 +44,7 @@
       <button type="submit" class="update-profile" style="margin-top: 10px;">Обновить</button>
     </form>
   </div>
+
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
