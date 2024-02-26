@@ -27,7 +27,7 @@
                         <div class="product-info">
                             <h3>{{ item.product.name }}</h3>
                             <p>{{ item.product.description }}</p>
-                            <p>Цена: <span class="price">{{ item.product.price }}</span> ₽</p>
+                            <p><strong>Цена:</strong><span class="price"> {{ item.product.price }}</span> ₽</p>
                         </div>
                         <div class="decr-counter">
                             <a href="{% url 'checkout' item.id %}"><button>Оформить</button></a>

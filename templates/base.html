@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
     <title>Home</title>
 </head>
 <body>
@@ -12,12 +12,20 @@
     <!--Навбар-->
     <header>
         <nav>
-            <a href="{% url 'home' %}">Главная</a>
-            <a href="{% url 'all-products' %}">Каталог</a>
-             {% if user.is_authenticated %}
-            <a href="{% url 'cart' %}">Корзина<span class="badge bg-secondary"> {{request.cart_items_count}}</span></a>
+                <a href="{% url 'home' %}">Главная</a>
+                <a href="{% url 'all-products' %}">Каталог</a>
+                 {% if user.is_authenticated %}
+                <a href="{% url 'cart' %}" class="cart-link">Корзина
+                    {% if request.cart_items_count > 0 %}
+                    <span class="badge bg-secondary">{{ request.cart_items_count }}</span>
+                    {% endif %}
+                </a>
+
 <!--            <a href="{% url 'about-us' %}">О нас</a>-->
-                <a href="{% url 'my_orders' %}">Мои заказы<span class="badge"> {{ request.orders_count }}</span></a>
+                <a href="{% url 'my_orders' %}" class="cart-link">Мои заказы
+                {% if request.orders_count > 0 %}
+                    <span class="badge"> {{ request.orders_count }}</span></a>
+                {% endif %}
                 <a href="{% url 'profile' %}">Профиль</a>
                 <a href="{% url 'logout' %}">Выйти</a>
                 {% if user.is_superuser %}
