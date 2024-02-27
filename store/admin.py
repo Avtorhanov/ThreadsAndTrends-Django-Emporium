@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, SubCategory, Product, Cart, Order, OrderItem, CartItem
+from .models import Category, SubCategory, Product, Cart, CartItem
 
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ['name']
@@ -37,21 +37,10 @@ class CartAdmin(admin.ModelAdmin):
     total_price.short_description = 'Total Price'
     total_quantity.short_description = 'Total Quantity'
 
-class OrderItemInline(admin.TabularInline):
-    model = OrderItem
-    extra = 0
-
-class OrderAdmin(admin.ModelAdmin):
-    list_display = ['owner', 'total_price', 'is_ordered', 'address', 'phone_number', 'total_quantity', 'status']
-    search_fields = ['owner__username']
-    inlines = [OrderItemInline]
-    fields = ['owner', 'total_price', 'is_ordered', 'address', 'phone_number', 'full_name', 'status']
-
-
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(SubCategory, SubCategoryAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Cart, CartAdmin)
-admin.site.register(Order, OrderAdmin)
+
 

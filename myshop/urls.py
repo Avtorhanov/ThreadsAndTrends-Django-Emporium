@@ -22,6 +22,7 @@ from myshop import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
+    path('orders/', include('orders.urls')),
     path('', include('store.urls')),
 ]
 if settings.DEBUG:
