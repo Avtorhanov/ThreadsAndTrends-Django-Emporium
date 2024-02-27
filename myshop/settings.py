@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     'store',
     'accounts',
+    'orders',
 ]
 
 MIDDLEWARE = [
@@ -51,7 +52,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'store.middleware.CartMiddleware',
-    'store.middleware.OrdersCountMiddleware',
+    'orders.middleware.OrdersCountMiddleware',
 ]
 
 ROOT_URLCONF = 'myshop.urls'
