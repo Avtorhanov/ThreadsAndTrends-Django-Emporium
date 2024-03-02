@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-    <!-- Контент для страницы корзины -->
+
     <h1>Ваша корзина</h1>
 
   {% if messages %}
@@ -41,14 +41,13 @@
                 {% endfor %}
                     <div class="total">Общая стоимость: {{ total_price }} ₽</div>
                 {% if cart_items|length > 1 %}
-                    <a href="{% url 'checkout_all' %}"><button>Купить все!</button></a>
+                    <a href="{% url 'checkout_all' %}"><button>Купить все !</button></a>
                 {% endif %}
             {% else %}
                 <h2>Пуста!</h2>
             {% endif %}
         </div>
     </div>
-
 
 {% endblock %}
 

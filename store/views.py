@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
@@ -13,17 +15,31 @@ def home(request):
     return render(request, 'base/home.html')
 
 # продукты
+def all_products(request):
+    products = Product.objects.all().order_by('-date')
+    page_number = request.GET.get('page')
+    paginator = Paginator(products, 20)
+    page_obj = paginator.get_page(page_number)
+    categories = Category.objects.all()
+
+    return render(request, 'store/products.html', {'page_obj': page_obj, 'categories': categories, 'is_paginated': True})
+
 def product_detail(request, product_id):
     # Логика для отображения страницы товара
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'store/product_detail.html', {'product': product})
 
-def all_products(request):
-    products = Product.objects.all().order_by('-date')
-    categories = Category.objects.all()
-    subcategories = SubCategory.objects.all()
+# представления для категорий и подкатегорий
+def category_detail(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    subcategories = SubCategory.objects.filter(category=category)
+    products = Product.objects.filter(category=category)
+    return render(request, 'store/category_detail.html', {'category': category, 'subcategories': subcategories, 'products': products})
 
-    return render(request, 'store/products.html', {'products': products, 'categories': categories, 'subcategories': subcategories})
+def subcategory_detail(request, subcategory_id):
+    subcategory = get_object_or_404(SubCategory, id=subcategory_id)
+    products = Product.objects.filter(subcategory=subcategory)
+    return render(request, 'store/subcategory_detail.html', {'subcategory': subcategory, 'products': products})
 
 # логика корзины
 def add_to_cart(request, product_id):
@@ -69,22 +85,6 @@ def remove_from_cart(request, item_id):
     cart_item.delete()
     messages.success(request, f'Товар удален из корзины!')
     return JsonResponse({'status': 'success', 'message': 'Товар удален из корзины'})
-
-# так чисто
-def about_us(request):
-    return render(request, 'base/about-us.html')
-
-# представления для категорий и подкатегорий
-def category_detail(request, category_id):
-    category = get_object_or_404(Category, id=category_id)
-    subcategories = SubCategory.objects.filter(category=category)
-    products = Product.objects.filter(category=category)
-    return render(request, 'store/category_detail.html', {'category': category, 'subcategories': subcategories, 'products': products})
-
-def subcategory_detail(request, subcategory_id):
-    subcategory = get_object_or_404(SubCategory, id=subcategory_id)
-    products = Product.objects.filter(subcategory=subcategory)
-    return render(request, 'store/subcategory_detail.html', {'subcategory': subcategory, 'products': products})
 
 # логика поиска
 def search_products(request):

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
     <div class="content-container">
@@ -10,14 +11,64 @@
             {% endfor %}
         </div>
     </div>
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    {% if message.tags %}
-                        <li class="{{ message.tags }}">{{ message }}</li>
-                    {% endif %}
-                {% endfor %}
-            </ul>
-        {% endif %}
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                {% if message.tags %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="product-container">
+        {% for product in page_obj %}
+            <div class="card">
+                <a href="{% url 'product_detail' product_id=product.id %}">
+                    <div class="product-image">
+                        <img src="{{ product.image.url }}" alt="Product Image">
+                    </div>
+                </a>
+                <div class="product-info">
+                    <div class="product-name">{{ product.name }}</div>
+                    <div class="product-description">{{ product.description }}</div>
+                    <div class="product-price">{{ product.price }} ₽</div>
+                    <div class="prod-counter">
+                        <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+        <!-- Пагинация -->
+    {% if is_paginated %}
+        <div id="pagination" class="pagination" >
+            {% if page_obj.has_previous %}
+                <a href="{% url 'all-products' %}?page=1" class="page-link">Первая</a>
+                <a href="{% url 'all-products' %}?page={{ page_obj.previous_page_number }}" class="page-link">Предыдущая</a>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="page-number current">{{ num }}</span>
+                {% else %}
+                    <a href="{% url 'all-products' %}?page={{ num }}" class="page-link">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+                <a href="{% url 'all-products' %}?page={{ page_obj.next_page_number }}" class="page-link">Следующая</a>
+                <a href="{% url 'all-products' %}?page={{ page_obj.paginator.num_pages }}" class="page-link">Последняя</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+<script>
+     window.onload = function() {
+         var pagination = document.getElementById("pagination");
+         if (pagination) {
+             pagination.scrollIntoView();
+         }
+    };
+</script>
 
 {% endblock %}

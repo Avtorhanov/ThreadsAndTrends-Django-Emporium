@@ -4,9 +4,37 @@
 <div class="container">
     <h1>{{ category.name }}</h1>
     <!-- Отображение только подкатегорий -->
-        <div class="subcategory-container">
-            {% for subcategory in subcategories %}
-                <a href="{% url 'subcategory_detail' subcategory.id %}" class="subcategory-link">{{ subcategory.name }}</a>
-            {% endfor %}
-        </div>
+    <div class="subcategory-container">
+        {% for subcategory in subcategories %}
+            <a href="{% url 'subcategory_detail' subcategory.id %}" class="subcategory-link">{{ subcategory.name }}</a>
+        {% endfor %}
+    </div>
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    {% if message.tags %}
+                        <li class="{{ message.tags }}">{{ message }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        {% endif %}
+    <div class="product-container">
+        {% for product in products %}
+            <div class="card">
+                <a href="{% url 'product_detail' product_id=product.id %}">
+                    <div class="product-image">
+                        <img src="{{ product.image.url }}" alt="Product Image">
+                    </div>
+                </a>
+                <div class="product-info">
+                    <div class="product-name">{{ product.name }}</div>
+                    <div class="product-description">{{ product.description }}</div>
+                    <div class="product-price">{{ product.price }} ₽</div>
+                    <div class="prod-counter">
+                        <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
 {% endblock %}
