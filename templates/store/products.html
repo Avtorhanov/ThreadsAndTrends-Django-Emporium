@@ -42,25 +42,30 @@
     </div>
 
         <!-- Пагинация -->
-    {% if is_paginated %}
-        <div id="pagination" class="pagination" >
-            {% if page_obj.has_previous %}
-                <a href="{% url 'all-products' %}?page=1" class="page-link">Первая</a>
-                <a href="{% url 'all-products' %}?page={{ page_obj.previous_page_number }}" class="page-link">Предыдущая</a>
+{% if is_paginated %}
+    <div id="pagination" class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="{% url 'all-products' %}?page=1" class="page-link">
+                <img src="{% static 'icons/first_page.svg' %}" alt="First Page Icon"></a>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+                <span class="page-number current"> {{ num }} </span>
+            {% elif num >= page_obj.number|add:'-1' and num <= page_obj.number|add:'1' %}
+                <a href="{% url 'all-products' %}?page={{ num }}" class="page-link"> {{ num }} </a>
             {% endif %}
-            {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                    <span class="page-number current">{{ num }}</span>
-                {% else %}
-                    <a href="{% url 'all-products' %}?page={{ num }}" class="page-link">{{ num }}</a>
-                {% endif %}
-            {% endfor %}
-            {% if page_obj.has_next %}
-                <a href="{% url 'all-products' %}?page={{ page_obj.next_page_number }}" class="page-link">Следующая</a>
-                <a href="{% url 'all-products' %}?page={{ page_obj.paginator.num_pages }}" class="page-link">Последняя</a>
-            {% endif %}
-        </div>
-    {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+            <a href="{% url 'all-products' %}?page={{ page_obj.paginator.num_pages }}" class="page-link">
+                <img src="{% static 'icons/last_page.svg' %}" alt="Last Page Icon"></a>
+        {% endif %}
+    </div>
+{% endif %}
+
+
+
+
+
 
 <script>
      window.onload = function() {

@@ -5,10 +5,8 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
-
 from store.models import Product, Category, SubCategory, Cart, CartItem
 from store.utils import get_cart
-
 
 # Главная
 def home(request):
@@ -18,11 +16,22 @@ def home(request):
 def all_products(request):
     products = Product.objects.all().order_by('-date')
     page_number = request.GET.get('page')
-    paginator = Paginator(products, 20)
+    paginator = Paginator(products, 10)
     page_obj = paginator.get_page(page_number)
     categories = Category.objects.all()
 
-    return render(request, 'store/products.html', {'page_obj': page_obj, 'categories': categories, 'is_paginated': True})
+    # Рассчитываем значения страниц
+    if page_obj.number <= 2:
+        start_page = 1
+        end_page = min(3, paginator.num_pages)
+    elif page_obj.number >= paginator.num_pages - 1:
+        start_page = max(paginator.num_pages - 2, 1)
+        end_page = paginator.num_pages
+    else:
+        start_page = page_obj.number - 1
+        end_page = page_obj.number + 1
+
+    return render(request, 'store/products.html', {'page_obj': page_obj, 'categories': categories, 'is_paginated': True, 'start_page': start_page, 'end_page': end_page})
 
 def product_detail(request, product_id):
     # Логика для отображения страницы товара
