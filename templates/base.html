@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
-    <title>Home</title>
+    <title>DiDi - Bedr</title>
 </head>
 <body>
 
@@ -21,7 +21,6 @@
                     {% endif %}
                 </a>
 
-<!--            <a href="{% url 'about-us' %}">О нас</a>-->
                 <a href="{% url 'my_orders' %}" class="cart-link">Мои заказы
                 {% if request.orders_count > 0 %}
                     <span class="badge"> {{ request.orders_count }}</span></a>
@@ -50,36 +49,9 @@
 
     <!--продукт -->
     {% block product %}
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    {% if message.tags %}
-                        <li class="{{ message.tags }}">{{ message }}</li>
-                    {% endif %}
-                {% endfor %}
-            </ul>
-        {% endif %}
-    <div class="product-container">
-    {% for product in products %}
-    <div class="card">
-        <a href="{% url 'product_detail' product_id=product.id %}">
-            <div class="product-image">
-                <img src="{{ product.image.url }}" alt="Product Image">
-            </div>
-        </a>
-        <div class="product-info">
-            <div class="product-name">{{ product.name }}</div>
-            <div class="product-description">{{ product.description }}</div>
-            <div class="product-price">{{ product.price }} ₽</div>
-            <div class="prod-counter">
-                <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-
     {% endblock %}
+
+
 
     <!--Результаты поиска -->
     {% block search_results %}

@@ -1,4 +1,4 @@
-# models.py
+
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -38,7 +38,7 @@ class Product(models.Model):
 
 class Cart(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    session_key = models.CharField(max_length=32, null=True, blank=True)  # Используется для неавторизованных пользователей
+    session_key = models.CharField(max_length=32, null=True, blank=True)
     products = models.ManyToManyField('Product', through='CartItem')
 
     def __str__(self):

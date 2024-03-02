@@ -12,7 +12,6 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('products/', all_products, name='all-products'),
     path('product/<int:product_id>/', views.product_detail, name='product_detail'),
-    path('about-us/', views.about_us, name='about-us'),
 
     # Просмотр корзины пользователя
     path('add_to_cart/<int:product_id>/', add_to_cart, name='add_to_cart'),
