@@ -1,6 +1,17 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                {% if message.tags %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+
   <div class="container">
     <h2>Детали заказа №{{ order.order_number }}</h2>
     <p>Дата заказа: {{ order.date_ordered }}</p>

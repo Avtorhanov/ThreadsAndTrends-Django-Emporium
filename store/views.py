@@ -10,7 +10,7 @@ from store.utils import get_cart
 
 # Главная
 def home(request):
-    return render(request, 'base/home.html')
+    return render(request, 'main/home.html')
 
 # продукты
 def all_products(request):
@@ -108,5 +108,5 @@ def search_products(request):
     else:
         # Если запрос пустой, просто показываем все товары
         products = Product.objects.all()
-    return render(request, 'base/search_results.html', {'products': products})
+    return render(request, 'main/search_results.html', {'products': products})
 
