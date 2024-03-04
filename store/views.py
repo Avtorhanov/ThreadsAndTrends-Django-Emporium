@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -98,15 +99,12 @@ def remove_from_cart(request, item_id):
 # логика поиска
 def search_products(request):
     query = request.GET.get('q')
+    products = Product.objects.all()
+
     if query:
-        if query.isdigit() and len(query) <= 5:
-            # Если запрос состоит из цифр и его длина не превышает 5 символов, ищем товары по их ID
-            products = Product.objects.filter(id=int(query))
-        else:
-            # В противном случае выполняем простой поиск по полям name и description
-            products = Product.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
-    else:
-        # Если запрос пустой, просто показываем все товары
-        products = Product.objects.all()
+        products = products.filter(
+            Q(name__icontains=query) | Q(description__icontains=query)
+        )
+
     return render(request, 'main/search_results.html', {'products': products})
 

@@ -25,7 +25,7 @@
                 {% if request.orders_count > 0 %}
                     <span class="badge"> {{ request.orders_count }}</span></a>
                 {% endif %}
-                <a href="{% url 'profile' %}">Профиль</a>
+                    <a href="{% url 'profile' %}">Профиль</a>
                 <a href="{% url 'logout' %}">Выйти</a>
                 {% if user.is_superuser %}
                     <a href="{% url 'admin:index' %}">Админ-панель</a>
@@ -55,22 +55,24 @@
 
     <!--Результаты поиска -->
     {% block search_results %}
-        {% if search_results %}
+        {% if products %}
             <div class="search-results">
                 <h2>Результаты поиска:</h2>
                 <ul>
-                    {% for product in search_results %}
+                    {% for product in products %}
                         <li>{{ product.name }}</li>
                     {% endfor %}
                 </ul>
             </div>
+        {% else %}
+            <p>По вашему запросу ничего не найдено.</p>
         {% endif %}
     {% endblock %}
 
     <!--Подвал-->
     <footer>
         <div class="footer-content">
-            <p>&copy; 2024 Мой Веб-Магазин. Все права защищены.</p>
+            <p>&copy; 2024 Веб-Магазин. Империя разных товаров.</p>
             <div class="social-icons">
                 <a href="https://chat.whatsapp.com/E23sogWlISi0UT8TBnOpve" target="_blank"><img src="{% static 'icons/whatsapp3.svg' %}" alt="WhatsApp"></a>
                 <a href="https://t.me/c/1300402125/39839" target="_blank"><img src="{% static 'icons/telegram3.svg' %}" alt="Telegram"></a>
