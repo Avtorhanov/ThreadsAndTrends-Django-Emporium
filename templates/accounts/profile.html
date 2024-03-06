@@ -2,6 +2,17 @@
 {% load static %}
 
 {% block content %}
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                {% if message.tags %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+
   <div class="transparent-container">
     <h3 class="registration-title">Ваши данные</h3>
     <form method="post" id="profile-form">
@@ -44,6 +55,21 @@
       <button type="submit" class="update-profile" style="margin-top: 10px;">Обновить</button>
     </form>
   </div>
+
+    <!-- Вывод товаров в корзине -->
+    <div class="cart-items">
+        <h3>Товары в корзине</h3>
+        <div class="thumbnails">
+            {% for item in cart_items %}
+                <div class="thumbnail">
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                    <p>{{ item.product.name }}</p>
+                    <p>Количество: {{ item.quantity }}</p>
+                </div>
+            {% endfor %}
+        </div>
+        <p>Общая стоимость: {{ total_price }}</p>
+    </div>
 
 
   <script>
