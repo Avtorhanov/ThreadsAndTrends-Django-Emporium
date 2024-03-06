@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-from store.models import Cart
+from store.models import Cart, CartItem
 from .forms import StandardUserCreationForm, ProfileUpdateForm
 
 
@@ -71,7 +71,20 @@ def profile(request):
 
     return render(request, 'accounts/profile.html', {'form': form, 'cart_items': cart_items})
 
+@login_required
+def profile_view(request):
+    user = request.user
+    cart, created = Cart.objects.get(owner=user)
+    cart_items = cart.cartitem_set.all()
+    total_price = sum(item.product.price * item.quantity for item in cart_items)
 
+    context = {
+        'user': user,
+        'cart_items': cart_items,
+        'total_price': total_price,
+    }
+
+    return render(request, 'accounts/profile.html', context)
 
 
 

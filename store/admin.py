@@ -29,18 +29,17 @@ class CartAdmin(admin.ModelAdmin):
         }),
     )
     readonly_fields = ['total_price']
+
     def total_price(self, obj):
         return obj.calculate_total_price()
     def total_quantity(self, obj):
         return sum(item.quantity for item in obj.cartitem_set.all())
 
-    total_price.short_description = 'Total Price'
-    total_quantity.short_description = 'Total Quantity'
+    total_price.short_description = 'Общая стоимость'
+    total_quantity.short_description = 'Общее количество'
 
 
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(SubCategory, SubCategoryAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Cart, CartAdmin)
-
-
