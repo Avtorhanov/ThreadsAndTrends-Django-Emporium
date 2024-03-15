@@ -49,6 +49,32 @@
         </div>
     </div>
 
+    <script>
+        // Получаем все элементы <p> внутри класса product-info
+        var productDescriptions = document.querySelectorAll('.product-info p');
+
+        productDescriptions.forEach(function(description) {
+           var text = description.textContent; // Получаем текст из элемента <p>
+           var newText = ''; // Создаем переменную для нового текста
+           var charCount = 0; // Счетчик символов
+
+            // Проходимся по каждому символу в тексте
+            for (var i = 0; i < text.length; i++) {
+                newText += text[i]; // Добавляем символ в новый текст
+                charCount++; // Увеличиваем счетчик символов
+
+                // Если счетчик достиг 30 символов, добавляем перенос строки
+                if (charCount === 30) {
+                    newText += '<br>';
+                    charCount = 0; // Сбрасываем счетчик символов
+                }
+            }
+
+            // Заменяем старый текст на новый текст с переносами
+            description.innerHTML = newText;
+        });
+    </script>
+
 {% endblock %}
 
 
