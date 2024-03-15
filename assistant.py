@@ -34,3 +34,23 @@
 # # Теперь открываем файл для чтения с определенной кодировкой
 # with open('store/subcategory_detail.html', 'r', encoding=encoding_result) as file:
 #     content = file.read()
+
+# for num in range(1, 26):
+#     if num % 2 != 0:  # если не кратно 2, то точно не кратно 4 и 8 тоже
+#         continue  # поэтому эту итерацию пропускаем
+#     print(f'\nЧисло {num}')
+#     print('Кратно 2')
+#
+#     if num % 4 != 0:
+#         continue
+#     print('Кратно 4')
+#
+#     if num % 8 != 0:
+#         continue
+#     print('Кратно 8')
+
+# У лукоморья дуб зеленый.
+a = input()
+b = a.split()
+for i in b:
+    print(i.lower())

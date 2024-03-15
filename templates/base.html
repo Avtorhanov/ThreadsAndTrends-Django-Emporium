@@ -5,7 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
-    <title>DiDi - Bedr</title>
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'faviconki/favicon-16x16.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'faviconki/favicon-32x32.png' %}">
+    <title>Emporium</title>
 </head>
 <body>
 
@@ -51,23 +53,6 @@
     {% block product %}
     {% endblock %}
 
-
-
-    <!--Результаты поиска -->
-    {% block search_results %}
-        {% if products %}
-            <div class="search-results">
-                <h2>Результаты поиска:</h2>
-                <ul>
-                    {% for product in products %}
-                        <li>{{ product.name }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% else %}
-            <p>По вашему запросу ничего не найдено.</p>
-        {% endif %}
-    {% endblock %}
 
     <!--Подвал-->
     <footer>

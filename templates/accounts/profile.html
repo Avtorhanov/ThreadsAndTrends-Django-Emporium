@@ -18,7 +18,7 @@
     <form method="post" id="profile-form">
       {% csrf_token %}
       <div class="input-container">
-        <label for="id_username">Ник:</label>
+        <label for="id_username">Ник Пользователя:</label>
         <input type="text" name="username" id="id_username" value="{{ user.username }}" required>
       </div>
 
@@ -56,36 +56,36 @@
     </form>
   </div>
 
-    <!-- Вывод товаров в корзине -->
-    <div class="cart-items">
-        <h3>Товары в корзине</h3>
-        <div class="thumbnails">
-            {% for item in cart_items %}
-                <div class="thumbnail">
-                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
-                    <p>{{ item.product.name }}</p>
-                    <p>Количество: {{ item.quantity }}</p>
-                </div>
-            {% endfor %}
-        </div>
-        <p>Общая стоимость: {{ total_price }}</p>
-    </div>
+<!--    &lt;!&ndash; Вывод товаров в корзине &ndash;&gt;-->
+<!--    <div class="cart-items">-->
+<!--        <h3>Товары в корзине</h3>-->
+<!--        <div class="thumbnails">-->
+<!--            {% for item in cart_items %}-->
+<!--                <div class="thumbnail">-->
+<!--                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">-->
+<!--                    <p>{{ item.product.name }}</p>-->
+<!--                    <p>Количество: {{ item.quantity }}</p>-->
+<!--                </div>-->
+<!--            {% endfor %}-->
+<!--        </div>-->
+<!--        <p>Общая стоимость: {{ total_price }}</p>-->
+<!--    </div>-->
 
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const passwordInput = document.getElementById('id_new_password');
-      const showPasswordButton = document.getElementById('show-password');
+<!--  <script>-->
+<!--    document.addEventListener('DOMContentLoaded', function() {-->
+<!--      const passwordInput = document.getElementById('id_new_password');-->
+<!--      const showPasswordButton = document.getElementById('show-password');-->
 
-      showPasswordButton.addEventListener('click', function() {
-        if (passwordInput.type === 'password') {
-          passwordInput.type = 'text';
-          showPasswordButton.textContent = 'Скрыть';
-        } else {
-          passwordInput.type = 'password';
-          showPasswordButton.textContent = 'Показать';
-        }
-      });
-    });
-  </script>
+<!--      showPasswordButton.addEventListener('click', function() {-->
+<!--        if (passwordInput.type === 'password') {-->
+<!--          passwordInput.type = 'text';-->
+<!--          showPasswordButton.textContent = 'Скрыть';-->
+<!--        } else {-->
+<!--          passwordInput.type = 'password';-->
+<!--          showPasswordButton.textContent = 'Показать';-->
+<!--        }-->
+<!--      });-->
+<!--    });-->
+<!--  </script>-->
 {% endblock %}
