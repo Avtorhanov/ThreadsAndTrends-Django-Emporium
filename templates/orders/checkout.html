@@ -22,7 +22,7 @@
             {% csrf_token %}
 
             <div class="input-container">
-            <label for="id_full_name">Имя пользователя</label>
+              <label for="id_full_name">Ник пользователя</label>
               <input type="text" class="form-control" id="id_full_name" name="full_name" required title="Пожалуйста, введите ваше имя пользователя">
             </div>
 
@@ -36,6 +36,19 @@
               <input type="tel" class="form-control" id="id_phone_number" name="phone_number" required>
             </div>
 
+            <div class="input-container">
+              <label for="id_size">Размер</label>
+              <input type="text" class="form-control" id="id_size" name="size" placeholder="Отметьте размер при необходимости">
+            </div>
+
+            <h3 class="title">Способ оплаты</h3>
+                <div style="display: flex; justify-content: space-between;">
+                    <label for="payment_cash_on_delivery">Оплата при получении</label>
+                    <input type="radio" id="payment_cash_on_delivery" name="payment_method" value="оплата при получении">
+                    <label for="payment_credit_card">Оплата картой</label>
+                    <input type="radio" id="payment_credit_card" name="payment_method" value="оплата картой">
+                </div><br>
+
             <button type="submit" class="btn btn-primary">Оформить заказ</button>
           </form>
         </div>
@@ -47,12 +60,6 @@
           </div>
           <div class="col-md-8">
             <h3>Ваш заказ</h3>
-            <ul class="list-group">
-              {% for cart_item in cart_items %}
-              <li class="list-group-item">
-              </li>
-              {% endfor %}
-            </ul>
             <strong>{{ cart_item.product.name }}</strong> - ({{ cart_item.quantity }} шт.)
             <p><strong>Общая сумма:</strong> {{ total_price }} руб.</p>
           </div>
