@@ -50,7 +50,24 @@
 #     print('Кратно 8')
 
 # У лукоморья дуб зеленый.
-a = input()
-b = a.split()
-for i in b:
-    print(i.lower())
+
+# Введите предложение
+# s = input()
+#
+# p = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~№41'
+# c = ''
+# for i in s:
+#     if i not in p:
+#         c += i
+#
+# words = c.lower().split()
+# for w in words:
+#     print(w[::-1])
+
+t = input()
+s = '!'
+c = 0
+for i in t:
+    if i == s:
+        c += 1
+print(c)
