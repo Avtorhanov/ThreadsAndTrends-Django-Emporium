@@ -8,7 +8,7 @@ def validate_checkout_data(full_name, username):
         return {'valid': False, 'message': 'Пожалуйста, введите ваше имя правильно.'}
     return {'valid': True}
 
-def create_order(user, total_price, address, phone_number, full_name, cart_item, size, payment_method):
+def create_order(user, total_price, address, phone_number, full_name, cart_item, size):
     # Получаем максимальный номер заказа для данного пользователя
     max_user_order_number = Order.objects.filter(owner=user).aggregate(models.Max('user_order_number'))['user_order_number__max']
     # Если у пользователя уже есть заказы, увеличиваем номер на 1, иначе начинаем с 1
@@ -25,7 +25,7 @@ def create_order(user, total_price, address, phone_number, full_name, cart_item,
         full_name=full_name,
         is_ordered=True,
         size=size,
-        payment_method=payment_method
+        # payment_method=payment_method
     )
 
     # Создаем связанный объект OrderItem
