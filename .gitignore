@@ -1,0 +1,11 @@
+
+venv/
+
+fixtures/
+
+.env
+
+assistant.py
+
+media/
+

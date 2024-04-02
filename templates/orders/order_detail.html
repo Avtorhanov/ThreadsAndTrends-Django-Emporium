@@ -26,14 +26,13 @@
         </div>
         <div class="col-md-8">
           <p><strong>{{ order_item.product.name }}</strong></p>
+            <p><strong>Статус заказа:</strong> {{ order.status }}</p> <!-- Добавьте статус заказа -->
           <p><strong>Количество:</strong> {{ order_item.quantity }} шт.</p>
-          <p>{{ order_item.description }}</p> <!-- Используйте description вместо product.description -->
-          <p>{{ order_item.status }}</p> <!-- Добавьте статус товара -->
+          <p>{{ order_item.description }}</p>
         </div>
       {% endfor %}
     </div>
     <p><strong>Общая сумма заказа:</strong> {{ order.total_price }} руб.</p>
-    <p><strong>Статус заказа:</strong> {{ order.status }}</p> <!-- Добавьте статус заказа -->
     <p><strong>Адрес доставки:</strong> {{ order.address }}</p> <!-- Добавьте адрес доставки -->
     <p><strong>Номер телефона:</strong> {{ order.phone_number }}</p> <!-- Добавьте номер телефона -->
     <!-- Здесь можно добавить другие детали заказа, если необходимо -->

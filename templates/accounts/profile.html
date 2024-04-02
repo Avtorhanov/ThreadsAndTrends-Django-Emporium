@@ -72,20 +72,20 @@
 <!--    </div>-->
 
 
-<!--  <script>-->
-<!--    document.addEventListener('DOMContentLoaded', function() {-->
-<!--      const passwordInput = document.getElementById('id_new_password');-->
-<!--      const showPasswordButton = document.getElementById('show-password');-->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const passwordInput = document.getElementById('id_new_password');
+      const showPasswordButton = document.getElementById('show-password');
 
-<!--      showPasswordButton.addEventListener('click', function() {-->
-<!--        if (passwordInput.type === 'password') {-->
-<!--          passwordInput.type = 'text';-->
-<!--          showPasswordButton.textContent = 'Скрыть';-->
-<!--        } else {-->
-<!--          passwordInput.type = 'password';-->
-<!--          showPasswordButton.textContent = 'Показать';-->
-<!--        }-->
-<!--      });-->
-<!--    });-->
-<!--  </script>-->
+      showPasswordButton.addEventListener('click', function() {
+        if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          showPasswordButton.textContent = 'Скрыть';
+        } else {
+          passwordInput.type = 'password';
+          showPasswordButton.textContent = 'Показать';
+        }
+      });
+    });
+  </script>
 {% endblock %}

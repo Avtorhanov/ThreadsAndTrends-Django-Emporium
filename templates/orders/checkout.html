@@ -17,7 +17,7 @@
     <div class="row">
       <div class="col-md-6">
         <div class="transparent-container">
-          <h3 class="title">Детали доставки</h3>
+          <div class="des"><h3 class="title">Детали доставки</h3></div>
           <form method="post" action="{% url 'checkout' item_id=cart_item.id %}">
             {% csrf_token %}
 
@@ -41,13 +41,13 @@
               <input type="text" class="form-control" id="id_size" name="size" placeholder="Отметьте размер при необходимости">
             </div>
 
-            <h3 class="title">Способ оплаты</h3>
-                <div style="display: flex; justify-content: space-between;">
-                    <label for="payment_cash_on_delivery">Оплата при получении</label>
-                    <input type="radio" id="payment_cash_on_delivery" name="payment_method" value="оплата при получении">
-                    <label for="payment_credit_card">Оплата картой</label>
-                    <input type="radio" id="payment_credit_card" name="payment_method" value="оплата картой">
-                </div><br>
+<!--            <div class="des"><h3 class="title">Способ оплаты</h3></div>-->
+<!--            <div style="display: flex; justify-content: space-between;">-->
+<!--                <label for="payment_cash_on_delivery">Оплата при получении</label>-->
+<!--                <input type="radio" id="payment_cash_on_delivery" name="payment_method" value="оплата при получении">-->
+<!--                <label for="payment_credit_card">Оплата картой</label>-->
+<!--                <input type="radio" id="payment_credit_card" name="payment_method" value="оплата картой">-->
+<!--            </div><br>-->
 
             <button type="submit" class="btn btn-primary">Оформить заказ</button>
           </form>
