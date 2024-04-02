@@ -1,7 +1,16 @@
 from pathlib import Path
-BASE_DIR = Path(__file__).resolve().parent.parent
+import os
+from dotenv import load_dotenv
 
-SECRET_KEY = 'django-insecure-)l=y6)z=lfhe+^+j$(stckta%p)ybubhn9uby*v@bmk6&ki1n@'
+# Загрузить переменные окружения из файла .env
+load_dotenv()
+
+SECRET_KEY = os.getenv('SECRET_KEY')
+
+# Удалите строку с секретным ключом, который вы использовали ранее
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEBUG = True
 

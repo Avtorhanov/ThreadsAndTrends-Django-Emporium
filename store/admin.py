@@ -18,7 +18,13 @@ class ProductAdmin(admin.ModelAdmin):
 class CartItemInline(admin.TabularInline):
     model = CartItem
     extra = 0
+    fields = ['product', 'quantity', 'price', 'product_description']  # Добавляем поле 'product_description'
+    readonly_fields = ['product_description']  # Устанавливаем его как только для чтения
 
+    def product_description(self, instance):
+        return instance.product.description
+
+    product_description.short_description = 'Описание товара'
 class CartAdmin(admin.ModelAdmin):
     list_display = ['owner', 'total_price', 'total_quantity']
     search_fields = ['owner__username']

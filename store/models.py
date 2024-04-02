@@ -54,7 +54,7 @@ class Cart(models.Model):
     products = models.ManyToManyField('Product', through='CartItem')
 
     def __str__(self):
-        return f"Козина - {self.owner}"
+        return f"Козина - {self.owner}a"
 
     def calculate_total_price(self):
         total_price = sum(item.quantity * item.product.price for item in self.cartitem_set.all())

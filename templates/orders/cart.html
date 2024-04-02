@@ -24,9 +24,9 @@
                                 <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
                             </div>
                         </a>
-                        <div class="product-info">
+                        <div class="prodUct-info">
                             <h3>{{ item.product.name }}</h3>
-                            <p>{{ item.product.description }}</p>
+                            <div class="description">{{ item.product.description }}</div>
                             <p><strong>Цена:</strong><span class="price"> {{ item.product.price }}</span> ₽</p>
                         </div>
                         <div class="decr-counter">
@@ -49,14 +49,14 @@
         </div>
     </div>
 
-    <script>
-        // Получаем все элементы <p> внутри класса product-info
-        var productDescriptions = document.querySelectorAll('.product-info p');
+<script>
+            // Перенос строк в описании товара (в корзине)
 
+        var productDescriptions = document.querySelectorAll('.prodUct-info .description');
         productDescriptions.forEach(function(description) {
-           var text = description.textContent; // Получаем текст из элемента <p>
-           var newText = ''; // Создаем переменную для нового текста
-           var charCount = 0; // Счетчик символов
+            var text = description.textContent; // Получаем текст из элемента
+            var newText = ''; // Создаем переменную для нового текста
+            var charCount = 0; // Счетчик символов
 
             // Проходимся по каждому символу в тексте
             for (var i = 0; i < text.length; i++) {
@@ -70,10 +70,10 @@
                 }
             }
 
-            // Заменяем старый текст на новый текст с переносами
+            // Вставляем новый HTML-код с переносами строк внутрь элемента
             description.innerHTML = newText;
         });
-    </script>
+</script>
 
 {% endblock %}
 
