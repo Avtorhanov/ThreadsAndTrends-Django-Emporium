@@ -14,6 +14,7 @@
     <file url="file://$PROJECT_DIR$/static/css/social_icon.css" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/store/admin.py" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/store/apps.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/store/tests.py" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/templates/main/search_results.html" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/templates/store/subcategory_detail.html" charset="UTF-8" />
     <file url="PROJECT" charset="windows-1251" />

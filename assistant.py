@@ -177,3 +177,133 @@
 # with open("data.json", "r") as f:
 #     data = json.load(f)
 #     print(data)
+
+
+# test.assert_equals(count_by(1, 5), [1, 2, 3, 4, 5])
+#         test.assert_equals(count_by(2, 5), [2, 4, 6, 8, 10])
+#         test.assert_equals(count_by(3, 5), [3, 6, 9, 12, 15])
+#         test.assert_equals(count_by(50, 5), [50, 100, 150, 200, 250])
+#         test.assert_equals(count_by(100, 5), [100, 200, 300, 400, 500])
+
+
+
+# def double_char(s):
+#     return ''.join(i * 2 for i in s)
+#
+# print(double_char('Hello world'))
+
+# def correct(s):
+#     return s.replace('0', 'O').replace('1', 'I').replace('5', 'S')
+#
+# print(correct('501'))
+
+# def is_palindrome(s):
+#     return True if s.capitalize() == s[::-1].capitalize() else False
+#
+# print(is_palindrome('a'))
+# print(is_palindrome('aba'))
+# print(is_palindrome('Abba'))
+# print(is_palindrome('malam'))
+# print(is_palindrome('walter'))
+# print(is_palindrome('kodok'))
+
+# def sum_numbers(s1, s2):
+#     return lambda s1, s2: sum(map(int, s1.split())) if s1 and s2 else 0 if not s1 else sum(map(int, s1.split())) if not s2 else sum(map(int, s2.split()))
+
+# def sum_numbers(s1, s2):
+#         return str(sum(map(int, s1.split())) + sum(map(int, s2.split())))
+# # Примеры использования:
+# print(sum_numbers("1 2 3", "4 5 6"))  # Вывод: "21"
+# print(sum_numbers("", "4 5 6"))       # Вывод: "15"
+# print(sum_numbers("1 2 3", ""))       # Вывод: "6"
+# print(sum_numbers("", ""))            # Вывод: "0"
+
+# def add_binary(a,b):
+#     return format(a + b, 'b')
+#
+# print(add_binary(1,4))
+
+# num = 14
+# g = format(num, 'b')
+# print(g)
+
+# def count_sheeps(sheeps):
+#     count = 0
+#     for sheep in (sheeps):
+#         if sheep == True:
+#             count += 1
+#     return count
+#
+# print(count_sheeps([True,  True,  True,  False,
+#   True,  True,  True,  True ,
+#   True,  False, True,  False,
+#   True,  False, False, True ,
+#   True,  True,  True,  True ,
+#   False, False, True,  True]))
+
+# Задача с Амазон
+
+# def find_pair(arr, k):
+#     num_dict = {}
+#     for i, num in enumerate(arr):
+#         diff = k - num
+#         if diff in num_dict:
+#             return f'Первое число {arr[num_dict[diff]]} индекс - {num_dict[diff]} \nВторое число {num} индекс - {i}'
+#
+#         num_dict[num] = i
+#     return 'Не найдено'
+#
+# print(find_pair([2,4,3,], 9))
+
+
+# def find_pair(arr, K):
+#     # Создаем пустой словарь для хранения индексов чисел из массива
+#     num_dict = {}
+#     # Проходим по каждому элементу и его индексу в массиве
+#     for i, num in enumerate(arr):
+#         # Вычисляем разность между целевым числом K и текущим числом num
+#         diff = K - num
+#         # Проверяем, есть ли разность в словаре (т.е. уже встречали число, которое дает нужную разность)
+#         if diff in num_dict:
+#             # Если нашли такую разность, возвращаем числа и их индексы
+#             return f"Числа: {arr[num_dict[diff]]} (индекс {num_dict[diff]}) и {num} (индекс {i})"
+#         # Если разность не найдена, сохраняем текущее число в словаре с его индексом
+#         num_dict[num] = i
+#     # Если не нашли пары чисел, которые в сумме дают K, возвращаем None
+#     return None
+# # Пример использования
+# print(find_pair([1, 2, 3, 4, 5], 7))
+
+# def bubble_sort(arr):
+#     n = len(arr)
+#     for i in range(n):
+#         for j in range(0, n-i-1):
+#             if arr[j] > arr[j+1]:
+#                 arr[j], arr[j+1] = arr[j+1], arr[j]
+#     return arr
+#
+# # Пример использования
+# print(bubble_sort([64, 34, 25, 12, 22, 11, 90]))
+#
+#
+# def count_elements(arr):
+#     count_dict = {}
+#     for element in arr:
+#         if element in count_dict:
+#             count_dict[element] += 1
+#         else:
+#             count_dict[element] = 1
+#     return count_dict
+#
+# # Пример использования
+# print(count_elements([1, 2, 1, 3, 2, 4, 1]))
+#
+# def max_subarray(arr):
+#     max_sum = current_sum = arr[0]
+#     for num in arr[1:]:
+#         current_sum = max(num, current_sum + num)
+#         max_sum = max(max_sum, current_sum)
+#     return max_sum
+#
+# # Пример использования
+# print(max_subarray([-2, 1, -3, 4, -1, 2, 1, -5, 4]))
