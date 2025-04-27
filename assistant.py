@@ -307,3 +307,80 @@
 #
 # # Пример использования
 # print(max_subarray([-2, 1, -3, 4, -1, 2, 1, -5, 4]))
+
+# import psycopg2
+# from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
+# try:
+#     # Подключаемся к postgres (не к конкретной БД)
+#     conn = psycopg2.connect(dbname='postgres', user='boss', password='1243', host='localhost', port='5432')
+#     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+#     cur = conn.cursor()
+
+#     # Проверяем наличие базы
+#     cur.execute("SELECT 1 FROM pg_database WHERE datname = 'db_shop'")
+#     exists = cur.fetchone()
+
+#     if not exists:
+#         cur.execute('CREATE DATABASE db_shop')
+#         print("База данных 'db_shop' успешно создана.")
+#     else:
+#         print("База данных 'db_shop' уже существует.")
+
+#     cur.close()
+#     conn.close()
+# except Exception as e:
+#     print("Ошибка при подключении или создании базы:", e)
+
+import json
+
+# Словарь для замены описаний (по названиям подкатегорий)
+desc_map = {
+    'часы': 'смотреть время',
+    'очки': 'солнцезащитные',
+    'витамины': 'для здоровья',
+    'косметика': 'для красоты',
+    'футболки': 'на выход',
+    'зимние': 'теплые',
+    'кроссовки': 'удобные',
+    'сумки': 'строго для денег'
+}
+
+# Словарь соответствия ID и описаний (если subcategory уже числовой)
+id_to_desc = {
+    1: 'смотреть время',  # ID для 'часы'
+    2: 'солнцезащитные',  # ID для 'очки'
+    3: 'для здоровья',     # ID для 'витамины'
+    4: 'для красоты',      # ID для 'косметика'
+    5: 'на выход',         # ID для 'футболки'
+    6: 'теплые',           # ID для 'зимние'
+    7: 'удобные',          # ID для 'кроссовки'
+    8: 'строго для денег'  # ID для 'сумки'
+}
+
+with open('fixtures/fixtures.json', 'r', encoding='utf-8') as f:
+    data = json.load(f)
+
+for obj in data:
+    if obj['model'].endswith('product') and 'subcategory' in obj['fields']:
+        subcat = obj['fields']['subcategory']
+        
+        # Если subcategory - строка (название)
+        if isinstance(subcat, str):
+            key = subcat.lower()
+            
+            # Обновляем описание по названию
+            if key in desc_map:
+                obj['fields']['description'] = desc_map[key]
+                
+        # Если subcategory - число (ID)
+        elif isinstance(subcat, int):
+            # Обновляем описание по ID
+            if subcat in id_to_desc:
+                obj['fields']['description'] = id_to_desc[subcat]
+
+with open('fixtures/fixtures.json', 'w', encoding='utf-8') as f:
+    json.dump(data, f, ensure_ascii=False, indent=4)
+
+print('Готово! Описания обновлены по названиям и ID подкатегорий.')
+
