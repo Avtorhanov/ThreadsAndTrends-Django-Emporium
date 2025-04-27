@@ -1,0 +1,624 @@
+[
+{
+  "model": "store.category",
+  "pk": 1,
+  "fields": {
+    "name": "аксесуары"
+  }
+},
+{
+  "model": "store.category",
+  "pk": 2,
+  "fields": {
+    "name": "Одежда"
+  }
+},
+{
+  "model": "store.category",
+  "pk": 3,
+  "fields": {
+    "name": "Красота и здоровье"
+  }
+},
+{
+  "model": "store.category",
+  "pk": 4,
+  "fields": {
+    "name": "Обувь"
+  }
+},
+{
+  "model": "store.subcategory",
+  "pk": 1,
+  "fields": {
+    "name": "часы",
+    "category": 1
+  }
+},
+{
+  "model": "store.subcategory",
+  "pk": 2,
+  "fields": {
+    "name": "очки",
+    "category": 1
+  }
+},
+{
+  "model": "store.subcategory",
+  "pk": 3,
+  "fields": {
+    "name": "Витамины",
+    "category": 3
+  }
+},
+{
+  "model": "store.subcategory",
+  "pk": 4,
+  "fields": {
+    "name": "Косметика",
+    "category": 3
+  }
+},
+{
+  "model": "store.subcategory",
+  "pk": 5,
+  "fields": {
+    "name": "Футболки",
+    "category": 2
+  }
+},
+{
+  "model": "store.subcategory",
+  "pk": 6,
+  "fields": {
+    "name": "Зимние",
+    "category": 4
+  }
+},
+{
+  "model": "store.subcategory",
+  "pk": 7,
+  "fields": {
+    "name": "кроссовки",
+    "category": 4
+  }
+},
+{
+  "model": "store.subcategory",
+  "pk": 8,
+  "fields": {
+    "name": "Сумки",
+    "category": 1
+  }
+},
+{
+  "model": "store.subcategory",
+  "pk": 9,
+  "fields": {
+    "name": "Obraz",
+    "category": 2
+  }
+},
+{
+  "model": "store.product",
+  "pk": 1,
+  "fields": {
+    "date": "2024-02-18T20:40:47.991Z",
+    "name": "INVICTA",
+    "description": "смотреть время",
+    "price": "55000.00",
+    "image": "product_images/photo_2023-12-09_15-02-03_ZmqnXBW.jpg",
+    "category": 1,
+    "subcategory": 1,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 2,
+  "fields": {
+    "date": "2024-02-18T21:19:20.105Z",
+    "name": "INVICTA",
+    "description": "смотреть время",
+    "price": "33000.00",
+    "image": "product_images/photo_2023-12-09_15-02-08.jpg",
+    "category": 1,
+    "subcategory": 1,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 3,
+  "fields": {
+    "date": "2024-02-18T21:20:01.534Z",
+    "name": "Timbalend",
+    "description": "смотреть время",
+    "price": "77000.00",
+    "image": "product_images/photo_2023-12-09_15-02-18_DFnfMz3.jpg",
+    "category": 1,
+    "subcategory": 1,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 4,
+  "fields": {
+    "date": "2024-02-18T21:20:43.200Z",
+    "name": "CalvinKlein",
+    "description": "солнцезащитные",
+    "price": "66000.00",
+    "image": "product_images/photo_2023-12-09_15-01-03.jpg",
+    "category": 1,
+    "subcategory": 2,
+    "status": "Нет в наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 5,
+  "fields": {
+    "date": "2024-02-18T21:21:29.762Z",
+    "name": "Rai ban",
+    "description": "солнцезащитные",
+    "price": "44000.00",
+    "image": "product_images/photo_2023-12-07_16-00-39_UmbEu2e.jpg",
+    "category": 1,
+    "subcategory": 2,
+    "status": "Нет в наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 6,
+  "fields": {
+    "date": "2024-02-18T21:22:02.521Z",
+    "name": "GUCCI",
+    "description": "солнцезащитные",
+    "price": "88000.00",
+    "image": "product_images/photo_2023-12-07_15-59-34_C2KQRl3.jpg",
+    "category": 1,
+    "subcategory": 2,
+    "status": "Нет в наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 7,
+  "fields": {
+    "date": "2024-02-18T21:22:44.147Z",
+    "name": "Karl Lagerfeld",
+    "description": "на выход",
+    "price": "55000.00",
+    "image": "product_images/photo_2023-12-10_13-24-32_SxIcXjk.jpg",
+    "category": 2,
+    "subcategory": 5,
+    "status": "Нет в наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 8,
+  "fields": {
+    "date": "2024-02-18T21:23:09.641Z",
+    "name": "Karl",
+    "description": "на выход",
+    "price": "45000.00",
+    "image": "product_images/photo_2023-12-10_13-24-53_H9UBluj.jpg",
+    "category": 2,
+    "subcategory": 5,
+    "status": "Снято с поставок"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 9,
+  "fields": {
+    "date": "2024-02-18T21:23:51.999Z",
+    "name": "Karlov",
+    "description": "на выход",
+    "price": "65000.00",
+    "image": "product_images/photo_2023-12-10_13-25-01_YBgugcv.jpg",
+    "category": 2,
+    "subcategory": 5,
+    "status": "Снято с поставок"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 10,
+  "fields": {
+    "date": "2024-02-18T21:24:51.254Z",
+    "name": "MANGO",
+    "description": "удобные",
+    "price": "87000.00",
+    "image": "product_images/photo_2023-12-11_14-58-30_QdNluB1.jpg",
+    "category": 4,
+    "subcategory": 7,
+    "status": "Снято с поставок"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 11,
+  "fields": {
+    "date": "2024-02-18T21:25:30.985Z",
+    "name": "Karlo",
+    "description": "удобные",
+    "price": "56000.00",
+    "image": "product_images/photo_2023-12-11_18-46-44_AoAzUGM.jpg",
+    "category": 4,
+    "subcategory": 7,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 12,
+  "fields": {
+    "date": "2024-02-18T21:26:11.225Z",
+    "name": "AhmadTea",
+    "description": "теплые",
+    "price": "88000.00",
+    "image": "product_images/photo_2023-12-11_18-46-46_X3YgbZK.jpg",
+    "category": 4,
+    "subcategory": 6,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 13,
+  "fields": {
+    "date": "2024-02-18T21:26:48.949Z",
+    "name": "UGG",
+    "description": "теплые",
+    "price": "87000.00",
+    "image": "product_images/photo_2023-12-11_18-46-52_m2aQETu.jpg",
+    "category": 4,
+    "subcategory": 6,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 14,
+  "fields": {
+    "date": "2024-02-18T21:27:25.234Z",
+    "name": "BERCO",
+    "description": "теплые",
+    "price": "56000.00",
+    "image": "product_images/photo_2023-12-11_18-46-42_LLaBTzi.jpg",
+    "category": 4,
+    "subcategory": 6,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 15,
+  "fields": {
+    "date": "2024-02-18T21:28:18.719Z",
+    "name": "BABOR",
+    "description": "для красоты",
+    "price": "54000.00",
+    "image": "product_images/photo_DpL7xlB.jpg",
+    "category": 3,
+    "subcategory": 4,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 16,
+  "fields": {
+    "date": "2024-02-18T21:29:09.909Z",
+    "name": "BABIYOR",
+    "description": "для красоты",
+    "price": "35000.00",
+    "image": "product_images/photo_2023-12-13_17-22-16_OY4ZH38.jpg",
+    "category": 3,
+    "subcategory": 4,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 17,
+  "fields": {
+    "date": "2024-02-18T21:29:54.557Z",
+    "name": "DIOR",
+    "description": "для красоты",
+    "price": "85000.00",
+    "image": "product_images/photo_2023-12-11_20-18-47_jTZ4xD1.jpg",
+    "category": 3,
+    "subcategory": 4,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 18,
+  "fields": {
+    "date": "2024-02-18T21:30:27.779Z",
+    "name": "iHERB",
+    "description": "для здоровья",
+    "price": "75000.00",
+    "image": "product_images/photo_2023-12-13_17-27-22.jpg",
+    "category": 3,
+    "subcategory": 3,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 19,
+  "fields": {
+    "date": "2024-02-18T21:31:35.713Z",
+    "name": "MegaFood",
+    "description": "для здоровья",
+    "price": "96000.00",
+    "image": "product_images/photo_2023-12-13_17-26-28_HHzaRlW.jpg",
+    "category": 3,
+    "subcategory": 3,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 20,
+  "fields": {
+    "date": "2024-02-18T21:32:22.922Z",
+    "name": "Multy",
+    "description": "для здоровья",
+    "price": "72000.00",
+    "image": "product_images/photo_2023-12-13_17-25-26_taTTHdG.jpg",
+    "category": 3,
+    "subcategory": 3,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 21,
+  "fields": {
+    "date": "2024-02-21T08:50:35.382Z",
+    "name": "LACOSTE",
+    "description": "строго для денег",
+    "price": "35000.00",
+    "image": "product_images/photo_2023-12-09_17-18-02.jpg",
+    "category": 1,
+    "subcategory": 8,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 23,
+  "fields": {
+    "date": "2024-03-23T17:38:21.109Z",
+    "name": "Awa",
+    "description": "на выход",
+    "price": "1233333.00",
+    "image": "product_images/photo_2023-12-10_13-24-57.jpg",
+    "category": 2,
+    "subcategory": 5,
+    "status": "В наличии"
+  }
+},
+{
+  "model": "store.cart",
+  "pk": 29,
+  "fields": {
+    "owner": 1,
+    "session_key": null
+  }
+},
+{
+  "model": "store.cart",
+  "pk": 31,
+  "fields": {
+    "owner": 7,
+    "session_key": null
+  }
+},
+{
+  "model": "store.cart",
+  "pk": 49,
+  "fields": {
+    "owner": 8,
+    "session_key": null
+  }
+},
+{
+  "model": "store.cart",
+  "pk": 54,
+  "fields": {
+    "owner": 9,
+    "session_key": null
+  }
+},
+{
+  "model": "store.cart",
+  "pk": 55,
+  "fields": {
+    "owner": null,
+    "session_key": "g00ws8be93kdrjr8rbm2lktclvzgy1gx"
+  }
+},
+{
+  "model": "store.cart",
+  "pk": 56,
+  "fields": {
+    "owner": 10,
+    "session_key": null
+  }
+},
+{
+  "model": "store.cart",
+  "pk": 57,
+  "fields": {
+    "owner": null,
+    "session_key": "pcm997rxnxei1yrxtmtabdjf5c2ls3jp"
+  }
+},
+{
+  "model": "store.cart",
+  "pk": 58,
+  "fields": {
+    "owner": null,
+    "session_key": "onkb5aykedrr58gfbyp2569qb4n7cwf6"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 187,
+  "fields": {
+    "cart": 31,
+    "product": 21,
+    "quantity": 1,
+    "price": "35000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 188,
+  "fields": {
+    "cart": 31,
+    "product": 14,
+    "quantity": 1,
+    "price": "56000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 195,
+  "fields": {
+    "cart": 49,
+    "product": 20,
+    "quantity": 1,
+    "price": "72000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 231,
+  "fields": {
+    "cart": 54,
+    "product": 21,
+    "quantity": 2,
+    "price": "35000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 232,
+  "fields": {
+    "cart": 54,
+    "product": 20,
+    "quantity": 1,
+    "price": "72000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 233,
+  "fields": {
+    "cart": 54,
+    "product": 19,
+    "quantity": 1,
+    "price": "96000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 234,
+  "fields": {
+    "cart": 54,
+    "product": 18,
+    "quantity": 1,
+    "price": "75000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 237,
+  "fields": {
+    "cart": 29,
+    "product": 19,
+    "quantity": 5,
+    "price": "96000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 240,
+  "fields": {
+    "cart": 29,
+    "product": 21,
+    "quantity": 5,
+    "price": "35000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 241,
+  "fields": {
+    "cart": 29,
+    "product": 18,
+    "quantity": 2,
+    "price": "75000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 243,
+  "fields": {
+    "cart": 29,
+    "product": 23,
+    "quantity": 1,
+    "price": "1233333.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 244,
+  "fields": {
+    "cart": 29,
+    "product": 20,
+    "quantity": 1,
+    "price": "72000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 254,
+  "fields": {
+    "cart": 56,
+    "product": 19,
+    "quantity": 1,
+    "price": "96000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 255,
+  "fields": {
+    "cart": 56,
+    "product": 18,
+    "quantity": 1,
+    "price": "75000.00"
+  }
+},
+{
+  "model": "store.cartitem",
+  "pk": 256,
+  "fields": {
+    "cart": 56,
+    "product": 21,
+    "quantity": 5,
+    "price": "35000.00"
+  }
+}
+]

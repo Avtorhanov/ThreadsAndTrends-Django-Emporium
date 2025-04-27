@@ -1,9 +1,7 @@
 
 venv/
 
-fixtures/
-
-.env
+.env/
 
 assistant.py
 

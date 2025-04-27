@@ -9,33 +9,32 @@ class AccountsTestCase(TestCase):
         self.client = Client()
         self.user = User.objects.create_user(username='testuser', email='test@example.com', password='password')
 
-    # Тесты для представлений
     def test_signup_view(self):
         response = self.client.post(reverse('signup'), {'username': 'newuser', 'email': 'newuser@example.com', 'password1': 'newpassword', 'password2': 'newpassword'})
-        self.assertEqual(response.status_code, 302)  # Проверяем, что после успешной регистрации происходит перенаправление на домашнюю страницу
+        self.assertEqual(response.status_code, 302)  
 
     def test_login_view(self):
         response = self.client.post(reverse('login'), {'username': 'testuser', 'password': 'password'})
-        self.assertEqual(response.status_code, 302)  # Проверяем, что после успешного входа происходит перенаправление на домашнюю страницу
+        self.assertEqual(response.status_code, 302)  
 
     def test_logout_view(self):
         self.client.login(username='testuser', password='password')
         response = self.client.get(reverse('logout'))
-        self.assertEqual(response.status_code, 302)  # Проверяем, что после выхода происходит перенаправление на домашнюю страницу
+        self.assertEqual(response.status_code, 302)  
 
     def test_profile_view(self):
         self.client.login(username='testuser', password='password')
         response = self.client.get(reverse('profile'))
-        self.assertEqual(response.status_code, 200)  # Проверяем, что страница профиля доступна после входа
+        self.assertEqual(response.status_code, 200)  
 
-    # Тесты для форм
+  
     def test_standard_user_creation_form(self):
         form_data = {'username': 'newuser', 'first_name': 'New', 'last_name': 'User', 'email': 'newuser@example.com', 'password1': 'password', 'password2': 'password'}
         form = StandardUserCreationForm(data=form_data)
-        self.assertTrue(form.is_valid())  # Проверяем, что форма проходит валидацию при правильных данных
+        self.assertTrue(form.is_valid())  
 
     def test_profile_update_form(self):
-        username = 'testuser1'  # Уникальное имя пользователя
+        username = 'testuser1'  
         password = 'password123'
         user = User.objects.create_user(username=username, password=password)
         data = {

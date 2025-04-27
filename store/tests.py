@@ -1,9 +1,8 @@
-from django.test import TestCase, Client, RequestFactory
+from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.core.paginator import Page
 from .models import Product, Cart, CartItem, Category, SubCategory
-from store.views import all_products, search_products
 
 class CartViewsTestCase(TestCase):
     def setUp(self):
