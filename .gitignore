@@ -7,7 +7,14 @@ fixtures/
 
 assistant.py
 
-media/
-
 static/
 
+.env
+
+assistant.py
+
+/media/
+
+/static/
+
+.idea
