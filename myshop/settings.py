@@ -5,18 +5,44 @@ from dotenv import load_dotenv
 # ��������� ���������� ��������� �� ����� .env
 load_dotenv()
 
-SECRET_KEY = os.getenv('SECRET_KEY')
-
-# ������� ������ � ��������� ������, ������� �� ������������ �����
-
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEBUG = True
+SECRET_KEY = os.getenv('SECRET_KEY')
+
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY is not set")
+
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = [
-    # 'www.AhmadAvtorkhanov.pythonanywhere.com'
+    host.strip()
+    for host in os.getenv('ALLOWED_HOSTS', '').split(',')
+    if host.strip()
 ]
+
+SECURE_SSL_REDIRECT = os.getenv(
+    'SECURE_SSL_REDIRECT', 'False'
+).lower() in ('true', '1', 'yes')
+
+SESSION_COOKIE_SECURE = os.getenv(
+    'SESSION_COOKIE_SECURE', 'False'
+).lower() in ('true', '1', 'yes')
+
+CSRF_COOKIE_SECURE = os.getenv(
+    'CSRF_COOKIE_SECURE', 'False'
+).lower() in ('true', '1', 'yes')
+
+SECURE_HSTS_SECONDS = int(
+    os.getenv('SECURE_HSTS_SECONDS', '0')
+)
+
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv(
+    'SECURE_HSTS_INCLUDE_SUBDOMAINS', 'False'
+).lower() in ('true', '1', 'yes')
+
+SECURE_HSTS_PRELOAD = os.getenv(
+    'SECURE_HSTS_PRELOAD', 'False'
+).lower() in ('true', '1', 'yes')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -75,16 +101,6 @@ DATABASES = {
     }
 }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'db_shop',
-#         'USER': 'boss',
-#         'PASSWORD': '***REMOVED***',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
