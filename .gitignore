@@ -1,18 +1,17 @@
 
+__pycache__/
+*.py[cod]
+
 venv/
-
-.env/
-
-assistant.py
-
-static/
 
 .env
 
-assistant.py
+db.sqlite3
 
 /media/
 
 /static/
 
-.idea
+.idea/
+
+assistant.py
