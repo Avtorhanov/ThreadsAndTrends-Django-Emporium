@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from store.models import Product, Category, SubCategory, Cart, CartItem
 from store.utils import get_cart
+from django.views.decorators.http import require_POST
 
 # Главная
 def home(request):
@@ -52,19 +53,44 @@ def subcategory_detail(request, subcategory_id):
     return render(request, 'store/subcategory_detail.html', {'subcategory': subcategory, 'products': products})
 
 # логика корзины
+@require_POST
 def add_to_cart(request, product_id):
-    product = Product.objects.get(pk=product_id)
+    product = get_object_or_404(Product, pk=product_id)
     cart = get_cart(request)
 
     if request.user.is_authenticated:
-        cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
+        cart_item, item_created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product,
+        )
     else:
         session_cart_products = request.session.get('cart_products', [])
-        session_cart_products.append(product_id)
-        request.session['cart_products'] = list(set(session_cart_products))
-        request.session['cart_items'] = len(session_cart_products)  # Обновление количества товаров в корзине
-        messages.success(request, 'Товар добавлен в воображаемую корзину!')
-        return JsonResponse({'status': 'success', 'message': 'Товар добавлен в корзину'})
+
+        if product_id not in session_cart_products:
+            session_cart_products.append(product_id)
+
+        request.session['cart_products'] = session_cart_products
+        request.session['cart_items'] = len(session_cart_products)
+
+        messages.success(request, 'Товар добавлен в корзину!')
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Товар добавлен в корзину',
+        })
+
+    if not item_created:
+        cart_item.quantity += 1
+
+    cart_item.price = product.price
+    cart_item.save()
+
+    messages.success(request, 'Товар добавлен в корзину!')
+
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Товар добавлен в корзину',
+    })
 
     if not item_created:
         cart_item.quantity += 1
@@ -83,18 +109,41 @@ def cart_view(request):
 
     return render(request, 'orders/cart.html', {'cart_items': cart_items, 'total_price': total_price})
 
+@login_required
+@require_POST
 def update_cart(request, item_id, new_count):
-    cart_item = get_object_or_404(CartItem, id=item_id)
-    cart_item.quantity = new_count
-    cart_item.save()
-    total_price = cart_item.cart.calculate_total_price()
-    return JsonResponse({'total_price': total_price})
+    cart_item = get_object_or_404(
+        CartItem,
+        id=item_id,
+        cart__owner=request.user,
+    )
 
+    cart_item.quantity = new_count
+    cart_item.save(update_fields=['quantity'])
+
+    total_price = cart_item.cart.calculate_total_price()
+
+    return JsonResponse({
+        'total_price': total_price
+    })
+
+@login_required
+@require_POST
 def remove_from_cart(request, item_id):
-    cart_item = get_object_or_404(CartItem, id=item_id)
+    cart_item = get_object_or_404(
+        CartItem,
+        id=item_id,
+        cart__owner=request.user,
+    )
+
     cart_item.delete()
-    messages.success(request, f'Товар удален из корзины!')
-    return JsonResponse({'status': 'success', 'message': 'Товар удален из корзины'})
+
+    messages.success(request, 'Товар удален из корзины!')
+
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Товар удален из корзины',
+    })
 
 # логика поиска
 def search_products(request):

@@ -1,13 +1,11 @@
 # store/urls.py
 from django.urls import path
 from . import views
-from django.conf import settings
-from django.conf.urls.static import static
 from django.urls import path
 from .views import all_products, category_detail, subcategory_detail, cart_view, add_to_cart, update_cart, remove_from_cart, search_products
 
 urlpatterns = [
-
+    
     # основные
     path('', views.home, name='home'),
     path('products/', all_products, name='all-products'),
@@ -25,8 +23,4 @@ urlpatterns = [
 
     # поиск
     path('search/', search_products, name='search_products'),
-
-
 ]
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
