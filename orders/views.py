@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
@@ -7,11 +6,8 @@ from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
 from orders.models import Order
-from orders.utils import (
-    validate_checkout_data,
-    create_order,
-    create_order_with_items,
-)
+from orders.forms import CheckoutForm
+from orders.services import create_order_from_cart_items
 from store.models import CartItem, Cart
 
 
@@ -24,48 +20,41 @@ def checkout(request, item_id):
         cart__owner=request.user,
     )
 
-    total_price = cart_item.product.price * cart_item.quantity
+    total_price = (
+        cart_item.product.price * cart_item.quantity
+    )
 
-    if request.method == 'POST':
-        full_name = request.POST.get('full_name')
-        address = request.POST.get('address')
-        phone_number = request.POST.get('phone_number')
-        size = request.POST.get('size')
+    if request.method == "POST":
+        form = CheckoutForm(request.POST)
 
-        username = request.user.username
+        if form.is_valid():
+            order = create_order_from_cart_items(
+                user=request.user,
+                cart_items=[cart_item],
+                **form.cleaned_data,
+            )
 
-        validation_result = validate_checkout_data(full_name, username)
+            messages.success(
+                request,
+                "Заказ оформлен!",
+            )
 
-        if not validation_result['valid']:
-            messages.error(request, validation_result['message'])
-            return redirect('checkout', item_id=item_id)
-
-        order = create_order(
-            request.user,
-            total_price,
-            address,
-            phone_number,
-            full_name,
-            cart_item,
-            size,
-        )
-
-        messages.success(request, 'Заказ оформлен!')
-
-        return redirect(
-            'order_detail',
-            order_id=order.id,
-        )
+            return redirect(
+                "order_detail",
+                order_id=order.id,
+            )
+    else:
+        form = CheckoutForm()
 
     return render(
         request,
-        'orders/checkout.html',
+        "orders/checkout.html",
         {
-            'cart_item': cart_item,
-            'total_price': total_price,
+            "cart_item": cart_item,
+            "total_price": total_price,
+            "form": form,
         },
     )
-
 
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -82,53 +71,35 @@ def checkout_all(request):
         for item in cart_items
     )
 
-    if request.method == 'POST':
-        full_name = request.POST.get('full_name')
-        address = request.POST.get('address')
-        phone_number = request.POST.get('phone_number')
+    if request.method == "POST":
+        form = CheckoutForm(request.POST)
 
-        username = request.user.username
+        if form.is_valid():
+            order = create_order_from_cart_items(
+                user=request.user,
+                cart_items=cart_items,
+                **form.cleaned_data,
+            )
 
-        validation_result = validate_checkout_data(
-            full_name,
-            username,
-        )
-
-        if not validation_result['valid']:
-            messages.error(
+            messages.success(
                 request,
-                validation_result['message'],
+                "Заказ оформлен!",
             )
-            return redirect('checkout_all')
 
-        order = create_order_with_items(
-            request.user,
-            address,
-            phone_number,
-            full_name,
-            cart_items,
-            total_price,
-        )
-
-
-        messages.success(
-            request,
-            'Заказ оформлен!',
-        )
-
-        return redirect(
-            reverse(
-                'order_detail',
-                kwargs={'order_id': order.id},
+            return redirect(
+                "order_detail",
+                order_id=order.id,
             )
-        )
+    else:
+        form = CheckoutForm()
 
     return render(
         request,
-        'orders/checkout_all.html',
+        "orders/checkout_all.html",
         {
-            'cart_items': cart_items,
-            'total_price': total_price,
+            "cart_items": cart_items,
+            "total_price": total_price,
+            "form": form,
         },
     )
 
