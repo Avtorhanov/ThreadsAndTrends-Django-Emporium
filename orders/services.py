@@ -22,7 +22,7 @@ def create_order_from_cart_items(
 
     total_price = sum(
         (
-            item.product.price * item.quantity
+            item.price * item.quantity
             for item in cart_items
         ),
         Decimal("0.00"),
@@ -43,7 +43,7 @@ def create_order_from_cart_items(
             order=order,
             product=item.product,
             quantity=item.quantity,
-            price=item.product.price,
+            price=item.price,
             description=item.product.description,
         )
         for item in cart_items

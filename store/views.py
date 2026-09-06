@@ -57,8 +57,6 @@ def subcategory_detail(request, subcategory_id):
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, pk=product_id)
 
-    cart = get_cart(request)
-
     add_product_to_cart(
         request,
         product.id,

@@ -54,7 +54,7 @@ class Cart(models.Model):
     products = models.ManyToManyField('Product', through='CartItem')
 
     def __str__(self):
-        return f"Козина - {self.owner}a"
+        return f"Козина — {self.owner or self.session_key}"
 
     def calculate_total_price(self):
         total_price = sum(item.quantity * item.product.price for item in self.cartitem_set.all())
@@ -73,7 +73,14 @@ class CartItem(models.Model):
     def __str__(self):
         return f"{self.quantity} из {self.product} в корзине"
 
-    class Meta:
-        verbose_name = "Корзина"
-        verbose_name_plural = "Элементы корзины"
+class Meta:
+    verbose_name = "Корзина"
+    verbose_name_plural = "Элементы корзины"
+
+    constraints = [
+        models.UniqueConstraint(
+            fields=['cart', 'product'],
+            name='unique_cart_product',
+        ),
+    ]
 
