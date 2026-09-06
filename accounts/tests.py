@@ -1,7 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
-from store.models import Cart, CartItem
 from accounts.forms import StandardUserCreationForm, ProfileUpdateForm
 
 class AccountsTestCase(TestCase):
@@ -21,12 +20,6 @@ class AccountsTestCase(TestCase):
         self.client.login(username='testuser', password='password')
         response = self.client.get(reverse('logout'))
         self.assertEqual(response.status_code, 302)  
-
-    def test_profile_view(self):
-        self.client.login(username='testuser', password='password')
-        response = self.client.get(reverse('profile'))
-        self.assertEqual(response.status_code, 200)  
-
   
     def test_standard_user_creation_form(self):
         form_data = {'username': 'newuser', 'first_name': 'New', 'last_name': 'User', 'email': 'newuser@example.com', 'password1': 'password', 'password2': 'password'}
@@ -47,3 +40,56 @@ class AccountsTestCase(TestCase):
 
         form = ProfileUpdateForm(data, instance=user)
         self.assertTrue(form.is_valid())
+
+    def test_authenticated_user_can_access_profile(self):
+        self.client.login(
+            username='testuser',
+            password='password',
+        )
+
+        response = self.client.get(
+            reverse('profile')
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            'accounts/profile.html',
+        )
+
+    def test_anonymous_user_cannot_access_profile(self):
+        response = self.client.get(
+            reverse('profile')
+        )
+
+        self.assertEqual(
+            response.status_code,
+            302,
+        )
+
+    def test_profile_password_change_keeps_user_logged_in(self):
+        self.client.login(
+            username='testuser',
+            password='password',
+        )
+    
+        response = self.client.post(
+            reverse('profile'),
+            {
+                'username': 'testuser',
+                'email': 'test@example.com',
+                'first_name': '',
+                'last_name': '',
+                'new_password': 'newpassword123',
+            },
+        )
+    
+        self.assertEqual(response.status_code, 302)
+    
+        self.assertTrue(
+            self.client.login(
+                username='testuser',
+                password='newpassword123',
+            )
+        )
+

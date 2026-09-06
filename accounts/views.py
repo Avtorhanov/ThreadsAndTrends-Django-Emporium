@@ -1,10 +1,9 @@
 from django.contrib.auth import login as auth_login, logout as auth_logout, update_session_auth_hash
-from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-from store.models import Cart, CartItem
 from .forms import StandardUserCreationForm, ProfileUpdateForm
 
 
@@ -46,22 +45,29 @@ def log_out_view(request):
 def profile(request):
     user = request.user
 
-    # Получаем данные о корзине для текущего пользователя
-    cart_items = Cart.objects.filter(owner=user)
-
     if request.method == 'POST':
         form = ProfileUpdateForm(request.POST, instance=user)
         if form.is_valid():
+            password_changed = bool(
+                form.cleaned_data.get('new_password')
+            )
+        
             user = form.save()
-            new_password = form.cleaned_data.get('new_password')
-            if new_password:
-                user.set_password(new_password)
-                user.save()
+        
+            if password_changed:
                 update_session_auth_hash(request, user)
-                messages.success(request, 'Пароль обновлен.')
+                messages.success(
+                    request,
+                    'Пароль обновлен.'
+                )
             else:
-                messages.success(request, 'Данные обновлены.')
+                messages.success(
+                    request,
+                    'Данные обновлены.'
+                )
+        
             return redirect('profile')
+        
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -69,22 +75,8 @@ def profile(request):
     else:
         form = ProfileUpdateForm(instance=user)
 
-    return render(request, 'accounts/profile.html', {'form': form, 'cart_items': cart_items})
+    return render(request, 'accounts/profile.html', {'form': form})
 
-@login_required
-def profile_view(request):
-    user = request.user
-    cart, created = Cart.objects.get(owner=user)
-    cart_items = cart.cartitem_set.all()
-    total_price = sum(item.product.price * item.quantity for item in cart_items)
-
-    context = {
-        'user': user,
-        'cart_items': cart_items,
-        'total_price': total_price,
-    }
-
-    return render(request, 'accounts/profile.html', context)
 
 
 
