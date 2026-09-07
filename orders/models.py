@@ -12,7 +12,6 @@ class Order(models.Model):
     address = models.CharField(max_length=255, default='', verbose_name="Адрес доставки")
     phone_number = models.CharField(max_length=20, default='', verbose_name="Номер телефона")
     full_name = models.CharField(max_length=100, default='', verbose_name="Полное Имя")
-    order_number = models.CharField(max_length=50, default='', verbose_name="Номер заказа")
     user_order_number = models.IntegerField(default=0,  verbose_name="Номер заказа клиента")
     size = models.CharField(max_length=50, default=' ',null=True, blank=True, verbose_name="размер")
 
@@ -46,10 +45,22 @@ class Order(models.Model):
     class Meta:
         verbose_name = "Заказ"
         verbose_name_plural = "Оформленные заказы"
+    
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(total_price__gte=0),
+                name='order_total_price_gte_0',
+            ),
+            models.UniqueConstraint(
+                fields=['owner', 'user_order_number'],
+                name='unique_user_order_number',
+            ),
+        ]
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, verbose_name="Заказ")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Товар")
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL,
+    null=True, blank=True, verbose_name="Товар")
     quantity = models.PositiveIntegerField(default=1, verbose_name="Количество")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, verbose_name="Цена")
     description = models.TextField(blank=True, null=True, verbose_name="Описание")

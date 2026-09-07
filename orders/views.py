@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
-
+from django.db.models import Count
 from orders.models import Order
 from orders.forms import CheckoutForm
 from orders.services import create_order_from_cart_items
@@ -15,7 +15,7 @@ from store.models import CartItem, Cart
 @require_http_methods(["GET", "POST"])
 def checkout(request, item_id):
     cart_item = get_object_or_404(
-        CartItem,
+        CartItem.objects.select_related('product'),
         id=item_id,
         cart__owner=request.user,
     )
@@ -64,7 +64,11 @@ def checkout_all(request):
         owner=request.user,
     )
 
-    cart_items = CartItem.objects.filter(cart=cart)
+    cart_items = ( 
+        CartItem.objects
+        .filter(cart=cart)
+        .select_related('product')
+        )
 
     total_price = sum(
         item.product.price * item.quantity
@@ -127,35 +131,40 @@ def order_detail(request, order_id):
 @login_required
 def my_orders(request):
     orders = (
-        Order.objects
-        .filter(
-            owner=request.user,
-            is_ordered=True,
-        )
-        .order_by('-date_ordered')
+    Order.objects
+    .filter(
+        owner=request.user,
+        is_ordered=True,
     )
-
-    return render(
-        request,
-        'orders/my_orders.html',
-        {'orders': orders},
+    .annotate(
+        items_count=Count('orderitem')
     )
+    .order_by('-date_ordered')
+)
 
 
 @login_required
 @require_POST
-def delete_order(request, order_id):
+def cancel_order(request, order_id):
     order = get_object_or_404(
         Order,
         id=order_id,
         owner=request.user,
     )
 
-    order.delete()
+    if order.status != 'В обработке':
+        messages.error(
+            request,
+            'Этот заказ нельзя отменить.',
+        )
+        return redirect('my_orders')
+
+    order.status = 'Отменен'
+    order.save(update_fields=['status'])
 
     messages.success(
         request,
-        'Заказ удален!',
+        'Заказ отменен.',
     )
 
     return redirect('my_orders')

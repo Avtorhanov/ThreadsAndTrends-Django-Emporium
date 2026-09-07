@@ -19,16 +19,23 @@
         <div class="cart">
           <div class="order-1">
             <a href="{% url 'order_detail' order_id=order.id %}" class="order-link">
-              <span class="order-number">Посмотреть заказ № {{ order.order_number }}</span>
+              <span class="order-number">Посмотреть заказ № {{ order.user_order_number }}</span>
             </a>
           </div>
-          <div class="order-info">
-            <p><strong>Адрес доставки:</strong> {{ order.address }}</p>
-            <p><strong>Номер телефона:</strong> {{ order.phone_number }}</p>
-            <p><strong>Количество товаров в заказе:</strong> {{ order.orderitem_set.count }}</p>
-            <p><strong>Сумма заказа:</strong> {{ order.total_price }} ₽</p>
-          </div>
-          <form action="{% url 'delete_order' order_id=order.id %}" method="post">
+            <div class="order-info">
+                <p><strong>Адрес доставки:</strong> {{ order.address }}</p>
+                <p><strong>Номер телефона:</strong> {{ order.phone_number }}</p>
+                <p><strong>Количество товаров в заказе:</strong> {{ order.items_count }}</p>
+                <p><strong>Сумма заказа:</strong> {{ order.total_price }}₽</p>
+                <p><strong>Статус:</strong> {{ order.status }}</p>
+            </div>
+
+            {% if order.status == 'В обработке' %}
+              <form action="{% url 'cancel_order' order_id=order.id %}" method="post">
+                {% csrf_token %}
+                <button type="submit">Отменить заказ</button>
+              </form>
+            {% endif %}
             {% csrf_token %}
             <button type="submit">Удалить</button>
           </form>

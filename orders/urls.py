@@ -8,8 +8,8 @@ urlpatterns = [
     path('order/<int:order_id>/', views.order_detail, name='order_detail'),
     path('my-orders/', views.my_orders, name='my_orders'),
     path(
-        'delete_order/<int:order_id>/',
-        views.delete_order,
-        name='delete_order',
+        'cancel_order/<int:order_id>/',
+        views.cancel_order,
+        name='cancel_order',
     ),
 ]

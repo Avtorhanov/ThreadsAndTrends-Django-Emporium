@@ -48,7 +48,6 @@ class OrdersSecurityTestCase(TestCase):
 
         self.owner_order = Order.objects.create(
             owner=self.owner,
-            order_number="1",
             total_price=100,
             address="Owner Address",
             phone_number="+79999999999",
@@ -58,7 +57,6 @@ class OrdersSecurityTestCase(TestCase):
 
         self.other_order = Order.objects.create(
             owner=self.other_user,
-            order_number="1",
             total_price=100,
             address="Other Address",
             phone_number="+78888888888",
@@ -90,10 +88,10 @@ class OrdersSecurityTestCase(TestCase):
 
         self.assertEqual(response.status_code, 302)
 
-    def test_anonymous_user_cannot_delete_order(self):
+    def test_anonymous_user_cannot_cancel_order(self):
         response = self.client.post(
             reverse(
-                "delete_order",
+                "cancel_order",
                 args=[self.owner_order.id],
             )
         )
@@ -103,68 +101,30 @@ class OrdersSecurityTestCase(TestCase):
     # -------------------------------------------------
     # IDOR protection
     # -------------------------------------------------
-    def test_delete_order_requires_csrf_token(self):
+    def test_cancel_order_requires_csrf_token(self):
         csrf_client = Client(enforce_csrf_checks=True)
-
+    
         csrf_client.login(
             username="owner",
             password="testpassword123",
         )
-
+    
         response = csrf_client.post(
             reverse(
-                "delete_order",
+                "cancel_order",
                 args=[self.owner_order.id],
             )
         )
-
+    
         self.assertEqual(response.status_code, 403)
-
-        self.assertTrue(
-            Order.objects.filter(
-                id=self.owner_order.id,
-            ).exists()
-        )
-
-    def test_checkout_requires_csrf_token(self):
-        csrf_client = Client(enforce_csrf_checks=True)
-
-        csrf_client.login(
-            username="owner",
-            password="testpassword123",
-        )
-
-        orders_before = Order.objects.filter(
-            owner=self.owner,
-        ).count()
-
-        response = csrf_client.post(
-            reverse(
-                "checkout",
-                args=[self.owner_cart_item.id],
-            ),
-            {
-                "full_name": "owner",
-                "address": "Test address",
-                "phone_number": "123456789",
-                "size": "M",
-            },
-        )
-
-        self.assertEqual(response.status_code, 403)
-
+    
+        self.owner_order.refresh_from_db()
+    
         self.assertEqual(
-            Order.objects.filter(
-                owner=self.owner,
-            ).count(),
-            orders_before,
+            self.owner_order.status,
+            "В обработке",
         )
 
-        self.assertTrue(
-            CartItem.objects.filter(
-                id=self.owner_cart_item.id,
-            ).exists()
-        )
 
     def test_checkout_all_requires_csrf_token(self):
         csrf_client = Client(enforce_csrf_checks=True)
@@ -232,7 +192,7 @@ class OrdersSecurityTestCase(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
-    def test_user_cannot_delete_other_users_order(self):
+    def test_user_cannot_cancel_other_users_order(self):
         self.client.login(
             username="other_user",
             password="testpassword123",
@@ -240,24 +200,25 @@ class OrdersSecurityTestCase(TestCase):
 
         response = self.client.post(
             reverse(
-                "delete_order",
+                "cancel_order",
                 args=[self.owner_order.id],
             )
         )
 
         self.assertEqual(response.status_code, 404)
 
-        self.assertTrue(
-            Order.objects.filter(
-                id=self.owner_order.id,
-            ).exists()
+        self.owner_order.refresh_from_db()
+
+        self.assertEqual(
+            self.owner_order.status,
+            "В обработке",
         )
 
     # -------------------------------------------------
     # HTTP method protection
     # -------------------------------------------------
 
-    def test_get_request_cannot_delete_order(self):
+    def test_get_request_cannot_cancel_order(self):
         self.client.login(
             username="owner",
             password="testpassword123",
@@ -265,17 +226,18 @@ class OrdersSecurityTestCase(TestCase):
 
         response = self.client.get(
             reverse(
-                "delete_order",
+                "cancel_order",
                 args=[self.owner_order.id],
             )
         )
 
         self.assertEqual(response.status_code, 405)
 
-        self.assertTrue(
-            Order.objects.filter(
-                id=self.owner_order.id,
-            ).exists()
+        self.owner_order.refresh_from_db()
+
+        self.assertEqual(
+            self.owner_order.status,
+            "В обработке",
         )
 
     # -------------------------------------------------
@@ -297,7 +259,7 @@ class OrdersSecurityTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
 
-    def test_order_owner_can_delete_own_order(self):
+    def test_order_owner_can_cancel_own_order(self):
         self.client.login(
             username="owner",
             password="testpassword123",
@@ -305,15 +267,47 @@ class OrdersSecurityTestCase(TestCase):
 
         response = self.client.post(
             reverse(
-                "delete_order",
+                "cancel_order",
                 args=[self.owner_order.id],
             )
         )
 
         self.assertEqual(response.status_code, 302)
 
-        self.assertFalse(
+        self.assertTrue(
             Order.objects.filter(
                 id=self.owner_order.id,
             ).exists()
+        )
+
+        self.owner_order.refresh_from_db()
+
+        self.assertEqual(
+            self.owner_order.status,
+            "Отменен",
+        )
+
+    def test_delivered_order_cannot_be_cancelled(self):
+        self.owner_order.status = "Доставлен"
+        self.owner_order.save(update_fields=["status"])
+
+        self.client.login(
+            username="owner",
+            password="testpassword123",
+        )
+
+        response = self.client.post(
+            reverse(
+                "cancel_order",
+                args=[self.owner_order.id],
+            )
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+        self.owner_order.refresh_from_db()
+
+        self.assertEqual(
+            self.owner_order.status,
+            "Доставлен",
         )

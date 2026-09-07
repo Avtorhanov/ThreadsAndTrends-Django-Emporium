@@ -13,7 +13,7 @@
     {% endif %}
 
   <div class="container">
-    <h2>Детали заказа №{{ order.order_number }}</h2>
+    <h2>Детали заказа №{{ order.user_order_number }}</h2>
     <p>Дата заказа: {{ order.date_ordered }}</p>
     <div class="row">
       {% for order_item in order_items %}

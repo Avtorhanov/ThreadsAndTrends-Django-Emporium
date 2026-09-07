@@ -1,7 +1,5 @@
 from decimal import Decimal
-
 from django.db import transaction
-
 from orders.models import Order, OrderItem
 
 
