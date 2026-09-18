@@ -73,14 +73,14 @@ class CartItem(models.Model):
     def __str__(self):
         return f"{self.quantity} из {self.product} в корзине"
 
-class Meta:
-    verbose_name = "Корзина"
-    verbose_name_plural = "Элементы корзины"
-
-    constraints = [
-        models.UniqueConstraint(
-            fields=['cart', 'product'],
-            name='unique_cart_product',
-        ),
-    ]
-
+    class Meta:
+        verbose_name = "Корзина"
+        verbose_name_plural = "Элементы корзины"
+    
+        constraints = [
+            models.UniqueConstraint(
+                fields=['cart', 'product'],
+                name='unique_cart_product',
+            ),
+        ]
+    

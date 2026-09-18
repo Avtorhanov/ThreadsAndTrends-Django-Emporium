@@ -9,7 +9,7 @@ ThreadsAndTrends-Django-Emporium
     python manage.py migrate
 
 3. Загрузите данные:
-    python manage.py loaddata fixtures/fixtures.json
+    python manage.py loaddata fixtures/catalog.json
 
 4. Запуск:
     python manage.py runserver 
