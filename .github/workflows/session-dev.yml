@@ -70,8 +70,9 @@ jobs:
             git commit -m "Регенерация openapi/schema.yml [schema]"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
-          cd /tmp/report
-          git init -q -b report
-          git add -A
-          git -c user.name=bot -c user.email=bot@example.com commit -q -m "report ${GITHUB_SHA}"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" report:ci-report-session-5
+          # Отчёт — отдельной веткой без истории, через те же учётные данные origin.
+          export GIT_INDEX_FILE=/tmp/report-index
+          git --work-tree=/tmp/report add -A
+          tree=$(git write-tree)
+          commit=$(git commit-tree "$tree" -m "report ${GITHUB_SHA}")
+          git push -f origin "$commit:refs/heads/ci-report-session-5"

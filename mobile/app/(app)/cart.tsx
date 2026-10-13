@@ -2,7 +2,6 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
   Pressable,
@@ -193,8 +192,7 @@ export default function CartScreen() {
       router.push("/sign-in");
       return;
     }
-    // Оформление заказа — следующий этап (сессия 5).
-    Alert.alert("Оформление заказа", "Оформление появится в ближайшем обновлении приложения.");
+    router.push("/checkout");
   };
 
   return (

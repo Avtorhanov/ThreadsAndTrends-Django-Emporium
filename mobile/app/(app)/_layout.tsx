@@ -16,6 +16,9 @@ export default function AppLayout() {
       <Stack.Screen name="product/[slug]" options={{ title: "" }} />
       <Stack.Screen name="cart" options={{ title: "Корзина", headerRight: undefined }} />
       <Stack.Protected guard={status === "signedIn"}>
+        <Stack.Screen name="checkout" options={{ title: "Оформление", headerRight: undefined }} />
+        <Stack.Screen name="orders/index" options={{ title: "Мои заказы" }} />
+        <Stack.Screen name="orders/[number]" options={{ title: "Заказ" }} />
         <Stack.Screen name="profile" options={{ title: "Профиль", headerRight: undefined }} />
         <Stack.Screen
           name="change-password"
