@@ -12,7 +12,7 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = [
         "owner",
         "date_ordered",
-        "total_price",
+        "total_kopecks",
         "is_ordered",
         "address",
         "phone_number",
@@ -24,7 +24,7 @@ class OrderAdmin(admin.ModelAdmin):
     fields = [
         "owner",
         "date_ordered",
-        "total_price",
+        "total_kopecks",
         "is_ordered",
         "address",
         "phone_number",

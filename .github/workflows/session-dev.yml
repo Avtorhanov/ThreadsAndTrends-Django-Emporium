@@ -1,0 +1,98 @@
+# ВРЕМЕННЫЙ workflow сессии 3: автоформатирование, генерация openapi/schema.yml и вывод
+# ошибок в аннотации (среда разработки без доступа к PyPI/npm). Удаляется до мёржа PR.
+name: session-dev
+
+on:
+  push:
+    branches: ["session-3-catalog"]
+
+concurrency:
+  group: session-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  dev:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: didi
+          POSTGRES_USER: didi
+          POSTGRES_PASSWORD: didi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U didi -d didi"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DB_NAME: didi
+      DB_USER: didi
+      DB_PASSWORD: didi
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DJANGO_SETTINGS_MODULE: myshop.settings.test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements/*.txt
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: pip install -r requirements/dev.txt
+      - name: Helper
+        run: |
+          cat > /tmp/annotate.sh <<'EOF'
+          # annotate <title> <file>: вывод файла кусками в error-аннотации (до 10 на шаг).
+          title="$1"; file="$2"
+          total=$(wc -l < "$file")
+          start=$(( total > 900 ? total - 900 : 0 ))
+          tail -n +$((start + 1)) "$file" | split -l 90 - /tmp/chunk_
+          for f in /tmp/chunk_*; do
+            msg=$(sed 's/%/%25/g' "$f" | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=${title}::${msg}"
+          done
+          rm -f /tmp/chunk_*
+          EOF
+      - name: Ruff autofix
+        run: |
+          ruff check --fix . > /tmp/ruff.txt 2>&1 || true
+          ruff format . >> /tmp/ruff.txt 2>&1
+          ruff check . > /tmp/ruff2.txt 2>&1 || { bash /tmp/annotate.sh ruff /tmp/ruff2.txt; }
+      - name: Migrations check
+        run: |
+          python manage.py makemigrations --dry-run -v 3 > /tmp/mig.txt 2>&1 || true
+          grep -q "No changes detected" /tmp/mig.txt || { bash /tmp/annotate.sh makemigrations /tmp/mig.txt; exit 1; }
+      - name: OpenAPI schema
+        if: always()
+        run: |
+          python manage.py spectacular --validate --fail-on-warn --file openapi/schema.yml > /tmp/schema.txt 2>&1 \
+            || { bash /tmp/annotate.sh spectacular /tmp/schema.txt; exit 1; }
+      - name: Commit autofix
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || { git commit -m "ci: autoformat and regenerate openapi schema"; git push; }
+      - name: Tests
+        if: always()
+        run: pytest -p no:cacheprovider -q --tb=short > /tmp/pytest.txt 2>&1 || { bash /tmp/annotate.sh pytest /tmp/pytest.txt; exit 1; }
+      - name: Frontend typecheck
+        if: always()
+        run: |
+          rc=0
+          for app in admin-panel mobile; do
+            (cd $app && npm ci --no-audit --no-fund > /tmp/npm-$app.txt 2>&1 && npm run typecheck >> /tmp/npm-$app.txt 2>&1) \
+              || { bash /tmp/annotate.sh "$app" /tmp/npm-$app.txt; rc=1; }
+          done
+          (cd admin-panel && npm run build > /tmp/build.txt 2>&1) || { bash /tmp/annotate.sh build /tmp/build.txt; rc=1; }
+          exit $rc

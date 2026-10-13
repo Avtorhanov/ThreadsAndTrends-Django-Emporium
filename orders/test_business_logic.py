@@ -3,7 +3,8 @@ from django.test import TestCase
 from django.urls import reverse
 
 from orders.models import Order, OrderItem
-from store.models import Cart, CartItem, Product
+from store.models import Cart, CartItem
+from store.tests.factories import make_product
 
 User = get_user_model()
 
@@ -15,17 +16,9 @@ class OrdersBusinessLogicTestCase(TestCase):
             password="testpassword123",
         )
 
-        self.product = Product.objects.create(
-            name="Test Product",
-            description="Test Description",
-            price=100,
-        )
+        self.product = make_product(name="Test Product", price_kopecks=100_00)
 
-        self.product_2 = Product.objects.create(
-            name="Test Product 2",
-            description="Test Description 2",
-            price=200,
-        )
+        self.product_2 = make_product(name="Test Product 2", price_kopecks=200_00)
 
         self.cart = Cart.objects.create(
             owner=self.user,
@@ -35,14 +28,14 @@ class OrdersBusinessLogicTestCase(TestCase):
             cart=self.cart,
             product=self.product,
             quantity=2,
-            price=100,
+            price_kopecks=100_00,
         )
 
         self.cart_item_2 = CartItem.objects.create(
             cart=self.cart,
             product=self.product_2,
             quantity=1,
-            price=200,
+            price_kopecks=200_00,
         )
 
     def test_checkout_creates_order_and_order_item(self):
@@ -91,8 +84,8 @@ class OrdersBusinessLogicTestCase(TestCase):
         )
 
         self.assertEqual(
-            order.total_price,
-            200,
+            order.total_kopecks,
+            200_00,
         )
 
     def test_checkout_removes_item_from_cart(self):
@@ -166,8 +159,8 @@ class OrdersBusinessLogicTestCase(TestCase):
         self.assertTrue(order_items.filter(product=self.product_2).exists())
 
         self.assertEqual(
-            order.total_price,
-            400,
+            order.total_kopecks,
+            400_00,
         )
 
     def test_checkout_all_clears_cart(self):

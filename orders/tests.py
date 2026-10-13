@@ -3,7 +3,8 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from orders.models import Order
-from store.models import Cart, CartItem, Product
+from store.models import Cart, CartItem
+from store.tests.factories import make_product
 
 User = get_user_model()
 
@@ -20,11 +21,7 @@ class OrdersSecurityTestCase(TestCase):
             password="testpassword123",
         )
 
-        self.product = Product.objects.create(
-            name="Test Product",
-            description="Test Description",
-            price=100,
-        )
+        self.product = make_product(name="Test Product", price_kopecks=100_00)
 
         self.owner_cart = Cart.objects.create(
             owner=self.owner,
@@ -38,20 +35,20 @@ class OrdersSecurityTestCase(TestCase):
             cart=self.owner_cart,
             product=self.product,
             quantity=1,
-            price=100,
+            price_kopecks=100_00,
         )
 
         self.other_cart_item = CartItem.objects.create(
             cart=self.other_cart,
             product=self.product,
             quantity=1,
-            price=100,
+            price_kopecks=100_00,
         )
 
         self.owner_order = Order.objects.create(
             owner=self.owner,
             order_number="1",
-            total_price=100,
+            total_kopecks=100_00,
             address="Owner Address",
             phone_number="+79999999999",
             full_name="owner",
@@ -61,7 +58,7 @@ class OrdersSecurityTestCase(TestCase):
         self.other_order = Order.objects.create(
             owner=self.other_user,
             order_number="1",
-            total_price=100,
+            total_kopecks=100_00,
             address="Other Address",
             phone_number="+78888888888",
             full_name="other_user",

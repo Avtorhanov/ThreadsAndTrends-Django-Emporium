@@ -10,9 +10,7 @@ class Order(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, verbose_name="Покупатель"
     )
     date_ordered = models.DateTimeField(auto_now_add=True, verbose_name="Дата оформления")
-    total_price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.0, verbose_name="Общая стоимость"
-    )
+    total_kopecks = models.PositiveBigIntegerField(default=0, verbose_name="Общая стоимость, коп.")
     is_ordered = models.BooleanField(default=False, verbose_name="Заказано")
     address = models.CharField(max_length=255, default="", verbose_name="Адрес доставки")
     phone_number = models.CharField(max_length=20, default="", verbose_name="Номер телефона")
@@ -63,9 +61,10 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, verbose_name="Заказ")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Товар")
+    # PROTECT: товары удаляются мягко, история заказов не теряется.
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, verbose_name="Товар")
     quantity = models.PositiveIntegerField(default=1, verbose_name="Количество")
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, verbose_name="Цена")
+    price_kopecks = models.PositiveBigIntegerField(default=0, verbose_name="Цена, коп.")
     description = models.TextField(blank=True, null=True, verbose_name="Описание")
 
     def __str__(self):

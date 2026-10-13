@@ -2,6 +2,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from accounts.api.urls import admin_urlpatterns, auth_urlpatterns
+from store.api.urls import admin_catalog_urlpatterns, catalog_urlpatterns
 
 from .views import HealthView
 
@@ -13,6 +14,9 @@ urlpatterns = [
     path("docs/", SpectacularSwaggerView.as_view(url_name="v1:schema"), name="docs"),
     # Мобильный клиент (JWT)
     path("auth/", include(auth_urlpatterns)),
+    # Публичный каталог (без аутентификации)
+    path("catalog/", include(catalog_urlpatterns)),
     # Панель администратора (сессия + CSRF)
+    path("admin/catalog/", include(admin_catalog_urlpatterns)),
     path("admin/", include(admin_urlpatterns)),
 ]

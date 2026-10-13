@@ -11,7 +11,6 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import mixins, status, viewsets
-from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny
@@ -20,21 +19,12 @@ from rest_framework.views import APIView
 
 from accounts import services
 from accounts.models import User
-from core.api.permissions import IsAdmin
+from core.api.mixins import AdminAPIMixin
 
 from .serializers import CustomerSerializer, CustomerStatus, LoginSerializer, StaffUserSerializer
 from .throttles import LoginEmailThrottle, LoginIPThrottle
 
 TAG = "admin"
-
-
-class AdminAPIMixin:
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAdmin]
-
-    def get_authenticate_header(self, request):
-        # 401 (а не 403) для неаутентифицированных: панель отличает «нужен вход» от «нет прав».
-        return "Session"
 
 
 @extend_schema(tags=[TAG])

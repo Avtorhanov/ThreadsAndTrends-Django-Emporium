@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.db import transaction
 
 from orders.models import Order, OrderItem
@@ -20,14 +18,11 @@ def create_order_from_cart_items(
     if not cart_items:
         raise ValueError("Невозможно создать заказ без товаров.")
 
-    total_price = sum(
-        (item.price * item.quantity for item in cart_items),
-        Decimal("0.00"),
-    )
+    total_kopecks = sum(item.price_kopecks * item.quantity for item in cart_items)
 
     order = Order.objects.create(
         owner=user,
-        total_price=total_price,
+        total_kopecks=total_kopecks,
         address=address,
         phone_number=phone_number,
         full_name=full_name,
@@ -41,7 +36,7 @@ def create_order_from_cart_items(
                 order=order,
                 product=item.product,
                 quantity=item.quantity,
-                price=item.price,
+                price_kopecks=item.price_kopecks,
                 description=item.product.description,
             )
             for item in cart_items

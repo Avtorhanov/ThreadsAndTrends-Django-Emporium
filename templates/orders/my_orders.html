@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load money %}
 
 {% block content %}
 
@@ -26,7 +27,7 @@
             <p><strong>Адрес доставки:</strong> {{ order.address }}</p>
             <p><strong>Номер телефона:</strong> {{ order.phone_number }}</p>
             <p><strong>Количество товаров в заказе:</strong> {{ order.orderitem_set.count }}</p>
-            <p><strong>Сумма заказа:</strong> {{ order.total_price }} ₽</p>
+            <p><strong>Сумма заказа:</strong> {{ order.total_kopecks|rub }} ₽</p>
           </div>
           <form action="{% url 'delete_order' order_id=order.id %}" method="post">
             {% csrf_token %}

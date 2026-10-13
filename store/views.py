@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
-from store.models import CartItem, Category, Product, SubCategory
+from store.models import CartItem, Category, Product
 from store.services import add_product_to_cart, get_cart
 
 
@@ -17,11 +17,11 @@ def home(request):
 
 # продукты
 def all_products(request):
-    products = Product.objects.all().order_by("-date")
+    products = Product.objects.live().with_stock().prefetch_related("images")
     page_number = request.GET.get("page")
     paginator = Paginator(products, 10)
     page_obj = paginator.get_page(page_number)
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_active=True, parent__isnull=True)
 
     # Рассчитываем значения страниц
     if page_obj.number <= 2:
@@ -47,36 +47,39 @@ def all_products(request):
     )
 
 
-def product_detail(request, product_id):
-    # Логика для отображения страницы товара
-    product = get_object_or_404(Product, id=product_id)
+def product_detail(request, slug):
+    product = get_object_or_404(
+        Product.objects.live().prefetch_related("images", "variants"), slug=slug
+    )
     return render(request, "store/product_detail.html", {"product": product})
 
 
-# представления для категорий и подкатегорий
-def category_detail(request, category_id):
-    category = get_object_or_404(Category, id=category_id)
-    subcategories = SubCategory.objects.filter(category=category)
-    products = Product.objects.filter(category=category)
+def category_detail(request, slug):
+    category = get_object_or_404(
+        Category.objects.filter(is_active=True).filter(
+            Q(parent__isnull=True) | Q(parent__is_active=True)
+        ),
+        slug=slug,
+    )
+    children = category.children.filter(is_active=True)
+    # Корневая категория показывает товары всех подкатегорий.
+    products = (
+        Product.objects.live()
+        .with_stock()
+        .filter(Q(category=category) | Q(category__parent=category))
+        .prefetch_related("images")
+    )
     return render(
         request,
         "store/category_detail.html",
-        {"category": category, "subcategories": subcategories, "products": products},
-    )
-
-
-def subcategory_detail(request, subcategory_id):
-    subcategory = get_object_or_404(SubCategory, id=subcategory_id)
-    products = Product.objects.filter(subcategory=subcategory)
-    return render(
-        request, "store/subcategory_detail.html", {"subcategory": subcategory, "products": products}
+        {"category": category, "children": children, "products": products},
     )
 
 
 # логика корзины
 @require_POST
 def add_to_cart(request, product_id):
-    product = get_object_or_404(Product, pk=product_id)
+    product = get_object_or_404(Product.objects.live(), pk=product_id)
 
     add_product_to_cart(
         request,
@@ -102,14 +105,14 @@ def cart_view(request):
 
     cart_items = cart.cartitem_set.select_related("product")
 
-    total_price = sum(item.price * item.quantity for item in cart_items)
+    total_kopecks = sum(item.price_kopecks * item.quantity for item in cart_items)
 
     return render(
         request,
         "orders/cart.html",
         {
             "cart_items": cart_items,
-            "total_price": total_price,
+            "total_kopecks": total_kopecks,
         },
     )
 
@@ -126,9 +129,7 @@ def update_cart(request, item_id, new_count):
     cart_item.quantity = new_count
     cart_item.save(update_fields=["quantity"])
 
-    total_price = cart_item.cart.calculate_total_price()
-
-    return JsonResponse({"total_price": total_price})
+    return JsonResponse({"total_kopecks": cart_item.cart.calculate_total_kopecks()})
 
 
 @login_required
@@ -155,7 +156,7 @@ def remove_from_cart(request, item_id):
 # логика поиска
 def search_products(request):
     query = request.GET.get("q")
-    products = Product.objects.all()
+    products = Product.objects.live().with_stock().prefetch_related("images")
 
     if query:
         products = products.filter(Q(name__icontains=query) | Q(description__icontains=query))

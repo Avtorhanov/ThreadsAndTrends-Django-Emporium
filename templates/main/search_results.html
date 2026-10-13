@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load money %}
 
 {% block content %}
 
@@ -18,19 +19,19 @@
                 <div class="product-container">
                     {% for product in products %}
                         <div class="card">
-                            <a href="{% url 'product_detail' product_id=product.id %}">
+                            <a href="{% url 'product_detail' slug=product.slug %}">
                                 <div class="product-image">
-                                    {% if product.image %}
-                                        <img src="{{ product.image.url }}" alt="Product Image">
+                                    {% if product.cover_url %}
+                                        <img src="{{ product.cover_url }}" alt="Product Image">
                                     {% endif %}
                                 </div>
                             </a>
                             <div class="product-info">
                                 <div class="product-name">{{ product.name }}</div>
                                 <div class="product-description">{{ product.description }}</div>
-                                <div class="product-price">{{ product.price }} ₽</div>
+                                <div class="product-price">{{ product.price_kopecks|rub }} ₽</div>
                                 <div class="prod-counter">
-                                    <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
+                                    <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price_kopecks }}')">Добавить в корзину</button>
                                 </div>
                             </div>
                         </div>

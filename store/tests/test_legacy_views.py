@@ -3,7 +3,9 @@ from django.core.paginator import Page
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from .models import Cart, CartItem, Category, Product, SubCategory
+from store.models import Cart, CartItem, Product
+
+from .factories import make_category, make_product
 
 User = get_user_model()
 
@@ -15,15 +17,16 @@ class CartViewsTestCase(TestCase):
             email="other@example.com", password="otherpassword123"
         )
 
-        self.product = Product.objects.create(
-            name="TestProduct", description="Test Description", price=10.00
-        )
+        self.product = make_product(name="TestProduct", price_kopecks=10_00)
 
         self.cart = Cart.objects.create(owner=self.user)
 
     def create_cart_item(self, quantity=1):
         return CartItem.objects.create(
-            cart=self.cart, product=self.product, quantity=quantity, price=self.product.price
+            cart=self.cart,
+            product=self.product,
+            quantity=quantity,
+            price_kopecks=self.product.price_kopecks,
         )
 
     # -------------------------
@@ -42,7 +45,7 @@ class CartViewsTestCase(TestCase):
             cart=self.cart,
             product=self.product,
             quantity=1,
-            price=10.0,
+            price_kopecks=10_00,
         )
 
         response = csrf_client.post(
@@ -69,7 +72,7 @@ class CartViewsTestCase(TestCase):
             cart=self.cart,
             product=self.product,
             quantity=1,
-            price=10.0,
+            price_kopecks=10_00,
         )
 
         response = csrf_client.post(
@@ -129,7 +132,7 @@ class CartViewsTestCase(TestCase):
             cart=self.cart,
             product=self.product,
             quantity=1,
-            price=10.0,
+            price_kopecks=10_00,
         )
 
         self.client.login(
@@ -165,7 +168,7 @@ class CartViewsTestCase(TestCase):
             cart=self.cart,
             product=self.product,
             quantity=1,
-            price=10.0,
+            price_kopecks=10_00,
         )
 
         self.client.login(
@@ -190,7 +193,7 @@ class CartViewsTestCase(TestCase):
             cart=self.cart,
             product=self.product,
             quantity=1,
-            price=10.0,
+            price_kopecks=10_00,
         )
 
         self.client.login(
@@ -235,7 +238,7 @@ class CartViewsTestCase(TestCase):
             cart=self.cart,
             product=self.product,
             quantity=1,
-            price=10.0,
+            price_kopecks=10_00,
         )
 
         self.client.login(
@@ -280,7 +283,7 @@ class CartViewsTestCase(TestCase):
             cart=self.cart,
             product=self.product,
             quantity=2,
-            price=self.product.price,
+            price_kopecks=self.product.price_kopecks,
         )
 
         # Гость добавляет такой же товар
@@ -303,46 +306,27 @@ class CartViewsTestCase(TestCase):
 
 class ModelsTestCase(TestCase):
     def setUp(self):
-        self.category = Category.objects.create(name="TestCategory")
-        self.subcategory = SubCategory.objects.create(
-            name="TestSubCategory", category=self.category
-        )
-        self.product = Product.objects.create(
-            name="TestProduct",
-            description="Test Description",
-            price=10.0,
-            category=self.category,
-            subcategory=self.subcategory,
-        )
-        self.user = User.objects.create_user(email="testuser@example.com", password="testpassword")
-        self.cart = Cart.objects.create(owner=self.user)
+        self.category = make_category(name="TestCategory")
+        self.child = make_category(name="TestSubCategory", parent=self.category)
+        self.product = make_product(name="TestProduct", category=self.child)
 
-    def test_category_creation(self):
-        category = Category.objects.get(name="TestCategory")
-        self.assertEqual(category.name, "TestCategory")
-
-    def test_subcategory_creation(self):
-        subcategory = SubCategory.objects.get(name="TestSubCategory")
-        self.assertEqual(subcategory.category, self.category)
+    def test_category_tree(self):
+        self.assertEqual(list(self.category.children.all()), [self.child])
+        self.assertEqual(str(self.child), "TestCategory / TestSubCategory")
 
     def test_product_creation(self):
         product = Product.objects.get(name="TestProduct")
-        self.assertEqual(product.category, self.category)
-        self.assertEqual(product.subcategory, self.subcategory)
+        self.assertEqual(product.category, self.child)
+        self.assertTrue(product.in_stock)
 
 
 class AllProductsViewTestCase(TestCase):
     def setUp(self):
         self.client = Client()  # Создаем экземпляр тестового клиента
         self.user = User.objects.create_user(email="testuser@example.com", password="testpassword")
-        self.category = Category.objects.create(name="Test Category")
+        self.category = make_category(name="Test Category")
         for i in range(15):
-            Product.objects.create(
-                name=f"Product {i}",
-                description=f"Description {i}",
-                price=10.0,
-                category=self.category,
-            )
+            make_product(name=f"Product {i}", category=self.category)
 
     def test_all_products_view(self):
         url = reverse("all-products")
