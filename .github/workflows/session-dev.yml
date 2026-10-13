@@ -1,0 +1,76 @@
+# Временный workflow сессии 7 (среда разработки без PyPI/npm/Docker и без доступа к логам Actions):
+# выполняет .github/session-dev.sh (установка зависимостей, фото демо-каталога, ruff, схема,
+# проверки, e2e прод-стека), коммитит автоисправления в рабочую ветку и выкладывает отчёт
+# в ветку ci-report-session-7. Удаляется до мёржа.
+name: session-dev
+
+on:
+  push:
+    branches: ["session-7-*"]
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[auto]')"
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: didi
+          POSTGRES_USER: didi
+          POSTGRES_PASSWORD: didi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U didi -d didi"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DB_NAME: didi
+      DB_USER: didi
+      DB_PASSWORD: didi
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DJANGO_SETTINGS_MODULE: myshop.settings.test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements/*.txt
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: pip install -r requirements/dev.txt
+      - name: Collect report
+        run: bash .github/session-dev.sh
+      - name: Publish report
+        if: always()
+        run: |
+          set +e
+          annotate() {
+            msg=$(tail -c 3000 "$2" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=$1::$msg"
+          }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A > /tmp/publish.log 2>&1 || annotate "git add" /tmp/publish.log
+          if ! git diff --cached --quiet; then
+            git commit -q -m "ruff, openapi/schema.yml, зависимости, фото демо-каталога [auto]" > /tmp/publish.log 2>&1 || annotate "git commit" /tmp/publish.log
+            git push origin HEAD:${GITHUB_REF_NAME} > /tmp/publish.log 2>&1 || annotate "git push branch" /tmp/publish.log
+          fi
+          export GIT_INDEX_FILE=/tmp/report-index
+          git --work-tree=/tmp/report add -A
+          tree=$(git write-tree)
+          commit=$(git commit-tree "$tree" -m "report ${GITHUB_SHA}")
+          git push -f origin "$commit:refs/heads/ci-report-session-7" > /tmp/publish.log 2>&1 || { annotate "git push report" /tmp/publish.log; exit 1; }
+          for f in /tmp/report/*.txt; do
+            echo "::notice title=$(basename $f)::$(tail -n 2 $f | sed ':a;N;$!ba;s/\n/ | /g')"
+          done
+          exit 0

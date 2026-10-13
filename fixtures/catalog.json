@@ -1,1153 +1,1341 @@
 [
-  {
-    "model": "store.category",
-    "pk": 1,
-    "fields": {
-      "name": "аксесуары",
-      "slug": "aksesuary",
-      "parent": null,
-      "position": 0,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.category",
-    "pk": 2,
-    "fields": {
-      "name": "Одежда",
-      "slug": "odezhda",
-      "parent": null,
-      "position": 1,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.category",
-    "pk": 3,
-    "fields": {
-      "name": "Красота и здоровье",
-      "slug": "krasota-i-zdorove",
-      "parent": null,
-      "position": 2,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.category",
-    "pk": 4,
-    "fields": {
-      "name": "Обувь",
-      "slug": "obuv",
-      "parent": null,
-      "position": 3,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.category",
-    "pk": 5,
-    "fields": {
-      "name": "часы",
-      "slug": "chasy",
-      "parent": 1,
-      "position": 0,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.category",
-    "pk": 6,
-    "fields": {
-      "name": "очки",
-      "slug": "ochki",
-      "parent": 1,
-      "position": 1,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.category",
-    "pk": 7,
-    "fields": {
-      "name": "Витамины",
-      "slug": "vitaminy",
-      "parent": 3,
-      "position": 2,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.category",
-    "pk": 8,
-    "fields": {
-      "name": "Косметика",
-      "slug": "kosmetika",
-      "parent": 3,
-      "position": 3,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.category",
-    "pk": 9,
-    "fields": {
-      "name": "Футболки",
-      "slug": "futbolki",
-      "parent": 2,
-      "position": 4,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.category",
-    "pk": 10,
-    "fields": {
-      "name": "Зимние",
-      "slug": "zimnie",
-      "parent": 4,
-      "position": 5,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.category",
-    "pk": 11,
-    "fields": {
-      "name": "кроссовки",
-      "slug": "krossovki",
-      "parent": 4,
-      "position": 6,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.category",
-    "pk": 12,
-    "fields": {
-      "name": "Сумки",
-      "slug": "sumki",
-      "parent": 1,
-      "position": 7,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.category",
-    "pk": 13,
-    "fields": {
-      "name": "Obraz",
-      "slug": "obraz",
-      "parent": 2,
-      "position": 8,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z"
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 1,
-    "fields": {
-      "name": "INVICTA",
-      "slug": "invicta",
-      "description": "смотреть время",
-      "category": 5,
-      "price_kopecks": 5500000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 2,
-    "fields": {
-      "name": "INVICTA",
-      "slug": "invicta-2",
-      "description": "смотреть время",
-      "category": 5,
-      "price_kopecks": 3300000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:19:20.105Z",
-      "updated_at": "2024-02-18T21:19:20.105Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 3,
-    "fields": {
-      "name": "Timbalend",
-      "slug": "timbalend",
-      "description": "смотреть время",
-      "category": 5,
-      "price_kopecks": 7700000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:20:01.534Z",
-      "updated_at": "2024-02-18T21:20:01.534Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 4,
-    "fields": {
-      "name": "CalvinKlein",
-      "slug": "calvinklein",
-      "description": "солнцезащитные",
-      "category": 6,
-      "price_kopecks": 6600000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:20:43.200Z",
-      "updated_at": "2024-02-18T21:20:43.200Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 5,
-    "fields": {
-      "name": "Rai ban",
-      "slug": "rai-ban",
-      "description": "солнцезащитные",
-      "category": 6,
-      "price_kopecks": 4400000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:21:29.762Z",
-      "updated_at": "2024-02-18T21:21:29.762Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 6,
-    "fields": {
-      "name": "GUCCI",
-      "slug": "gucci",
-      "description": "солнцезащитные",
-      "category": 6,
-      "price_kopecks": 8800000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:22:02.521Z",
-      "updated_at": "2024-02-18T21:22:02.521Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 7,
-    "fields": {
-      "name": "Karl Lagerfeld",
-      "slug": "karl-lagerfeld",
-      "description": "на выход",
-      "category": 9,
-      "price_kopecks": 5500000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:22:44.147Z",
-      "updated_at": "2024-02-18T21:22:44.147Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 8,
-    "fields": {
-      "name": "Karl",
-      "slug": "karl",
-      "description": "на выход",
-      "category": 9,
-      "price_kopecks": 4500000,
-      "compare_at_kopecks": null,
-      "is_active": false,
-      "created_at": "2024-02-18T21:23:09.641Z",
-      "updated_at": "2024-02-18T21:23:09.641Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 9,
-    "fields": {
-      "name": "Karlov",
-      "slug": "karlov",
-      "description": "на выход",
-      "category": 9,
-      "price_kopecks": 6500000,
-      "compare_at_kopecks": null,
-      "is_active": false,
-      "created_at": "2024-02-18T21:23:51.999Z",
-      "updated_at": "2024-02-18T21:23:51.999Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 10,
-    "fields": {
-      "name": "MANGO",
-      "slug": "mango",
-      "description": "удобные",
-      "category": 11,
-      "price_kopecks": 8700000,
-      "compare_at_kopecks": null,
-      "is_active": false,
-      "created_at": "2024-02-18T21:24:51.254Z",
-      "updated_at": "2024-02-18T21:24:51.254Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 11,
-    "fields": {
-      "name": "Karlo",
-      "slug": "karlo",
-      "description": "удобные",
-      "category": 11,
-      "price_kopecks": 5600000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:25:30.985Z",
-      "updated_at": "2024-02-18T21:25:30.985Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 12,
-    "fields": {
-      "name": "AhmadTea",
-      "slug": "ahmadtea",
-      "description": "теплые",
-      "category": 10,
-      "price_kopecks": 8800000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:26:11.225Z",
-      "updated_at": "2024-02-18T21:26:11.225Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 13,
-    "fields": {
-      "name": "UGG",
-      "slug": "ugg",
-      "description": "теплые",
-      "category": 10,
-      "price_kopecks": 8700000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:26:48.949Z",
-      "updated_at": "2024-02-18T21:26:48.949Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 14,
-    "fields": {
-      "name": "BERCO",
-      "slug": "berco",
-      "description": "теплые",
-      "category": 10,
-      "price_kopecks": 5600000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:27:25.234Z",
-      "updated_at": "2024-02-18T21:27:25.234Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 15,
-    "fields": {
-      "name": "BABOR",
-      "slug": "babor",
-      "description": "для красоты",
-      "category": 8,
-      "price_kopecks": 5400000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:28:18.719Z",
-      "updated_at": "2024-02-18T21:28:18.719Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 16,
-    "fields": {
-      "name": "BABIYOR",
-      "slug": "babiyor",
-      "description": "для красоты",
-      "category": 8,
-      "price_kopecks": 3500000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:29:09.909Z",
-      "updated_at": "2024-02-18T21:29:09.909Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 17,
-    "fields": {
-      "name": "DIOR",
-      "slug": "dior",
-      "description": "для красоты",
-      "category": 8,
-      "price_kopecks": 8500000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:29:54.557Z",
-      "updated_at": "2024-02-18T21:29:54.557Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 18,
-    "fields": {
-      "name": "iHERB",
-      "slug": "iherb",
-      "description": "для здоровья",
-      "category": 7,
-      "price_kopecks": 7500000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:30:27.779Z",
-      "updated_at": "2024-02-18T21:30:27.779Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 19,
-    "fields": {
-      "name": "MegaFood",
-      "slug": "megafood",
-      "description": "для здоровья",
-      "category": 7,
-      "price_kopecks": 9600000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:31:35.713Z",
-      "updated_at": "2024-02-18T21:31:35.713Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 20,
-    "fields": {
-      "name": "Multy",
-      "slug": "multy",
-      "description": "для здоровья",
-      "category": 7,
-      "price_kopecks": 7200000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-18T21:32:22.922Z",
-      "updated_at": "2024-02-18T21:32:22.922Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 21,
-    "fields": {
-      "name": "LACOSTE",
-      "slug": "lacoste",
-      "description": "строго для денег",
-      "category": 12,
-      "price_kopecks": 3500000,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-02-21T08:50:35.382Z",
-      "updated_at": "2024-02-21T08:50:35.382Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.product",
-    "pk": 23,
-    "fields": {
-      "name": "Awa",
-      "slug": "awa",
-      "description": "на выход",
-      "category": 9,
-      "price_kopecks": 123333300,
-      "compare_at_kopecks": null,
-      "is_active": true,
-      "created_at": "2024-03-23T17:38:21.109Z",
-      "updated_at": "2024-03-23T17:38:21.109Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1,
-    "fields": {
-      "product": 1,
-      "size": "",
-      "sku": "DD-00001",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T20:40:47.991Z",
-      "updated_at": "2024-02-18T20:40:47.991Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 2,
-    "fields": {
-      "product": 2,
-      "size": "",
-      "sku": "DD-00002",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T21:19:20.105Z",
-      "updated_at": "2024-02-18T21:19:20.105Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 3,
-    "fields": {
-      "product": 3,
-      "size": "",
-      "sku": "DD-00003",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T21:20:01.534Z",
-      "updated_at": "2024-02-18T21:20:01.534Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 4,
-    "fields": {
-      "product": 4,
-      "size": "",
-      "sku": "DD-00004",
-      "stock": 0,
-      "position": 0,
-      "created_at": "2024-02-18T21:20:43.200Z",
-      "updated_at": "2024-02-18T21:20:43.200Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 5,
-    "fields": {
-      "product": 5,
-      "size": "",
-      "sku": "DD-00005",
-      "stock": 0,
-      "position": 0,
-      "created_at": "2024-02-18T21:21:29.762Z",
-      "updated_at": "2024-02-18T21:21:29.762Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 6,
-    "fields": {
-      "product": 6,
-      "size": "",
-      "sku": "DD-00006",
-      "stock": 0,
-      "position": 0,
-      "created_at": "2024-02-18T21:22:02.521Z",
-      "updated_at": "2024-02-18T21:22:02.521Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 7,
-    "fields": {
-      "product": 7,
-      "size": "S",
-      "sku": "DD-00007-S",
-      "stock": 0,
-      "position": 0,
-      "created_at": "2024-02-18T21:22:44.147Z",
-      "updated_at": "2024-02-18T21:22:44.147Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1001,
-    "fields": {
-      "product": 7,
-      "size": "M",
-      "sku": "DD-00007-M",
-      "stock": 0,
-      "position": 1,
-      "created_at": "2024-02-18T21:22:44.147Z",
-      "updated_at": "2024-02-18T21:22:44.147Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1002,
-    "fields": {
-      "product": 7,
-      "size": "L",
-      "sku": "DD-00007-L",
-      "stock": 0,
-      "position": 2,
-      "created_at": "2024-02-18T21:22:44.147Z",
-      "updated_at": "2024-02-18T21:22:44.147Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 8,
-    "fields": {
-      "product": 8,
-      "size": "S",
-      "sku": "DD-00008-S",
-      "stock": 0,
-      "position": 0,
-      "created_at": "2024-02-18T21:23:09.641Z",
-      "updated_at": "2024-02-18T21:23:09.641Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1003,
-    "fields": {
-      "product": 8,
-      "size": "M",
-      "sku": "DD-00008-M",
-      "stock": 0,
-      "position": 1,
-      "created_at": "2024-02-18T21:23:09.641Z",
-      "updated_at": "2024-02-18T21:23:09.641Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1004,
-    "fields": {
-      "product": 8,
-      "size": "L",
-      "sku": "DD-00008-L",
-      "stock": 0,
-      "position": 2,
-      "created_at": "2024-02-18T21:23:09.641Z",
-      "updated_at": "2024-02-18T21:23:09.641Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 9,
-    "fields": {
-      "product": 9,
-      "size": "S",
-      "sku": "DD-00009-S",
-      "stock": 0,
-      "position": 0,
-      "created_at": "2024-02-18T21:23:51.999Z",
-      "updated_at": "2024-02-18T21:23:51.999Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1005,
-    "fields": {
-      "product": 9,
-      "size": "M",
-      "sku": "DD-00009-M",
-      "stock": 0,
-      "position": 1,
-      "created_at": "2024-02-18T21:23:51.999Z",
-      "updated_at": "2024-02-18T21:23:51.999Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1006,
-    "fields": {
-      "product": 9,
-      "size": "L",
-      "sku": "DD-00009-L",
-      "stock": 0,
-      "position": 2,
-      "created_at": "2024-02-18T21:23:51.999Z",
-      "updated_at": "2024-02-18T21:23:51.999Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 10,
-    "fields": {
-      "product": 10,
-      "size": "39",
-      "sku": "DD-00010-39",
-      "stock": 0,
-      "position": 0,
-      "created_at": "2024-02-18T21:24:51.254Z",
-      "updated_at": "2024-02-18T21:24:51.254Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1007,
-    "fields": {
-      "product": 10,
-      "size": "40",
-      "sku": "DD-00010-40",
-      "stock": 0,
-      "position": 1,
-      "created_at": "2024-02-18T21:24:51.254Z",
-      "updated_at": "2024-02-18T21:24:51.254Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1008,
-    "fields": {
-      "product": 10,
-      "size": "41",
-      "sku": "DD-00010-41",
-      "stock": 0,
-      "position": 2,
-      "created_at": "2024-02-18T21:24:51.254Z",
-      "updated_at": "2024-02-18T21:24:51.254Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1009,
-    "fields": {
-      "product": 10,
-      "size": "42",
-      "sku": "DD-00010-42",
-      "stock": 0,
-      "position": 3,
-      "created_at": "2024-02-18T21:24:51.254Z",
-      "updated_at": "2024-02-18T21:24:51.254Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 11,
-    "fields": {
-      "product": 11,
-      "size": "39",
-      "sku": "DD-00011-39",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T21:25:30.985Z",
-      "updated_at": "2024-02-18T21:25:30.985Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1010,
-    "fields": {
-      "product": 11,
-      "size": "40",
-      "sku": "DD-00011-40",
-      "stock": 10,
-      "position": 1,
-      "created_at": "2024-02-18T21:25:30.985Z",
-      "updated_at": "2024-02-18T21:25:30.985Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1011,
-    "fields": {
-      "product": 11,
-      "size": "41",
-      "sku": "DD-00011-41",
-      "stock": 10,
-      "position": 2,
-      "created_at": "2024-02-18T21:25:30.985Z",
-      "updated_at": "2024-02-18T21:25:30.985Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1012,
-    "fields": {
-      "product": 11,
-      "size": "42",
-      "sku": "DD-00011-42",
-      "stock": 10,
-      "position": 3,
-      "created_at": "2024-02-18T21:25:30.985Z",
-      "updated_at": "2024-02-18T21:25:30.985Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 12,
-    "fields": {
-      "product": 12,
-      "size": "39",
-      "sku": "DD-00012-39",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T21:26:11.225Z",
-      "updated_at": "2024-02-18T21:26:11.225Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1013,
-    "fields": {
-      "product": 12,
-      "size": "40",
-      "sku": "DD-00012-40",
-      "stock": 10,
-      "position": 1,
-      "created_at": "2024-02-18T21:26:11.225Z",
-      "updated_at": "2024-02-18T21:26:11.225Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1014,
-    "fields": {
-      "product": 12,
-      "size": "41",
-      "sku": "DD-00012-41",
-      "stock": 10,
-      "position": 2,
-      "created_at": "2024-02-18T21:26:11.225Z",
-      "updated_at": "2024-02-18T21:26:11.225Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1015,
-    "fields": {
-      "product": 12,
-      "size": "42",
-      "sku": "DD-00012-42",
-      "stock": 10,
-      "position": 3,
-      "created_at": "2024-02-18T21:26:11.225Z",
-      "updated_at": "2024-02-18T21:26:11.225Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 13,
-    "fields": {
-      "product": 13,
-      "size": "39",
-      "sku": "DD-00013-39",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T21:26:48.949Z",
-      "updated_at": "2024-02-18T21:26:48.949Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1016,
-    "fields": {
-      "product": 13,
-      "size": "40",
-      "sku": "DD-00013-40",
-      "stock": 10,
-      "position": 1,
-      "created_at": "2024-02-18T21:26:48.949Z",
-      "updated_at": "2024-02-18T21:26:48.949Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1017,
-    "fields": {
-      "product": 13,
-      "size": "41",
-      "sku": "DD-00013-41",
-      "stock": 10,
-      "position": 2,
-      "created_at": "2024-02-18T21:26:48.949Z",
-      "updated_at": "2024-02-18T21:26:48.949Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1018,
-    "fields": {
-      "product": 13,
-      "size": "42",
-      "sku": "DD-00013-42",
-      "stock": 10,
-      "position": 3,
-      "created_at": "2024-02-18T21:26:48.949Z",
-      "updated_at": "2024-02-18T21:26:48.949Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 14,
-    "fields": {
-      "product": 14,
-      "size": "39",
-      "sku": "DD-00014-39",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T21:27:25.234Z",
-      "updated_at": "2024-02-18T21:27:25.234Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1019,
-    "fields": {
-      "product": 14,
-      "size": "40",
-      "sku": "DD-00014-40",
-      "stock": 10,
-      "position": 1,
-      "created_at": "2024-02-18T21:27:25.234Z",
-      "updated_at": "2024-02-18T21:27:25.234Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1020,
-    "fields": {
-      "product": 14,
-      "size": "41",
-      "sku": "DD-00014-41",
-      "stock": 10,
-      "position": 2,
-      "created_at": "2024-02-18T21:27:25.234Z",
-      "updated_at": "2024-02-18T21:27:25.234Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1021,
-    "fields": {
-      "product": 14,
-      "size": "42",
-      "sku": "DD-00014-42",
-      "stock": 10,
-      "position": 3,
-      "created_at": "2024-02-18T21:27:25.234Z",
-      "updated_at": "2024-02-18T21:27:25.234Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 15,
-    "fields": {
-      "product": 15,
-      "size": "",
-      "sku": "DD-00015",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T21:28:18.719Z",
-      "updated_at": "2024-02-18T21:28:18.719Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 16,
-    "fields": {
-      "product": 16,
-      "size": "",
-      "sku": "DD-00016",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T21:29:09.909Z",
-      "updated_at": "2024-02-18T21:29:09.909Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 17,
-    "fields": {
-      "product": 17,
-      "size": "",
-      "sku": "DD-00017",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T21:29:54.557Z",
-      "updated_at": "2024-02-18T21:29:54.557Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 18,
-    "fields": {
-      "product": 18,
-      "size": "",
-      "sku": "DD-00018",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T21:30:27.779Z",
-      "updated_at": "2024-02-18T21:30:27.779Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 19,
-    "fields": {
-      "product": 19,
-      "size": "",
-      "sku": "DD-00019",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T21:31:35.713Z",
-      "updated_at": "2024-02-18T21:31:35.713Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 20,
-    "fields": {
-      "product": 20,
-      "size": "",
-      "sku": "DD-00020",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-18T21:32:22.922Z",
-      "updated_at": "2024-02-18T21:32:22.922Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 21,
-    "fields": {
-      "product": 21,
-      "size": "",
-      "sku": "DD-00021",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-02-21T08:50:35.382Z",
-      "updated_at": "2024-02-21T08:50:35.382Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 23,
-    "fields": {
-      "product": 23,
-      "size": "S",
-      "sku": "DD-00023-S",
-      "stock": 10,
-      "position": 0,
-      "created_at": "2024-03-23T17:38:21.109Z",
-      "updated_at": "2024-03-23T17:38:21.109Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1022,
-    "fields": {
-      "product": 23,
-      "size": "M",
-      "sku": "DD-00023-M",
-      "stock": 10,
-      "position": 1,
-      "created_at": "2024-03-23T17:38:21.109Z",
-      "updated_at": "2024-03-23T17:38:21.109Z",
-      "deleted_at": null
-    }
-  },
-  {
-    "model": "store.productvariant",
-    "pk": 1023,
-    "fields": {
-      "product": 23,
-      "size": "L",
-      "sku": "DD-00023-L",
-      "stock": 10,
-      "position": 2,
-      "created_at": "2024-03-23T17:38:21.109Z",
-      "updated_at": "2024-03-23T17:38:21.109Z",
-      "deleted_at": null
-    }
+ {
+  "model": "store.category",
+  "pk": 1,
+  "fields": {
+   "name": "Аксессуары",
+   "slug": "aksessuary",
+   "parent": null,
+   "position": 0,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
   }
+ },
+ {
+  "model": "store.category",
+  "pk": 2,
+  "fields": {
+   "name": "Одежда",
+   "slug": "odezhda",
+   "parent": null,
+   "position": 1,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
+  }
+ },
+ {
+  "model": "store.category",
+  "pk": 4,
+  "fields": {
+   "name": "Обувь",
+   "slug": "obuv",
+   "parent": null,
+   "position": 2,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
+  }
+ },
+ {
+  "model": "store.category",
+  "pk": 3,
+  "fields": {
+   "name": "Красота и здоровье",
+   "slug": "krasota-i-zdorove",
+   "parent": null,
+   "position": 3,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
+  }
+ },
+ {
+  "model": "store.category",
+  "pk": 5,
+  "fields": {
+   "name": "Часы",
+   "slug": "chasy",
+   "parent": 1,
+   "position": 0,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
+  }
+ },
+ {
+  "model": "store.category",
+  "pk": 6,
+  "fields": {
+   "name": "Очки",
+   "slug": "ochki",
+   "parent": 1,
+   "position": 1,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
+  }
+ },
+ {
+  "model": "store.category",
+  "pk": 12,
+  "fields": {
+   "name": "Сумки и рюкзаки",
+   "slug": "sumki",
+   "parent": 1,
+   "position": 2,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
+  }
+ },
+ {
+  "model": "store.category",
+  "pk": 9,
+  "fields": {
+   "name": "Футболки",
+   "slug": "futbolki",
+   "parent": 2,
+   "position": 0,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
+  }
+ },
+ {
+  "model": "store.category",
+  "pk": 13,
+  "fields": {
+   "name": "Худи и свитшоты",
+   "slug": "hudi",
+   "parent": 2,
+   "position": 1,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
+  }
+ },
+ {
+  "model": "store.category",
+  "pk": 11,
+  "fields": {
+   "name": "Кроссовки и кеды",
+   "slug": "krossovki",
+   "parent": 4,
+   "position": 0,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
+  }
+ },
+ {
+  "model": "store.category",
+  "pk": 10,
+  "fields": {
+   "name": "Зимняя обувь",
+   "slug": "zimnie",
+   "parent": 4,
+   "position": 1,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
+  }
+ },
+ {
+  "model": "store.category",
+  "pk": 8,
+  "fields": {
+   "name": "Косметика",
+   "slug": "kosmetika",
+   "parent": 3,
+   "position": 0,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
+  }
+ },
+ {
+  "model": "store.category",
+  "pk": 7,
+  "fields": {
+   "name": "Витамины",
+   "slug": "vitaminy",
+   "parent": 3,
+   "position": 1,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z"
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 1,
+  "fields": {
+   "name": "Часы-хронограф «Навигатор»",
+   "slug": "chasy-hronograf-navigator",
+   "description": "Хронограф со стальным корпусом 42 мм и коричневым кожаным ремешком. Кварцевый механизм, сапфировое покрытие стекла, водозащита 5 ATM.",
+   "category": 5,
+   "price_kopecks": 1299000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 1,
+  "fields": {
+   "product": 1,
+   "size": "",
+   "sku": "DD-1",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-01T09:00:00.000Z",
+   "updated_at": "2026-09-01T09:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 2,
+  "fields": {
+   "name": "Часы «Классика» серебристые",
+   "slug": "chasy-klassika-serebristye",
+   "description": "Лаконичные кварцевые часы на стальном браслете. Подходят и к костюму, и к свитеру.",
+   "category": 5,
+   "price_kopecks": 849000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-01T10:00:00.000Z",
+   "updated_at": "2026-09-01T10:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 2,
+  "fields": {
+   "product": 2,
+   "size": "",
+   "sku": "DD-2",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-01T10:00:00.000Z",
+   "updated_at": "2026-09-01T10:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 3,
+  "fields": {
+   "name": "Часы «Полночь» чёрные",
+   "slug": "chasy-polnoch-chernye",
+   "description": "Матовый чёрный корпус, светящиеся стрелки, силиконовый ремешок. Водозащита 10 ATM.",
+   "category": 5,
+   "price_kopecks": 1099000,
+   "compare_at_kopecks": 1399000,
+   "is_active": true,
+   "created_at": "2026-09-01T11:00:00.000Z",
+   "updated_at": "2026-09-01T11:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 3,
+  "fields": {
+   "product": 3,
+   "size": "",
+   "sku": "DD-3",
+   "stock": 3,
+   "position": 0,
+   "created_at": "2026-09-01T11:00:00.000Z",
+   "updated_at": "2026-09-01T11:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 4,
+  "fields": {
+   "name": "Солнцезащитные очки «Авиатор»",
+   "slug": "ochki-aviator",
+   "description": "Металлическая оправа, поляризованные линзы с защитой UV400. В комплекте футляр.",
+   "category": 6,
+   "price_kopecks": 499000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-01T12:00:00.000Z",
+   "updated_at": "2026-09-01T12:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 4,
+  "fields": {
+   "product": 4,
+   "size": "",
+   "sku": "DD-4",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-01T12:00:00.000Z",
+   "updated_at": "2026-09-01T12:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 5,
+  "fields": {
+   "name": "Очки «Вэйфарер» чёрные",
+   "slug": "ochki-veyfarer",
+   "description": "Классическая форма в ацетатной оправе. Линзы UV400, подходят для вождения.",
+   "category": 6,
+   "price_kopecks": 379000,
+   "compare_at_kopecks": 499000,
+   "is_active": true,
+   "created_at": "2026-09-01T13:00:00.000Z",
+   "updated_at": "2026-09-01T13:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 5,
+  "fields": {
+   "product": 5,
+   "size": "",
+   "sku": "DD-5",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-01T13:00:00.000Z",
+   "updated_at": "2026-09-01T13:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 6,
+  "fields": {
+   "name": "Очки «Ретро» круглые",
+   "slug": "ochki-retro-kruglye",
+   "description": "Тонкая круглая оправа и тёмные линзы — образ в стиле 70-х.",
+   "category": 6,
+   "price_kopecks": 329000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-01T14:00:00.000Z",
+   "updated_at": "2026-09-01T14:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 6,
+  "fields": {
+   "product": 6,
+   "size": "",
+   "sku": "DD-6",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-01T14:00:00.000Z",
+   "updated_at": "2026-09-01T14:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 7,
+  "fields": {
+   "name": "Сумка-тоут из натуральной кожи",
+   "slug": "sumka-tout",
+   "description": "Вместительная сумка на каждый день: ноутбук 14\", внутренний карман на молнии.",
+   "category": 12,
+   "price_kopecks": 699000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-01T15:00:00.000Z",
+   "updated_at": "2026-09-01T15:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 7,
+  "fields": {
+   "product": 7,
+   "size": "",
+   "sku": "DD-7",
+   "stock": 5,
+   "position": 0,
+   "created_at": "2026-09-01T15:00:00.000Z",
+   "updated_at": "2026-09-01T15:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 8,
+  "fields": {
+   "name": "Рюкзак городской",
+   "slug": "ryukzak-gorodskoy",
+   "description": "Водоотталкивающая ткань, отделение для ноутбука 15\", объём 20 л.",
+   "category": 12,
+   "price_kopecks": 449000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-01T16:00:00.000Z",
+   "updated_at": "2026-09-01T16:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 8,
+  "fields": {
+   "product": 8,
+   "size": "",
+   "sku": "DD-8",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-01T16:00:00.000Z",
+   "updated_at": "2026-09-01T16:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 9,
+  "fields": {
+   "name": "Футболка базовая белая",
+   "slug": "futbolka-bazovaya-belaya",
+   "description": "Плотный хлопок 180 г/м², прямой крой. Не просвечивает и не садится после стирки.",
+   "category": 9,
+   "price_kopecks": 149000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-01T17:00:00.000Z",
+   "updated_at": "2026-09-01T17:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 9,
+  "fields": {
+   "product": 9,
+   "size": "S",
+   "sku": "DD-9-S",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-01T17:00:00.000Z",
+   "updated_at": "2026-09-01T17:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 10,
+  "fields": {
+   "product": 9,
+   "size": "M",
+   "sku": "DD-9-M",
+   "stock": 10,
+   "position": 1,
+   "created_at": "2026-09-01T17:00:00.000Z",
+   "updated_at": "2026-09-01T17:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 11,
+  "fields": {
+   "product": 9,
+   "size": "L",
+   "sku": "DD-9-L",
+   "stock": 10,
+   "position": 2,
+   "created_at": "2026-09-01T17:00:00.000Z",
+   "updated_at": "2026-09-01T17:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 10,
+  "fields": {
+   "name": "Футболка оверсайз чёрная",
+   "slug": "futbolka-oversayz-chernaya",
+   "description": "Свободный крой, спущенное плечо, 100% хлопок.",
+   "category": 9,
+   "price_kopecks": 199000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-01T18:00:00.000Z",
+   "updated_at": "2026-09-01T18:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 12,
+  "fields": {
+   "product": 10,
+   "size": "S",
+   "sku": "DD-10-S",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-01T18:00:00.000Z",
+   "updated_at": "2026-09-01T18:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 13,
+  "fields": {
+   "product": 10,
+   "size": "M",
+   "sku": "DD-10-M",
+   "stock": 10,
+   "position": 1,
+   "created_at": "2026-09-01T18:00:00.000Z",
+   "updated_at": "2026-09-01T18:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 14,
+  "fields": {
+   "product": 10,
+   "size": "L",
+   "sku": "DD-10-L",
+   "stock": 10,
+   "position": 2,
+   "created_at": "2026-09-01T18:00:00.000Z",
+   "updated_at": "2026-09-01T18:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 11,
+  "fields": {
+   "name": "Футболка с принтом «Горы»",
+   "slug": "futbolka-gory",
+   "description": "Мягкий хлопок и стойкий принт, который не трескается после стирок.",
+   "category": 9,
+   "price_kopecks": 229000,
+   "compare_at_kopecks": 279000,
+   "is_active": true,
+   "created_at": "2026-09-01T19:00:00.000Z",
+   "updated_at": "2026-09-01T19:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 15,
+  "fields": {
+   "product": 11,
+   "size": "S",
+   "sku": "DD-11-S",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-01T19:00:00.000Z",
+   "updated_at": "2026-09-01T19:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 16,
+  "fields": {
+   "product": 11,
+   "size": "M",
+   "sku": "DD-11-M",
+   "stock": 10,
+   "position": 1,
+   "created_at": "2026-09-01T19:00:00.000Z",
+   "updated_at": "2026-09-01T19:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 17,
+  "fields": {
+   "product": 11,
+   "size": "L",
+   "sku": "DD-11-L",
+   "stock": 10,
+   "position": 2,
+   "created_at": "2026-09-01T19:00:00.000Z",
+   "updated_at": "2026-09-01T19:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 12,
+  "fields": {
+   "name": "Худи оверсайз серое",
+   "slug": "hudi-oversayz-seroe",
+   "description": "Тёплый футер с начёсом, капюшон на кулиске, карман-кенгуру.",
+   "category": 13,
+   "price_kopecks": 349000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-01T20:00:00.000Z",
+   "updated_at": "2026-09-01T20:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 18,
+  "fields": {
+   "product": 12,
+   "size": "S",
+   "sku": "DD-12-S",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-01T20:00:00.000Z",
+   "updated_at": "2026-09-01T20:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 19,
+  "fields": {
+   "product": 12,
+   "size": "M",
+   "sku": "DD-12-M",
+   "stock": 10,
+   "position": 1,
+   "created_at": "2026-09-01T20:00:00.000Z",
+   "updated_at": "2026-09-01T20:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 20,
+  "fields": {
+   "product": 12,
+   "size": "L",
+   "sku": "DD-12-L",
+   "stock": 10,
+   "position": 2,
+   "created_at": "2026-09-01T20:00:00.000Z",
+   "updated_at": "2026-09-01T20:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 13,
+  "fields": {
+   "name": "Свитшот бежевый",
+   "slug": "svitshot-bezhevyy",
+   "description": "Хлопковый свитшот с мягким начёсом. Базовая вещь на межсезонье.",
+   "category": 13,
+   "price_kopecks": 299000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-01T21:00:00.000Z",
+   "updated_at": "2026-09-01T21:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 21,
+  "fields": {
+   "product": 13,
+   "size": "S",
+   "sku": "DD-13-S",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-01T21:00:00.000Z",
+   "updated_at": "2026-09-01T21:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 22,
+  "fields": {
+   "product": 13,
+   "size": "M",
+   "sku": "DD-13-M",
+   "stock": 10,
+   "position": 1,
+   "created_at": "2026-09-01T21:00:00.000Z",
+   "updated_at": "2026-09-01T21:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 23,
+  "fields": {
+   "product": 13,
+   "size": "L",
+   "sku": "DD-13-L",
+   "stock": 10,
+   "position": 2,
+   "created_at": "2026-09-01T21:00:00.000Z",
+   "updated_at": "2026-09-01T21:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 14,
+  "fields": {
+   "name": "Худи на молнии чёрное",
+   "slug": "hudi-na-molnii-chernoe",
+   "description": "Двусторонняя молния, плотный трикотаж. Временно нет в наличии.",
+   "category": 13,
+   "price_kopecks": 399000,
+   "compare_at_kopecks": 459000,
+   "is_active": true,
+   "created_at": "2026-09-01T22:00:00.000Z",
+   "updated_at": "2026-09-01T22:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 24,
+  "fields": {
+   "product": 14,
+   "size": "S",
+   "sku": "DD-14-S",
+   "stock": 0,
+   "position": 0,
+   "created_at": "2026-09-01T22:00:00.000Z",
+   "updated_at": "2026-09-01T22:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 25,
+  "fields": {
+   "product": 14,
+   "size": "M",
+   "sku": "DD-14-M",
+   "stock": 0,
+   "position": 1,
+   "created_at": "2026-09-01T22:00:00.000Z",
+   "updated_at": "2026-09-01T22:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 26,
+  "fields": {
+   "product": 14,
+   "size": "L",
+   "sku": "DD-14-L",
+   "stock": 0,
+   "position": 2,
+   "created_at": "2026-09-01T22:00:00.000Z",
+   "updated_at": "2026-09-01T22:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 15,
+  "fields": {
+   "name": "Кроссовки беговые «Спринт»",
+   "slug": "krossovki-sprint",
+   "description": "Лёгкая сетка, амортизирующая подошва. Для бега и на каждый день.",
+   "category": 11,
+   "price_kopecks": 799000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-01T23:00:00.000Z",
+   "updated_at": "2026-09-01T23:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 27,
+  "fields": {
+   "product": 15,
+   "size": "39",
+   "sku": "DD-15-39",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-01T23:00:00.000Z",
+   "updated_at": "2026-09-01T23:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 28,
+  "fields": {
+   "product": 15,
+   "size": "40",
+   "sku": "DD-15-40",
+   "stock": 10,
+   "position": 1,
+   "created_at": "2026-09-01T23:00:00.000Z",
+   "updated_at": "2026-09-01T23:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 29,
+  "fields": {
+   "product": 15,
+   "size": "41",
+   "sku": "DD-15-41",
+   "stock": 10,
+   "position": 2,
+   "created_at": "2026-09-01T23:00:00.000Z",
+   "updated_at": "2026-09-01T23:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 30,
+  "fields": {
+   "product": 15,
+   "size": "42",
+   "sku": "DD-15-42",
+   "stock": 10,
+   "position": 3,
+   "created_at": "2026-09-01T23:00:00.000Z",
+   "updated_at": "2026-09-01T23:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 16,
+  "fields": {
+   "name": "Кеды белые классические",
+   "slug": "kedy-belye",
+   "description": "Кожаный верх, резиновая подошва. Сочетаются с чем угодно.",
+   "category": 11,
+   "price_kopecks": 549000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-02T00:00:00.000Z",
+   "updated_at": "2026-09-02T00:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 31,
+  "fields": {
+   "product": 16,
+   "size": "39",
+   "sku": "DD-16-39",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-02T00:00:00.000Z",
+   "updated_at": "2026-09-02T00:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 32,
+  "fields": {
+   "product": 16,
+   "size": "40",
+   "sku": "DD-16-40",
+   "stock": 10,
+   "position": 1,
+   "created_at": "2026-09-02T00:00:00.000Z",
+   "updated_at": "2026-09-02T00:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 33,
+  "fields": {
+   "product": 16,
+   "size": "41",
+   "sku": "DD-16-41",
+   "stock": 10,
+   "position": 2,
+   "created_at": "2026-09-02T00:00:00.000Z",
+   "updated_at": "2026-09-02T00:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 34,
+  "fields": {
+   "product": 16,
+   "size": "42",
+   "sku": "DD-16-42",
+   "stock": 10,
+   "position": 3,
+   "created_at": "2026-09-02T00:00:00.000Z",
+   "updated_at": "2026-09-02T00:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 17,
+  "fields": {
+   "name": "Кроссовки «Стрит» яркие",
+   "slug": "krossovki-strit",
+   "description": "Смелые цвета, высокая подошва, мягкая стелька.",
+   "category": 11,
+   "price_kopecks": 899000,
+   "compare_at_kopecks": 1099000,
+   "is_active": true,
+   "created_at": "2026-09-02T01:00:00.000Z",
+   "updated_at": "2026-09-02T01:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 35,
+  "fields": {
+   "product": 17,
+   "size": "39",
+   "sku": "DD-17-39",
+   "stock": 2,
+   "position": 0,
+   "created_at": "2026-09-02T01:00:00.000Z",
+   "updated_at": "2026-09-02T01:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 36,
+  "fields": {
+   "product": 17,
+   "size": "40",
+   "sku": "DD-17-40",
+   "stock": 2,
+   "position": 1,
+   "created_at": "2026-09-02T01:00:00.000Z",
+   "updated_at": "2026-09-02T01:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 37,
+  "fields": {
+   "product": 17,
+   "size": "41",
+   "sku": "DD-17-41",
+   "stock": 2,
+   "position": 2,
+   "created_at": "2026-09-02T01:00:00.000Z",
+   "updated_at": "2026-09-02T01:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 38,
+  "fields": {
+   "product": 17,
+   "size": "42",
+   "sku": "DD-17-42",
+   "stock": 2,
+   "position": 3,
+   "created_at": "2026-09-02T01:00:00.000Z",
+   "updated_at": "2026-09-02T01:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 18,
+  "fields": {
+   "name": "Ботинки зимние «Тайга»",
+   "slug": "botinki-tayga",
+   "description": "Натуральный мех внутри, нескользящая подошва, держат до −30 °C.",
+   "category": 10,
+   "price_kopecks": 1199000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-02T02:00:00.000Z",
+   "updated_at": "2026-09-02T02:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 39,
+  "fields": {
+   "product": 18,
+   "size": "39",
+   "sku": "DD-18-39",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-02T02:00:00.000Z",
+   "updated_at": "2026-09-02T02:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 40,
+  "fields": {
+   "product": 18,
+   "size": "40",
+   "sku": "DD-18-40",
+   "stock": 10,
+   "position": 1,
+   "created_at": "2026-09-02T02:00:00.000Z",
+   "updated_at": "2026-09-02T02:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 41,
+  "fields": {
+   "product": 18,
+   "size": "41",
+   "sku": "DD-18-41",
+   "stock": 10,
+   "position": 2,
+   "created_at": "2026-09-02T02:00:00.000Z",
+   "updated_at": "2026-09-02T02:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 42,
+  "fields": {
+   "product": 18,
+   "size": "42",
+   "sku": "DD-18-42",
+   "stock": 10,
+   "position": 3,
+   "created_at": "2026-09-02T02:00:00.000Z",
+   "updated_at": "2026-09-02T02:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 19,
+  "fields": {
+   "name": "Угги замшевые",
+   "slug": "uggi-zamshevye",
+   "description": "Овчина внутри и снаружи — тепло и мягко.",
+   "category": 10,
+   "price_kopecks": 849000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-02T03:00:00.000Z",
+   "updated_at": "2026-09-02T03:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 43,
+  "fields": {
+   "product": 19,
+   "size": "39",
+   "sku": "DD-19-39",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-02T03:00:00.000Z",
+   "updated_at": "2026-09-02T03:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 44,
+  "fields": {
+   "product": 19,
+   "size": "40",
+   "sku": "DD-19-40",
+   "stock": 10,
+   "position": 1,
+   "created_at": "2026-09-02T03:00:00.000Z",
+   "updated_at": "2026-09-02T03:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 45,
+  "fields": {
+   "product": 19,
+   "size": "41",
+   "sku": "DD-19-41",
+   "stock": 10,
+   "position": 2,
+   "created_at": "2026-09-02T03:00:00.000Z",
+   "updated_at": "2026-09-02T03:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 46,
+  "fields": {
+   "product": 19,
+   "size": "42",
+   "sku": "DD-19-42",
+   "stock": 10,
+   "position": 3,
+   "created_at": "2026-09-02T03:00:00.000Z",
+   "updated_at": "2026-09-02T03:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 20,
+  "fields": {
+   "name": "Челси утеплённые",
+   "slug": "chelsi-uteplennye",
+   "description": "Кожаные челси с шерстяной подкладкой и эластичными вставками.",
+   "category": 10,
+   "price_kopecks": 979000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-02T04:00:00.000Z",
+   "updated_at": "2026-09-02T04:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 47,
+  "fields": {
+   "product": 20,
+   "size": "39",
+   "sku": "DD-20-39",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-02T04:00:00.000Z",
+   "updated_at": "2026-09-02T04:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 48,
+  "fields": {
+   "product": 20,
+   "size": "40",
+   "sku": "DD-20-40",
+   "stock": 10,
+   "position": 1,
+   "created_at": "2026-09-02T04:00:00.000Z",
+   "updated_at": "2026-09-02T04:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 49,
+  "fields": {
+   "product": 20,
+   "size": "41",
+   "sku": "DD-20-41",
+   "stock": 10,
+   "position": 2,
+   "created_at": "2026-09-02T04:00:00.000Z",
+   "updated_at": "2026-09-02T04:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 50,
+  "fields": {
+   "product": 20,
+   "size": "42",
+   "sku": "DD-20-42",
+   "stock": 10,
+   "position": 3,
+   "created_at": "2026-09-02T04:00:00.000Z",
+   "updated_at": "2026-09-02T04:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 21,
+  "fields": {
+   "name": "Крем для лица увлажняющий",
+   "slug": "krem-dlya-lica",
+   "description": "Гиалуроновая кислота и сквалан. Для всех типов кожи, 50 мл.",
+   "category": 8,
+   "price_kopecks": 129000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-02T05:00:00.000Z",
+   "updated_at": "2026-09-02T05:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 51,
+  "fields": {
+   "product": 21,
+   "size": "",
+   "sku": "DD-21",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-02T05:00:00.000Z",
+   "updated_at": "2026-09-02T05:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 22,
+  "fields": {
+   "name": "Сыворотка с витамином C",
+   "slug": "syvorotka-vitamin-c",
+   "description": "Выравнивает тон и придаёт сияние. Флакон с пипеткой, 30 мл.",
+   "category": 8,
+   "price_kopecks": 189000,
+   "compare_at_kopecks": 229000,
+   "is_active": true,
+   "created_at": "2026-09-02T06:00:00.000Z",
+   "updated_at": "2026-09-02T06:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 52,
+  "fields": {
+   "product": 22,
+   "size": "",
+   "sku": "DD-22",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-02T06:00:00.000Z",
+   "updated_at": "2026-09-02T06:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 23,
+  "fields": {
+   "name": "Помада матовая",
+   "slug": "pomada-matovaya",
+   "description": "Стойкий матовый финиш, не сушит губы.",
+   "category": 8,
+   "price_kopecks": 89000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-02T07:00:00.000Z",
+   "updated_at": "2026-09-02T07:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 53,
+  "fields": {
+   "product": 23,
+   "size": "",
+   "sku": "DD-23",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-02T07:00:00.000Z",
+   "updated_at": "2026-09-02T07:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 24,
+  "fields": {
+   "name": "Витамин D3 2000 МЕ",
+   "slug": "vitamin-d3",
+   "description": "120 капсул — запас на 4 месяца. Не является лекарственным средством.",
+   "category": 7,
+   "price_kopecks": 69000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-02T08:00:00.000Z",
+   "updated_at": "2026-09-02T08:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 54,
+  "fields": {
+   "product": 24,
+   "size": "",
+   "sku": "DD-24",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-02T08:00:00.000Z",
+   "updated_at": "2026-09-02T08:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.product",
+  "pk": 25,
+  "fields": {
+   "name": "Омега-3 рыбий жир",
+   "slug": "omega-3",
+   "description": "Капсулы 1000 мг. Не является лекарственным средством.",
+   "category": 7,
+   "price_kopecks": 129000,
+   "compare_at_kopecks": null,
+   "is_active": true,
+   "created_at": "2026-09-02T09:00:00.000Z",
+   "updated_at": "2026-09-02T09:00:00.000Z",
+   "deleted_at": null
+  }
+ },
+ {
+  "model": "store.productvariant",
+  "pk": 55,
+  "fields": {
+   "product": 25,
+   "size": "",
+   "sku": "DD-25",
+   "stock": 10,
+   "position": 0,
+   "created_at": "2026-09-02T09:00:00.000Z",
+   "updated_at": "2026-09-02T09:00:00.000Z",
+   "deleted_at": null
+  }
+ }
 ]
