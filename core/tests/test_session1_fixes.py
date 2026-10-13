@@ -21,12 +21,13 @@ def product():
     return make_product(name="Футболка", price_kopecks=10_00)
 
 
-def test_cart_item_unique_per_cart_and_product(product):
+def test_cart_item_unique_per_cart_and_variant(product):
     user = User.objects.create_user(email="u@example.com", password="p")
     cart = Cart.objects.create(owner=user)
-    CartItem.objects.create(cart=cart, product=product)
+    variant = product.variants.get()
+    CartItem.objects.create(cart=cart, variant=variant, quantity=1, seen_price_kopecks=10_00)
     with pytest.raises(IntegrityError):
-        CartItem.objects.create(cart=cart, product=product)
+        CartItem.objects.create(cart=cart, variant=variant, quantity=1, seen_price_kopecks=10_00)
 
 
 def test_pages_do_not_create_cart_for_user(client):
@@ -39,10 +40,8 @@ def test_pages_do_not_create_cart_for_user(client):
     assert not Cart.objects.filter(owner=user).exists()
 
 
-def test_header_counters_are_lazy(django_assert_num_queries, product):
+def test_header_counters_are_lazy(django_assert_num_queries):
     user = User.objects.create_user(email="u@example.com", password="p")
-    cart = Cart.objects.create(owner=user)
-    CartItem.objects.create(cart=cart, product=product, quantity=3)
     Order.objects.create(owner=user)
 
     request = RequestFactory().get("/")
@@ -51,19 +50,15 @@ def test_header_counters_are_lazy(django_assert_num_queries, product):
 
     with django_assert_num_queries(0):
         counters = header_counters(request)["header_counters"]
-    with django_assert_num_queries(2):
-        assert counters.cart == 1
+    with django_assert_num_queries(1):
         assert counters.orders == 1
         # Повторное обращение берётся из cached_property.
-        assert counters.cart == 1
+        assert counters.orders == 1
 
 
-def test_header_counters_for_guest_use_session():
+def test_header_counters_for_guest():
     request = RequestFactory().get("/")
     request.user = type("Anon", (), {"is_authenticated": False})()
-    request.session = {"cart_products": [1, 2]}
+    request.session = {}
 
-    counters = header_counters(request)["header_counters"]
-
-    assert counters.cart == 2
-    assert counters.orders == 0
+    assert header_counters(request)["header_counters"].orders == 0

@@ -7,6 +7,8 @@ from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 
 OLD = [("store", "0001_initial"), ("orders", "0001_initial")]
+# Состояние сразу после переноса каталога (дальше корзину меняет сессия 4).
+CATALOG = [("store", "0004_catalog_finalize"), ("orders", "0004_money_kopecks_finalize")]
 
 
 @pytest.fixture
@@ -52,9 +54,8 @@ def test_legacy_catalog_is_converted(migrator):
     OrderItem.objects.create(order=order, product=in_sub, quantity=2, price=Decimal("1990.50"))
 
     migrator.loader.build_graph()
-    targets = migrator.loader.graph.leaf_nodes()
-    migrator.migrate(targets)
-    new = migrator.loader.project_state(targets).apps
+    migrator.migrate(CATALOG)
+    new = migrator.loader.project_state(CATALOG).apps
 
     NewCategory = new.get_model("store", "Category")
     NewProduct = new.get_model("store", "Product")

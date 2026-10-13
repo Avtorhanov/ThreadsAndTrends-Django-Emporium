@@ -149,8 +149,15 @@ REST_FRAMEWORK = {
         "password_reset": env_str("THROTTLE_PASSWORD_RESET", "5/hour"),
         "password_reset_confirm": env_str("THROTTLE_PASSWORD_RESET_CONFIRM", "10/min"),
         "password_reset_confirm_email": env_str("THROTTLE_PASSWORD_RESET_CONFIRM_EMAIL", "20/hour"),
+        # Публичный расчёт гостевой корзины.
+        "cart_quote": env_str("THROTTLE_CART_QUOTE", "60/min"),
     },
 }
+
+# --- Корзина ---
+# Максимум единиц одного варианта (дополнительно ограничено остатком) и позиций в корзине.
+CART_MAX_QUANTITY = env_int("CART_MAX_QUANTITY", 10)
+CART_MAX_ITEMS = env_int("CART_MAX_ITEMS", 50)
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env_int("JWT_ACCESS_MINUTES", 15)),

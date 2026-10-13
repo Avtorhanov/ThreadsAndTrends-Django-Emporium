@@ -3,8 +3,6 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from orders.models import Order
-from store.models import Cart, CartItem
-from store.tests.factories import make_product
 
 User = get_user_model()
 
@@ -19,30 +17,6 @@ class OrdersSecurityTestCase(TestCase):
         self.other_user = User.objects.create_user(
             email="other_user@example.com",
             password="testpassword123",
-        )
-
-        self.product = make_product(name="Test Product", price_kopecks=100_00)
-
-        self.owner_cart = Cart.objects.create(
-            owner=self.owner,
-        )
-
-        self.other_cart = Cart.objects.create(
-            owner=self.other_user,
-        )
-
-        self.owner_cart_item = CartItem.objects.create(
-            cart=self.owner_cart,
-            product=self.product,
-            quantity=1,
-            price_kopecks=100_00,
-        )
-
-        self.other_cart_item = CartItem.objects.create(
-            cart=self.other_cart,
-            product=self.product,
-            quantity=1,
-            price_kopecks=100_00,
         )
 
         self.owner_order = Order.objects.create(
@@ -68,16 +42,6 @@ class OrdersSecurityTestCase(TestCase):
     # -------------------------------------------------
     # Authentication
     # -------------------------------------------------
-
-    def test_anonymous_user_cannot_access_checkout(self):
-        response = self.client.get(
-            reverse(
-                "checkout",
-                args=[self.owner_cart_item.id],
-            )
-        )
-
-        self.assertEqual(response.status_code, 302)
 
     def test_anonymous_user_cannot_access_order_detail(self):
         response = self.client.get(
@@ -124,97 +88,6 @@ class OrdersSecurityTestCase(TestCase):
                 id=self.owner_order.id,
             ).exists()
         )
-
-    def test_checkout_requires_csrf_token(self):
-        csrf_client = Client(enforce_csrf_checks=True)
-
-        csrf_client.login(
-            email="owner@example.com",
-            password="testpassword123",
-        )
-
-        orders_before = Order.objects.filter(
-            owner=self.owner,
-        ).count()
-
-        response = csrf_client.post(
-            reverse(
-                "checkout",
-                args=[self.owner_cart_item.id],
-            ),
-            {
-                "full_name": "owner",
-                "address": "Test address",
-                "phone_number": "123456789",
-                "size": "M",
-            },
-        )
-
-        self.assertEqual(response.status_code, 403)
-
-        self.assertEqual(
-            Order.objects.filter(
-                owner=self.owner,
-            ).count(),
-            orders_before,
-        )
-
-        self.assertTrue(
-            CartItem.objects.filter(
-                id=self.owner_cart_item.id,
-            ).exists()
-        )
-
-    def test_checkout_all_requires_csrf_token(self):
-        csrf_client = Client(enforce_csrf_checks=True)
-
-        csrf_client.login(
-            email="owner@example.com",
-            password="testpassword123",
-        )
-
-        orders_before = Order.objects.filter(
-            owner=self.owner,
-        ).count()
-
-        response = csrf_client.post(
-            reverse("checkout_all"),
-            {
-                "full_name": "owner",
-                "address": "Test address",
-                "phone_number": "123456789",
-            },
-        )
-
-        self.assertEqual(response.status_code, 403)
-
-        self.assertEqual(
-            Order.objects.filter(
-                owner=self.owner,
-            ).count(),
-            orders_before,
-        )
-
-        self.assertTrue(
-            CartItem.objects.filter(
-                id=self.owner_cart_item.id,
-            ).exists()
-        )
-
-    def test_user_cannot_checkout_other_users_cart_item(self):
-        self.client.login(
-            email="other_user@example.com",
-            password="testpassword123",
-        )
-
-        response = self.client.get(
-            reverse(
-                "checkout",
-                args=[self.owner_cart_item.id],
-            )
-        )
-
-        self.assertEqual(response.status_code, 404)
 
     def test_user_cannot_view_other_users_order(self):
         self.client.login(

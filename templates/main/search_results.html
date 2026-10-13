@@ -30,9 +30,6 @@
                                 <div class="product-name">{{ product.name }}</div>
                                 <div class="product-description">{{ product.description }}</div>
                                 <div class="product-price">{{ product.price_kopecks|rub }} ₽</div>
-                                <div class="prod-counter">
-                                    <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price_kopecks }}')">Добавить в корзину</button>
-                                </div>
                             </div>
                         </div>
                     {% endfor %}

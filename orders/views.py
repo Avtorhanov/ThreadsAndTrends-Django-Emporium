@@ -1,101 +1,12 @@
+"""Легаси-страницы заказов (только суперпользователь, см. LOGIN_URL). Оформление заказа
+удалено в сессии 4; новое оформление и заказы — API сессии 5."""
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_http_methods, require_POST
+from django.views.decorators.http import require_POST
 
-from orders.forms import CheckoutForm
 from orders.models import Order
-from orders.services import create_order_from_cart_items
-from store.models import Cart, CartItem
-
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def checkout(request, item_id):
-    cart_item = get_object_or_404(
-        CartItem,
-        id=item_id,
-        cart__owner=request.user,
-    )
-
-    total_kopecks = cart_item.product.price_kopecks * cart_item.quantity
-
-    if request.method == "POST":
-        form = CheckoutForm(request.POST)
-
-        if form.is_valid():
-            order = create_order_from_cart_items(
-                user=request.user,
-                cart_items=[cart_item],
-                **form.cleaned_data,
-            )
-
-            messages.success(
-                request,
-                "Заказ оформлен!",
-            )
-
-            return redirect(
-                "order_detail",
-                order_id=order.id,
-            )
-    else:
-        form = CheckoutForm()
-
-    return render(
-        request,
-        "orders/checkout.html",
-        {
-            "cart_item": cart_item,
-            "total_kopecks": total_kopecks,
-            "form": form,
-        },
-    )
-
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def checkout_all(request):
-    cart = get_object_or_404(
-        Cart,
-        owner=request.user,
-    )
-
-    cart_items = CartItem.objects.filter(cart=cart)
-
-    total_kopecks = sum(item.product.price_kopecks * item.quantity for item in cart_items)
-
-    if request.method == "POST":
-        form = CheckoutForm(request.POST)
-
-        if form.is_valid():
-            order = create_order_from_cart_items(
-                user=request.user,
-                cart_items=cart_items,
-                **form.cleaned_data,
-            )
-
-            messages.success(
-                request,
-                "Заказ оформлен!",
-            )
-
-            return redirect(
-                "order_detail",
-                order_id=order.id,
-            )
-    else:
-        form = CheckoutForm()
-
-    return render(
-        request,
-        "orders/checkout_all.html",
-        {
-            "cart_items": cart_items,
-            "total_kopecks": total_kopecks,
-            "form": form,
-        },
-    )
 
 
 @login_required

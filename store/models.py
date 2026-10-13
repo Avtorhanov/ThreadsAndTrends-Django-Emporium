@@ -200,46 +200,53 @@ class ProductImage(models.Model):
 
 
 class Cart(models.Model):
-    owner = models.ForeignKey(
+    """Корзина клиента — одна на пользователя. Гостевая корзина хранится на устройстве
+    и переносится сюда при входе (store.services.cart.merge)."""
+
+    owner = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
+        related_name="cart",
         verbose_name="Покупатель",
     )
-    session_key = models.CharField(max_length=32, null=True, blank=True, verbose_name="Гость")
-    products = models.ManyToManyField("Product", through="CartItem")
-
-    def __str__(self):
-        return f"Козина — {self.owner or self.session_key}"
-
-    def calculate_total_kopecks(self) -> int:
-        return sum(
-            item.quantity * item.product.price_kopecks
-            for item in self.cartitem_set.select_related("product")
-        )
 
     class Meta:
-        verbose_name = "Корзину"
+        verbose_name = "Корзина"
         verbose_name_plural = "Корзины"
+
+    def __str__(self):
+        return f"Корзина — {self.owner}"
 
 
 class CartItem(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, verbose_name="Элемент из корзины")
-    # Корзина — не история: CASCADE допустим. Логика корзины переписывается в сессии 4.
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Товар")
-    quantity = models.PositiveIntegerField(default=1, verbose_name="Количество")
-    price_kopecks = models.PositiveBigIntegerField(default=0, verbose_name="Цена, коп.")
+    """Позиция корзины. Цена не хранится: сумма всегда считается от текущей цены товара.
+    seen_price_kopecks — цена, которую покупатель видел последней; нужна только для
+    предупреждения «цена изменилась» и в расчётах не участвует."""
 
-    def __str__(self):
-        return f"{self.quantity} из {self.product} в корзине"
+    cart = models.ForeignKey(
+        Cart, on_delete=models.CASCADE, related_name="items", verbose_name="Корзина"
+    )
+    # Корзина — не история: при физическом удалении варианта позиция удаляется.
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.CASCADE,
+        related_name="cart_items",
+        verbose_name="Вариант товара",
+    )
+    quantity = models.PositiveIntegerField(verbose_name="Количество")
+    seen_price_kopecks = models.PositiveBigIntegerField(
+        verbose_name="Цена, которую видел покупатель, коп."
+    )
+    added_at = models.DateTimeField(auto_now_add=True, verbose_name="Добавлено")
 
     class Meta:
-        verbose_name = "Элемент корзины"
-        verbose_name_plural = "Элементы корзины"
+        verbose_name = "Позиция корзины"
+        verbose_name_plural = "Позиции корзины"
+        ordering = ["id"]
         constraints = [
-            models.UniqueConstraint(
-                fields=["cart", "product"],
-                name="unique_cart_product",
-            ),
+            models.UniqueConstraint(fields=["cart", "variant"], name="cart_item_unique_variant"),
+            models.CheckConstraint(condition=Q(quantity__gte=1), name="cart_item_quantity_gte_1"),
         ]
+
+    def __str__(self):
+        return f"{self.quantity} × {self.variant}"
