@@ -89,6 +89,8 @@ jobs:
           rc=0
           pytest -p no:cacheprovider -q --tb=short > /tmp/pytest.txt 2>&1 || rc=$?
           echo "::notice title=pytest::$(tail -n 1 /tmp/pytest.txt)"
+          sed -n '/warnings summary/,/-- Docs/p' /tmp/pytest.txt | head -60 > /tmp/warn.txt
+          [ -s /tmp/warn.txt ] && echo "::warning title=pytest-warnings::$(sed 's/%/%25/g' /tmp/warn.txt | sed ':a;N;$!ba;s/\n/%0A/g')"
           [ $rc -eq 0 ] || { bash /tmp/annotate.sh pytest /tmp/pytest.txt; exit 1; }
       - name: Frontend typecheck
         if: always()

@@ -60,6 +60,26 @@ python manage.py runserver
 - Администратор (`is_staff`) создаётся суперпользователем в резервной Django admin; клиент
   стать администратором через API не может.
 
+## Каталог
+
+| Клиент | Эндпоинты | Доступ |
+|---|---|---|
+| Мобильное приложение | `/api/v1/catalog/categories/`, `/api/v1/catalog/products/?category=<slug>`, `/api/v1/catalog/products/<slug>/` | без аутентификации |
+| Панель администратора | `/api/v1/admin/catalog/{categories,products,variants,images}/…` | сессия + `IsAdmin` |
+
+- Деньги — целые копейки (`price_kopecks`, `compare_at_kopecks` — «старая цена»), API отдаёт и
+  принимает только копейки; рубли — форматирование в клиентах.
+- Категории — дерево из двух уровней (`Category.parent`); товары лежат только в конечных категориях.
+- Товар → варианты (`ProductVariant`: размер, артикул, остаток). Товар без размеров — один вариант
+  «Без размера». «В наличии» вычисляется из остатков, точные остатки клиенту не отдаются.
+- Галерея — до 10 фото (JPEG/PNG/WebP, до 5 МБ), первое — обложка. Хранение — `STORAGES["default"]`
+  (локально `MEDIA_ROOT`; S3-совместимое хранилище — сессия 7).
+- URL — по slug (транслит названия, при переименовании не меняется).
+- Удаление товара мягкое (`deleted_at`): `Product.objects` скрывает удалённые, `Product.all_objects` —
+  все; история заказов сохраняется (`OrderItem.product` — `PROTECT`). Категорию с товарами
+  (в т.ч. удалёнными) удалить нельзя — только скрыть.
+- Бизнес-правила — `store/services/catalog.py`, API — `store/api/`.
+
 ## Мобильное приложение (`mobile/`)
 
 ```bash
@@ -82,7 +102,7 @@ npm ci
 npm run dev                                       # http://localhost:5173/panel/
 ```
 
-Vite проксирует `/api` на `http://localhost:8000` (`VITE_BACKEND_URL`), поэтому cookie сессии и CSRF
+Vite проксирует `/api` и `/media` на `http://localhost:8000` (`VITE_BACKEND_URL`), поэтому cookie сессии и CSRF
 работают как на одном домене. В продакшене панель раздаётся nginx по `/panel/` с того же домена,
 что и API (сессия 7). `npm run build` → `admin-panel/dist/`.
 
