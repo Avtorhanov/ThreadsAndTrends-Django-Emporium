@@ -43,9 +43,12 @@ class ProductQuerySet(models.QuerySet):
         )
 
     def with_stock(self):
-        return self.annotate(
+        queryset = self.annotate(
             total_stock=Sum("variants__stock", filter=Q(variants__deleted_at__isnull=True))
         )
+        # Meta.ordering не применяется к запросам с GROUP BY — без явного порядка
+        # пагинация нестабильна.
+        return queryset.order_by(*(self.query.order_by or self.model._meta.ordering))
 
 
 class ProductManager(models.Manager.from_queryset(ProductQuerySet)):
