@@ -74,16 +74,26 @@ jobs:
           git status --short > /tmp/report/changed.txt
       - name: Publish report
         run: |
+          set +e
+          # Логи Actions недоступны из среды разработки: ошибки публикации — аннотациями.
+          annotate() {
+            msg=$(tail -c 3000 "$2" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=$1::$msg"
+          }
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- . ':!mobile/node_modules' ':!admin-panel/node_modules' ':!admin-panel/dist' ':!mobile/src/api/schema.d.ts' ':!admin-panel/src/api/schema.d.ts'
+          git add -A > /tmp/publish.log 2>&1 || annotate "git add" /tmp/publish.log
           if ! git diff --cached --quiet; then
-            git commit -m "ruff, openapi/schema.yml, зависимости приложения [auto]"
-            git push origin HEAD:${GITHUB_REF_NAME}
+            git commit -q -m "ruff, openapi/schema.yml, зависимости приложения [auto]" > /tmp/publish.log 2>&1 || annotate "git commit" /tmp/publish.log
+            git push origin HEAD:${GITHUB_REF_NAME} > /tmp/publish.log 2>&1 || annotate "git push branch" /tmp/publish.log
           fi
           # Отчёт — отдельной веткой без истории, через те же учётные данные origin.
           export GIT_INDEX_FILE=/tmp/report-index
           git --work-tree=/tmp/report add -A
           tree=$(git write-tree)
           commit=$(git commit-tree "$tree" -m "report ${GITHUB_SHA}")
-          git push -f origin "$commit:refs/heads/ci-report-session-6"
+          git push -f origin "$commit:refs/heads/ci-report-session-6" > /tmp/publish.log 2>&1 || { annotate "git push report" /tmp/publish.log; exit 1; }
+          for f in pytest ruff migrations schema typecheck-mobile typecheck-admin-panel expo-install; do
+            [ -f /tmp/report/$f.txt ] && echo "::notice title=$f::$(tail -n 3 /tmp/report/$f.txt | sed ':a;N;$!ba;s/\n/ | /g')"
+          done
+          exit 0
