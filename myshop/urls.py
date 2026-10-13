@@ -7,7 +7,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # API для мобильного приложения; новые версии подключаются отдельным namespace.
     path("api/v1/", include("core.api.urls", namespace="v1")),
-    path("accounts/", include("accounts.urls")),
     path("orders/", include("orders.urls")),
     path("", include("store.urls")),
 ]

@@ -1,15 +1,17 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
 from orders.models import Order, OrderItem
 from store.models import Cart, CartItem, Product
 
+User = get_user_model()
+
 
 class OrdersBusinessLogicTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            username="testuser",
+            email="testuser@example.com",
             password="testpassword123",
         )
 
@@ -45,7 +47,7 @@ class OrdersBusinessLogicTestCase(TestCase):
 
     def test_checkout_creates_order_and_order_item(self):
         self.client.login(
-            username="testuser",
+            email="testuser@example.com",
             password="testpassword123",
         )
 
@@ -95,7 +97,7 @@ class OrdersBusinessLogicTestCase(TestCase):
 
     def test_checkout_removes_item_from_cart(self):
         self.client.login(
-            username="testuser",
+            email="testuser@example.com",
             password="testpassword123",
         )
 
@@ -130,7 +132,7 @@ class OrdersBusinessLogicTestCase(TestCase):
 
     def test_checkout_all_creates_order_with_all_cart_items(self):
         self.client.login(
-            username="testuser",
+            email="testuser@example.com",
             password="testpassword123",
         )
 
@@ -170,7 +172,7 @@ class OrdersBusinessLogicTestCase(TestCase):
 
     def test_checkout_all_clears_cart(self):
         self.client.login(
-            username="testuser",
+            email="testuser@example.com",
             password="testpassword123",
         )
 

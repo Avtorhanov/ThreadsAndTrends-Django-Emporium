@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env*.local
+# OpenAPI-типы генерируются из ../openapi/schema.yml (npm run gen:api)
+src/api/schema.d.ts

@@ -1,7 +1,17 @@
 # DiDi-shop
 
-Бэкенд маркетплейса DiDi-shop: Django 5.2 LTS, PostgreSQL, DRF API для мобильного приложения.
-Роли: Клиент и Администратор (единственный продавец, работает через Django admin).
+Маркетплейс DiDi-shop (монорепозиторий):
+
+| Каталог | Что это |
+|---|---|
+| корень | бэкенд: Django 5.2 LTS, PostgreSQL, DRF API `/api/v1/` |
+| `mobile/` | мобильное приложение клиента: Expo (React Native), expo-router |
+| `admin-panel/` | панель администратора: React + Vite |
+| `openapi/schema.yml` | OpenAPI-схема API; из неё генерируются типы обоих клиентов |
+
+Роли: **Клиент** (мобильное приложение, JWT) и **Администратор** — единственный продавец
+(`is_staff`, панель администратора, вход по сессии). Стандартная Django admin оставлена
+только как резервный вход суперпользователя.
 
 ## Быстрый старт (Docker)
 
@@ -12,7 +22,12 @@ docker compose up --build
 - Сайт: http://localhost:8000
 - API: http://localhost:8000/api/v1/ (healthcheck — `/api/v1/health/`)
 - OpenAPI: http://localhost:8000/api/v1/schema/, Swagger UI — `/api/v1/docs/` (в dev открыты всем, в prod — только администратору)
-- Админка: http://localhost:8000/admin/ (`docker compose exec web python manage.py createsuperuser`)
+- Резервная Django admin (только суперпользователь): http://localhost:8000/admin/
+  (`docker compose exec web python manage.py createsuperuser` — спросит email и пароль)
+- Письма (коды сброса пароля) в dev печатаются в лог воркера: `docker compose logs -f worker`
+
+После обновления до сессии 2 пересоздайте локальную БД: миграции пересозданы с нуля
+(`docker compose down -v && docker compose up --build`).
 
 Сервисы: `db` (Postgres 16), `web` (миграции + демо-каталог + dev-сервер), `worker` (фоновые задачи),
 `scheduler` (периодические задачи), `redis` (опционально, профиль `redis`).
@@ -28,6 +43,60 @@ python manage.py loaddata fixtures/catalog.json
 python manage.py runserver
 ```
 
+## Пользователи и аутентификация
+
+| Клиент | Аутентификация | Эндпоинты |
+|---|---|---|
+| Мобильное приложение | JWT: access 15 мин (в памяти), refresh 30 дней (SecureStore), ротация + чёрный список | `/api/v1/auth/…` |
+| Панель администратора | сессия Django (httpOnly-cookie) + заголовок `X-CSRFToken` | `/api/v1/admin/…` |
+
+- Вход по email (без учёта регистра); пароли проверяются `AUTH_PASSWORD_VALIDATORS`.
+- Смена пароля — только со старым паролем; смена и сброс пароля завершают сессии на других устройствах.
+- Сброс пароля: 6-значный код на email, действует 15 минут, 5 попыток, новый код — не чаще раза в минуту.
+- Удаление аккаунта — мягкое (`deleted_at`): email и имя обезличиваются, токены отзываются, заказы
+  сохраняются без персональных данных получателя. При незавершённых заказах удаление запрещено.
+- Rate limit входа, регистрации и сброса пароля — по IP и по email (DRF throttling в общем кэше).
+  За nginx задайте `NUM_PROXIES=1`, иначе IP берётся из соединения, а `X-Forwarded-For` игнорируется.
+- Администратор (`is_staff`) создаётся суперпользователем в резервной Django admin; клиент
+  стать администратором через API не может.
+
+## Мобильное приложение (`mobile/`)
+
+```bash
+cd mobile
+npm ci
+npm run gen:api                                   # типы из ../openapi/schema.yml
+EXPO_PUBLIC_API_URL=http://192.168.1.10:8000 npx expo start
+```
+
+Адрес API — `EXPO_PUBLIC_API_URL` (эмулятор Android — `http://10.0.2.2:8000`, iOS-симулятор —
+`http://localhost:8000`, телефон — IP компьютера; добавьте его в `ALLOWED_HOSTS`).
+Проверка типов: `npm run typecheck`. Бизнес-логика — в `src/auth` и `src/api`, экраны — в `app/`.
+Переход на Swift/Kotlin не затрагивает бэкенд: клиент для них генерируется из той же OpenAPI-схемы.
+
+## Панель администратора (`admin-panel/`)
+
+```bash
+cd admin-panel
+npm ci
+npm run dev                                       # http://localhost:5173/panel/
+```
+
+Vite проксирует `/api` на `http://localhost:8000` (`VITE_BACKEND_URL`), поэтому cookie сессии и CSRF
+работают как на одном домене. В продакшене панель раздаётся nginx по `/panel/` с того же домена,
+что и API (сессия 7). `npm run build` → `admin-panel/dist/`.
+
+## OpenAPI и типы клиентов
+
+После изменения API обновите схему и закоммитьте её (CI проверяет актуальность):
+
+```bash
+python manage.py spectacular --file openapi/schema.yml
+```
+
+Типы TypeScript (`src/api/schema.d.ts`) генерируются в каждом клиенте командой `npm run gen:api`
+(автоматически перед `typecheck` и `build`) и в git не хранятся.
+
 ## Настройки
 
 | Модуль | Назначение |
@@ -42,6 +111,10 @@ python manage.py runserver
 |---|---|---|
 | `CACHE_URL` | `db://django_cache`, `redis://host:6379/1`, `locmem://`, `dummy://` | `db://django_cache` |
 | `TASKS_BACKEND` | `database`, `immediate`, `dummy` или полный путь к классу бэкенда | `database` |
+| `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_*` | SMTP-провайдер писем | dev — консоль, prod — SMTP |
+| `NUM_PROXIES` | число доверенных прокси (за nginx — `1`) | `0` |
+| `JWT_ACCESS_MINUTES`, `JWT_REFRESH_DAYS` | время жизни токенов | `15`, `30` |
+| `THROTTLE_*` | лимиты попыток (см. `.env.example`) | см. `settings/base.py` |
 
 ## Фоновые и периодические задачи
 
@@ -72,5 +145,6 @@ ruff check . && ruff format --check .
 pytest
 ```
 
-CI (GitHub Actions): ruff, проверка миграций, валидация OpenAPI-схемы, тесты на Postgres,
-`check --deploy` для prod-настроек, сборка Docker-образа.
+CI (GitHub Actions): ruff, проверка миграций, валидация и актуальность OpenAPI-схемы, тесты на Postgres,
+`check --deploy` для prod-настроек, typecheck мобильного приложения и панели, сборка панели,
+сборка Docker-образа и подъём dev-стека.

@@ -19,7 +19,7 @@ class OrderAdmin(admin.ModelAdmin):
         "total_quantity",
         "status",
     ]
-    search_fields = ["owner__username"]
+    search_fields = ["owner__email"]
     inlines = [OrderItemInline]
     fields = [
         "owner",

@@ -1,11 +1,14 @@
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.db import models
 
 from store.models import Product
 
 
 class Order(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Покупатель")
+    # PROTECT: пользователи удаляются мягко, история заказов не теряется.
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, verbose_name="Покупатель"
+    )
     date_ordered = models.DateTimeField(auto_now_add=True, verbose_name="Дата оформления")
     total_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.0, verbose_name="Общая стоимость"
@@ -34,7 +37,7 @@ class Order(models.Model):
     )
 
     def __str__(self):
-        return f"Номер заказа #{self.id} пользователя {self.owner.username}"
+        return f"Номер заказа #{self.id} пользователя {self.owner.email}"
 
     def total_quantity(self):
         return f"{sum(item.quantity for item in self.orderitem_set.all())}"

@@ -1,5 +1,6 @@
 """Общие настройки. Окружения: dev, test, prod (myshop.settings.<env>)."""
 
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -8,6 +9,7 @@ from core.env import (
     cache_from_url,
     database_from_env,
     env_bool,
+    env_int,
     env_list,
     env_str,
     tasks_from_env,
@@ -25,7 +27,8 @@ ALLOWED_HOSTS = env_list("ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    # Django admin — только суперпользователь (резервный вход), см. core.admin
+    "core.admin.SuperuserAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -34,6 +37,7 @@ INSTALLED_APPS = [
     # third-party
     "rest_framework",
     "drf_spectacular",
+    "rest_framework_simplejwt.token_blacklist",
     "django_tasks",
     "django_tasks_db",
     # local
@@ -87,8 +91,16 @@ CACHES = {"default": cache_from_url(env_str("CACHE_URL", "db://django_cache"))}
 TASKS = {"default": tasks_from_env()}
 
 # Периодические задачи для `manage.py run_scheduler`:
-# {"task": "app.tasks.func", "every": <секунды>}. Заполняются в сессиях 5–6.
-PERIODIC_TASKS: list[dict] = []
+# {"task": "app.tasks.func", "every": <секунды>}.
+PERIODIC_TASKS: list[dict] = [
+    {"task": "accounts.tasks.cleanup_auth_records", "every": 24 * 60 * 60},
+]
+
+# --- Пользователи ---
+AUTH_USER_MODEL = "accounts.User"
+# Шаблонные страницы входа отключены (клиент — мобильное приложение); login_required
+# легаси-страниц ведёт на вход в резервную админку.
+LOGIN_URL = "admin:login"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -107,14 +119,16 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(env_str("MEDIA_ROOT", str(BASE_DIR / "media")))
 
-# --- API для мобильного приложения ---
+# --- API: мобильное приложение (JWT) и панель администратора (сессия) ---
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.NamespaceVersioning",
     "DEFAULT_VERSION": "v1",
     "ALLOWED_VERSIONS": ["v1"],
-    # Схема аутентификации для мобильного клиента выбирается в сессии 2.
+    # JWT первым: без учётных данных ответ 401 с WWW-Authenticate: Bearer.
+    # Сессия — для Browsable API в dev; эндпоинты панели принимают только её.
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
@@ -122,6 +136,33 @@ REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "EXCEPTION_HANDLER": "core.api.exceptions.exception_handler",
+    # Число доверенных прокси перед приложением (nginx = 1). При 0 X-Forwarded-For
+    # игнорируется — иначе лимиты обходятся подделкой заголовка.
+    "NUM_PROXIES": env_int("NUM_PROXIES", 0),
+    # Лимиты хранятся в общем кэше (CACHE_URL) и работают на всех воркерах.
+    "DEFAULT_THROTTLE_RATES": {
+        "auth_login": env_str("THROTTLE_AUTH_LOGIN", "10/min"),
+        "auth_login_email": env_str("THROTTLE_AUTH_LOGIN_EMAIL", "20/hour"),
+        "auth_register": env_str("THROTTLE_AUTH_REGISTER", "10/hour"),
+        "auth_sensitive": env_str("THROTTLE_AUTH_SENSITIVE", "10/hour"),
+        "password_reset": env_str("THROTTLE_PASSWORD_RESET", "5/hour"),
+        "password_reset_confirm": env_str("THROTTLE_PASSWORD_RESET_CONFIRM", "10/min"),
+        "password_reset_confirm_email": env_str("THROTTLE_PASSWORD_RESET_CONFIRM_EMAIL", "20/hour"),
+    },
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env_int("JWT_ACCESS_MINUTES", 15)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=env_int("JWT_REFRESH_DAYS", 30)),
+    # Refresh одноразовый: при обновлении старый уходит в чёрный список.
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+    # В токен пишется хэш пароля: смена/сброс пароля сразу инвалидирует access-токены.
+    "CHECK_REVOKE_TOKEN": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "SIGNING_KEY": env_str("JWT_SIGNING_KEY", SECRET_KEY),
 }
 
 SPECTACULAR_SETTINGS = {
@@ -132,7 +173,21 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": r"/api/v[0-9]+",
     # Схема и Swagger UI — только администратору; в dev открыты всем.
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
+    "SERVE_AUTHENTICATION": ["rest_framework.authentication.SessionAuthentication"],
+    "COMPONENT_SPLIT_REQUEST": True,
 }
+
+# --- Почта ---
+# Отправка — фоновой задачей core.tasks.send_email. Провайдер выбирается переменными EMAIL_*.
+EMAIL_BACKEND = env_str("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = env_str("EMAIL_HOST", "localhost")
+EMAIL_PORT = env_int("EMAIL_PORT", 587)
+EMAIL_HOST_USER = env_str("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = env_str("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
+EMAIL_TIMEOUT = env_int("EMAIL_TIMEOUT", 10)
+DEFAULT_FROM_EMAIL = env_str("DEFAULT_FROM_EMAIL", "DiDi-shop <noreply@localhost>")
 
 LOG_LEVEL = env_str("LOG_LEVEL", "INFO")
 LOGGING = {
