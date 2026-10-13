@@ -13,6 +13,9 @@ permissions:
 jobs:
   bootstrap:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -27,29 +30,47 @@ jobs:
           for p in djangorestframework-simplejwt djangorestframework drf-spectacular Django; do
             pip index versions "$p" 2>/dev/null | head -1
           done > versions.txt
+          npm view expo version | sed 's/^/expo /' >> versions.txt
           cat versions.txt
+          echo "::notice title=versions::$(tr '\n' ';' < versions.txt)"
 
       - name: Expo app
         if: hashFiles('mobile/package.json') == ''
         env:
           CI: "1"
         run: |
-          npx --yes create-expo-app@latest mobile --template blank-typescript
-          cd mobile
-          npx expo install expo-router expo-secure-store expo-linking expo-constants \
-            react-native-safe-area-context react-native-screens
-          npm install openapi-fetch
-          npm install -D openapi-typescript
-          rm -rf node_modules
+          set -o pipefail
+          {
+            npx --yes create-expo-app@latest mobile --template blank-typescript --no-install
+            cd mobile
+            npm install
+            npx expo install expo-router expo-secure-store expo-linking expo-constants \
+              react-native-safe-area-context react-native-screens
+            npm install openapi-fetch
+            npm install -D openapi-typescript
+            rm -rf node_modules
+          } 2>&1 | tee /tmp/expo.log
 
       - name: Admin panel (React + Vite)
         if: hashFiles('admin-panel/package.json') == ''
         run: |
-          mkdir admin-panel && cd admin-panel
-          npm init -y >/dev/null
-          npm install react react-dom react-router openapi-fetch
-          npm install -D vite @vitejs/plugin-react typescript @types/react @types/react-dom openapi-typescript
-          rm -rf node_modules
+          set -o pipefail
+          {
+            mkdir admin-panel && cd admin-panel
+            npm init -y >/dev/null
+            npm install react react-dom react-router openapi-fetch
+            npm install -D vite @vitejs/plugin-react typescript @types/react @types/react-dom openapi-typescript
+            rm -rf node_modules
+          } 2>&1 | tee /tmp/panel.log
+
+      - name: Report failure
+        if: failure()
+        run: |
+          for f in /tmp/expo.log /tmp/panel.log; do
+            [ -f "$f" ] || continue
+            msg=$(tail -c 6000 "$f" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=$(basename $f)::$msg"
+          done
 
       - name: Commit
         run: |
