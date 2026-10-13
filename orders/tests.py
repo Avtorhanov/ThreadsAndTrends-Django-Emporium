@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.test import TestCase, Client
+from django.test import Client, TestCase
 from django.urls import reverse
 
 from orders.models import Order
@@ -201,7 +201,7 @@ class OrdersSecurityTestCase(TestCase):
                 id=self.owner_cart_item.id,
             ).exists()
         )
-        
+
     def test_user_cannot_checkout_other_users_cart_item(self):
         self.client.login(
             username="other_user",

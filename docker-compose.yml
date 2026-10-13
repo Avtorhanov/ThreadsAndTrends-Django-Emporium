@@ -1,0 +1,85 @@
+# Локальная разработка: `docker compose up --build` → http://localhost:8000
+# Redis (опционально): `docker compose --profile redis up` и CACHE_URL=redis://redis:6379/1 в .env
+
+x-app: &app
+  build:
+    context: .
+    args:
+      REQUIREMENTS: dev
+  image: didi-shop:dev
+  env_file:
+    - path: .env
+      required: false
+  environment: &app-env
+    DJANGO_SETTINGS_MODULE: myshop.settings.dev
+    SECRET_KEY: ${SECRET_KEY:-dev-insecure-secret-key}
+    DB_HOST: db
+    DB_PORT: "5432"
+    DB_NAME: ${DB_NAME:-didi}
+    DB_USER: ${DB_USER:-didi}
+    DB_PASSWORD: ${DB_PASSWORD:-didi}
+    CACHE_URL: ${CACHE_URL:-db://django_cache}
+    TASKS_BACKEND: ${TASKS_BACKEND:-database}
+  volumes:
+    - .:/app
+    - media:/data/media
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-didi}
+      POSTGRES_USER: ${DB_USER:-didi}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-didi}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    <<: *app
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      <<: *app-env
+      RUN_MIGRATIONS: "1"
+      LOAD_FIXTURES: ${LOAD_FIXTURES:-1}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  worker:
+    <<: *app
+    command: python manage.py db_worker --queue-name '*'
+    depends_on:
+      web:
+        condition: service_healthy
+
+  scheduler:
+    <<: *app
+    command: python manage.py run_scheduler
+    depends_on:
+      web:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    profiles: ["redis"]
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:
+  media:

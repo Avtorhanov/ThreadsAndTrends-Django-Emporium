@@ -21,10 +21,7 @@ def create_order_from_cart_items(
         raise ValueError("Невозможно создать заказ без товаров.")
 
     total_price = sum(
-        (
-            item.price * item.quantity
-            for item in cart_items
-        ),
+        (item.price * item.quantity for item in cart_items),
         Decimal("0.00"),
     )
 
@@ -38,16 +35,18 @@ def create_order_from_cart_items(
         size=size or "",
     )
 
-    OrderItem.objects.bulk_create([
-        OrderItem(
-            order=order,
-            product=item.product,
-            quantity=item.quantity,
-            price=item.price,
-            description=item.product.description,
-        )
-        for item in cart_items
-    ])
+    OrderItem.objects.bulk_create(
+        [
+            OrderItem(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                price=item.price,
+                description=item.product.description,
+            )
+            for item in cart_items
+        ]
+    )
 
     for item in cart_items:
         item.delete()
