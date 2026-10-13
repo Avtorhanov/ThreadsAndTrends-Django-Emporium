@@ -91,26 +91,47 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await guestCartStorage.save(lines);
   }, []);
 
+  // Один перенос гостевой корзины за раз: экран корзины и провайдер могут вызвать
+  // refresh одновременно, а повторный merge удвоил бы количества.
+  const merging = useRef<Promise<Cart> | null>(null);
+
+  const mergeGuest = useCallback(
+    async (lines: GuestLine[]): Promise<Cart> => {
+      let next: Cart;
+      try {
+        const result = await cartService.merge(lines);
+        next = result.cart;
+        setNotice(noticeText(result.notices));
+      } catch (err) {
+        // Некорректные данные гостевой корзины не должны блокировать корзину навсегда;
+        // при ошибке сети гостевая корзина остаётся и переносится при следующей попытке.
+        if (!(err instanceof ApiError && err.status === 400)) throw err;
+        setNotice("Не удалось перенести гостевую корзину.");
+        next = await cartService.get();
+      }
+      await saveGuest([]);
+      return next;
+    },
+    [saveGuest],
+  );
+
   const refresh = useCallback(async () => {
     if (!ready) return;
     const current = ++generation.current;
     setLoading(true);
     setError(null);
     try {
-      const local = await loadGuest();
+      await loadGuest();
+      // guest.current, а не снимок до await: другой refresh мог уже перенести корзину.
+      const local = guest.current ?? [];
       let next: Cart;
       if (signedIn && local.length > 0) {
-        try {
-          const result = await cartService.merge(local);
-          next = result.cart;
-          setNotice(noticeText(result.notices));
-        } catch (err) {
-          // Некорректные данные гостевой корзины не должны блокировать корзину навсегда.
-          if (!(err instanceof ApiError && err.status === 400)) throw err;
-          setNotice("Не удалось перенести гостевую корзину.");
-          next = await cartService.get();
-        }
-        await saveGuest([]);
+        merging.current ??= mergeGuest(local).finally(() => {
+          merging.current = null;
+        });
+        next = await merging.current;
+      } else if (signedIn && merging.current) {
+        next = await merging.current;
       } else {
         next = signedIn ? await cartService.get() : await cartService.quote(local);
       }
@@ -120,7 +141,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } finally {
       if (current === generation.current) setLoading(false);
     }
-  }, [ready, signedIn, loadGuest, saveGuest]);
+  }, [ready, signedIn, loadGuest, mergeGuest]);
 
   useEffect(() => {
     if (!signedIn) setNotice(null);
