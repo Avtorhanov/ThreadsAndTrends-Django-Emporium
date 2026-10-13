@@ -153,9 +153,7 @@ class YooKassaProvider:
                 amount_kopecks=value_to_kopecks(data["amount"]["value"]),
                 currency=str(data["amount"]["currency"]),
                 confirmation_url=str((data.get("confirmation") or {}).get("confirmation_url", "")),
-                cancellation_reason=str(
-                    (data.get("cancellation_details") or {}).get("reason", "")
-                ),
+                cancellation_reason=str((data.get("cancellation_details") or {}).get("reason", "")),
                 raw=data,
             )
         except (KeyError, TypeError) as exc:
@@ -170,9 +168,7 @@ class YooKassaProvider:
                 status=str(data["status"]),
                 amount_kopecks=value_to_kopecks(data["amount"]["value"]),
                 currency=str(data["amount"]["currency"]),
-                cancellation_reason=str(
-                    (data.get("cancellation_details") or {}).get("reason", "")
-                ),
+                cancellation_reason=str((data.get("cancellation_details") or {}).get("reason", "")),
                 raw=data,
             )
         except (KeyError, TypeError) as exc:

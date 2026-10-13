@@ -110,7 +110,9 @@ class Refund(models.Model):
             models.Index(fields=["status", "created_at"], name="refund_status_created_idx"),
         ]
         constraints = [
-            models.CheckConstraint(condition=Q(amount_kopecks__gt=0), name="refund_amount_positive"),
+            models.CheckConstraint(
+                condition=Q(amount_kopecks__gt=0), name="refund_amount_positive"
+            ),
             # Только полный возврат: не больше одного выполняющегося или выполненного на платёж.
             models.UniqueConstraint(
                 fields=["payment"],

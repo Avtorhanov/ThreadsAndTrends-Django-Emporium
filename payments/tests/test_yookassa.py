@@ -7,8 +7,7 @@ import urllib.error
 
 import pytest
 
-from payments.providers import ProviderError
-from payments.providers import yookassa
+from payments.providers import ProviderError, yookassa
 from payments.providers.yookassa import YooKassaProvider, kopecks_to_value, value_to_kopecks
 
 PAYMENT = {
@@ -56,7 +55,11 @@ def provider():
 
 def http_error(code, body):
     return urllib.error.HTTPError(
-        "https://api.yookassa.ru/v3/payments", code, "error", {}, io.BytesIO(json.dumps(body).encode())
+        "https://api.yookassa.ru/v3/payments",
+        code,
+        "error",
+        {},
+        io.BytesIO(json.dumps(body).encode()),
     )
 
 
@@ -106,7 +109,11 @@ def test_create_payment_request(http, provider):
 
 def test_get_payment_with_cancellation(http, provider):
     http["queue"].append(
-        {**PAYMENT, "status": "canceled", "cancellation_details": {"reason": "expired_on_confirmation"}}
+        {
+            **PAYMENT,
+            "status": "canceled",
+            "cancellation_details": {"reason": "expired_on_confirmation"},
+        }
     )
     remote = provider.get_payment(PAYMENT["id"])
     assert http["requests"][0].get_method() == "GET"

@@ -180,9 +180,7 @@ def sync_payment(payment: Payment) -> Payment:
 def sync_order_payments(order: Order) -> None:
     """Сверка незавершённых платежей заказа (возврат из приложения, автоотмена).
     Временная недоступность провайдера не ошибка: статус обновит webhook или следующая сверка."""
-    pending = order.payments.filter(status=PaymentStatus.PENDING).exclude(
-        provider_payment_id=None
-    )
+    pending = order.payments.filter(status=PaymentStatus.PENDING).exclude(provider_payment_id=None)
     for payment in pending:
         try:
             sync_payment(payment)

@@ -90,9 +90,7 @@ def test_repeated_start_reuses_pending_payment(online_order, fake_provider):
         (S.CANCELLED, "online"),
     ],
 )
-def test_start_payment_rejects_not_payable_orders(
-    customer, fake_provider, status, payment_method
-):
+def test_start_payment_rejects_not_payable_orders(customer, fake_provider, status, payment_method):
     order = make_order(customer, status=status, payment_method=payment_method)
     with pytest.raises(ValidationError) as exc:
         services.start_payment(order)

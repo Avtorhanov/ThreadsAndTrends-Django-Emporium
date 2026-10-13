@@ -21,9 +21,7 @@ def check_payment_settings(app_configs, **kwargs):
             )
         )
     if settings.PAYMENTS_TAX_SYSTEM_CODE not in TAX_SYSTEM_CODES:
-        errors.append(
-            Error("PAYMENTS_TAX_SYSTEM_CODE должен быть от 1 до 6.", id="payments.E002")
-        )
+        errors.append(Error("PAYMENTS_TAX_SYSTEM_CODE должен быть от 1 до 6.", id="payments.E002"))
     if settings.PAYMENTS_VAT_CODE < 1:
         errors.append(
             Error("PAYMENTS_VAT_CODE — код ставки НДС ЮKassa (1 — без НДС).", id="payments.E003")

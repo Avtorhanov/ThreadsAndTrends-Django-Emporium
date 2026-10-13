@@ -95,9 +95,7 @@ def test_order_detail_payment_fields(client_api, online_order):
 
 
 def test_expired_order_cannot_be_paid(client_api, online_order, fake_provider):
-    Order.objects.filter(pk=online_order.pk).update(
-        created_at=timezone.now() - timedelta(hours=1)
-    )
+    Order.objects.filter(pk=online_order.pk).update(created_at=timezone.now() - timedelta(hours=1))
     body = client_api.get(f"{ORDERS}{online_order.number}/").json()
     assert body["can_pay"] is False
     assert client_api.post(pay_url(online_order), {}, format="json").status_code == 400
