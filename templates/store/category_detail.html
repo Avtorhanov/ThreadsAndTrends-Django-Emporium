@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
+{% load money %}
 
 {% block content %}
 <div class="container">
     <h1>{{ category.name }}</h1>
-    <!-- Отображение только подкатегорий -->
     <div class="subcategory-container">
-        {% for subcategory in subcategories %}
-            <a href="{% url 'subcategory_detail' subcategory.id %}" class="subcategory-link">{{ subcategory.name }}</a>
+        {% for child in children %}
+            <a href="{% url 'category_detail' child.slug %}" class="subcategory-link">{{ child.name }}</a>
         {% endfor %}
     </div>
         {% if messages %}
@@ -21,17 +21,17 @@
     <div class="product-container">
         {% for product in products %}
             <div class="card">
-                <a href="{% url 'product_detail' product_id=product.id %}">
+                <a href="{% url 'product_detail' slug=product.slug %}">
                     <div class="product-image">
-                        <img src="{{ product.image.url }}" alt="Product Image">
+                        <img src="{{ product.cover_url }}" alt="Product Image">
                     </div>
                 </a>
                 <div class="product-info">
                     <div class="product-name">{{ product.name }}</div>
                     <div class="product-description">{{ product.description }}</div>
-                    <div class="product-price">{{ product.price }} ₽</div>
+                    <div class="product-price">{{ product.price_kopecks|rub }} ₽</div>
                     <div class="prod-counter">
-                        <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price }}')">Добавить в корзину</button>
+                        <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price_kopecks }}')">Добавить в корзину</button>
                     </div>
                 </div>
             </div>

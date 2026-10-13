@@ -1,0 +1,20 @@
+from django.urls import path
+from rest_framework.routers import SimpleRouter
+
+from . import admin_views, views
+
+catalog_urlpatterns = [
+    path("categories/", views.CategoryTreeView.as_view(), name="catalog-categories"),
+    path("products/", views.ProductListView.as_view(), name="catalog-products"),
+    path("products/<slug:slug>/", views.ProductDetailView.as_view(), name="catalog-product"),
+]
+
+admin_router = SimpleRouter()
+admin_router.register(
+    "categories", admin_views.AdminCategoryViewSet, basename="admin-catalog-category"
+)
+admin_router.register("products", admin_views.AdminProductViewSet, basename="admin-catalog-product")
+admin_router.register("variants", admin_views.AdminVariantViewSet, basename="admin-catalog-variant")
+admin_router.register("images", admin_views.AdminImageViewSet, basename="admin-catalog-image")
+
+admin_catalog_urlpatterns = admin_router.urls

@@ -18,7 +18,7 @@ def checkout(request, item_id):
         cart__owner=request.user,
     )
 
-    total_price = cart_item.product.price * cart_item.quantity
+    total_kopecks = cart_item.product.price_kopecks * cart_item.quantity
 
     if request.method == "POST":
         form = CheckoutForm(request.POST)
@@ -47,7 +47,7 @@ def checkout(request, item_id):
         "orders/checkout.html",
         {
             "cart_item": cart_item,
-            "total_price": total_price,
+            "total_kopecks": total_kopecks,
             "form": form,
         },
     )
@@ -63,7 +63,7 @@ def checkout_all(request):
 
     cart_items = CartItem.objects.filter(cart=cart)
 
-    total_price = sum(item.product.price * item.quantity for item in cart_items)
+    total_kopecks = sum(item.product.price_kopecks * item.quantity for item in cart_items)
 
     if request.method == "POST":
         form = CheckoutForm(request.POST)
@@ -92,7 +92,7 @@ def checkout_all(request):
         "orders/checkout_all.html",
         {
             "cart_items": cart_items,
-            "total_price": total_price,
+            "total_kopecks": total_kopecks,
             "form": form,
         },
     )

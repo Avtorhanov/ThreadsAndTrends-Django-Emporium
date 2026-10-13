@@ -8,7 +8,8 @@ from django.urls import reverse
 
 from core.context_processors import header_counters
 from orders.models import Order
-from store.models import Cart, CartItem, Category, Product
+from store.models import Cart, CartItem
+from store.tests.factories import make_product
 
 User = get_user_model()
 
@@ -17,8 +18,7 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def product():
-    category = Category.objects.create(name="Одежда")
-    return Product.objects.create(name="Футболка", description="d", price=10, category=category)
+    return make_product(name="Футболка", price_kopecks=10_00)
 
 
 def test_cart_item_unique_per_cart_and_product(product):

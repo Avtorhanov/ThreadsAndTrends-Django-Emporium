@@ -12,7 +12,11 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       // Host не подменяется (changeOrigin: false): Origin и Host совпадают, CSRF-проверка Django проходит.
-      proxy: { "/api": { target: backend, changeOrigin: false } },
+      proxy: {
+        "/api": { target: backend, changeOrigin: false },
+        // Фото товаров (в dev их раздаёт Django при DEBUG=True).
+        "/media": { target: backend, changeOrigin: false },
+      },
     },
   };
 });

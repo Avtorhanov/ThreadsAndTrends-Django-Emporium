@@ -1,76 +1,82 @@
 import { router } from "expo-router";
-import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { useAuth } from "../../src/auth/AuthProvider";
+import { useCategories } from "../../src/catalog/hooks";
 import { colors, radius, spacing } from "../../src/components/theme";
-import { Button, LinkButton, Message, Screen, TextField } from "../../src/components/ui";
-import { useSubmit } from "../../src/hooks/useSubmit";
+import { Button, Message } from "../../src/components/ui";
 
-export default function ProfileScreen() {
-  const { user, updateProfile, logout } = useAuth();
-  const [firstName, setFirstName] = useState(user?.first_name ?? "");
-  const [lastName, setLastName] = useState(user?.last_name ?? "");
-  const [saved, setSaved] = useState(false);
-
-  const save = useSubmit(async () => {
-    setSaved(false);
-    await updateProfile({ first_name: firstName.trim(), last_name: lastName.trim() });
-    setSaved(true);
+function openProducts(category?: { slug: string; name: string }) {
+  router.push({
+    pathname: "/products",
+    params: category ? { category: category.slug, title: category.name } : {},
   });
-  const signOut = useSubmit(logout);
+}
 
-  if (!user) return null;
+export default function CatalogScreen() {
+  const { data, loading, error, reload } = useCategories();
 
   return (
-    <Screen>
-      <View style={styles.card}>
-        <Text style={styles.caption}>Email</Text>
-        <Text style={styles.email}>{user.email}</Text>
-        <Text style={styles.caption}>
-          С нами с {new Date(user.date_joined).toLocaleDateString("ru-RU")}
-        </Text>
-      </View>
+    <ScrollView
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={loading && data !== null} onRefresh={reload} />}
+    >
+      <Pressable style={styles.all} onPress={() => openProducts()} accessibilityRole="button">
+        <Text style={styles.allText}>Все товары</Text>
+        <Text style={styles.chevron}>›</Text>
+      </Pressable>
 
-      <Message text={save.error} />
-      <Message text={saved ? "Изменения сохранены." : null} kind="success" />
-      <TextField
-        label="Имя"
-        value={firstName}
-        onChangeText={setFirstName}
-        autoComplete="given-name"
-        errors={save.fieldErrors.first_name}
-      />
-      <TextField
-        label="Фамилия"
-        value={lastName}
-        onChangeText={setLastName}
-        autoComplete="family-name"
-        errors={save.fieldErrors.last_name}
-      />
-      <Button title="Сохранить" onPress={() => void save.submit()} loading={save.loading} />
+      {loading && data === null ? <ActivityIndicator color={colors.primary} /> : null}
+      <Message text={error} />
+      {error && data === null ? <Button title="Повторить" variant="secondary" onPress={reload} /> : null}
 
-      <LinkButton title="Сменить пароль" onPress={() => router.push("/change-password")} />
-      <Button
-        title="Выйти"
-        variant="secondary"
-        onPress={() => void signOut.submit()}
-        loading={signOut.loading}
-      />
-      <LinkButton title="Удалить аккаунт" onPress={() => router.push("/delete-account")} />
-    </Screen>
+      {data?.map((root) => (
+        <View key={root.id} style={styles.section}>
+          <Pressable onPress={() => openProducts(root)} accessibilityRole="button">
+            <Text style={styles.sectionTitle}>{root.name}</Text>
+          </Pressable>
+          <View style={styles.chips}>
+            {root.children.map((child) => (
+              <Pressable
+                key={child.id}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+                onPress={() => openProducts(child)}
+              >
+                <Text style={styles.chipText}>{child.name}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ))}
+      {data && data.length === 0 ? <Text style={styles.empty}>Каталог пока пуст.</Text> : null}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
+  content: { padding: spacing.md, gap: spacing.md, backgroundColor: colors.background, flexGrow: 1 },
+  all: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: colors.primary,
     borderRadius: radius,
     padding: spacing.md,
-    gap: spacing.xs,
+  },
+  allText: { color: colors.primaryText, fontSize: 17, fontWeight: "600" },
+  chevron: { color: colors.primaryText, fontSize: 22 },
+  section: { gap: spacing.sm },
+  sectionTitle: { fontSize: 20, fontWeight: "700", color: colors.text },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  chip: {
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    borderRadius: 999,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  caption: { color: colors.muted, fontSize: 13 },
-  email: { color: colors.text, fontSize: 18, fontWeight: "600" },
+  chipText: { color: colors.text, fontSize: 15 },
+  pressed: { opacity: 0.7 },
+  empty: { color: colors.muted, textAlign: "center", marginTop: spacing.xl },
 });

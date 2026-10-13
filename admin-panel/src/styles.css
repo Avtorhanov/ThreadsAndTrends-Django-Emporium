@@ -276,3 +276,135 @@ select {
   gap: 16px;
   margin-top: 16px;
 }
+
+/* --- Каталог --- */
+
+.header-action {
+  margin-left: auto;
+  text-decoration: none;
+}
+
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
+.stack .page-header {
+  margin-bottom: 0;
+}
+
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.card > p.muted {
+  margin: 0 0 12px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 14px;
+  max-width: 720px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.input-narrow {
+  width: 90px;
+}
+
+.inline-form {
+  margin: 12px 0 0;
+}
+
+.indent {
+  padding-left: 32px !important;
+}
+
+.strong {
+  font-weight: 600;
+}
+
+.thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb-empty {
+  background: var(--bg);
+  border: 1px dashed var(--border);
+}
+
+.old-price {
+  margin-left: 8px;
+  font-size: 13px;
+}
+
+.table td a {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.gallery-item {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.gallery-item img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-item figcaption {
+  padding: 8px;
+  justify-content: space-between;
+}
+
+.gallery-item .button {
+  padding: 6px 10px;
+}
+
+.upload {
+  display: inline-block;
+}

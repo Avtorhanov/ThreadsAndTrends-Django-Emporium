@@ -10,9 +10,7 @@ def get_cart(request):
     session_cart_products = request.session.get("cart_products", [])
 
     if session_cart_products:
-        for product_id in session_cart_products:
-            product = Product.objects.get(pk=product_id)
-
+        for product in Product.objects.live().filter(pk__in=session_cart_products):
             cart_item, created = CartItem.objects.get_or_create(
                 cart=cart,
                 product=product,
@@ -28,7 +26,7 @@ def get_cart(request):
 
 
 def add_product_to_cart(request, product_id):
-    product = Product.objects.get(pk=product_id)
+    product = Product.objects.live().get(pk=product_id)
 
     if not request.user.is_authenticated:
         session_cart_products = request.session.get("cart_products", [])
@@ -50,7 +48,7 @@ def add_product_to_cart(request, product_id):
     if not created:
         cart_item.quantity += 1
 
-    cart_item.price = product.price
+    cart_item.price_kopecks = product.price_kopecks
     cart_item.save()
 
 
@@ -62,9 +60,8 @@ def merge_session_cart_into_user_cart(request, user):
 
     cart, _ = Cart.objects.get_or_create(owner=user)
 
-    for product_id in session_cart_products:
-        product = Product.objects.get(pk=product_id)
-
+    # Удалённые и скрытые товары из гостевой корзины пропускаются.
+    for product in Product.objects.live().filter(pk__in=session_cart_products):
         cart_item, created = CartItem.objects.get_or_create(
             cart=cart,
             product=product,
@@ -73,7 +70,7 @@ def merge_session_cart_into_user_cart(request, user):
         if not created:
             cart_item.quantity += 1
 
-        cart_item.price = product.price
+        cart_item.price_kopecks = product.price_kopecks
         cart_item.save()
 
     del request.session["cart_products"]

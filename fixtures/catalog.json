@@ -3,408 +3,1151 @@
     "model": "store.category",
     "pk": 1,
     "fields": {
-      "name": "аксесуары"
+      "name": "аксесуары",
+      "slug": "aksesuary",
+      "parent": null,
+      "position": 0,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
     }
   },
   {
     "model": "store.category",
     "pk": 2,
     "fields": {
-      "name": "Одежда"
+      "name": "Одежда",
+      "slug": "odezhda",
+      "parent": null,
+      "position": 1,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
     }
   },
   {
     "model": "store.category",
     "pk": 3,
     "fields": {
-      "name": "Красота и здоровье"
+      "name": "Красота и здоровье",
+      "slug": "krasota-i-zdorove",
+      "parent": null,
+      "position": 2,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
     }
   },
   {
     "model": "store.category",
     "pk": 4,
     "fields": {
-      "name": "Обувь"
+      "name": "Обувь",
+      "slug": "obuv",
+      "parent": null,
+      "position": 3,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
     }
   },
   {
-    "model": "store.subcategory",
-    "pk": 1,
+    "model": "store.category",
+    "pk": 5,
     "fields": {
       "name": "часы",
-      "category": 1
+      "slug": "chasy",
+      "parent": 1,
+      "position": 0,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
     }
   },
   {
-    "model": "store.subcategory",
-    "pk": 2,
-    "fields": {
-      "name": "очки",
-      "category": 1
-    }
-  },
-  {
-    "model": "store.subcategory",
-    "pk": 3,
-    "fields": {
-      "name": "Витамины",
-      "category": 3
-    }
-  },
-  {
-    "model": "store.subcategory",
-    "pk": 4,
-    "fields": {
-      "name": "Косметика",
-      "category": 3
-    }
-  },
-  {
-    "model": "store.subcategory",
-    "pk": 5,
-    "fields": {
-      "name": "Футболки",
-      "category": 2
-    }
-  },
-  {
-    "model": "store.subcategory",
+    "model": "store.category",
     "pk": 6,
     "fields": {
-      "name": "Зимние",
-      "category": 4
+      "name": "очки",
+      "slug": "ochki",
+      "parent": 1,
+      "position": 1,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
     }
   },
   {
-    "model": "store.subcategory",
+    "model": "store.category",
     "pk": 7,
     "fields": {
-      "name": "кроссовки",
-      "category": 4
+      "name": "Витамины",
+      "slug": "vitaminy",
+      "parent": 3,
+      "position": 2,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
     }
   },
   {
-    "model": "store.subcategory",
+    "model": "store.category",
     "pk": 8,
     "fields": {
-      "name": "Сумки",
-      "category": 1
+      "name": "Косметика",
+      "slug": "kosmetika",
+      "parent": 3,
+      "position": 3,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
     }
   },
   {
-    "model": "store.subcategory",
+    "model": "store.category",
     "pk": 9,
     "fields": {
+      "name": "Футболки",
+      "slug": "futbolki",
+      "parent": 2,
+      "position": 4,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
+    }
+  },
+  {
+    "model": "store.category",
+    "pk": 10,
+    "fields": {
+      "name": "Зимние",
+      "slug": "zimnie",
+      "parent": 4,
+      "position": 5,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
+    }
+  },
+  {
+    "model": "store.category",
+    "pk": 11,
+    "fields": {
+      "name": "кроссовки",
+      "slug": "krossovki",
+      "parent": 4,
+      "position": 6,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
+    }
+  },
+  {
+    "model": "store.category",
+    "pk": 12,
+    "fields": {
+      "name": "Сумки",
+      "slug": "sumki",
+      "parent": 1,
+      "position": 7,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
+    }
+  },
+  {
+    "model": "store.category",
+    "pk": 13,
+    "fields": {
       "name": "Obraz",
-      "category": 2
+      "slug": "obraz",
+      "parent": 2,
+      "position": 8,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z"
     }
   },
   {
     "model": "store.product",
     "pk": 1,
     "fields": {
-      "date": "2024-02-18T20:40:47.991Z",
       "name": "INVICTA",
+      "slug": "invicta",
       "description": "смотреть время",
-      "price": "55000.00",
-      "image": "product_images/photo_2023-12-09_15-02-03_ZmqnXBW.jpg",
-      "category": 1,
-      "subcategory": 1,
-      "status": "В наличии"
+      "category": 5,
+      "price_kopecks": 5500000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 2,
     "fields": {
-      "date": "2024-02-18T21:19:20.105Z",
       "name": "INVICTA",
+      "slug": "invicta-2",
       "description": "смотреть время",
-      "price": "33000.00",
-      "image": "product_images/photo_2023-12-09_15-02-08.jpg",
-      "category": 1,
-      "subcategory": 1,
-      "status": "В наличии"
+      "category": 5,
+      "price_kopecks": 3300000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:19:20.105Z",
+      "updated_at": "2024-02-18T21:19:20.105Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 3,
     "fields": {
-      "date": "2024-02-18T21:20:01.534Z",
       "name": "Timbalend",
+      "slug": "timbalend",
       "description": "смотреть время",
-      "price": "77000.00",
-      "image": "product_images/photo_2023-12-09_15-02-18_DFnfMz3.jpg",
-      "category": 1,
-      "subcategory": 1,
-      "status": "В наличии"
+      "category": 5,
+      "price_kopecks": 7700000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:20:01.534Z",
+      "updated_at": "2024-02-18T21:20:01.534Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 4,
     "fields": {
-      "date": "2024-02-18T21:20:43.200Z",
       "name": "CalvinKlein",
+      "slug": "calvinklein",
       "description": "солнцезащитные",
-      "price": "66000.00",
-      "image": "product_images/photo_2023-12-09_15-01-03.jpg",
-      "category": 1,
-      "subcategory": 2,
-      "status": "Нет в наличии"
+      "category": 6,
+      "price_kopecks": 6600000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:20:43.200Z",
+      "updated_at": "2024-02-18T21:20:43.200Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 5,
     "fields": {
-      "date": "2024-02-18T21:21:29.762Z",
       "name": "Rai ban",
+      "slug": "rai-ban",
       "description": "солнцезащитные",
-      "price": "44000.00",
-      "image": "product_images/photo_2023-12-07_16-00-39_UmbEu2e.jpg",
-      "category": 1,
-      "subcategory": 2,
-      "status": "Нет в наличии"
+      "category": 6,
+      "price_kopecks": 4400000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:21:29.762Z",
+      "updated_at": "2024-02-18T21:21:29.762Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 6,
     "fields": {
-      "date": "2024-02-18T21:22:02.521Z",
       "name": "GUCCI",
+      "slug": "gucci",
       "description": "солнцезащитные",
-      "price": "88000.00",
-      "image": "product_images/photo_2023-12-07_15-59-34_C2KQRl3.jpg",
-      "category": 1,
-      "subcategory": 2,
-      "status": "Нет в наличии"
+      "category": 6,
+      "price_kopecks": 8800000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:22:02.521Z",
+      "updated_at": "2024-02-18T21:22:02.521Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 7,
     "fields": {
-      "date": "2024-02-18T21:22:44.147Z",
       "name": "Karl Lagerfeld",
+      "slug": "karl-lagerfeld",
       "description": "на выход",
-      "price": "55000.00",
-      "image": "product_images/photo_2023-12-10_13-24-32_SxIcXjk.jpg",
-      "category": 2,
-      "subcategory": 5,
-      "status": "Нет в наличии"
+      "category": 9,
+      "price_kopecks": 5500000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:22:44.147Z",
+      "updated_at": "2024-02-18T21:22:44.147Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 8,
     "fields": {
-      "date": "2024-02-18T21:23:09.641Z",
       "name": "Karl",
+      "slug": "karl",
       "description": "на выход",
-      "price": "45000.00",
-      "image": "product_images/photo_2023-12-10_13-24-53_H9UBluj.jpg",
-      "category": 2,
-      "subcategory": 5,
-      "status": "Снято с поставок"
+      "category": 9,
+      "price_kopecks": 4500000,
+      "compare_at_kopecks": null,
+      "is_active": false,
+      "created_at": "2024-02-18T21:23:09.641Z",
+      "updated_at": "2024-02-18T21:23:09.641Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 9,
     "fields": {
-      "date": "2024-02-18T21:23:51.999Z",
       "name": "Karlov",
+      "slug": "karlov",
       "description": "на выход",
-      "price": "65000.00",
-      "image": "product_images/photo_2023-12-10_13-25-01_YBgugcv.jpg",
-      "category": 2,
-      "subcategory": 5,
-      "status": "Снято с поставок"
+      "category": 9,
+      "price_kopecks": 6500000,
+      "compare_at_kopecks": null,
+      "is_active": false,
+      "created_at": "2024-02-18T21:23:51.999Z",
+      "updated_at": "2024-02-18T21:23:51.999Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 10,
     "fields": {
-      "date": "2024-02-18T21:24:51.254Z",
       "name": "MANGO",
+      "slug": "mango",
       "description": "удобные",
-      "price": "87000.00",
-      "image": "product_images/photo_2023-12-11_14-58-30_QdNluB1.jpg",
-      "category": 4,
-      "subcategory": 7,
-      "status": "Снято с поставок"
+      "category": 11,
+      "price_kopecks": 8700000,
+      "compare_at_kopecks": null,
+      "is_active": false,
+      "created_at": "2024-02-18T21:24:51.254Z",
+      "updated_at": "2024-02-18T21:24:51.254Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 11,
     "fields": {
-      "date": "2024-02-18T21:25:30.985Z",
       "name": "Karlo",
+      "slug": "karlo",
       "description": "удобные",
-      "price": "56000.00",
-      "image": "product_images/photo_2023-12-11_18-46-44_AoAzUGM.jpg",
-      "category": 4,
-      "subcategory": 7,
-      "status": "В наличии"
+      "category": 11,
+      "price_kopecks": 5600000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:25:30.985Z",
+      "updated_at": "2024-02-18T21:25:30.985Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 12,
     "fields": {
-      "date": "2024-02-18T21:26:11.225Z",
       "name": "AhmadTea",
+      "slug": "ahmadtea",
       "description": "теплые",
-      "price": "88000.00",
-      "image": "product_images/photo_2023-12-11_18-46-46_X3YgbZK.jpg",
-      "category": 4,
-      "subcategory": 6,
-      "status": "В наличии"
+      "category": 10,
+      "price_kopecks": 8800000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:26:11.225Z",
+      "updated_at": "2024-02-18T21:26:11.225Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 13,
     "fields": {
-      "date": "2024-02-18T21:26:48.949Z",
       "name": "UGG",
+      "slug": "ugg",
       "description": "теплые",
-      "price": "87000.00",
-      "image": "product_images/photo_2023-12-11_18-46-52_m2aQETu.jpg",
-      "category": 4,
-      "subcategory": 6,
-      "status": "В наличии"
+      "category": 10,
+      "price_kopecks": 8700000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:26:48.949Z",
+      "updated_at": "2024-02-18T21:26:48.949Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 14,
     "fields": {
-      "date": "2024-02-18T21:27:25.234Z",
       "name": "BERCO",
+      "slug": "berco",
       "description": "теплые",
-      "price": "56000.00",
-      "image": "product_images/photo_2023-12-11_18-46-42_LLaBTzi.jpg",
-      "category": 4,
-      "subcategory": 6,
-      "status": "В наличии"
+      "category": 10,
+      "price_kopecks": 5600000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:27:25.234Z",
+      "updated_at": "2024-02-18T21:27:25.234Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 15,
     "fields": {
-      "date": "2024-02-18T21:28:18.719Z",
       "name": "BABOR",
+      "slug": "babor",
       "description": "для красоты",
-      "price": "54000.00",
-      "image": "product_images/photo_DpL7xlB.jpg",
-      "category": 3,
-      "subcategory": 4,
-      "status": "В наличии"
+      "category": 8,
+      "price_kopecks": 5400000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:28:18.719Z",
+      "updated_at": "2024-02-18T21:28:18.719Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 16,
     "fields": {
-      "date": "2024-02-18T21:29:09.909Z",
       "name": "BABIYOR",
+      "slug": "babiyor",
       "description": "для красоты",
-      "price": "35000.00",
-      "image": "product_images/photo_2023-12-13_17-22-16_OY4ZH38.jpg",
-      "category": 3,
-      "subcategory": 4,
-      "status": "В наличии"
+      "category": 8,
+      "price_kopecks": 3500000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:29:09.909Z",
+      "updated_at": "2024-02-18T21:29:09.909Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 17,
     "fields": {
-      "date": "2024-02-18T21:29:54.557Z",
       "name": "DIOR",
+      "slug": "dior",
       "description": "для красоты",
-      "price": "85000.00",
-      "image": "product_images/photo_2023-12-11_20-18-47_jTZ4xD1.jpg",
-      "category": 3,
-      "subcategory": 4,
-      "status": "В наличии"
+      "category": 8,
+      "price_kopecks": 8500000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:29:54.557Z",
+      "updated_at": "2024-02-18T21:29:54.557Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 18,
     "fields": {
-      "date": "2024-02-18T21:30:27.779Z",
       "name": "iHERB",
+      "slug": "iherb",
       "description": "для здоровья",
-      "price": "75000.00",
-      "image": "product_images/photo_2023-12-13_17-27-22.jpg",
-      "category": 3,
-      "subcategory": 3,
-      "status": "В наличии"
+      "category": 7,
+      "price_kopecks": 7500000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:30:27.779Z",
+      "updated_at": "2024-02-18T21:30:27.779Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 19,
     "fields": {
-      "date": "2024-02-18T21:31:35.713Z",
       "name": "MegaFood",
+      "slug": "megafood",
       "description": "для здоровья",
-      "price": "96000.00",
-      "image": "product_images/photo_2023-12-13_17-26-28_HHzaRlW.jpg",
-      "category": 3,
-      "subcategory": 3,
-      "status": "В наличии"
+      "category": 7,
+      "price_kopecks": 9600000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:31:35.713Z",
+      "updated_at": "2024-02-18T21:31:35.713Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 20,
     "fields": {
-      "date": "2024-02-18T21:32:22.922Z",
       "name": "Multy",
+      "slug": "multy",
       "description": "для здоровья",
-      "price": "72000.00",
-      "image": "product_images/photo_2023-12-13_17-25-26_taTTHdG.jpg",
-      "category": 3,
-      "subcategory": 3,
-      "status": "В наличии"
+      "category": 7,
+      "price_kopecks": 7200000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-18T21:32:22.922Z",
+      "updated_at": "2024-02-18T21:32:22.922Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 21,
     "fields": {
-      "date": "2024-02-21T08:50:35.382Z",
       "name": "LACOSTE",
+      "slug": "lacoste",
       "description": "строго для денег",
-      "price": "35000.00",
-      "image": "product_images/photo_2023-12-09_17-18-02.jpg",
-      "category": 1,
-      "subcategory": 8,
-      "status": "В наличии"
+      "category": 12,
+      "price_kopecks": 3500000,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-02-21T08:50:35.382Z",
+      "updated_at": "2024-02-21T08:50:35.382Z",
+      "deleted_at": null
     }
   },
   {
     "model": "store.product",
     "pk": 23,
     "fields": {
-      "date": "2024-03-23T17:38:21.109Z",
       "name": "Awa",
+      "slug": "awa",
       "description": "на выход",
-      "price": "1233333.00",
-      "image": "product_images/photo_2023-12-10_13-24-57.jpg",
-      "category": 2,
-      "subcategory": 5,
-      "status": "В наличии"
+      "category": 9,
+      "price_kopecks": 123333300,
+      "compare_at_kopecks": null,
+      "is_active": true,
+      "created_at": "2024-03-23T17:38:21.109Z",
+      "updated_at": "2024-03-23T17:38:21.109Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1,
+    "fields": {
+      "product": 1,
+      "size": "",
+      "sku": "DD-00001",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T20:40:47.991Z",
+      "updated_at": "2024-02-18T20:40:47.991Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 2,
+    "fields": {
+      "product": 2,
+      "size": "",
+      "sku": "DD-00002",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T21:19:20.105Z",
+      "updated_at": "2024-02-18T21:19:20.105Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 3,
+    "fields": {
+      "product": 3,
+      "size": "",
+      "sku": "DD-00003",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T21:20:01.534Z",
+      "updated_at": "2024-02-18T21:20:01.534Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 4,
+    "fields": {
+      "product": 4,
+      "size": "",
+      "sku": "DD-00004",
+      "stock": 0,
+      "position": 0,
+      "created_at": "2024-02-18T21:20:43.200Z",
+      "updated_at": "2024-02-18T21:20:43.200Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 5,
+    "fields": {
+      "product": 5,
+      "size": "",
+      "sku": "DD-00005",
+      "stock": 0,
+      "position": 0,
+      "created_at": "2024-02-18T21:21:29.762Z",
+      "updated_at": "2024-02-18T21:21:29.762Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 6,
+    "fields": {
+      "product": 6,
+      "size": "",
+      "sku": "DD-00006",
+      "stock": 0,
+      "position": 0,
+      "created_at": "2024-02-18T21:22:02.521Z",
+      "updated_at": "2024-02-18T21:22:02.521Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 7,
+    "fields": {
+      "product": 7,
+      "size": "S",
+      "sku": "DD-00007-S",
+      "stock": 0,
+      "position": 0,
+      "created_at": "2024-02-18T21:22:44.147Z",
+      "updated_at": "2024-02-18T21:22:44.147Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1001,
+    "fields": {
+      "product": 7,
+      "size": "M",
+      "sku": "DD-00007-M",
+      "stock": 0,
+      "position": 1,
+      "created_at": "2024-02-18T21:22:44.147Z",
+      "updated_at": "2024-02-18T21:22:44.147Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1002,
+    "fields": {
+      "product": 7,
+      "size": "L",
+      "sku": "DD-00007-L",
+      "stock": 0,
+      "position": 2,
+      "created_at": "2024-02-18T21:22:44.147Z",
+      "updated_at": "2024-02-18T21:22:44.147Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 8,
+    "fields": {
+      "product": 8,
+      "size": "S",
+      "sku": "DD-00008-S",
+      "stock": 0,
+      "position": 0,
+      "created_at": "2024-02-18T21:23:09.641Z",
+      "updated_at": "2024-02-18T21:23:09.641Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1003,
+    "fields": {
+      "product": 8,
+      "size": "M",
+      "sku": "DD-00008-M",
+      "stock": 0,
+      "position": 1,
+      "created_at": "2024-02-18T21:23:09.641Z",
+      "updated_at": "2024-02-18T21:23:09.641Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1004,
+    "fields": {
+      "product": 8,
+      "size": "L",
+      "sku": "DD-00008-L",
+      "stock": 0,
+      "position": 2,
+      "created_at": "2024-02-18T21:23:09.641Z",
+      "updated_at": "2024-02-18T21:23:09.641Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 9,
+    "fields": {
+      "product": 9,
+      "size": "S",
+      "sku": "DD-00009-S",
+      "stock": 0,
+      "position": 0,
+      "created_at": "2024-02-18T21:23:51.999Z",
+      "updated_at": "2024-02-18T21:23:51.999Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1005,
+    "fields": {
+      "product": 9,
+      "size": "M",
+      "sku": "DD-00009-M",
+      "stock": 0,
+      "position": 1,
+      "created_at": "2024-02-18T21:23:51.999Z",
+      "updated_at": "2024-02-18T21:23:51.999Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1006,
+    "fields": {
+      "product": 9,
+      "size": "L",
+      "sku": "DD-00009-L",
+      "stock": 0,
+      "position": 2,
+      "created_at": "2024-02-18T21:23:51.999Z",
+      "updated_at": "2024-02-18T21:23:51.999Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 10,
+    "fields": {
+      "product": 10,
+      "size": "39",
+      "sku": "DD-00010-39",
+      "stock": 0,
+      "position": 0,
+      "created_at": "2024-02-18T21:24:51.254Z",
+      "updated_at": "2024-02-18T21:24:51.254Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1007,
+    "fields": {
+      "product": 10,
+      "size": "40",
+      "sku": "DD-00010-40",
+      "stock": 0,
+      "position": 1,
+      "created_at": "2024-02-18T21:24:51.254Z",
+      "updated_at": "2024-02-18T21:24:51.254Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1008,
+    "fields": {
+      "product": 10,
+      "size": "41",
+      "sku": "DD-00010-41",
+      "stock": 0,
+      "position": 2,
+      "created_at": "2024-02-18T21:24:51.254Z",
+      "updated_at": "2024-02-18T21:24:51.254Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1009,
+    "fields": {
+      "product": 10,
+      "size": "42",
+      "sku": "DD-00010-42",
+      "stock": 0,
+      "position": 3,
+      "created_at": "2024-02-18T21:24:51.254Z",
+      "updated_at": "2024-02-18T21:24:51.254Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 11,
+    "fields": {
+      "product": 11,
+      "size": "39",
+      "sku": "DD-00011-39",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T21:25:30.985Z",
+      "updated_at": "2024-02-18T21:25:30.985Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1010,
+    "fields": {
+      "product": 11,
+      "size": "40",
+      "sku": "DD-00011-40",
+      "stock": 10,
+      "position": 1,
+      "created_at": "2024-02-18T21:25:30.985Z",
+      "updated_at": "2024-02-18T21:25:30.985Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1011,
+    "fields": {
+      "product": 11,
+      "size": "41",
+      "sku": "DD-00011-41",
+      "stock": 10,
+      "position": 2,
+      "created_at": "2024-02-18T21:25:30.985Z",
+      "updated_at": "2024-02-18T21:25:30.985Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1012,
+    "fields": {
+      "product": 11,
+      "size": "42",
+      "sku": "DD-00011-42",
+      "stock": 10,
+      "position": 3,
+      "created_at": "2024-02-18T21:25:30.985Z",
+      "updated_at": "2024-02-18T21:25:30.985Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 12,
+    "fields": {
+      "product": 12,
+      "size": "39",
+      "sku": "DD-00012-39",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T21:26:11.225Z",
+      "updated_at": "2024-02-18T21:26:11.225Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1013,
+    "fields": {
+      "product": 12,
+      "size": "40",
+      "sku": "DD-00012-40",
+      "stock": 10,
+      "position": 1,
+      "created_at": "2024-02-18T21:26:11.225Z",
+      "updated_at": "2024-02-18T21:26:11.225Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1014,
+    "fields": {
+      "product": 12,
+      "size": "41",
+      "sku": "DD-00012-41",
+      "stock": 10,
+      "position": 2,
+      "created_at": "2024-02-18T21:26:11.225Z",
+      "updated_at": "2024-02-18T21:26:11.225Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1015,
+    "fields": {
+      "product": 12,
+      "size": "42",
+      "sku": "DD-00012-42",
+      "stock": 10,
+      "position": 3,
+      "created_at": "2024-02-18T21:26:11.225Z",
+      "updated_at": "2024-02-18T21:26:11.225Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 13,
+    "fields": {
+      "product": 13,
+      "size": "39",
+      "sku": "DD-00013-39",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T21:26:48.949Z",
+      "updated_at": "2024-02-18T21:26:48.949Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1016,
+    "fields": {
+      "product": 13,
+      "size": "40",
+      "sku": "DD-00013-40",
+      "stock": 10,
+      "position": 1,
+      "created_at": "2024-02-18T21:26:48.949Z",
+      "updated_at": "2024-02-18T21:26:48.949Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1017,
+    "fields": {
+      "product": 13,
+      "size": "41",
+      "sku": "DD-00013-41",
+      "stock": 10,
+      "position": 2,
+      "created_at": "2024-02-18T21:26:48.949Z",
+      "updated_at": "2024-02-18T21:26:48.949Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1018,
+    "fields": {
+      "product": 13,
+      "size": "42",
+      "sku": "DD-00013-42",
+      "stock": 10,
+      "position": 3,
+      "created_at": "2024-02-18T21:26:48.949Z",
+      "updated_at": "2024-02-18T21:26:48.949Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 14,
+    "fields": {
+      "product": 14,
+      "size": "39",
+      "sku": "DD-00014-39",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T21:27:25.234Z",
+      "updated_at": "2024-02-18T21:27:25.234Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1019,
+    "fields": {
+      "product": 14,
+      "size": "40",
+      "sku": "DD-00014-40",
+      "stock": 10,
+      "position": 1,
+      "created_at": "2024-02-18T21:27:25.234Z",
+      "updated_at": "2024-02-18T21:27:25.234Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1020,
+    "fields": {
+      "product": 14,
+      "size": "41",
+      "sku": "DD-00014-41",
+      "stock": 10,
+      "position": 2,
+      "created_at": "2024-02-18T21:27:25.234Z",
+      "updated_at": "2024-02-18T21:27:25.234Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1021,
+    "fields": {
+      "product": 14,
+      "size": "42",
+      "sku": "DD-00014-42",
+      "stock": 10,
+      "position": 3,
+      "created_at": "2024-02-18T21:27:25.234Z",
+      "updated_at": "2024-02-18T21:27:25.234Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 15,
+    "fields": {
+      "product": 15,
+      "size": "",
+      "sku": "DD-00015",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T21:28:18.719Z",
+      "updated_at": "2024-02-18T21:28:18.719Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 16,
+    "fields": {
+      "product": 16,
+      "size": "",
+      "sku": "DD-00016",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T21:29:09.909Z",
+      "updated_at": "2024-02-18T21:29:09.909Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 17,
+    "fields": {
+      "product": 17,
+      "size": "",
+      "sku": "DD-00017",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T21:29:54.557Z",
+      "updated_at": "2024-02-18T21:29:54.557Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 18,
+    "fields": {
+      "product": 18,
+      "size": "",
+      "sku": "DD-00018",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T21:30:27.779Z",
+      "updated_at": "2024-02-18T21:30:27.779Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 19,
+    "fields": {
+      "product": 19,
+      "size": "",
+      "sku": "DD-00019",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T21:31:35.713Z",
+      "updated_at": "2024-02-18T21:31:35.713Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 20,
+    "fields": {
+      "product": 20,
+      "size": "",
+      "sku": "DD-00020",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-18T21:32:22.922Z",
+      "updated_at": "2024-02-18T21:32:22.922Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 21,
+    "fields": {
+      "product": 21,
+      "size": "",
+      "sku": "DD-00021",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-02-21T08:50:35.382Z",
+      "updated_at": "2024-02-21T08:50:35.382Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 23,
+    "fields": {
+      "product": 23,
+      "size": "S",
+      "sku": "DD-00023-S",
+      "stock": 10,
+      "position": 0,
+      "created_at": "2024-03-23T17:38:21.109Z",
+      "updated_at": "2024-03-23T17:38:21.109Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1022,
+    "fields": {
+      "product": 23,
+      "size": "M",
+      "sku": "DD-00023-M",
+      "stock": 10,
+      "position": 1,
+      "created_at": "2024-03-23T17:38:21.109Z",
+      "updated_at": "2024-03-23T17:38:21.109Z",
+      "deleted_at": null
+    }
+  },
+  {
+    "model": "store.productvariant",
+    "pk": 1023,
+    "fields": {
+      "product": 23,
+      "size": "L",
+      "sku": "DD-00023-L",
+      "stock": 10,
+      "position": 2,
+      "created_at": "2024-03-23T17:38:21.109Z",
+      "updated_at": "2024-03-23T17:38:21.109Z",
+      "deleted_at": null
     }
   }
 ]
