@@ -85,7 +85,11 @@ jobs:
           git diff --cached --quiet || { git commit -m "ci: autoformat and regenerate openapi schema"; git push; }
       - name: Tests
         if: always()
-        run: pytest -p no:cacheprovider -q --tb=short > /tmp/pytest.txt 2>&1 || { bash /tmp/annotate.sh pytest /tmp/pytest.txt; exit 1; }
+        run: |
+          rc=0
+          pytest -p no:cacheprovider -q --tb=short > /tmp/pytest.txt 2>&1 || rc=$?
+          echo "::notice title=pytest::$(tail -n 1 /tmp/pytest.txt)"
+          [ $rc -eq 0 ] || { bash /tmp/annotate.sh pytest /tmp/pytest.txt; exit 1; }
       - name: Frontend typecheck
         if: always()
         run: |

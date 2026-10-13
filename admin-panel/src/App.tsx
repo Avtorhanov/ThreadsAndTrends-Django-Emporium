@@ -3,8 +3,11 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { Layout } from "./components/Layout";
+import { CategoriesPage } from "./pages/CategoriesPage";
 import { CustomersPage } from "./pages/CustomersPage";
 import { LoginPage } from "./pages/LoginPage";
+import { ProductEditPage } from "./pages/ProductEditPage";
+import { ProductsPage } from "./pages/ProductsPage";
 
 function RequireStaff({ children }: { children: ReactNode }) {
   const { status } = useAuth();
@@ -44,6 +47,11 @@ export function App() {
             >
               <Route index element={<Navigate to="/customers" replace />} />
               <Route path="/customers" element={<CustomersPage />} />
+              <Route path="/catalog" element={<Navigate to="/catalog/products" replace />} />
+              <Route path="/catalog/products" element={<ProductsPage />} />
+              <Route path="/catalog/products/new" element={<ProductEditPage />} />
+              <Route path="/catalog/products/:id" element={<ProductEditPage />} />
+              <Route path="/catalog/categories" element={<CategoriesPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -217,12 +217,20 @@ class AdminProductViewSet(
         catalog.soft_delete_product(self.get_object())
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @extend_schema(request=None, responses={200: AdminProductDetailSerializer})
+    @extend_schema(
+        request=None,
+        responses={200: AdminProductDetailSerializer},
+        description="Восстановить мягко удалённый товар.",
+    )
     @action(detail=True, methods=["post"])
     def restore(self, request, pk=None):
         return self._detail(catalog.restore_product(self.get_object()))
 
-    @extend_schema(request=AdminVariantSerializer, responses={201: AdminVariantSerializer})
+    @extend_schema(
+        request=AdminVariantSerializer,
+        responses={201: AdminVariantSerializer},
+        description="Добавить вариант (размер). «Без размера» нельзя сочетать с размерами.",
+    )
     @action(detail=True, methods=["post"], url_path="variants")
     def add_variant(self, request, pk=None):
         serializer = AdminVariantSerializer(data=request.data)
@@ -230,7 +238,11 @@ class AdminProductViewSet(
         variant = catalog.create_variant(self.get_object(), **serializer.validated_data)
         return Response(AdminVariantSerializer(variant).data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(request=AdminImageUploadSerializer, responses={201: AdminImageSerializer})
+    @extend_schema(
+        request=AdminImageUploadSerializer,
+        responses={201: AdminImageSerializer},
+        description="Загрузить фото в конец галереи (JPEG/PNG/WebP, до 5 МБ, до 10 фото).",
+    )
     @action(detail=True, methods=["post"], url_path="images", parser_classes=[MultiPartParser])
     def add_image(self, request, pk=None):
         serializer = AdminImageUploadSerializer(data=request.data)
@@ -240,9 +252,11 @@ class AdminProductViewSet(
         return Response(data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
-        request=AdminImageReorderSerializer, responses={200: AdminImageSerializer(many=True)}
+        request=AdminImageReorderSerializer,
+        responses={200: AdminImageSerializer(many=True)},
+        description="Новый порядок галереи; первое фото — обложка.",
     )
-    @action(detail=True, methods=["post"], url_path="images/reorder")
+    @action(detail=True, methods=["post"], url_path="images/reorder", pagination_class=None)
     def reorder_images(self, request, pk=None):
         serializer = AdminImageReorderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
