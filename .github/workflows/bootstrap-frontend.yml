@@ -25,12 +25,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Python package versions
+      - name: Versions
         run: |
-          for p in djangorestframework-simplejwt djangorestframework drf-spectacular Django; do
-            pip index versions "$p" 2>/dev/null | head -1
-          done > versions.txt
-          npm view expo version | sed 's/^/expo /' >> versions.txt
+          { echo "simplejwt: $(pip index versions djangorestframework-simplejwt 2>/dev/null | sed -n 1p || true)"
+            echo "expo: $(npm view expo version || true)"; } > versions.txt || true
           cat versions.txt
           echo "::notice title=versions::$(tr '\n' ';' < versions.txt)"
 
