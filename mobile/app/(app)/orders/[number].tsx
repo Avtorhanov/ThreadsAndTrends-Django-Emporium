@@ -1,4 +1,5 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
+import { useEffect, useRef } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, radius, spacing } from "../../../src/components/theme";
@@ -8,6 +9,8 @@ import { formatKopecks } from "../../../src/lib/money";
 import { formatDateTime, StatusBadge } from "../../../src/orders/components";
 import { useOrder } from "../../../src/orders/hooks";
 import { type OrderDetail, orderService } from "../../../src/orders/orderService";
+import { checkPayment, isPaymentInProgress, payOrder } from "../../../src/orders/payment";
+import { PaymentPanel } from "../../../src/orders/PaymentPanel";
 
 function Items({ order }: { order: OrderDetail }) {
   return (
@@ -64,12 +67,32 @@ export default function OrderScreen() {
   const cancel = useSubmit(async () => {
     setOrder(await orderService.cancel(number));
   });
+  const pay = useSubmit(async () => {
+    setOrder(await payOrder(number));
+  });
+  const check = useSubmit(async () => {
+    setOrder(await checkPayment(number, true));
+  });
+
+  // Экран открыт по ссылке возврата со страницы оплаты (или позже) — сверяем оплату один раз.
+  const autoChecked = useRef(false);
+  useEffect(() => {
+    if (!order || autoChecked.current || !isPaymentInProgress(order)) return;
+    autoChecked.current = true;
+    void check.submit();
+  }, [order, check.submit]);
 
   const confirmCancel = () =>
-    Alert.alert("Отменить заказ?", "Товары вернутся в продажу. Отмену нельзя отменить.", [
-      { text: "Не отменять", style: "cancel" },
-      { text: "Отменить заказ", style: "destructive", onPress: () => void cancel.submit() },
-    ]);
+    Alert.alert(
+      "Отменить заказ?",
+      order?.payment_status === "succeeded"
+        ? "Деньги вернутся на карту или счёт, с которых вы платили. Отмену нельзя отменить."
+        : "Товары вернутся в продажу. Отмену нельзя отменить.",
+      [
+        { text: "Не отменять", style: "cancel" },
+        { text: "Отменить заказ", style: "destructive", onPress: () => void cancel.submit() },
+      ],
+    );
 
   if (!order) {
     return (
@@ -86,13 +109,29 @@ export default function OrderScreen() {
     <Screen>
       <Stack.Screen options={{ title: `Заказ ${order.number}` }} />
       {created && order.status !== "cancelled" ? (
-        <Message text="Заказ оформлен. Мы сообщим об изменении статуса на email." kind="success" />
+        <Message
+          text={
+            order.can_pay
+              ? "Заказ оформлен. Оплатите его, чтобы мы начали сборку."
+              : "Заказ оформлен. Мы сообщим об изменении статуса на email."
+          }
+          kind="success"
+        />
       ) : null}
 
       <View style={styles.header}>
         <StatusBadge status={order.status} label={order.status_display} />
         <Text style={styles.muted}>от {formatDateTime(order.created_at)}</Text>
       </View>
+
+      <PaymentPanel
+        order={order}
+        paying={pay.loading}
+        checking={check.loading}
+        error={pay.error ?? check.error}
+        onPay={() => void pay.submit()}
+        onCheck={() => void check.submit()}
+      />
 
       <Items order={order} />
 

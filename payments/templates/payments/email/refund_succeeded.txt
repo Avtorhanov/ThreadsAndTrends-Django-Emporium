@@ -1,0 +1,7 @@
+{% load money %}{% autoescape off %}Здравствуйте{% if first_name %}, {{ first_name }}{% endif %}!
+
+Деньги за заказ {{ order.number }} возвращены: {{ refund.amount_kopecks|rub }} ₽.
+Они поступят на карту или счёт, с которых вы платили; срок зачисления зависит от банка.
+
+Заказ можно посмотреть в приложении DiDi-shop, раздел «Мои заказы».
+{% endautoescape %}

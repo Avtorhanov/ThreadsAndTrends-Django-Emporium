@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "store.apps.StoreConfig",
     "accounts",
     "orders",
+    "payments",
 ]
 
 MIDDLEWARE = [
@@ -93,6 +94,10 @@ TASKS = {"default": tasks_from_env()}
 # {"task": "app.tasks.func", "every": <секунды>}.
 PERIODIC_TASKS: list[dict] = [
     {"task": "accounts.tasks.cleanup_auth_records", "every": 24 * 60 * 60},
+    # Сверка зависших платежей и возвратов (потерянный webhook, сбой сети).
+    {"task": "payments.tasks.sync_pending", "every": 60},
+    # Автоотмена онлайн-заказов, не оплаченных за ORDERS_UNPAID_TIMEOUT_MINUTES.
+    {"task": "payments.tasks.cancel_unpaid_orders", "every": 60},
 ]
 
 # --- Пользователи ---
@@ -152,6 +157,9 @@ REST_FRAMEWORK = {
         "cart_quote": env_str("THROTTLE_CART_QUOTE", "60/min"),
         # Оформление заказа (на пользователя).
         "order_create": env_str("THROTTLE_ORDER_CREATE", "30/hour"),
+        # Оплата: получение ссылки и сверка после возврата из браузера (на пользователя).
+        "payment_start": env_str("THROTTLE_PAYMENT_START", "30/hour"),
+        "payment_refresh": env_str("THROTTLE_PAYMENT_REFRESH", "120/hour"),
     },
 }
 
@@ -166,9 +174,33 @@ DELIVERY_COURIER_KOPECKS = env_int("DELIVERY_COURIER_KOPECKS", 500_00)
 DELIVERY_FREE_FROM_KOPECKS = env_int("DELIVERY_FREE_FROM_KOPECKS", 10_000_00)
 # Адрес пункта самовывоза; пусто — самовывоз не предлагается.
 PICKUP_ADDRESS = env_str("PICKUP_ADDRESS", "")
-# Онлайн-оплата включается вместе с платёжным провайдером (сессия 6): до этого заказ с ней
-# нельзя оплатить, поэтому по умолчанию предлагается только оплата при получении.
+# Онлайн-оплата (ЮKassa) предлагается только при заданных ключах магазина — иначе system check
+# payments.E001. По умолчанию выключена: только оплата при получении.
 ORDERS_ONLINE_PAYMENT_ENABLED = env_bool("ORDERS_ONLINE_PAYMENT_ENABLED", False)
+# Неоплаченный онлайн-заказ отменяется через столько минут, товар возвращается в продажу.
+ORDERS_UNPAID_TIMEOUT_MINUTES = env_int("ORDERS_UNPAID_TIMEOUT_MINUTES", 30)
+
+# --- Платежи (ЮKassa) ---
+YOOKASSA_SHOP_ID = env_str("YOOKASSA_SHOP_ID", "")
+YOOKASSA_SECRET_KEY = env_str("YOOKASSA_SECRET_KEY", "")
+YOOKASSA_API_URL = env_str("YOOKASSA_API_URL", "https://api.yookassa.ru/v3")
+YOOKASSA_TIMEOUT = env_int("YOOKASSA_TIMEOUT", 10)
+# Адреса, с которых ЮKassa шлёт уведомления (https://yookassa.ru/developers/using-api/webhooks).
+YOOKASSA_WEBHOOK_IPS = env_list(
+    "YOOKASSA_WEBHOOK_IPS",
+    "185.71.76.0/27,185.71.77.0/27,77.75.153.0/25,77.75.156.11,77.75.156.35,"
+    "77.75.154.128/25,2a02:5180::/32",
+)
+# Куда страница оплаты возвращает покупателя: только адреса приложения (в Expo Go — exp://).
+PAYMENTS_RETURN_URL_PREFIXES = env_list("PAYMENTS_RETURN_URL_PREFIXES", "didishop://")
+PAYMENTS_DEFAULT_RETURN_URL = env_str("PAYMENTS_DEFAULT_RETURN_URL", "didishop://orders/{number}")
+# Чеки 54-ФЗ через ЮKassa. Коды: система налогообложения 1 — ОСН, 2 — УСН доходы,
+# 3 — УСН доходы минус расходы, 4 — ЕНВД, 5 — ЕСХН, 6 — патент; НДС 1 — без НДС
+# (остальные — по справочнику ЮKassa). Значения согласуйте с бухгалтером.
+PAYMENTS_RECEIPTS_ENABLED = env_bool("PAYMENTS_RECEIPTS_ENABLED", True)
+PAYMENTS_TAX_SYSTEM_CODE = env_int("PAYMENTS_TAX_SYSTEM_CODE", 2)
+PAYMENTS_VAT_CODE = env_int("PAYMENTS_VAT_CODE", 1)
+PAYMENTS_RECEIPT_PAYMENT_MODE = env_str("PAYMENTS_RECEIPT_PAYMENT_MODE", "full_payment")
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env_int("JWT_ACCESS_MINUTES", 15)),
@@ -199,6 +231,9 @@ SPECTACULAR_SETTINGS = {
         "PaymentMethodEnum": "orders.models.PaymentMethod.choices",
         "DeliveryMethodEnum": "orders.models.DeliveryMethod.choices",
         "ChangedByEnum": "orders.models.ChangedBy.choices",
+        "PaymentStatusEnum": "payments.models.PaymentStatus.choices",
+        "RefundStatusEnum": "payments.models.RefundStatus.choices",
+        "RefundReasonEnum": "payments.models.RefundReason.choices",
     },
 }
 

@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Link, useParams } from "react-router";
 
 import { ApiError } from "../api/errors";
-import { type OrderStatus, ordersService } from "../api/orders";
+import { type AdminOrderDetail, type OrderStatus, ordersService } from "../api/orders";
 import { OrderStatusBadge } from "../components/orders/OrderStatusBadge";
+import { PaymentsCard } from "../components/orders/PaymentsCard";
 import { useOrder } from "../hooks/useOrders";
 import { formatKopecks } from "../lib/money";
 
@@ -28,20 +29,29 @@ export function OrderDetailPage() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  async function move(status: OrderStatus) {
+  async function run(action: (id: number) => Promise<AdminOrderDetail>, fallback: string) {
     if (orderId === null) return;
-    const question = CONFIRM[status];
-    if (question && !window.confirm(question)) return;
     setBusy(true);
     setActionError(null);
     try {
-      order.set(await ordersService.transition(orderId, status));
+      order.set(await action(orderId));
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : "Статус не изменён.");
-      order.reload(); // статус мог измениться с другого устройства
+      setActionError(err instanceof ApiError ? err.message : fallback);
+      order.reload(); // заказ мог измениться с другого устройства
     } finally {
       setBusy(false);
     }
+  }
+
+  function move(status: OrderStatus) {
+    const question = CONFIRM[status];
+    if (question && !window.confirm(question)) return;
+    void run((id) => ordersService.transition(id, status), "Статус не изменён.");
+  }
+
+  function retryRefund() {
+    if (!window.confirm("Отправить возврат денег покупателю ещё раз?")) return;
+    void run((id) => ordersService.refund(id), "Возврат не отправлен.");
   }
 
   const data = order.data;
@@ -74,7 +84,7 @@ export function OrderDetailPage() {
                       option.status === "cancelled" ? "button button-danger" : "button"
                     }
                     disabled={busy}
-                    onClick={() => void move(option.status)}
+                    onClick={() => move(option.status)}
                   >
                     {option.status === "cancelled" ? "Отменить заказ" : `→ ${option.label}`}
                   </button>
@@ -84,6 +94,16 @@ export function OrderDetailPage() {
               <p className="muted">Статус окончательный.</p>
             )}
           </div>
+
+          {data.payment_method === "online" ? (
+            <PaymentsCard
+              payments={data.payments}
+              canRetryRefund={data.can_retry_refund}
+              busy={busy}
+              onRetryRefund={retryRefund}
+              onSync={() => void run((id) => ordersService.syncPayment(id), "Не удалось проверить.")}
+            />
+          ) : null}
 
           <div className="order-grid">
             <div className="card">

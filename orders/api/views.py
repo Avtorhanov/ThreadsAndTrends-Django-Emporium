@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from orders.models import ChangedBy, Order, OrderItem, OrderStatusChange
 from orders.services import checkout as checkout_service
 from orders.services import status as status_service
+from payments.models import Payment
 from store.models import ProductImage
 
 from .serializers import (
@@ -50,6 +51,7 @@ def order_detail_queryset(queryset, *, with_actors: bool = False):
             ),
         ),
         Prefetch("status_changes", queryset=changes),
+        Prefetch("payments", queryset=Payment.objects.prefetch_related("refunds")),
     )
 
 

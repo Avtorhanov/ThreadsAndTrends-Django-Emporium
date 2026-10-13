@@ -706,6 +706,53 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminOrderDetail'
           description: ''
+  /api/v1/admin/orders/{id}/payment-sync/:
+    post:
+      operationId: admin_orders_payment_sync
+      description: Сверить незавершённые платежи заказа с провайдером.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заказ.
+        required: true
+      tags:
+      - admin-orders
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderDetail'
+          description: ''
+        '503':
+          description: Провайдер временно недоступен
+  /api/v1/admin/orders/{id}/refund/:
+    post:
+      operationId: admin_orders_refund
+      description: Повторить возврат денег, если провайдер отклонил прошлый возврат
+        (доступно при can_retry_refund). Возврат выполняется в фоне.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заказ.
+        required: true
+      tags:
+      - admin-orders
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderDetail'
+          description: ''
   /api/v1/admin/orders/{id}/transition/:
     post:
       operationId: admin_orders_transition
@@ -1263,6 +1310,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrderDetail'
           description: ''
+  /api/v1/orders/{number}/pay/:
+    post:
+      operationId: orders_pay
+      description: Ссылка на страницу оплаты онлайн-заказа в статусе «Ожидает оплаты».
+        Повторный вызов возвращает ту же попытку оплаты, пока она не завершилась.
+        Статус заказа меняется только по подтверждению провайдера.
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: string
+        required: true
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentStartInputRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentStart'
+          description: ''
+        '503':
+          description: Провайдер временно недоступен — повторить позже
+  /api/v1/orders/{number}/pay/refresh/:
+    post:
+      operationId: orders_pay_refresh
+      description: Сверить оплату с провайдером (после возврата со страницы оплаты)
+        и вернуть заказ.
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: string
+        required: true
+      tags:
+      - orders
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+        '503':
+          description: Провайдер временно недоступен — повторить позже
   /api/v1/orders/checkout/:
     get:
       operationId: orders_checkout_preview
@@ -1489,6 +1592,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AdminOrderStatusChange'
+        pay_until:
+          type: string
+          format: date-time
+          nullable: true
+          description: Срок оплаты онлайн-заказа; потом заказ отменяется
+          readOnly: true
         updated_at:
           type: string
           format: date-time
@@ -1499,8 +1608,17 @@ components:
           items:
             $ref: '#/components/schemas/AdminTransitionOption'
           readOnly: true
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminPayment'
+          description: Попытки онлайн-оплаты и возвраты
+        can_retry_refund:
+          type: boolean
+          readOnly: true
       required:
       - allowed_transitions
+      - can_retry_refund
       - comment
       - created_at
       - customer
@@ -1512,8 +1630,10 @@ components:
       - items
       - items_total_kopecks
       - number
+      - pay_until
       - payment_method
       - payment_method_display
+      - payments
       - recipient_name
       - recipient_phone
       - status
@@ -1620,6 +1740,43 @@ components:
       - from_status
       - to_status
       - to_status_display
+    AdminPayment:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount_kopecks:
+          type: integer
+        status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
+        status_display:
+          type: string
+        provider_payment_id:
+          type: string
+          nullable: true
+        cancellation_reason:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true
+        refunds:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminRefund'
+      required:
+      - amount_kopecks
+      - cancellation_reason
+      - created_at
+      - id
+      - paid_at
+      - provider_payment_id
+      - refunds
+      - status
+      - status_display
     AdminProduct:
       type: object
       properties:
@@ -1822,6 +1979,39 @@ components:
       - total_stock
       - updated_at
       - variants
+    AdminRefund:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount_kopecks:
+          type: integer
+        status:
+          $ref: '#/components/schemas/RefundStatusEnum'
+        status_display:
+          type: string
+        reason:
+          $ref: '#/components/schemas/RefundReasonEnum'
+        reason_display:
+          type: string
+        provider_refund_id:
+          type: string
+          nullable: true
+        cancellation_reason:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - amount_kopecks
+      - cancellation_reason
+      - created_at
+      - id
+      - provider_refund_id
+      - reason
+      - reason_display
+      - status
+      - status_display
     AdminTransitionOption:
       type: object
       properties:
@@ -2477,6 +2667,9 @@ components:
       required:
       - email
       - password
+    NullEnum:
+      enum:
+      - null
     OrderDetail:
       type: object
       properties:
@@ -2549,8 +2742,43 @@ components:
         can_cancel:
           type: boolean
           readOnly: true
+        can_pay:
+          type: boolean
+          readOnly: true
+        pay_until:
+          type: string
+          format: date-time
+          nullable: true
+          description: Срок оплаты онлайн-заказа; потом заказ отменяется
+          readOnly: true
+        payment_status:
+          nullable: true
+          description: |-
+            Статус последней попытки онлайн-оплаты; null — не было
+
+            * `pending` - Ожидает оплаты
+            * `succeeded` - Оплачен
+            * `canceled` - Не оплачен
+            * `refunded` - Возвращён
+          readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/PaymentStatusEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        refund_status:
+          nullable: true
+          description: |-
+            Статус последнего возврата денег; null — возврата не было
+
+            * `pending` - Выполняется
+            * `succeeded` - Выполнен
+            * `canceled` - Отклонён
+          readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/RefundStatusEnum'
+          - $ref: '#/components/schemas/NullEnum'
       required:
       - can_cancel
+      - can_pay
       - comment
       - created_at
       - delivery_address
@@ -2560,10 +2788,13 @@ components:
       - items
       - items_total_kopecks
       - number
+      - pay_until
       - payment_method
       - payment_method_display
+      - payment_status
       - recipient_name
       - recipient_phone
+      - refund_status
       - status
       - status_display
       - status_history
@@ -2948,6 +3179,39 @@ components:
       description: |-
         * `online` - Онлайн
         * `on_delivery` - При получении
+    PaymentStart:
+      type: object
+      properties:
+        confirmation_url:
+          type: string
+          format: uri
+          description: Страница оплаты провайдера
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
+      required:
+      - confirmation_url
+      - payment_status
+    PaymentStartInputRequest:
+      type: object
+      properties:
+        return_url:
+          type: string
+          default: ''
+          description: Адрес возврата в приложение после оплаты (deep link). Пусто
+            — адрес по умолчанию didishop://orders/<номер>
+          maxLength: 1000
+    PaymentStatusEnum:
+      enum:
+      - pending
+      - succeeded
+      - canceled
+      - refunded
+      type: string
+      description: |-
+        * `pending` - Ожидает оплаты
+        * `succeeded` - Оплачен
+        * `canceled` - Не оплачен
+        * `refunded` - Возвращён
     Profile:
       type: object
       properties:
@@ -2996,6 +3260,28 @@ components:
           minLength: 1
       required:
       - refresh
+    RefundReasonEnum:
+      enum:
+      - order_cancelled
+      - late_payment
+      - duplicate_payment
+      - amount_mismatch
+      type: string
+      description: |-
+        * `order_cancelled` - Заказ отменён
+        * `late_payment` - Оплата после отмены заказа
+        * `duplicate_payment` - Повторная оплата заказа
+        * `amount_mismatch` - Сумма не совпала с заказом
+    RefundStatusEnum:
+      enum:
+      - pending
+      - succeeded
+      - canceled
+      type: string
+      description: |-
+        * `pending` - Выполняется
+        * `succeeded` - Выполнен
+        * `canceled` - Отклонён
     RegisterRequest:
       type: object
       properties:
