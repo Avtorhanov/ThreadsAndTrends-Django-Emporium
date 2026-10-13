@@ -901,8 +901,12 @@ paths:
       - jwtAuth: []
       - cookieAuth: []
       responses:
-        '204':
-          description: No response body
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
   /api/v1/cart/merge/:
     post:
       operationId: cart_merge
@@ -1557,10 +1561,22 @@ components:
         variant_id:
           type: integer
         reason:
-          $ref: '#/components/schemas/ReasonEnum'
+          $ref: '#/components/schemas/CartMergeNoticeReasonEnum'
       required:
       - reason
       - variant_id
+    CartMergeNoticeReasonEnum:
+      enum:
+      - unavailable
+      - out_of_stock
+      - cart_full
+      - quantity_limited
+      type: string
+      description: |-
+        * `unavailable` - Товар недоступен — не перенесён
+        * `out_of_stock` - Нет в наличии — не перенесён
+        * `cart_full` - Корзина заполнена — не перенесён
+        * `quantity_limited` - Количество уменьшено до доступного
     CartMergeResult:
       type: object
       properties:
@@ -2100,18 +2116,6 @@ components:
       - date_joined
       - email
       - id
-    ReasonEnum:
-      enum:
-      - unavailable
-      - out_of_stock
-      - cart_full
-      - quantity_limited
-      type: string
-      description: |-
-        * `unavailable` - Товар недоступен — не перенесён
-        * `out_of_stock` - Нет в наличии — не перенесён
-        * `cart_full` - Корзина заполнена — не перенесён
-        * `quantity_limited` - Количество уменьшено до доступного
     RefreshRequest:
       type: object
       properties:
