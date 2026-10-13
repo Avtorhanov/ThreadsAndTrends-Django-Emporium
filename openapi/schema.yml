@@ -611,6 +611,130 @@ paths:
               schema:
                 $ref: '#/components/schemas/Customer'
           description: ''
+  /api/v1/admin/orders/:
+    get:
+      operationId: admin_orders_list
+      description: |-
+        API панели администратора: только сессия Django (+ CSRF) и роль администратора.
+        JWT мобильного клиента не принимается.
+      parameters:
+      - in: query
+        name: created_from
+        schema:
+          type: string
+        description: Дата оформления от (ГГГГ-ММ-ДД)
+      - in: query
+        name: created_to
+        schema:
+          type: string
+        description: Дата оформления до (ГГГГ-ММ-ДД)
+      - in: query
+        name: delivery_method
+        schema:
+          type: string
+          enum:
+          - courier
+          - pickup
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: payment_method
+        schema:
+          type: string
+          enum:
+          - on_delivery
+          - online
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Номер заказа, email, имя или телефон получателя
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - assembled
+          - awaiting_payment
+          - cancelled
+          - confirmed
+          - delivered
+          - paid
+          - ready_for_pickup
+          - shipped
+      - in: query
+        name: unfinished
+        schema:
+          type: boolean
+        description: Только незавершённые заказы
+      tags:
+      - admin-orders
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdminOrderListList'
+          description: ''
+  /api/v1/admin/orders/{id}/:
+    get:
+      operationId: admin_orders_retrieve
+      description: |-
+        API панели администратора: только сессия Django (+ CSRF) и роль администратора.
+        JWT мобильного клиента не принимается.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заказ.
+        required: true
+      tags:
+      - admin-orders
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderDetail'
+          description: ''
+  /api/v1/admin/orders/{id}/transition/:
+    post:
+      operationId: admin_orders_transition
+      description: Перевести заказ в статус из allowed_transitions. Отмена возвращает
+        остатки; «Оплачен» ставит только платёжная система.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заказ.
+        required: true
+      tags:
+      - admin-orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminTransitionRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderDetail'
+          description: ''
   /api/v1/auth/login/:
     post:
       operationId: login
@@ -1037,6 +1161,126 @@ paths:
               schema:
                 $ref: '#/components/schemas/Health'
           description: ''
+  /api/v1/orders/:
+    get:
+      operationId: orders_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - orders
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderListList'
+          description: ''
+    post:
+      operationId: orders_create
+      description: Оформить заказ из всей корзины. Ошибки корзины (empty_cart, cart_changed)
+        и изменение суммы (total_changed) — 400 с текстом для покупателя.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: 'Уникальный ключ попытки оформления (8–64 символа: латиница,
+          цифры, - и _). Повтор запроса с тем же ключом возвращает уже созданный заказ
+          (200).'
+        required: true
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutInputRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: Повтор с тем же ключом
+  /api/v1/orders/{number}/:
+    get:
+      operationId: orders_retrieve
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: string
+        required: true
+      tags:
+      - orders
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+  /api/v1/orders/{number}/cancel/:
+    post:
+      operationId: orders_cancel
+      description: Отмена до отправки заказа. Остатки возвращаются на склад.
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: string
+        required: true
+      tags:
+      - orders
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+  /api/v1/orders/checkout/:
+    get:
+      operationId: orders_checkout_preview
+      description: 'Данные экрана оформления: корзина (тот же расчёт, что и в заказе),
+        способы доставки со стоимостью, способы оплаты и получатель из последнего
+        заказа.'
+      tags:
+      - orders
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutPreview'
+          description: ''
 components:
   schemas:
     AdminCategory:
@@ -1157,6 +1401,225 @@ components:
           description: JPEG, PNG или WebP, до 5 МБ
       required:
       - image
+    AdminOrderCustomer:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        is_deleted:
+          type: boolean
+      required:
+      - email
+      - id
+      - is_deleted
+    AdminOrderDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        customer:
+          $ref: '#/components/schemas/AdminOrderCustomer'
+        number:
+          type: string
+          readOnly: true
+          title: Номер
+        status:
+          allOf:
+          - $ref: '#/components/schemas/OrderStatusEnum'
+          readOnly: true
+          title: Статус
+        status_display:
+          type: string
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          readOnly: true
+          title: Способ оплаты
+        payment_method_display:
+          type: string
+        delivery_method:
+          allOf:
+          - $ref: '#/components/schemas/DeliveryMethodEnum'
+          readOnly: true
+          title: Способ доставки
+        delivery_method_display:
+          type: string
+        items_total_kopecks:
+          type: integer
+          readOnly: true
+          title: Товары, коп.
+        delivery_kopecks:
+          type: integer
+          readOnly: true
+          title: Доставка, коп.
+        total_kopecks:
+          type: integer
+          readOnly: true
+          title: Итого, коп.
+        recipient_name:
+          type: string
+          readOnly: true
+          title: Получатель
+        recipient_phone:
+          type: string
+          readOnly: true
+          title: Телефон
+        delivery_address:
+          type: string
+          readOnly: true
+          title: Адрес доставки
+        comment:
+          type: string
+          readOnly: true
+          title: Комментарий
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Оформлен
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        status_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminOrderStatusChange'
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Изменён
+        allowed_transitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminTransitionOption'
+          readOnly: true
+      required:
+      - allowed_transitions
+      - comment
+      - created_at
+      - customer
+      - delivery_address
+      - delivery_kopecks
+      - delivery_method
+      - delivery_method_display
+      - id
+      - items
+      - items_total_kopecks
+      - number
+      - payment_method
+      - payment_method_display
+      - recipient_name
+      - recipient_phone
+      - status
+      - status_display
+      - status_history
+      - total_kopecks
+      - updated_at
+    AdminOrderList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: string
+          readOnly: true
+          title: Номер
+        status:
+          allOf:
+          - $ref: '#/components/schemas/OrderStatusEnum'
+          readOnly: true
+          title: Статус
+        status_display:
+          type: string
+        customer:
+          $ref: '#/components/schemas/AdminOrderCustomer'
+        recipient_name:
+          type: string
+          readOnly: true
+          title: Получатель
+        recipient_phone:
+          type: string
+          readOnly: true
+          title: Телефон
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          readOnly: true
+          title: Способ оплаты
+        delivery_method:
+          allOf:
+          - $ref: '#/components/schemas/DeliveryMethodEnum'
+          readOnly: true
+          title: Способ доставки
+        total_kopecks:
+          type: integer
+          readOnly: true
+          title: Итого, коп.
+        items_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Оформлен
+      required:
+      - created_at
+      - customer
+      - delivery_method
+      - id
+      - items_count
+      - number
+      - payment_method
+      - recipient_name
+      - recipient_phone
+      - status
+      - status_display
+      - total_kopecks
+    AdminOrderStatusChange:
+      type: object
+      properties:
+        from_status:
+          description: |-
+            Пусто — оформление заказа
+
+            * `awaiting_payment` - Ожидает оплаты
+            * `confirmed` - Принят
+            * `paid` - Оплачен
+            * `assembled` - Собран
+            * `shipped` - Отправлен
+            * `ready_for_pickup` - Готов к выдаче
+            * `delivered` - Получен
+            * `cancelled` - Отменён
+          oneOf:
+          - $ref: '#/components/schemas/OrderStatusEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        to_status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+        to_status_display:
+          type: string
+        changed_by:
+          $ref: '#/components/schemas/ChangedByEnum'
+        created_at:
+          type: string
+          format: date-time
+        actor_email:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - actor_email
+      - changed_by
+      - created_at
+      - from_status
+      - to_status
+      - to_status_display
     AdminProduct:
       type: object
       properties:
@@ -1359,6 +1822,23 @@ components:
       - total_stock
       - updated_at
       - variants
+    AdminTransitionOption:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+        label:
+          type: string
+      required:
+      - label
+      - status
+    AdminTransitionRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+      required:
+      - status
     AdminVariant:
       type: object
       properties:
@@ -1417,6 +1897,9 @@ components:
       - access
       - refresh
       - user
+    BlankEnum:
+      enum:
+      - ''
     Cart:
       type: object
       properties:
@@ -1795,6 +2278,78 @@ components:
       required:
       - new_password
       - old_password
+    ChangedByEnum:
+      enum:
+      - customer
+      - admin
+      - system
+      type: string
+      description: |-
+        * `customer` - Клиент
+        * `admin` - Администратор
+        * `system` - Система
+    CheckoutInputRequest:
+      type: object
+      properties:
+        delivery_method:
+          $ref: '#/components/schemas/DeliveryMethodEnum'
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        recipient_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        recipient_phone:
+          type: string
+          minLength: 1
+          description: Российский номер
+          maxLength: 32
+        delivery_address:
+          type: string
+          default: ''
+          description: Обязателен для курьера; для самовывоза игнорируется
+          maxLength: 500
+        comment:
+          type: string
+          default: ''
+          maxLength: 500
+        expected_total_kopecks:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Итог, который видел покупатель; если сумма изменилась — 400
+            (total_changed)
+      required:
+      - delivery_method
+      - payment_method
+      - recipient_name
+      - recipient_phone
+    CheckoutPreview:
+      type: object
+      properties:
+        cart:
+          $ref: '#/components/schemas/Cart'
+        delivery_options:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeliveryOption'
+        payment_methods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMethodEnum'
+        free_delivery_from_kopecks:
+          type: integer
+          description: Курьерская доставка бесплатна от этой суммы товаров, коп.
+        defaults:
+          allOf:
+          - $ref: '#/components/schemas/RecipientDefaults'
+          description: Данные получателя из последнего заказа
+      required:
+      - cart
+      - defaults
+      - delivery_options
+      - free_delivery_from_kopecks
+      - payment_methods
     Customer:
       type: object
       properties:
@@ -1862,6 +2417,32 @@ components:
           maxLength: 128
       required:
       - password
+    DeliveryMethodEnum:
+      enum:
+      - courier
+      - pickup
+      type: string
+      description: |-
+        * `courier` - Курьер
+        * `pickup` - Самовывоз
+    DeliveryOption:
+      type: object
+      properties:
+        method:
+          $ref: '#/components/schemas/DeliveryMethodEnum'
+        title:
+          type: string
+        cost_kopecks:
+          type: integer
+          description: Стоимость для текущей корзины, коп.
+        address:
+          type: string
+          description: Адрес пункта самовывоза; пусто для курьера
+      required:
+      - address
+      - cost_kopecks
+      - method
+      - title
     Health:
       type: object
       properties:
@@ -1896,6 +2477,253 @@ components:
       required:
       - email
       - password
+    OrderDetail:
+      type: object
+      properties:
+        number:
+          type: string
+          readOnly: true
+          title: Номер
+        status:
+          allOf:
+          - $ref: '#/components/schemas/OrderStatusEnum'
+          readOnly: true
+          title: Статус
+        status_display:
+          type: string
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          readOnly: true
+          title: Способ оплаты
+        payment_method_display:
+          type: string
+        delivery_method:
+          allOf:
+          - $ref: '#/components/schemas/DeliveryMethodEnum'
+          readOnly: true
+          title: Способ доставки
+        delivery_method_display:
+          type: string
+        items_total_kopecks:
+          type: integer
+          readOnly: true
+          title: Товары, коп.
+        delivery_kopecks:
+          type: integer
+          readOnly: true
+          title: Доставка, коп.
+        total_kopecks:
+          type: integer
+          readOnly: true
+          title: Итого, коп.
+        recipient_name:
+          type: string
+          readOnly: true
+          title: Получатель
+        recipient_phone:
+          type: string
+          readOnly: true
+          title: Телефон
+        delivery_address:
+          type: string
+          readOnly: true
+          title: Адрес доставки
+        comment:
+          type: string
+          readOnly: true
+          title: Комментарий
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Оформлен
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        status_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderStatusChange'
+        can_cancel:
+          type: boolean
+          readOnly: true
+      required:
+      - can_cancel
+      - comment
+      - created_at
+      - delivery_address
+      - delivery_kopecks
+      - delivery_method
+      - delivery_method_display
+      - items
+      - items_total_kopecks
+      - number
+      - payment_method
+      - payment_method_display
+      - recipient_name
+      - recipient_phone
+      - status
+      - status_display
+      - status_history
+      - total_kopecks
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        product_slug:
+          type: string
+        product_name:
+          type: string
+        size:
+          type: string
+          description: Пусто — товар без размера
+        sku:
+          type: string
+        price_kopecks:
+          type: integer
+          description: Цена на момент заказа, коп.
+        quantity:
+          type: integer
+        line_total_kopecks:
+          type: integer
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - cover_url
+      - id
+      - line_total_kopecks
+      - price_kopecks
+      - product_name
+      - product_slug
+      - quantity
+      - size
+      - sku
+    OrderList:
+      type: object
+      properties:
+        number:
+          type: string
+          readOnly: true
+          title: Номер
+        status:
+          allOf:
+          - $ref: '#/components/schemas/OrderStatusEnum'
+          readOnly: true
+          title: Статус
+        status_display:
+          type: string
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          readOnly: true
+          title: Способ оплаты
+        delivery_method:
+          allOf:
+          - $ref: '#/components/schemas/DeliveryMethodEnum'
+          readOnly: true
+          title: Способ доставки
+        total_kopecks:
+          type: integer
+          readOnly: true
+          title: Итого, коп.
+        items_count:
+          type: integer
+          description: Всего единиц товара
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Оформлен
+      required:
+      - created_at
+      - delivery_method
+      - items_count
+      - number
+      - payment_method
+      - status
+      - status_display
+      - total_kopecks
+    OrderStatusChange:
+      type: object
+      properties:
+        from_status:
+          description: |-
+            Пусто — оформление заказа
+
+            * `awaiting_payment` - Ожидает оплаты
+            * `confirmed` - Принят
+            * `paid` - Оплачен
+            * `assembled` - Собран
+            * `shipped` - Отправлен
+            * `ready_for_pickup` - Готов к выдаче
+            * `delivered` - Получен
+            * `cancelled` - Отменён
+          oneOf:
+          - $ref: '#/components/schemas/OrderStatusEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        to_status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+        to_status_display:
+          type: string
+        changed_by:
+          $ref: '#/components/schemas/ChangedByEnum'
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - changed_by
+      - created_at
+      - from_status
+      - to_status
+      - to_status_display
+    OrderStatusEnum:
+      enum:
+      - awaiting_payment
+      - confirmed
+      - paid
+      - assembled
+      - shipped
+      - ready_for_pickup
+      - delivered
+      - cancelled
+      type: string
+      description: |-
+        * `awaiting_payment` - Ожидает оплаты
+        * `confirmed` - Принят
+        * `paid` - Оплачен
+        * `assembled` - Собран
+        * `shipped` - Отправлен
+        * `ready_for_pickup` - Готов к выдаче
+        * `delivered` - Получен
+        * `cancelled` - Отменён
+    PaginatedAdminOrderListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminOrderList'
     PaginatedAdminProductList:
       type: object
       required:
@@ -1965,6 +2793,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Customer'
+    PaginatedOrderListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderList'
     PasswordResetConfirmRequest:
       type: object
       properties:
@@ -2089,6 +2940,14 @@ components:
           type: string
           title: Фамилия
           maxLength: 150
+    PaymentMethodEnum:
+      enum:
+      - online
+      - on_delivery
+      type: string
+      description: |-
+        * `online` - Онлайн
+        * `on_delivery` - При получении
     Profile:
       type: object
       properties:
@@ -2116,6 +2975,19 @@ components:
       - date_joined
       - email
       - id
+    RecipientDefaults:
+      type: object
+      properties:
+        recipient_name:
+          type: string
+        recipient_phone:
+          type: string
+        delivery_address:
+          type: string
+      required:
+      - delivery_address
+      - recipient_name
+      - recipient_phone
     RefreshRequest:
       type: object
       properties:

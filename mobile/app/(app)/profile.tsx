@@ -50,6 +50,7 @@ export default function ProfileScreen() {
       />
       <Button title="Сохранить" onPress={() => void save.submit()} loading={save.loading} />
 
+      <Button title="Мои заказы" variant="secondary" onPress={() => router.push("/orders")} />
       <LinkButton title="Сменить пароль" onPress={() => router.push("/change-password")} />
       <Button
         title="Выйти"

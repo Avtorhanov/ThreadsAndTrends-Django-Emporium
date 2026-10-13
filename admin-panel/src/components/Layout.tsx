@@ -9,7 +9,7 @@ export function Layout() {
       <header className="topbar">
         <span className="brand">DiDi-shop</span>
         <nav className="nav">
-          {/* Заказы появятся в сессии 5. */}
+          <NavLink to="/orders">Заказы</NavLink>
           <NavLink to="/catalog/products">Товары</NavLink>
           <NavLink to="/catalog/categories">Категории</NavLink>
           <NavLink to="/customers">Клиенты</NavLink>

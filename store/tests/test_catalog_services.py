@@ -4,7 +4,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError
 
-from orders.models import Order, OrderItem
+from orders.models import OrderItem
+from orders.tests.factories import make_order
 from store.models import Category, Product, ProductImage, ProductVariant
 from store.services import catalog
 from store.templatetags.money import format_kopecks
@@ -144,10 +145,7 @@ def test_db_constraints_protect_money_invariants():
 
 def test_soft_deleted_product_hidden_but_kept_in_order_history(customer):
     product = make_product()
-    order = Order.objects.create(owner=customer, total_kopecks=product.price_kopecks)
-    item = OrderItem.objects.create(
-        order=order, product=product, quantity=1, price_kopecks=product.price_kopecks
-    )
+    item = make_order(customer, product).items.get()
 
     catalog.soft_delete_product(product)
 

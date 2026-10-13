@@ -9,7 +9,8 @@ from rest_framework.test import APIClient
 from rest_framework.throttling import SimpleRateThrottle
 
 from accounts.models import PasswordResetCode
-from orders.models import Order
+from orders.models import OrderStatus
+from orders.tests.factories import make_order
 from store.models import Cart
 
 from .conftest import NEW_PASSWORD, PASSWORD, login
@@ -311,12 +312,13 @@ def test_delete_account_requires_password(auth_client, customer):
 
 def test_delete_account_anonymizes_and_revokes(api_client, customer, tokens):
     Cart.objects.create(owner=customer)
-    order = Order.objects.create(
-        owner=customer,
-        full_name="Иван",
-        phone_number="+7900",
-        address="Москва",
-        status="Доставлен",
+    order = make_order(
+        customer,
+        status=OrderStatus.DELIVERED,
+        recipient_name="Иван",
+        recipient_phone="+79001234567",
+        delivery_address="Москва",
+        comment="Код домофона 12",
     )
 
     response = bearer(tokens["access"]).post(
@@ -336,7 +338,12 @@ def test_delete_account_anonymizes_and_revokes(api_client, customer, tokens):
     assert login(api_client, "customer@example.com").status_code == 401
     assert not Cart.objects.filter(owner=customer).exists()
     order.refresh_from_db()  # заказ сохраняется для учёта, но обезличен
-    assert (order.full_name, order.phone_number, order.address) == ("", "", "")
+    assert (
+        order.recipient_name,
+        order.recipient_phone,
+        order.delivery_address,
+        order.comment,
+    ) == ("", "", "", "")
 
     # Email освобождается для новой регистрации.
     response = api_client.post(
@@ -348,7 +355,7 @@ def test_delete_account_anonymizes_and_revokes(api_client, customer, tokens):
 
 
 def test_delete_account_blocked_by_active_order(auth_client, customer):
-    Order.objects.create(owner=customer, status="В пути")
+    make_order(customer, status=OrderStatus.SHIPPED)
     response = auth_client.post("/api/v1/auth/me/delete/", {"password": PASSWORD}, format="json")
     assert response.status_code == 400
     assert "незавершённые заказы" in response.json()["non_field_errors"][0]

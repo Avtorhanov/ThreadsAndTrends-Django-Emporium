@@ -6,6 +6,8 @@ import { Layout } from "./components/Layout";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { CustomersPage } from "./pages/CustomersPage";
 import { LoginPage } from "./pages/LoginPage";
+import { OrderDetailPage } from "./pages/OrderDetailPage";
+import { OrdersPage } from "./pages/OrdersPage";
 import { ProductEditPage } from "./pages/ProductEditPage";
 import { ProductsPage } from "./pages/ProductsPage";
 
@@ -45,7 +47,9 @@ export function App() {
                 </RequireStaff>
               }
             >
-              <Route index element={<Navigate to="/customers" replace />} />
+              <Route index element={<Navigate to="/orders" replace />} />
+              <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/orders/:id" element={<OrderDetailPage />} />
               <Route path="/customers" element={<CustomersPage />} />
               <Route path="/catalog" element={<Navigate to="/catalog/products" replace />} />
               <Route path="/catalog/products" element={<ProductsPage />} />

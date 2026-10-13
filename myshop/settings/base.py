@@ -71,7 +71,6 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.static",
-                "core.context_processors.header_counters",
             ],
         },
     },
@@ -151,6 +150,8 @@ REST_FRAMEWORK = {
         "password_reset_confirm_email": env_str("THROTTLE_PASSWORD_RESET_CONFIRM_EMAIL", "20/hour"),
         # Публичный расчёт гостевой корзины.
         "cart_quote": env_str("THROTTLE_CART_QUOTE", "60/min"),
+        # Оформление заказа (на пользователя).
+        "order_create": env_str("THROTTLE_ORDER_CREATE", "30/hour"),
     },
 }
 
@@ -158,6 +159,16 @@ REST_FRAMEWORK = {
 # Максимум единиц одного варианта (дополнительно ограничено остатком) и позиций в корзине.
 CART_MAX_QUANTITY = env_int("CART_MAX_QUANTITY", 10)
 CART_MAX_ITEMS = env_int("CART_MAX_ITEMS", 50)
+
+# --- Заказы ---
+# Курьерская доставка: стоимость и порог бесплатной доставки (по сумме товаров), копейки.
+DELIVERY_COURIER_KOPECKS = env_int("DELIVERY_COURIER_KOPECKS", 500_00)
+DELIVERY_FREE_FROM_KOPECKS = env_int("DELIVERY_FREE_FROM_KOPECKS", 10_000_00)
+# Адрес пункта самовывоза; пусто — самовывоз не предлагается.
+PICKUP_ADDRESS = env_str("PICKUP_ADDRESS", "")
+# Онлайн-оплата включается вместе с платёжным провайдером (сессия 6): до этого заказ с ней
+# нельзя оплатить, поэтому по умолчанию предлагается только оплата при получении.
+ORDERS_ONLINE_PAYMENT_ENABLED = env_bool("ORDERS_ONLINE_PAYMENT_ENABLED", False)
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env_int("JWT_ACCESS_MINUTES", 15)),
@@ -184,6 +195,10 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "ENUM_NAME_OVERRIDES": {
         "CartMergeNoticeReasonEnum": "store.services.cart.MergeNoticeReason.choices",
+        "OrderStatusEnum": "orders.models.OrderStatus.choices",
+        "PaymentMethodEnum": "orders.models.PaymentMethod.choices",
+        "DeliveryMethodEnum": "orders.models.DeliveryMethod.choices",
+        "ChangedByEnum": "orders.models.ChangedBy.choices",
     },
 }
 
