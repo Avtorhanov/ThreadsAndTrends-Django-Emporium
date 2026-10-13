@@ -82,7 +82,12 @@ class OrderListCreateView(generics.ListAPIView):
         return super().get_throttles()
 
     def get_queryset(self):
-        return customer_orders(self.request.user).annotate(items_count=Sum("items__quantity"))
+        # Meta.ordering не применяется к запросам с GROUP BY — порядок задаётся явно.
+        return (
+            customer_orders(self.request.user)
+            .annotate(items_count=Sum("items__quantity"))
+            .order_by("-created_at", "-id")
+        )
 
     @extend_schema(operation_id="orders_list")
     def get(self, request, *args, **kwargs):
