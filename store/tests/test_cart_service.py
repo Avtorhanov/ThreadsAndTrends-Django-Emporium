@@ -126,7 +126,11 @@ def test_unavailable_variant_cannot_be_added_and_is_marked_in_cart(customer, mak
 
     summary = cart_service.get_summary(customer)
     [line] = summary.lines
-    assert (line.status, line.max_quantity, line.line_total_kopecks) == (LineStatus.UNAVAILABLE, 0, 0)
+    assert (line.status, line.max_quantity, line.line_total_kopecks) == (
+        LineStatus.UNAVAILABLE,
+        0,
+        0,
+    )
     assert line.product == product  # название по-прежнему можно показать
     assert summary.total_kopecks == 0
     assert not summary.can_checkout

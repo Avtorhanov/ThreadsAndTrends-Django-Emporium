@@ -67,9 +67,7 @@ class CartItemView(CartResponseMixin, APIView):
     def patch(self, request, pk: int):
         serializer = CartQuantitySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        summary = cart_service.set_quantity(
-            request.user, pk, serializer.validated_data["quantity"]
-        )
+        summary = cart_service.set_quantity(request.user, pk, serializer.validated_data["quantity"])
         return self.cart_response(summary)
 
     @extend_schema(operation_id="cart_items_remove", request=None, responses=CartSerializer)
