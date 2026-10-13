@@ -15,3 +15,9 @@ STORAGES = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 LOGGING["root"]["level"] = "WARNING"  # noqa: F405
+
+# Детерминированные условия заказов в тестах (не зависят от окружения).
+DELIVERY_COURIER_KOPECKS = 500_00
+DELIVERY_FREE_FROM_KOPECKS = 10_000_00
+PICKUP_ADDRESS = "Москва, ул. Тестовая, 1"
+ORDERS_ONLINE_PAYMENT_ENABLED = True

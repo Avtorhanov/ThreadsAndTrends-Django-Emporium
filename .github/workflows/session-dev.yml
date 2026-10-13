@@ -1,0 +1,39 @@
+# Временный workflow сессии 5 (среда разработки без PyPI/npm): регенерирует
+# openapi/schema.yml и коммитит её в ветку. Удаляется до мёржа.
+name: session-dev
+
+on:
+  push:
+    branches: ["session-5-*"]
+
+permissions:
+  contents: write
+
+jobs:
+  schema:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[schema]')"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements/*.txt
+      - run: pip install -r requirements/dev.txt
+      - name: Migrations diff
+        run: python manage.py makemigrations --dry-run -v 3 || true
+        env:
+          DJANGO_SETTINGS_MODULE: myshop.settings.test
+      - name: Generate schema
+        run: python manage.py spectacular --validate --file openapi/schema.yml
+        env:
+          DJANGO_SETTINGS_MODULE: myshop.settings.test
+      - name: Commit schema
+        run: |
+          if git diff --quiet openapi/schema.yml; then echo "schema unchanged"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add openapi/schema.yml
+          git commit -m "Регенерация openapi/schema.yml [schema]"
+          git push

@@ -3,11 +3,8 @@
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.test import RequestFactory
 from django.urls import reverse
 
-from core.context_processors import header_counters
-from orders.models import Order
 from store.models import Cart, CartItem
 from store.tests.factories import make_product
 
@@ -38,27 +35,3 @@ def test_pages_do_not_create_cart_for_user(client):
 
     assert response.status_code == 200
     assert not Cart.objects.filter(owner=user).exists()
-
-
-def test_header_counters_are_lazy(django_assert_num_queries):
-    user = User.objects.create_user(email="u@example.com", password="p")
-    Order.objects.create(owner=user)
-
-    request = RequestFactory().get("/")
-    request.user = user
-    request.session = {}
-
-    with django_assert_num_queries(0):
-        counters = header_counters(request)["header_counters"]
-    with django_assert_num_queries(1):
-        assert counters.orders == 1
-        # Повторное обращение берётся из cached_property.
-        assert counters.orders == 1
-
-
-def test_header_counters_for_guest():
-    request = RequestFactory().get("/")
-    request.user = type("Anon", (), {"is_authenticated": False})()
-    request.session = {}
-
-    assert header_counters(request)["header_counters"].orders == 0

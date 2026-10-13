@@ -1,0 +1,17 @@
+{% load money %}{% autoescape off %}Здравствуйте{% if first_name %}, {{ first_name }}{% endif %}!
+
+{% if created %}Ваш заказ {{ order.number }} оформлен.
+
+{% for item in items %}— {{ item.product_name }}{% if item.size %} ({{ item.size }}){% endif %} × {{ item.quantity }}: {{ item.price_kopecks|rub_times:item.quantity }} ₽
+{% endfor %}
+Товары: {{ order.items_total_kopecks|rub }} ₽
+Доставка: {% if order.delivery_kopecks %}{{ order.delivery_kopecks|rub }} ₽{% else %}бесплатно{% endif %}
+Итого: {{ order.total_kopecks|rub }} ₽
+
+Способ получения: {{ order.get_delivery_method_display }}{% if order.delivery_address %}, {{ order.delivery_address }}{% endif %}
+Оплата: {{ order.get_payment_method_display }}
+Статус: {{ status_label }}
+{% else %}Статус заказа {{ order.number }} изменился: {{ status_label }}.
+{% endif %}
+Следить за заказом можно в приложении DiDi-shop, раздел «Мои заказы».
+{% endautoescape %}
