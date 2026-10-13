@@ -10,3 +10,6 @@ venv
 media
 staticfiles
 db.sqlite3
+mobile
+admin-panel
+**/node_modules

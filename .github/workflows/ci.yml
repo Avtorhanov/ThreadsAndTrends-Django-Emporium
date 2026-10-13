@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, "session-*"]
   pull_request:
 
 concurrency:
@@ -55,8 +55,13 @@ jobs:
         run: python manage.py makemigrations --check --dry-run
         env:
           DJANGO_SETTINGS_MODULE: myshop.settings.test
-      - name: OpenAPI schema is valid
-        run: python manage.py spectacular --validate --fail-on-warn --file /tmp/schema.yml
+      - name: OpenAPI schema is valid and committed (openapi/schema.yml)
+        run: |
+          python manage.py spectacular --validate --fail-on-warn --file openapi/schema.yml
+          git diff --exit-code openapi/schema.yml || {
+            echo "::error file=openapi/schema.yml::Схема устарела: python manage.py spectacular --file openapi/schema.yml"
+            exit 1
+          }
         env:
           DJANGO_SETTINGS_MODULE: myshop.settings.test
       - name: Tests
@@ -67,6 +72,29 @@ jobs:
           DJANGO_SETTINGS_MODULE: myshop.settings.prod
           SECRET_KEY: ci-deploy-check-${{ github.run_id }}-not-a-real-secret-key-0123456789
           ALLOWED_HOSTS: example.com
+
+  frontend:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [mobile, admin-panel]
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+      - run: npm ci
+      # Типы API генерируются из openapi/schema.yml перед проверкой (pretypecheck).
+      - run: npm run typecheck
+      - name: Build
+        if: matrix.app == 'admin-panel'
+        run: npm run build
 
   docker:
     runs-on: ubuntu-latest

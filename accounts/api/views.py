@@ -17,7 +17,7 @@ from .serializers import (
     DeleteAccountSerializer,
     LoginSerializer,
     PasswordResetConfirmSerializer,
-    PasswordResetRequestSerializer,
+    PasswordResetEmailSerializer,
     ProfileSerializer,
     RefreshSerializer,
     RegisterSerializer,
@@ -173,13 +173,13 @@ class PasswordResetRequestView(PublicAPIView):
     throttle_classes = [PasswordResetThrottle]
 
     @extend_schema(
-        request=PasswordResetRequestSerializer,
+        request=PasswordResetEmailSerializer,
         responses={202: None},
         operation_id="request_password_reset",
         description="Всегда 202: ответ не раскрывает, зарегистрирован ли email.",
     )
     def post(self, request):
-        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer = PasswordResetEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         services.request_password_reset(serializer.validated_data["email"])
         return Response(status=status.HTTP_202_ACCEPTED)

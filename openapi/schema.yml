@@ -314,7 +314,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PasswordResetRequestRequest'
+              $ref: '#/components/schemas/PasswordResetEmailRequest'
         required: true
       security:
       - {}
@@ -575,7 +575,7 @@ components:
       - code
       - email
       - new_password
-    PasswordResetRequestRequest:
+    PasswordResetEmailRequest:
       type: object
       properties:
         email:

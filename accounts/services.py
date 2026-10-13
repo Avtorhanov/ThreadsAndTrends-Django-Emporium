@@ -24,7 +24,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from core.tasks import send_email
 
 from .models import PasswordResetCode, User, normalize_email
-from .signals import account_deleted
+from .signals import account_deleted, account_deleting
 
 logger = logging.getLogger(__name__)
 
@@ -208,10 +208,12 @@ def delete_own_account(user: User, *, password: str) -> None:
 
 
 def soft_delete_user(user: User) -> User:
-    """Мягкое удаление с анонимизацией. Заказы остаются (история и бухучёт),
-    вход и восстановление пароля невозможны, все refresh-токены отозваны."""
+    """Мягкое удаление с анонимизацией. Заказы остаются для учёта (персональные данные
+    в них обезличивает приложение orders), вход и восстановление пароля невозможны,
+    все refresh-токены отозваны."""
     if user.is_deleted:
         return user
+    account_deleting.send(sender=User, user=user)  # приёмники могут запретить удаление
     with transaction.atomic():
         user.deleted_at = timezone.now()
         user.is_active = False

@@ -47,7 +47,7 @@ class DeleteAccountSerializer(serializers.Serializer):
     password = serializers.CharField(trim_whitespace=False, max_length=128)
 
 
-class PasswordResetRequestSerializer(serializers.Serializer):
+class PasswordResetEmailSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
 

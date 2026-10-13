@@ -311,7 +311,13 @@ def test_delete_account_requires_password(auth_client, customer):
 
 def test_delete_account_anonymizes_and_revokes(api_client, customer, tokens):
     Cart.objects.create(owner=customer)
-    order = Order.objects.create(owner=customer, full_name="Иван", phone_number="+7900")
+    order = Order.objects.create(
+        owner=customer,
+        full_name="Иван",
+        phone_number="+7900",
+        address="Москва",
+        status="Доставлен",
+    )
 
     response = bearer(tokens["access"]).post(
         "/api/v1/auth/me/delete/", {"password": PASSWORD}, format="json"
@@ -329,7 +335,8 @@ def test_delete_account_anonymizes_and_revokes(api_client, customer, tokens):
     assert refresh(api_client, tokens["refresh"]).status_code == 401
     assert login(api_client, "customer@example.com").status_code == 401
     assert not Cart.objects.filter(owner=customer).exists()
-    assert Order.objects.filter(pk=order.pk).exists()  # история заказов сохраняется
+    order.refresh_from_db()  # заказ сохраняется для учёта, но обезличен
+    assert (order.full_name, order.phone_number, order.address) == ("", "", "")
 
     # Email освобождается для новой регистрации.
     response = api_client.post(
@@ -338,6 +345,15 @@ def test_delete_account_anonymizes_and_revokes(api_client, customer, tokens):
         format="json",
     )
     assert response.status_code == 201
+
+
+def test_delete_account_blocked_by_active_order(auth_client, customer):
+    Order.objects.create(owner=customer, status="В пути")
+    response = auth_client.post("/api/v1/auth/me/delete/", {"password": PASSWORD}, format="json")
+    assert response.status_code == 400
+    assert "незавершённые заказы" in response.json()["non_field_errors"][0]
+    customer.refresh_from_db()
+    assert customer.deleted_at is None and customer.is_active
 
 
 def test_staff_cannot_delete_account_via_app(api_client, staff):

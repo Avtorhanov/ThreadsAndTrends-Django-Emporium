@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# OpenAPI-типы генерируются из ../openapi/schema.yml (npm run gen:api)
+src/api/schema.d.ts

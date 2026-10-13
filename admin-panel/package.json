@@ -1,14 +1,17 @@
 {
-  "name": "admin-panel",
+  "name": "didi-shop-admin-panel",
+  "private": true,
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "gen:api": "openapi-typescript ../openapi/schema.yml -o src/api/schema.d.ts",
+    "pretypecheck": "npm run gen:api",
+    "typecheck": "tsc --noEmit",
+    "prebuild": "npm run gen:api",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "openapi-fetch": "^0.17.0",
     "react": "^19.3.0",
