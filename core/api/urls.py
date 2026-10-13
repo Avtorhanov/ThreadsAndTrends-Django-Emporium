@@ -3,6 +3,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from accounts.api.urls import admin_urlpatterns, auth_urlpatterns
 from orders.api.urls import admin_orders_urlpatterns, orders_urlpatterns
+from payments.api.urls import order_payment_urlpatterns, payment_urlpatterns
 from store.api.urls import admin_catalog_urlpatterns, cart_urlpatterns, catalog_urlpatterns
 
 from .views import HealthView
@@ -21,6 +22,10 @@ urlpatterns = [
     path("cart/", include(cart_urlpatterns)),
     # Заказы клиента (JWT)
     path("orders/", include(orders_urlpatterns)),
+    # Оплата заказа клиентом (JWT)
+    path("orders/", include(order_payment_urlpatterns)),
+    # Уведомления платёжного провайдера (без аутентификации, проверка IP + сверка по API)
+    path("payments/", include(payment_urlpatterns)),
     # Панель администратора (сессия + CSRF)
     path("admin/catalog/", include(admin_catalog_urlpatterns)),
     path("admin/", include(admin_orders_urlpatterns)),

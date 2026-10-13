@@ -9,6 +9,9 @@ export type AdminOrderPage = Schemas["PaginatedAdminOrderListList"];
 export type OrderStatus = Schemas["OrderStatusEnum"];
 export type PaymentMethod = Schemas["PaymentMethodEnum"];
 export type DeliveryMethod = Schemas["DeliveryMethodEnum"];
+export type AdminPayment = Schemas["AdminPayment"];
+export type PaymentStatus = Schemas["PaymentStatusEnum"];
+export type RefundStatus = Schemas["RefundStatusEnum"];
 
 export type OrderQuery = {
   search: string;
@@ -74,6 +77,18 @@ export const ordersService = {
         params: { path: { id } },
         body: { status },
       }),
+    );
+  },
+
+  /** Повторить возврат после отказа провайдера. */
+  refund(id: number): Promise<AdminOrderDetail> {
+    return unwrap(api.POST("/api/v1/admin/orders/{id}/refund/", { params: { path: { id } } }));
+  },
+
+  /** Сверить незавершённые платежи с провайдером (если уведомление не дошло). */
+  syncPayment(id: number): Promise<AdminOrderDetail> {
+    return unwrap(
+      api.POST("/api/v1/admin/orders/{id}/payment-sync/", { params: { path: { id } } }),
     );
   },
 };

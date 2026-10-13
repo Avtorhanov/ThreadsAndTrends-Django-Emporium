@@ -4,7 +4,7 @@
 from django.core.exceptions import ValidationError
 from django.db.models import Q, Sum
 from django.utils.dateparse import parse_date
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -12,6 +12,8 @@ from rest_framework.response import Response
 from core.api.mixins import AdminAPIMixin
 from orders.models import ChangedBy, DeliveryMethod, Order, OrderStatus, PaymentMethod
 from orders.services import status as status_service
+from payments import services as payment_services
+from payments.api.views import PaymentServiceUnavailable
 
 from .serializers import (
     AdminOrderDetailSerializer,
@@ -114,5 +116,40 @@ class AdminOrderViewSet(
         status_service.transition(
             order, serializer.validated_data["status"], by=ChangedBy.ADMIN, actor=request.user
         )
+        fresh = self.get_queryset().get(pk=order.pk)
+        return Response(self.get_serializer(fresh).data)
+
+    @extend_schema(
+        operation_id="admin_orders_refund",
+        request=None,
+        responses=AdminOrderDetailSerializer,
+        description=(
+            "Повторить возврат денег, если провайдер отклонил прошлый возврат "
+            "(доступно при can_retry_refund). Возврат выполняется в фоне."
+        ),
+    )
+    @action(detail=True, methods=["post"])
+    def refund(self, request, pk=None):
+        order = self.get_object()
+        payment_services.retry_refund(order)
+        fresh = self.get_queryset().get(pk=order.pk)
+        return Response(self.get_serializer(fresh).data)
+
+    @extend_schema(
+        operation_id="admin_orders_payment_sync",
+        request=None,
+        responses={
+            200: AdminOrderDetailSerializer,
+            503: OpenApiResponse(description="Провайдер временно недоступен"),
+        },
+        description="Сверить незавершённые платежи заказа с провайдером.",
+    )
+    @action(detail=True, methods=["post"], url_path="payment-sync")
+    def payment_sync(self, request, pk=None):
+        order = self.get_object()
+        try:
+            payment_services.sync_order_payments(order)
+        except payment_services.PaymentUnavailable as exc:
+            raise PaymentServiceUnavailable() from exc
         fresh = self.get_queryset().get(pk=order.pk)
         return Response(self.get_serializer(fresh).data)

@@ -12,6 +12,7 @@ export type OrderStatus = Schemas["OrderStatusEnum"];
 export type PaymentMethod = Schemas["PaymentMethodEnum"];
 export type DeliveryMethod = Schemas["DeliveryMethodEnum"];
 export type OrdersPage = Schemas["PaginatedOrderListList"];
+export type PaymentStart = Schemas["PaymentStart"];
 
 /** Ключ попытки оформления: повтор запроса с ним (обрыв сети, двойное нажатие) не создаёт
  * второй заказ. Не секрет — уникален в пределах аккаунта. */
@@ -46,9 +47,24 @@ export const orderService = {
       api.POST("/api/v1/orders/{number}/cancel/", { params: { path: { number } } }),
     );
   },
+  /** Ссылка на страницу оплаты провайдера; returnUrl — deep link обратно в приложение. */
+  pay(number: string, returnUrl: string): Promise<PaymentStart> {
+    return unwrap(
+      api.POST("/api/v1/orders/{number}/pay/", {
+        params: { path: { number } },
+        body: { return_url: returnUrl },
+      }),
+    );
+  },
+  /** Сервер сверяет оплату с провайдером и возвращает заказ. */
+  refreshPayment(number: string): Promise<OrderDetail> {
+    return unwrap(
+      api.POST("/api/v1/orders/{number}/pay/refresh/", { params: { path: { number } } }),
+    );
+  },
 };
 
 export const PAYMENT_TITLES: Record<PaymentMethod, string> = {
-  online: "Картой онлайн",
+  online: "Онлайн: карта, СБП, SberPay",
   on_delivery: "При получении",
 };

@@ -4,6 +4,9 @@ from rest_framework import serializers
 from orders.models import ChangedBy, DeliveryMethod, Order, OrderStatus, PaymentMethod
 from orders.services.checkout import CheckoutInput
 from orders.services.status import allowed_transitions, can_cancel
+from payments import services as payment_services
+from payments.api.serializers import AdminPaymentSerializer
+from payments.models import PaymentStatus, RefundStatus
 from store.api.cart_serializers import CartSerializer
 from store.api.serializers import absolute_url
 
@@ -115,6 +118,10 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
     status_history = OrderStatusChangeSerializer(many=True, source="status_changes")
     can_cancel = serializers.SerializerMethodField()
+    can_pay = serializers.SerializerMethodField()
+    pay_until = serializers.SerializerMethodField()
+    payment_status = serializers.SerializerMethodField()
+    refund_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -137,11 +144,54 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "items",
             "status_history",
             "can_cancel",
+            "can_pay",
+            "pay_until",
+            "payment_status",
+            "refund_status",
         ]
         read_only_fields = fields
 
     def get_can_cancel(self, order) -> bool:
         return can_cancel(order, ChangedBy.CUSTOMER)
+
+    def _payment(self, order) -> payment_services.PaymentSummary:
+        # Один расчёт на заказ (платежи и возвраты — из prefetch order_detail_queryset).
+        cache = self.context.setdefault("_payment_summary", {})
+        if order.pk not in cache:
+            cache[order.pk] = payment_services.summary(order)
+        return cache[order.pk]
+
+    def get_can_pay(self, order) -> bool:
+        return self._payment(order).can_pay
+
+    @extend_schema_field(
+        serializers.DateTimeField(
+            allow_null=True, help_text="Срок оплаты онлайн-заказа; потом заказ отменяется"
+        )
+    )
+    def get_pay_until(self, order):
+        deadline = self._payment(order).pay_until
+        return serializers.DateTimeField().to_representation(deadline) if deadline else None
+
+    @extend_schema_field(
+        serializers.ChoiceField(
+            choices=PaymentStatus.choices,
+            allow_null=True,
+            help_text="Статус последней попытки онлайн-оплаты; null — не было",
+        )
+    )
+    def get_payment_status(self, order):
+        return self._payment(order).payment_status
+
+    @extend_schema_field(
+        serializers.ChoiceField(
+            choices=RefundStatus.choices,
+            allow_null=True,
+            help_text="Статус последнего возврата денег; null — возврата не было",
+        )
+    )
+    def get_refund_status(self, order):
+        return self._payment(order).refund_status
 
 
 # --- Панель администратора ---
@@ -194,16 +244,27 @@ class AdminOrderDetailSerializer(OrderDetailSerializer):
     customer = AdminOrderCustomerSerializer(source="owner")
     status_history = AdminOrderStatusChangeSerializer(many=True, source="status_changes")
     allowed_transitions = serializers.SerializerMethodField()
+    payments = AdminPaymentSerializer(many=True, help_text="Попытки онлайн-оплаты и возвраты")
+    can_retry_refund = serializers.SerializerMethodField()
 
     class Meta(OrderDetailSerializer.Meta):
         fields = [
             "id",
             "customer",
-            *[f for f in OrderDetailSerializer.Meta.fields if f != "can_cancel"],
+            *[
+                f
+                for f in OrderDetailSerializer.Meta.fields
+                if f not in ("can_cancel", "can_pay", "payment_status", "refund_status")
+            ],
             "updated_at",
             "allowed_transitions",
+            "payments",
+            "can_retry_refund",
         ]
         read_only_fields = fields
+
+    def get_can_retry_refund(self, order) -> bool:
+        return payment_services.refund_retry_payment(order) is not None
 
     @extend_schema_field(AdminTransitionOptionSerializer(many=True))
     def get_allowed_transitions(self, order):
