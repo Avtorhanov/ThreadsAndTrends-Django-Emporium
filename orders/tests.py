@@ -1,20 +1,22 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
 from orders.models import Order
 from store.models import Cart, CartItem, Product
 
+User = get_user_model()
+
 
 class OrdersSecurityTestCase(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user(
-            username="owner",
+            email="owner@example.com",
             password="testpassword123",
         )
 
         self.other_user = User.objects.create_user(
-            username="other_user",
+            email="other_user@example.com",
             password="testpassword123",
         )
 
@@ -107,7 +109,7 @@ class OrdersSecurityTestCase(TestCase):
         csrf_client = Client(enforce_csrf_checks=True)
 
         csrf_client.login(
-            username="owner",
+            email="owner@example.com",
             password="testpassword123",
         )
 
@@ -130,7 +132,7 @@ class OrdersSecurityTestCase(TestCase):
         csrf_client = Client(enforce_csrf_checks=True)
 
         csrf_client.login(
-            username="owner",
+            email="owner@example.com",
             password="testpassword123",
         )
 
@@ -170,7 +172,7 @@ class OrdersSecurityTestCase(TestCase):
         csrf_client = Client(enforce_csrf_checks=True)
 
         csrf_client.login(
-            username="owner",
+            email="owner@example.com",
             password="testpassword123",
         )
 
@@ -204,7 +206,7 @@ class OrdersSecurityTestCase(TestCase):
 
     def test_user_cannot_checkout_other_users_cart_item(self):
         self.client.login(
-            username="other_user",
+            email="other_user@example.com",
             password="testpassword123",
         )
 
@@ -219,7 +221,7 @@ class OrdersSecurityTestCase(TestCase):
 
     def test_user_cannot_view_other_users_order(self):
         self.client.login(
-            username="other_user",
+            email="other_user@example.com",
             password="testpassword123",
         )
 
@@ -234,7 +236,7 @@ class OrdersSecurityTestCase(TestCase):
 
     def test_user_cannot_delete_other_users_order(self):
         self.client.login(
-            username="other_user",
+            email="other_user@example.com",
             password="testpassword123",
         )
 
@@ -259,7 +261,7 @@ class OrdersSecurityTestCase(TestCase):
 
     def test_get_request_cannot_delete_order(self):
         self.client.login(
-            username="owner",
+            email="owner@example.com",
             password="testpassword123",
         )
 
@@ -284,7 +286,7 @@ class OrdersSecurityTestCase(TestCase):
 
     def test_order_owner_can_view_own_order(self):
         self.client.login(
-            username="owner",
+            email="owner@example.com",
             password="testpassword123",
         )
 
@@ -299,7 +301,7 @@ class OrdersSecurityTestCase(TestCase):
 
     def test_order_owner_can_delete_own_order(self):
         self.client.login(
-            username="owner",
+            email="owner@example.com",
             password="testpassword123",
         )
 

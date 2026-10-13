@@ -1,0 +1,703 @@
+openapi: 3.0.3
+info:
+  title: DiDi-shop API
+  version: 1.0.0
+  description: API маркетплейса DiDi-shop для мобильного приложения.
+paths:
+  /api/v1/admin/auth/csrf/:
+    get:
+      operationId: admin_csrf
+      description: Выставляет cookie csrftoken для последующих POST-запросов панели.
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/auth/login/:
+    post:
+      operationId: admin_login
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffUser'
+          description: ''
+  /api/v1/admin/auth/logout/:
+    post:
+      operationId: admin_logout
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/auth/me/:
+    get:
+      operationId: admin_me
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffUser'
+          description: ''
+  /api/v1/admin/customers/:
+    get:
+      operationId: admin_customers_list
+      description: Клиенты магазина. Администраторы в выборку не попадают и через
+        неё не изменяются.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Поиск по email, имени и фамилии
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - blocked
+          - deleted
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCustomerList'
+          description: ''
+  /api/v1/admin/customers/{id}/:
+    get:
+      operationId: admin_customers_retrieve
+      description: Клиенты магазина. Администраторы в выборку не попадают и через
+        неё не изменяются.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Пользователь.
+        required: true
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/v1/admin/customers/{id}/block/:
+    post:
+      operationId: admin_customers_block_create
+      description: Клиенты магазина. Администраторы в выборку не попадают и через
+        неё не изменяются.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Пользователь.
+        required: true
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/v1/admin/customers/{id}/delete/:
+    post:
+      operationId: admin_customers_delete_create
+      description: Мягкое удаление с анонимизацией, как при удалении клиентом.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Пользователь.
+        required: true
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/v1/admin/customers/{id}/unblock/:
+    post:
+      operationId: admin_customers_unblock_create
+      description: Клиенты магазина. Администраторы в выборку не попадают и через
+        неё не изменяются.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Пользователь.
+        required: true
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/v1/auth/login/:
+    post:
+      operationId: login
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResult'
+          description: ''
+        '401':
+          description: Неверные данные
+  /api/v1/auth/logout/:
+    post:
+      operationId: logout
+      description: Отзыв refresh-токена текущего устройства. Работает и с истёкшим
+        access.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/me/:
+    get:
+      operationId: get_profile
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
+    patch:
+      operationId: update_profile
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
+  /api/v1/auth/me/delete/:
+    post:
+      operationId: delete_account
+      description: Мягкое удаление с анонимизацией. Требуется текущий пароль.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteAccountRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/password/change/:
+    post:
+      operationId: change_password
+      description: Остальные устройства разлогиниваются; текущему выдаётся новая пара
+        токенов.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+          description: ''
+  /api/v1/auth/password/reset/:
+    post:
+      operationId: request_password_reset
+      description: 'Всегда 202: ответ не раскрывает, зарегистрирован ли email.'
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '202':
+          description: No response body
+  /api/v1/auth/password/reset/confirm/:
+    post:
+      operationId: confirm_password_reset
+      description: Новый пароль по коду из письма; все прежние сессии завершаются.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+          description: ''
+  /api/v1/auth/refresh/:
+    post:
+      operationId: refresh_tokens
+      description: 'Ротация: старый refresh попадает в чёрный список, выдаётся новая
+        пара.'
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+          description: ''
+        '401':
+          description: Токен отозван
+  /api/v1/auth/register/:
+    post:
+      operationId: register
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResult'
+          description: ''
+  /api/v1/health/:
+    get:
+      operationId: health_retrieve
+      description: 503 и status=error, если какая-либо проверка не прошла.
+      tags:
+      - health
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: ''
+components:
+  schemas:
+    AuthResult:
+      type: object
+      properties:
+        access:
+          type: string
+          description: 'JWT access-токен (заголовок Authorization: Bearer)'
+        refresh:
+          type: string
+          description: JWT refresh-токен; одноразовый, ротируется
+        user:
+          $ref: '#/components/schemas/Profile'
+      required:
+      - access
+      - refresh
+      - user
+    ChangePasswordRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+          minLength: 1
+          maxLength: 128
+        new_password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - new_password
+      - old_password
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+          title: Имя
+        last_name:
+          type: string
+          readOnly: true
+          title: Фамилия
+        status:
+          allOf:
+          - $ref: '#/components/schemas/CustomerStatusEnum'
+          readOnly: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата регистрации
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Последний вход
+        deleted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Удалён
+      required:
+      - date_joined
+      - deleted_at
+      - email
+      - first_name
+      - id
+      - last_login
+      - last_name
+      - status
+    CustomerStatusEnum:
+      enum:
+      - active
+      - blocked
+      - deleted
+      type: string
+      description: |-
+        * `active` - active
+        * `blocked` - blocked
+        * `deleted` - deleted
+    DeleteAccountRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+    Health:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatusEnum'
+        checks:
+          type: object
+          additionalProperties:
+            type: boolean
+      required:
+      - checks
+      - status
+    HealthStatusEnum:
+      enum:
+      - ok
+      - error
+      type: string
+      description: |-
+        * `ok` - ok
+        * `error` - error
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - email
+      - password
+    PaginatedCustomerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Customer'
+    PasswordResetConfirmRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        code:
+          type: string
+          minLength: 1
+          pattern: ^\d{6}$
+        new_password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - code
+      - email
+      - new_password
+    PasswordResetRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    PatchedProfileRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+    Profile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          title: Имя
+          maxLength: 150
+        last_name:
+          type: string
+          title: Фамилия
+          maxLength: 150
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата регистрации
+      required:
+      - date_joined
+      - email
+      - id
+    RefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+      required:
+      - email
+      - password
+    StaffUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+          title: Имя
+        last_name:
+          type: string
+          readOnly: true
+          title: Фамилия
+        is_superuser:
+          type: boolean
+          readOnly: true
+          title: Статус суперпользователя
+          description: Указывает, что пользователь имеет все права без явного их назначения.
+      required:
+      - email
+      - first_name
+      - id
+      - is_superuser
+      - last_name
+    TokenPair:
+      type: object
+      properties:
+        access:
+          type: string
+          description: 'JWT access-токен (заголовок Authorization: Bearer)'
+        refresh:
+          type: string
+          description: JWT refresh-токен; одноразовый, ротируется
+      required:
+      - access
+      - refresh
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

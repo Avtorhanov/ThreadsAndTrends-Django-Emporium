@@ -39,7 +39,7 @@ class CartItemInline(admin.TabularInline):
 
 class CartAdmin(admin.ModelAdmin):
     list_display = ["owner", "total_price", "total_quantity"]
-    search_fields = ["owner__username"]
+    search_fields = ["owner__email"]
     inlines = [CartItemInline]
     fieldsets = (
         (

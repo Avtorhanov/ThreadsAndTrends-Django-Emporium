@@ -1,15 +1,19 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.paginator import Page
 from django.test import Client, TestCase
 from django.urls import reverse
 
 from .models import Cart, CartItem, Category, Product, SubCategory
 
+User = get_user_model()
+
 
 class CartViewsTestCase(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="owner", password="ownerpassword123")
-        self.other_user = User.objects.create_user(username="other", password="otherpassword123")
+        self.user = User.objects.create_user(email="owner@example.com", password="ownerpassword123")
+        self.other_user = User.objects.create_user(
+            email="other@example.com", password="otherpassword123"
+        )
 
         self.product = Product.objects.create(
             name="TestProduct", description="Test Description", price=10.00
@@ -30,7 +34,7 @@ class CartViewsTestCase(TestCase):
         csrf_client = Client(enforce_csrf_checks=True)
 
         csrf_client.login(
-            username="testuser",
+            email="testuser@example.com",
             password="testpassword",
         )
 
@@ -57,7 +61,7 @@ class CartViewsTestCase(TestCase):
         csrf_client = Client(enforce_csrf_checks=True)
 
         csrf_client.login(
-            username="testuser",
+            email="testuser@example.com",
             password="testpassword",
         )
 
@@ -80,7 +84,7 @@ class CartViewsTestCase(TestCase):
         self.assertTrue(CartItem.objects.filter(id=cart_item.id).exists())
 
     def test_add_to_cart_authenticated_user(self):
-        self.client.login(username="owner", password="ownerpassword123")
+        self.client.login(email="owner@example.com", password="ownerpassword123")
 
         response = self.client.post(reverse("add_to_cart", args=[self.product.id]))
 
@@ -104,7 +108,7 @@ class CartViewsTestCase(TestCase):
     # -------------------------
 
     def test_cart_view_authenticated_user(self):
-        self.client.login(username="owner", password="ownerpassword123")
+        self.client.login(email="owner@example.com", password="ownerpassword123")
 
         response = self.client.get(reverse("cart"))
 
@@ -129,7 +133,7 @@ class CartViewsTestCase(TestCase):
         )
 
         self.client.login(
-            username="owner",
+            email="owner@example.com",
             password="ownerpassword123",
         )
 
@@ -153,7 +157,7 @@ class CartViewsTestCase(TestCase):
 
     def test_other_user_cannot_update_cart_item(self):
         User.objects.create_user(
-            username="otheruser",
+            email="otheruser@example.com",
             password="otherpassword",
         )
 
@@ -165,7 +169,7 @@ class CartViewsTestCase(TestCase):
         )
 
         self.client.login(
-            username="otheruser",
+            email="otheruser@example.com",
             password="otherpassword",
         )
 
@@ -190,7 +194,7 @@ class CartViewsTestCase(TestCase):
         )
 
         self.client.login(
-            username="owner",
+            email="owner@example.com",
             password="ownerpassword123",
         )
 
@@ -223,7 +227,7 @@ class CartViewsTestCase(TestCase):
 
     def test_other_user_cannot_remove_cart_item(self):
         User.objects.create_user(
-            username="otheruser",
+            email="otheruser@example.com",
             password="otherpassword",
         )
 
@@ -235,7 +239,7 @@ class CartViewsTestCase(TestCase):
         )
 
         self.client.login(
-            username="otheruser",
+            email="otheruser@example.com",
             password="otherpassword",
         )
 
@@ -255,7 +259,7 @@ class CartViewsTestCase(TestCase):
 
         # Гость авторизуется
         self.client.login(
-            username="owner",
+            email="owner@example.com",
             password="ownerpassword123",
         )
 
@@ -284,7 +288,7 @@ class CartViewsTestCase(TestCase):
 
         # Авторизация
         self.client.login(
-            username="owner",
+            email="owner@example.com",
             password="ownerpassword123",
         )
 
@@ -310,7 +314,7 @@ class ModelsTestCase(TestCase):
             category=self.category,
             subcategory=self.subcategory,
         )
-        self.user = User.objects.create_user(username="testuser", password="testpassword")
+        self.user = User.objects.create_user(email="testuser@example.com", password="testpassword")
         self.cart = Cart.objects.create(owner=self.user)
 
     def test_category_creation(self):
@@ -330,7 +334,7 @@ class ModelsTestCase(TestCase):
 class AllProductsViewTestCase(TestCase):
     def setUp(self):
         self.client = Client()  # Создаем экземпляр тестового клиента
-        self.user = User.objects.create_user(username="testuser", password="testpassword")
+        self.user = User.objects.create_user(email="testuser@example.com", password="testpassword")
         self.category = Category.objects.create(name="Test Category")
         for i in range(15):
             Product.objects.create(

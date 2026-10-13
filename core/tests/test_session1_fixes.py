@@ -1,7 +1,7 @@
 """Регрессия на «мины» из аудита, исправленные в сессии 1."""
 
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.test import RequestFactory
 from django.urls import reverse
@@ -9,6 +9,8 @@ from django.urls import reverse
 from core.context_processors import header_counters
 from orders.models import Order
 from store.models import Cart, CartItem, Category, Product
+
+User = get_user_model()
 
 pytestmark = pytest.mark.django_db
 
@@ -20,7 +22,7 @@ def product():
 
 
 def test_cart_item_unique_per_cart_and_product(product):
-    user = User.objects.create_user(username="u", password="p")
+    user = User.objects.create_user(email="u@example.com", password="p")
     cart = Cart.objects.create(owner=user)
     CartItem.objects.create(cart=cart, product=product)
     with pytest.raises(IntegrityError):
@@ -28,7 +30,7 @@ def test_cart_item_unique_per_cart_and_product(product):
 
 
 def test_pages_do_not_create_cart_for_user(client):
-    user = User.objects.create_user(username="u", password="p")
+    user = User.objects.create_user(email="u@example.com", password="p")
     client.force_login(user)
 
     response = client.get(reverse("home"))
@@ -38,7 +40,7 @@ def test_pages_do_not_create_cart_for_user(client):
 
 
 def test_header_counters_are_lazy(django_assert_num_queries, product):
-    user = User.objects.create_user(username="u", password="p")
+    user = User.objects.create_user(email="u@example.com", password="p")
     cart = Cart.objects.create(owner=user)
     CartItem.objects.create(cart=cart, product=product, quantity=3)
     Order.objects.create(owner=user)
