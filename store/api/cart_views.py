@@ -70,7 +70,7 @@ class CartItemView(CartResponseMixin, APIView):
         summary = cart_service.set_quantity(request.user, pk, serializer.validated_data["quantity"])
         return self.cart_response(summary)
 
-    @extend_schema(operation_id="cart_items_remove", request=None, responses=CartSerializer)
+    @extend_schema(operation_id="cart_items_remove", request=None, responses={200: CartSerializer})
     def delete(self, request, pk: int):
         return self.cart_response(cart_service.remove(request.user, pk))
 

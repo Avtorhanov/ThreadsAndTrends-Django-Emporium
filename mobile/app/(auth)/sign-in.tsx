@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 
 import { useAuth } from "../../src/auth/AuthProvider";
-import { Button, LinkButton, Message, Screen, TextField } from "../../src/components/ui";
+import { Button, Hint, LinkButton, Message, Screen, TextField } from "../../src/components/ui";
 import { useSubmit } from "../../src/hooks/useSubmit";
 
 export default function SignInScreen() {
@@ -15,6 +15,7 @@ export default function SignInScreen() {
 
   return (
     <Screen title="Вход">
+      <Hint>Корзина сохранится: после входа товары из неё перенесутся в ваш аккаунт.</Hint>
       <Message text={error} />
       <TextField
         label="Email"
@@ -41,6 +42,10 @@ export default function SignInScreen() {
       <LinkButton
         title="Нет аккаунта? Зарегистрироваться"
         onPress={() => router.push("/sign-up")}
+      />
+      <LinkButton
+        title="Продолжить без входа"
+        onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
       />
     </Screen>
   );

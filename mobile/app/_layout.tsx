@@ -4,6 +4,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AuthProvider, useAuth } from "../src/auth/AuthProvider";
+import { CartProvider } from "../src/cart/CartProvider";
 import { colors, spacing } from "../src/components/theme";
 import { Button } from "../src/components/ui";
 
@@ -27,15 +28,13 @@ function RootNavigator() {
     );
   }
 
-  const signedIn = status === "signedIn";
-  // Группы экранов переключаются по статусу: без входа (app) недоступна и наоборот.
+  // Каталог и корзина открыты всем; вход и регистрация — модальной группой поверх них.
+  // После входа экраны (auth) закрываются, пользователь возвращается туда, откуда пришёл.
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={signedIn}>
-        <Stack.Screen name="(app)" />
-      </Stack.Protected>
-      <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(app)" />
+      <Stack.Protected guard={status !== "signedIn"}>
+        <Stack.Screen name="(auth)" options={{ presentation: "modal" }} />
       </Stack.Protected>
     </Stack>
   );
@@ -45,8 +44,10 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar style="dark" />
-        <RootNavigator />
+        <CartProvider>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </CartProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

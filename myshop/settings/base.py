@@ -182,6 +182,9 @@ SPECTACULAR_SETTINGS = {
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "SERVE_AUTHENTICATION": ["rest_framework.authentication.SessionAuthentication"],
     "COMPONENT_SPLIT_REQUEST": True,
+    "ENUM_NAME_OVERRIDES": {
+        "CartMergeNoticeReasonEnum": "store.services.cart.MergeNoticeReason.choices",
+    },
 }
 
 # --- Почта ---
