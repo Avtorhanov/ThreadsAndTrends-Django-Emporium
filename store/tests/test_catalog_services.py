@@ -108,12 +108,19 @@ def test_product_requires_leaf_category():
 
 @pytest.mark.parametrize(
     ("price", "compare_at", "field"),
-    [(0, None, "price_kopecks"), (500, 500, "compare_at_kopecks"), (500, 400, "compare_at_kopecks")],
+    [
+        (0, None, "price_kopecks"),
+        (500, 500, "compare_at_kopecks"),
+        (500, 400, "compare_at_kopecks"),
+    ],
 )
 def test_product_price_validation(price, compare_at, field):
     with pytest.raises(ValidationError) as exc:
         catalog.create_product(
-            name="Товар", category=make_category(), price_kopecks=price, compare_at_kopecks=compare_at
+            name="Товар",
+            category=make_category(),
+            price_kopecks=price,
+            compare_at_kopecks=compare_at,
         )
     assert field in exc.value.message_dict
 

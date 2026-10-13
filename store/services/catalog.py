@@ -279,9 +279,11 @@ def update_variant(variant: ProductVariant, **changes) -> ProductVariant:
 @transaction.atomic
 def delete_variant(variant: ProductVariant) -> None:
     _lock_product(variant.product)
-    if not ProductVariant.objects.filter(product_id=variant.product_id).exclude(
-        pk=variant.pk
-    ).exists():
+    if (
+        not ProductVariant.objects.filter(product_id=variant.product_id)
+        .exclude(pk=variant.pk)
+        .exists()
+    ):
         raise ValidationError("У товара должен остаться хотя бы один вариант.")
     # Мягкое удаление: вариант может быть в истории заказов (сессия 5).
     variant.deleted_at = timezone.now()

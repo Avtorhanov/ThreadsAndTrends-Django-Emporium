@@ -169,7 +169,10 @@ class AdminProductViewSet(
         parameters=[
             OpenApiParameter("search", str, description="Поиск по названию и артикулу"),
             OpenApiParameter(
-                "status", str, enum=ProductStatus.CHOICES, description="По умолчанию — кроме удалённых"
+                "status",
+                str,
+                enum=ProductStatus.CHOICES,
+                description="По умолчанию — кроме удалённых",
             ),
             OpenApiParameter("category", int, description="id категории (с подкатегориями)"),
             OpenApiParameter("stock", str, enum=StockFilter.CHOICES),
@@ -243,9 +246,7 @@ class AdminProductViewSet(
     def reorder_images(self, request, pk=None):
         serializer = AdminImageReorderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        images = catalog.reorder_product_images(
-            self.get_object(), serializer.validated_data["ids"]
-        )
+        images = catalog.reorder_product_images(self.get_object(), serializer.validated_data["ids"])
         context = self.get_serializer_context()
         return Response(AdminImageSerializer(images, many=True, context=context).data)
 

@@ -19,6 +19,9 @@ paths:
   /api/v1/admin/auth/login/:
     post:
       operationId: admin_login
+      description: |-
+        API панели администратора: только сессия Django (+ CSRF) и роль администратора.
+        JWT мобильного клиента не принимается.
       tags:
       - admin
       requestBody:
@@ -40,6 +43,9 @@ paths:
   /api/v1/admin/auth/logout/:
     post:
       operationId: admin_logout
+      description: |-
+        API панели администратора: только сессия Django (+ CSRF) и роль администратора.
+        JWT мобильного клиента не принимается.
       tags:
       - admin
       security:
@@ -51,6 +57,9 @@ paths:
   /api/v1/admin/auth/me/:
     get:
       operationId: admin_me
+      description: |-
+        API панели администратора: только сессия Django (+ CSRF) и роль администратора.
+        JWT мобильного клиента не принимается.
       tags:
       - admin
       security:
@@ -62,6 +71,423 @@ paths:
               schema:
                 $ref: '#/components/schemas/StaffUser'
           description: ''
+  /api/v1/admin/catalog/categories/:
+    get:
+      operationId: admin_catalog_categories_list
+      description: Все категории плоским списком (включая скрытые); дерево строит
+        панель по parent.
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminCategory'
+          description: ''
+    post:
+      operationId: admin_catalog_categories_create
+      description: Все категории плоским списком (включая скрытые); дерево строит
+        панель по parent.
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminCategoryRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCategory'
+          description: ''
+  /api/v1/admin/catalog/categories/{id}/:
+    get:
+      operationId: admin_catalog_categories_retrieve
+      description: Все категории плоским списком (включая скрытые); дерево строит
+        панель по parent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Категория.
+        required: true
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCategory'
+          description: ''
+    patch:
+      operationId: admin_catalog_categories_partial_update
+      description: Все категории плоским списком (включая скрытые); дерево строит
+        панель по parent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Категория.
+        required: true
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminCategoryRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCategory'
+          description: ''
+    delete:
+      operationId: admin_catalog_categories_destroy
+      description: 'Физическое удаление пустой категории. С товарами (в т.ч. удалёнными)
+        или подкатегориями — 400: такую категорию можно только скрыть.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Категория.
+        required: true
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/catalog/images/{id}/:
+    delete:
+      operationId: admin_catalog_images_destroy
+      description: |-
+        API панели администратора: только сессия Django (+ CSRF) и роль администратора.
+        JWT мобильного клиента не принимается.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Изображение товара.
+        required: true
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: Изображение и файл удалены
+  /api/v1/admin/catalog/products/:
+    get:
+      operationId: admin_catalog_products_list
+      description: Товары, включая скрытые и удалённые (фильтр status).
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+        description: id категории (с подкатегориями)
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Поиск по названию и артикулу
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - deleted
+          - inactive
+        description: По умолчанию — кроме удалённых
+      - in: query
+        name: stock
+        schema:
+          type: string
+          enum:
+          - in_stock
+          - out_of_stock
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdminProductList'
+          description: ''
+    post:
+      operationId: admin_catalog_products_create
+      description: Товары, включая скрытые и удалённые (фильтр status).
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductDetail'
+          description: ''
+  /api/v1/admin/catalog/products/{id}/:
+    get:
+      operationId: admin_catalog_products_retrieve
+      description: Товары, включая скрытые и удалённые (фильтр status).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Товар.
+        required: true
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductDetail'
+          description: ''
+    patch:
+      operationId: admin_catalog_products_partial_update
+      description: Товары, включая скрытые и удалённые (фильтр status).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Товар.
+        required: true
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminProductUpdateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductDetail'
+          description: ''
+    delete:
+      operationId: admin_catalog_products_destroy
+      description: 'Мягкое удаление: товар пропадает с витрины, история заказов сохраняется.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Товар.
+        required: true
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/catalog/products/{id}/images/:
+    post:
+      operationId: admin_catalog_products_images_create
+      description: Товары, включая скрытые и удалённые (фильтр status).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Товар.
+        required: true
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminImageUploadRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminImage'
+          description: ''
+  /api/v1/admin/catalog/products/{id}/images/reorder/:
+    post:
+      operationId: admin_catalog_products_images_reorder_create
+      description: Товары, включая скрытые и удалённые (фильтр status).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Товар.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminImageReorderRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdminImageList'
+          description: ''
+  /api/v1/admin/catalog/products/{id}/restore/:
+    post:
+      operationId: admin_catalog_products_restore_create
+      description: Товары, включая скрытые и удалённые (фильтр status).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Товар.
+        required: true
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductDetail'
+          description: ''
+  /api/v1/admin/catalog/products/{id}/variants/:
+    post:
+      operationId: admin_catalog_products_variants_create
+      description: Товары, включая скрытые и удалённые (фильтр status).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Товар.
+        required: true
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminVariantRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVariant'
+          description: ''
+  /api/v1/admin/catalog/variants/{id}/:
+    patch:
+      operationId: admin_catalog_variants_partial_update
+      description: |-
+        API панели администратора: только сессия Django (+ CSRF) и роль администратора.
+        JWT мобильного клиента не принимается.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Вариант товара.
+        required: true
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminVariantRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVariant'
+          description: ''
+    delete:
+      operationId: admin_catalog_variants_destroy
+      description: Мягкое удаление. Последний вариант товара удалить нельзя (400).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Вариант товара.
+        required: true
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/admin/customers/:
     get:
       operationId: admin_customers_list
@@ -386,6 +812,75 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResult'
           description: ''
+  /api/v1/catalog/categories/:
+    get:
+      operationId: catalog_categories_list
+      description: 'Дерево активных категорий: корни с подкатегориями.'
+      tags:
+      - catalog
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogCategoryTree'
+          description: ''
+  /api/v1/catalog/products/:
+    get:
+      operationId: catalog_products_list
+      description: |-
+        Публичное чтение (каталог): без аутентификации, чтобы просроченный JWT
+        в заголовке не превращал открытый запрос в 401.
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Slug категории (с подкатегориями)
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - catalog
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCatalogProductList'
+          description: ''
+  /api/v1/catalog/products/{slug}/:
+    get:
+      operationId: catalog_products_retrieve
+      description: |-
+        Публичное чтение (каталог): без аутентификации, чтобы просроченный JWT
+        в заголовке не превращал открытый запрос в 401.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogProductDetail'
+          description: ''
   /api/v1/health/:
     get:
       operationId: health_retrieve
@@ -403,6 +898,369 @@ paths:
           description: ''
 components:
   schemas:
+    AdminCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Название
+          maxLength: 100
+        slug:
+          description: Пусто — сгенерировать из названия (только при создании).
+          oneOf:
+          - type: string
+            maxLength: 120
+            pattern: ^[-a-zA-Z0-9_]+$
+          - type: string
+            maxLength: 0
+        parent:
+          type: integer
+          nullable: true
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+        is_active:
+          type: boolean
+          title: Показывать
+        products_count:
+          type: integer
+          readOnly: true
+          description: Товаров без учёта удалённых
+        children_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создана
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Изменена
+      required:
+      - children_count
+      - created_at
+      - id
+      - name
+      - products_count
+      - updated_at
+    AdminCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Название
+          maxLength: 100
+        slug:
+          description: Пусто — сгенерировать из названия (только при создании).
+          oneOf:
+          - type: string
+            maxLength: 120
+            pattern: ^[-a-zA-Z0-9_]+$
+          - type: string
+            maxLength: 0
+        parent:
+          type: integer
+          nullable: true
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+        is_active:
+          type: boolean
+          title: Показывать
+      required:
+      - name
+    AdminImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+        position:
+          type: integer
+          readOnly: true
+          title: Порядок
+      required:
+      - id
+      - position
+      - url
+    AdminImageReorderRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          description: Все id изображений товара в новом порядке
+      required:
+      - ids
+    AdminImageUploadRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          format: binary
+          description: JPEG, PNG или WebP, до 5 МБ
+      required:
+      - image
+    AdminProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          title: Название
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        category:
+          type: integer
+          readOnly: true
+          title: Категория
+        category_name:
+          type: string
+          readOnly: true
+        price_kopecks:
+          type: integer
+          readOnly: true
+          title: Цена, коп.
+        compare_at_kopecks:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Старая цена, коп.
+        is_active:
+          type: boolean
+          readOnly: true
+          title: Активен
+        deleted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Удалён
+        total_stock:
+          type: integer
+          readOnly: true
+          description: Сумма остатков вариантов
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создан
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Изменён
+      required:
+      - category
+      - category_name
+      - compare_at_kopecks
+      - cover_url
+      - created_at
+      - deleted_at
+      - id
+      - is_active
+      - name
+      - price_kopecks
+      - slug
+      - total_stock
+      - updated_at
+    AdminProductCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        slug:
+          description: Пусто — сгенерировать из названия (только при создании).
+          oneOf:
+          - type: string
+            maxLength: 220
+            pattern: ^[-a-zA-Z0-9_]+$
+          - type: string
+            maxLength: 0
+        description:
+          type: string
+        category:
+          type: integer
+        price_kopecks:
+          type: integer
+          maximum: 10000000000
+          minimum: 1
+          format: int64
+        compare_at_kopecks:
+          type: integer
+          maximum: 10000000000
+          minimum: 1
+          format: int64
+          nullable: true
+        is_active:
+          type: boolean
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminVariantRequest'
+          description: Варианты (размеры). Не передано — один вариант «Без размера».
+      required:
+      - category
+      - name
+      - price_kopecks
+    AdminProductDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          title: Название
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        category:
+          type: integer
+          readOnly: true
+          title: Категория
+        category_name:
+          type: string
+          readOnly: true
+        price_kopecks:
+          type: integer
+          readOnly: true
+          title: Цена, коп.
+        compare_at_kopecks:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Старая цена, коп.
+        is_active:
+          type: boolean
+          readOnly: true
+          title: Активен
+        deleted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Удалён
+        total_stock:
+          type: integer
+          readOnly: true
+          description: Сумма остатков вариантов
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создан
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Изменён
+        description:
+          type: string
+          readOnly: true
+          title: Описание
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminVariant'
+          readOnly: true
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminImage'
+          readOnly: true
+      required:
+      - category
+      - category_name
+      - compare_at_kopecks
+      - cover_url
+      - created_at
+      - deleted_at
+      - description
+      - id
+      - images
+      - is_active
+      - name
+      - price_kopecks
+      - slug
+      - total_stock
+      - updated_at
+      - variants
+    AdminVariant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        size:
+          type: string
+          title: Размер
+          maxLength: 50
+        sku:
+          type: string
+          description: Пусто — сгенерировать (DD-<id товара>-<размер>).
+          maxLength: 64
+        stock:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Остаток
+        position:
+          type: integer
+          minimum: 0
+      required:
+      - id
+    AdminVariantRequest:
+      type: object
+      properties:
+        size:
+          type: string
+          title: Размер
+          maxLength: 50
+        sku:
+          type: string
+          description: Пусто — сгенерировать (DD-<id товара>-<размер>).
+          maxLength: 64
+        stock:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Остаток
+        position:
+          type: integer
+          minimum: 0
     AuthResult:
       type: object
       properties:
@@ -418,6 +1276,180 @@ components:
       - access
       - refresh
       - user
+    CatalogCategoryShort:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          readOnly: true
+          title: Название
+      required:
+      - id
+      - name
+      - slug
+    CatalogCategoryTree:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          readOnly: true
+          title: Название
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogCategoryShort'
+          readOnly: true
+      required:
+      - children
+      - id
+      - name
+      - slug
+    CatalogImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - url
+    CatalogProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          readOnly: true
+          title: Название
+        price_kopecks:
+          type: integer
+          readOnly: true
+          title: Цена, коп.
+        compare_at_kopecks:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Старая цена, коп.
+        in_stock:
+          type: boolean
+          readOnly: true
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CatalogCategoryShort'
+          readOnly: true
+      required:
+      - category
+      - compare_at_kopecks
+      - cover_url
+      - id
+      - in_stock
+      - name
+      - price_kopecks
+      - slug
+    CatalogProductDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          readOnly: true
+          title: Название
+        price_kopecks:
+          type: integer
+          readOnly: true
+          title: Цена, коп.
+        compare_at_kopecks:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Старая цена, коп.
+        in_stock:
+          type: boolean
+          readOnly: true
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CatalogCategoryShort'
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+          title: Описание
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogImage'
+          readOnly: true
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogVariant'
+          readOnly: true
+      required:
+      - category
+      - compare_at_kopecks
+      - cover_url
+      - description
+      - id
+      - images
+      - in_stock
+      - name
+      - price_kopecks
+      - slug
+      - variants
+    CatalogVariant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        size:
+          type: string
+          readOnly: true
+          title: Размер
+        in_stock:
+          type: boolean
+          readOnly: true
+      required:
+      - id
+      - in_stock
+      - size
     ChangePasswordRequest:
       type: object
       properties:
@@ -533,6 +1565,75 @@ components:
       required:
       - email
       - password
+    PaginatedAdminImageList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminImage'
+    PaginatedAdminProductList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminProduct'
+    PaginatedCatalogProductList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogProduct'
     PaginatedCustomerList:
       type: object
       required:
@@ -584,6 +1685,84 @@ components:
           minLength: 1
       required:
       - email
+    PatchedAdminCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Название
+          maxLength: 100
+        slug:
+          description: Пусто — сгенерировать из названия (только при создании).
+          oneOf:
+          - type: string
+            maxLength: 120
+            pattern: ^[-a-zA-Z0-9_]+$
+          - type: string
+            maxLength: 0
+        parent:
+          type: integer
+          nullable: true
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+        is_active:
+          type: boolean
+          title: Показывать
+    PatchedAdminProductUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        slug:
+          description: Пусто — сгенерировать из названия (только при создании).
+          oneOf:
+          - type: string
+            maxLength: 220
+            pattern: ^[-a-zA-Z0-9_]+$
+          - type: string
+            maxLength: 0
+        description:
+          type: string
+        category:
+          type: integer
+        price_kopecks:
+          type: integer
+          maximum: 10000000000
+          minimum: 1
+          format: int64
+        compare_at_kopecks:
+          type: integer
+          maximum: 10000000000
+          minimum: 1
+          format: int64
+          nullable: true
+        is_active:
+          type: boolean
+    PatchedAdminVariantRequest:
+      type: object
+      properties:
+        size:
+          type: string
+          title: Размер
+          maxLength: 50
+        sku:
+          type: string
+          description: Пусто — сгенерировать (DD-<id товара>-<размер>).
+          maxLength: 64
+        stock:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Остаток
+        position:
+          type: integer
+          minimum: 0
     PatchedProfileRequest:
       type: object
       properties:

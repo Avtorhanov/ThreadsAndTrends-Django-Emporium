@@ -183,9 +183,7 @@ def test_variants_api(admin_client):
     product = make_product()
     default = product.variants.get()
 
-    response = admin_client.post(
-        f"{PRODUCTS}{product.pk}/variants/", {"size": "M"}, format="json"
-    )
+    response = admin_client.post(f"{PRODUCTS}{product.pk}/variants/", {"size": "M"}, format="json")
     assert response.status_code == 400  # нельзя смешивать «Без размера» и размеры
 
     response = admin_client.patch(
