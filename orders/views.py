@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
 
-from orders.models import Order
 from orders.forms import CheckoutForm
+from orders.models import Order
 from orders.services import create_order_from_cart_items
-from store.models import CartItem, Cart
+from store.models import Cart, CartItem
 
 
 @login_required
@@ -20,9 +18,7 @@ def checkout(request, item_id):
         cart__owner=request.user,
     )
 
-    total_price = (
-        cart_item.product.price * cart_item.quantity
-    )
+    total_price = cart_item.product.price * cart_item.quantity
 
     if request.method == "POST":
         form = CheckoutForm(request.POST)
@@ -56,6 +52,7 @@ def checkout(request, item_id):
         },
     )
 
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def checkout_all(request):
@@ -66,10 +63,7 @@ def checkout_all(request):
 
     cart_items = CartItem.objects.filter(cart=cart)
 
-    total_price = sum(
-        item.product.price * item.quantity
-        for item in cart_items
-    )
+    total_price = sum(item.product.price * item.quantity for item in cart_items)
 
     if request.method == "POST":
         form = CheckoutForm(request.POST)
@@ -116,29 +110,25 @@ def order_detail(request, order_id):
 
     return render(
         request,
-        'orders/order_detail.html',
+        "orders/order_detail.html",
         {
-            'order': order,
-            'order_items': order_items,
+            "order": order,
+            "order_items": order_items,
         },
     )
 
 
 @login_required
 def my_orders(request):
-    orders = (
-        Order.objects
-        .filter(
-            owner=request.user,
-            is_ordered=True,
-        )
-        .order_by('-date_ordered')
-    )
+    orders = Order.objects.filter(
+        owner=request.user,
+        is_ordered=True,
+    ).order_by("-date_ordered")
 
     return render(
         request,
-        'orders/my_orders.html',
-        {'orders': orders},
+        "orders/my_orders.html",
+        {"orders": orders},
     )
 
 
@@ -155,7 +145,7 @@ def delete_order(request, order_id):
 
     messages.success(
         request,
-        'Заказ удален!',
+        "Заказ удален!",
     )
 
-    return redirect('my_orders')
+    return redirect("my_orders")

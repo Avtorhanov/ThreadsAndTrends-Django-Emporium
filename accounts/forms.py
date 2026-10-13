@@ -3,13 +3,14 @@ from django import forms
 from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.models import User
 
+
 class StandardUserCreationForm(forms.ModelForm):
-    password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
-    password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
+    password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
+    password2 = forms.CharField(label="Password confirmation", widget=forms.PasswordInput)
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email']
+        fields = ["username", "first_name", "last_name", "email"]
 
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
@@ -25,22 +26,25 @@ class StandardUserCreationForm(forms.ModelForm):
             user.save()
         return user
 
+
 class ProfileUpdateForm(UserChangeForm):
-    new_password = forms.CharField(label='new_password', widget=forms.PasswordInput(), required=False)
+    new_password = forms.CharField(
+        label="new_password", widget=forms.PasswordInput(), required=False
+    )
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name']
+        fields = ["username", "email", "first_name", "last_name"]
 
     def clean_new_password(self):
-        new_password = self.cleaned_data.get('new_password')
+        new_password = self.cleaned_data.get("new_password")
         if new_password:
             return new_password
         return None
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        new_password = self.cleaned_data.get('new_password')
+        new_password = self.cleaned_data.get("new_password")
         if new_password:
             user.set_password(new_password)
         if commit:

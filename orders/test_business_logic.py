@@ -7,7 +7,6 @@ from store.models import Cart, CartItem, Product
 
 
 class OrdersBusinessLogicTestCase(TestCase):
-
     def setUp(self):
         self.user = User.objects.create_user(
             username="testuser",
@@ -160,13 +159,9 @@ class OrdersBusinessLogicTestCase(TestCase):
 
         order_items = OrderItem.objects.filter(order=order)
 
-        self.assertTrue(
-            order_items.filter(product=self.product).exists()
-        )
+        self.assertTrue(order_items.filter(product=self.product).exists())
 
-        self.assertTrue(
-            order_items.filter(product=self.product_2).exists   ()
-        )
+        self.assertTrue(order_items.filter(product=self.product_2).exists())
 
         self.assertEqual(
             order.total_price,
@@ -178,7 +173,7 @@ class OrdersBusinessLogicTestCase(TestCase):
             username="testuser",
             password="testpassword123",
         )
-    
+
         response = self.client.post(
             reverse("checkout_all"),
             {
@@ -187,9 +182,9 @@ class OrdersBusinessLogicTestCase(TestCase):
                 "phone_number": "+79999999999",
             },
         )
-    
+
         self.assertEqual(response.status_code, 302)
-    
+
         self.assertFalse(
             CartItem.objects.filter(
                 cart=self.cart,

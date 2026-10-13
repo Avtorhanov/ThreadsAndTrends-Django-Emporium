@@ -18,15 +18,16 @@
                 <a href="{% url 'all-products' %}">Каталог</a>
                 <a href="{% url 'cart' %}" class="cart-link">Корзина
                  {% if user.is_authenticated %}
-                    {% if request.cart_items_count > 0 %}
-                    <span class="badge bg-secondary">{{ request.cart_items_count }}</span>
-                    {% endif %}
+                    {% with count=header_counters.cart %}
+                    {% if count > 0 %}<span class="badge bg-secondary">{{ count }}</span>{% endif %}
+                    {% endwith %}
                 </a>
 
                 <a href="{% url 'my_orders' %}" class="cart-link">Мои заказы
-                {% if request.orders_count > 0 %}
-                    <span class="badge"> {{ request.orders_count }}</span></a>
-                {% endif %}
+                {% with count=header_counters.orders %}
+                {% if count > 0 %}<span class="badge">{{ count }}</span>{% endif %}
+                {% endwith %}
+                </a>
                     <a href="{% url 'profile' %}">Профиль</a>
                 <a href="{% url 'logout' %}">Выйти</a>
                 {% if user.is_superuser %}

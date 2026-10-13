@@ -1,0 +1,26 @@
+[project]
+name = "didi-shop"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "myshop.settings.test"
+python_files = ["tests.py", "test_*.py"]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ"]
+ignore = ["DJ001"]
+
+[tool.ruff.lint.per-file-ignores]
+"*/tests.py" = ["DJ008"]
+"*/tests/*" = ["DJ008"]
+"myshop/settings/*" = ["F405"]
+# Легаси-модели переписываются в сессиях 3 (каталог) и 5 (заказы).
+"store/models.py" = ["DJ012", "E501"]
+"orders/models.py" = ["DJ012", "E501"]
