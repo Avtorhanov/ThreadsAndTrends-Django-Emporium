@@ -334,7 +334,7 @@ paths:
   /api/v1/admin/catalog/products/{id}/images/:
     post:
       operationId: admin_catalog_products_images_create
-      description: Товары, включая скрытые и удалённые (фильтр status).
+      description: Загрузить фото в конец галереи (JPEG/PNG/WebP, до 5 МБ, до 10 фото).
       parameters:
       - in: path
         name: id
@@ -362,7 +362,7 @@ paths:
   /api/v1/admin/catalog/products/{id}/images/reorder/:
     post:
       operationId: admin_catalog_products_images_reorder_create
-      description: Товары, включая скрытые и удалённые (фильтр status).
+      description: Новый порядок галереи; первое фото — обложка.
       parameters:
       - in: path
         name: id
@@ -370,12 +370,6 @@ paths:
           type: integer
         description: A unique integer value identifying this Товар.
         required: true
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
       tags:
       - admin-catalog
       requestBody:
@@ -391,12 +385,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedAdminImageList'
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminImage'
           description: ''
   /api/v1/admin/catalog/products/{id}/restore/:
     post:
       operationId: admin_catalog_products_restore_create
-      description: Товары, включая скрытые и удалённые (фильтр status).
+      description: Восстановить мягко удалённый товар.
       parameters:
       - in: path
         name: id
@@ -418,7 +414,7 @@ paths:
   /api/v1/admin/catalog/products/{id}/variants/:
     post:
       operationId: admin_catalog_products_variants_create
-      description: Товары, включая скрытые и удалённые (фильтр status).
+      description: Добавить вариант (размер). «Без размера» нельзя сочетать с размерами.
       parameters:
       - in: path
         name: id
@@ -1565,29 +1561,6 @@ components:
       required:
       - email
       - password
-    PaginatedAdminImageList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminImage'
     PaginatedAdminProductList:
       type: object
       required:
