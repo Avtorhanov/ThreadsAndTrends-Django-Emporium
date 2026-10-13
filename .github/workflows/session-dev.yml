@@ -49,6 +49,7 @@ jobs:
       - run: pip install -r requirements/dev.txt
       - name: Collect report
         run: |
+          set +e  # каждая проверка пишет свой код выхода в отчёт, сбой одной не прерывает остальные
           mkdir -p /tmp/report
           echo "${GITHUB_SHA}" > /tmp/report/sha.txt
           # Недостающая зависимость приложения ставится версией, совместимой с Expo SDK.
