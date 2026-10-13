@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -11,16 +11,25 @@ import {
   View,
 } from "react-native";
 
+import { useCart } from "../../../src/cart/CartProvider";
 import { Price } from "../../../src/catalog/components";
 import { useProduct } from "../../../src/catalog/hooks";
 import { colors, radius, spacing } from "../../../src/components/theme";
-import { Button, Message } from "../../../src/components/ui";
+import { Button, LinkButton, Message } from "../../../src/components/ui";
+import { useSubmit } from "../../../src/hooks/useSubmit";
 
 export default function ProductScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data: product, loading, error, reload } = useProduct(slug);
   const { width } = useWindowDimensions();
   const [selected, setSelected] = useState<number | null>(null);
+  const [added, setAdded] = useState(false);
+  const cart = useCart();
+  const addToCart = useSubmit(async (variantId: number, priceKopecks: number) => {
+    setAdded(false);
+    await cart.add(variantId, priceKopecks);
+    setAdded(true);
+  });
 
   if (loading && !product) {
     return (
@@ -40,6 +49,13 @@ export default function ProductScreen() {
 
   // Один вариант «Без размера» — выбор размера не показывается.
   const hasSizes = product.variants.some((variant) => variant.size !== "");
+  const variantId = hasSizes ? selected : (product.variants[0]?.id ?? null);
+  const variant = product.variants.find((item) => item.id === variantId);
+  const addTitle = !product.in_stock
+    ? "Нет в наличии"
+    : variantId === null
+      ? "Выберите размер"
+      : "В корзину";
 
   return (
     <>
@@ -81,7 +97,10 @@ export default function ProductScreen() {
                     accessibilityRole="button"
                     accessibilityState={{ selected: selected === variant.id, disabled: !variant.in_stock }}
                     disabled={!variant.in_stock}
-                    onPress={() => setSelected(variant.id)}
+                    onPress={() => {
+                      setSelected(variant.id);
+                      setAdded(false);
+                    }}
                     style={[
                       styles.chip,
                       selected === variant.id && styles.chipSelected,
@@ -102,6 +121,20 @@ export default function ProductScreen() {
               </View>
             </View>
           ) : null}
+
+          <View style={styles.cartBlock}>
+            <Message text={addToCart.error} />
+            <Message text={added ? "Товар в корзине." : null} kind="success" />
+            <Button
+              title={addTitle}
+              loading={addToCart.loading}
+              disabled={!variant?.in_stock}
+              onPress={() => variant && void addToCart.submit(variant.id, product.price_kopecks)}
+            />
+            {added ? (
+              <LinkButton title="Перейти в корзину" onPress={() => router.push("/cart")} />
+            ) : null}
+          </View>
 
           {product.description ? <Text style={styles.description}>{product.description}</Text> : null}
         </View>
@@ -144,5 +177,6 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 15, color: colors.text },
   chipTextSelected: { color: colors.primaryText },
   chipTextDisabled: { textDecorationLine: "line-through" },
+  cartBlock: { gap: spacing.sm, marginTop: spacing.md },
   description: { fontSize: 15, lineHeight: 22, color: colors.text, marginTop: spacing.md },
 });

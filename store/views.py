@@ -1,13 +1,10 @@
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+"""Легаси-витрина (шаблоны). Корзина — только в мобильном приложении (API /api/v1/cart/)."""
+
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
-from django.views.decorators.http import require_POST
 
-from store.models import CartItem, Category, Product
-from store.services import add_product_to_cart, get_cart
+from store.models import Category, Product
 
 
 # Главная
@@ -73,83 +70,6 @@ def category_detail(request, slug):
         request,
         "store/category_detail.html",
         {"category": category, "children": children, "products": products},
-    )
-
-
-# логика корзины
-@require_POST
-def add_to_cart(request, product_id):
-    product = get_object_or_404(Product.objects.live(), pk=product_id)
-
-    add_product_to_cart(
-        request,
-        product.id,
-    )
-
-    messages.success(
-        request,
-        "Товар добавлен в корзину!",
-    )
-
-    return JsonResponse(
-        {
-            "status": "success",
-            "message": "Товар добавлен в корзину",
-        }
-    )
-
-
-@login_required
-def cart_view(request):
-    cart = get_cart(request)
-
-    cart_items = cart.cartitem_set.select_related("product")
-
-    total_kopecks = sum(item.price_kopecks * item.quantity for item in cart_items)
-
-    return render(
-        request,
-        "orders/cart.html",
-        {
-            "cart_items": cart_items,
-            "total_kopecks": total_kopecks,
-        },
-    )
-
-
-@login_required
-@require_POST
-def update_cart(request, item_id, new_count):
-    cart_item = get_object_or_404(
-        CartItem,
-        id=item_id,
-        cart__owner=request.user,
-    )
-
-    cart_item.quantity = new_count
-    cart_item.save(update_fields=["quantity"])
-
-    return JsonResponse({"total_kopecks": cart_item.cart.calculate_total_kopecks()})
-
-
-@login_required
-@require_POST
-def remove_from_cart(request, item_id):
-    cart_item = get_object_or_404(
-        CartItem,
-        id=item_id,
-        cart__owner=request.user,
-    )
-
-    cart_item.delete()
-
-    messages.success(request, "Товар удален из корзины!")
-
-    return JsonResponse(
-        {
-            "status": "success",
-            "message": "Товар удален из корзины",
-        }
     )
 
 

@@ -808,6 +808,151 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResult'
           description: ''
+  /api/v1/cart/:
+    get:
+      operationId: cart_retrieve
+      tags:
+      - cart
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+  /api/v1/cart/ack-prices/:
+    post:
+      operationId: cart_ack_prices
+      description: 'Покупатель увидел изменившиеся цены: предупреждения снимаются.'
+      tags:
+      - cart
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+  /api/v1/cart/items/:
+    post:
+      operationId: cart_items_add
+      description: Добавить вариант товара; если он уже в корзине — увеличить количество.
+      tags:
+      - cart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartAddRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+  /api/v1/cart/items/{id}/:
+    patch:
+      operationId: cart_items_set_quantity
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - cart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCartQuantityRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+    delete:
+      operationId: cart_items_remove
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - cart
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+  /api/v1/cart/merge/:
+    post:
+      operationId: cart_merge
+      description: Перенос гостевой корзины с устройства после входа или регистрации.
+        Количества складываются и ограничиваются доступным; недоступное пропускается
+        (notices).
+      tags:
+      - cart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartLinesInputRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartMergeResult'
+          description: ''
+  /api/v1/cart/quote/:
+    post:
+      operationId: cart_quote
+      description: Расчёт гостевой корзины по текущим ценам и наличию. Ничего не сохраняет;
+        доступен без входа.
+      tags:
+      - cart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartLinesInputRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
   /api/v1/catalog/categories/:
     get:
       operationId: catalog_categories_list
@@ -1272,6 +1417,196 @@ components:
       - access
       - refresh
       - user
+    Cart:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartLine'
+        total_kopecks:
+          type: integer
+          description: Сумма доступных позиций по текущим ценам — сумма будущего заказа
+        items_count:
+          type: integer
+          description: Всего единиц товара в корзине
+        can_checkout:
+          type: boolean
+          description: Корзина не пуста и все позиции доступны в нужном количестве
+        has_problems:
+          type: boolean
+        has_price_changes:
+          type: boolean
+      required:
+      - can_checkout
+      - has_price_changes
+      - has_problems
+      - items
+      - items_count
+      - total_kopecks
+    CartAddRequest:
+      type: object
+      properties:
+        variant_id:
+          type: integer
+          minimum: 1
+        quantity:
+          type: integer
+          maximum: 1000
+          minimum: 1
+          default: 1
+      required:
+      - variant_id
+    CartLine:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+          description: id позиции корзины; null — позиция гостевой корзины
+        variant_id:
+          type: integer
+        product:
+          allOf:
+          - $ref: '#/components/schemas/CartProduct'
+          nullable: true
+          description: null — вариант не существует (удалён из каталога)
+        size:
+          type: string
+          nullable: true
+          description: Пустая строка — товар без размера; null — вариант не найден
+        quantity:
+          type: integer
+        status:
+          allOf:
+          - $ref: '#/components/schemas/CartLineStatusEnum'
+          description: |-
+            ok — можно оформить; unavailable — товар снят с продажи; out_of_stock — нет в наличии; exceeds_stock — в корзине больше, чем max_quantity
+
+            * `ok` - Доступна
+            * `unavailable` - Недоступна
+            * `out_of_stock` - Нет в наличии
+            * `exceeds_stock` - Превышает остаток
+        max_quantity:
+          type: integer
+          description: Сколько можно купить сейчас (0 — нельзя)
+        unit_price_kopecks:
+          type: integer
+          nullable: true
+          description: Текущая цена товара, коп.
+        seen_price_kopecks:
+          type: integer
+          nullable: true
+          description: Цена, которую покупатель видел последней, коп.
+        price_changed:
+          type: boolean
+        line_total_kopecks:
+          type: integer
+          description: 0, если позиция недоступна
+      required:
+      - id
+      - line_total_kopecks
+      - max_quantity
+      - price_changed
+      - product
+      - quantity
+      - seen_price_kopecks
+      - size
+      - status
+      - unit_price_kopecks
+      - variant_id
+    CartLineInputRequest:
+      type: object
+      properties:
+        variant_id:
+          type: integer
+          minimum: 1
+        quantity:
+          type: integer
+          maximum: 1000
+          minimum: 1
+        seen_price_kopecks:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Цена, которую покупатель видел при добавлении, коп.
+      required:
+      - quantity
+      - variant_id
+    CartLineStatusEnum:
+      enum:
+      - ok
+      - unavailable
+      - out_of_stock
+      - exceeds_stock
+      type: string
+      description: |-
+        * `ok` - Доступна
+        * `unavailable` - Недоступна
+        * `out_of_stock` - Нет в наличии
+        * `exceeds_stock` - Превышает остаток
+    CartLinesInputRequest:
+      type: object
+      description: Позиции гостевой корзины, хранящейся на устройстве.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartLineInputRequest'
+      required:
+      - items
+    CartMergeNotice:
+      type: object
+      properties:
+        variant_id:
+          type: integer
+        reason:
+          $ref: '#/components/schemas/CartMergeNoticeReasonEnum'
+      required:
+      - reason
+      - variant_id
+    CartMergeNoticeReasonEnum:
+      enum:
+      - unavailable
+      - out_of_stock
+      - cart_full
+      - quantity_limited
+      type: string
+      description: |-
+        * `unavailable` - Товар недоступен — не перенесён
+        * `out_of_stock` - Нет в наличии — не перенесён
+        * `cart_full` - Корзина заполнена — не перенесён
+        * `quantity_limited` - Количество уменьшено до доступного
+    CartMergeResult:
+      type: object
+      properties:
+        cart:
+          $ref: '#/components/schemas/Cart'
+        notices:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartMergeNotice'
+      required:
+      - cart
+      - notices
+    CartProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - cover_url
+      - id
+      - name
+      - slug
     CatalogCategoryShort:
       type: object
       properties:
@@ -1736,6 +2071,13 @@ components:
         position:
           type: integer
           minimum: 0
+    PatchedCartQuantityRequest:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          maximum: 1000
+          minimum: 1
     PatchedProfileRequest:
       type: object
       properties:

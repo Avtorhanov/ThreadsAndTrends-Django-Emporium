@@ -19,9 +19,6 @@
                 </p>
             {% endif %}
             <p><strong>Цена:</strong>  {{ product.price_kopecks|rub }} ₽{% if product.compare_at_kopecks %} <s>{{ product.compare_at_kopecks|rub }} ₽</s>{% endif %}</p>
-            <div class="prod-counter">
-                <button class="add-to-cart" onclick="addToCart('{{ product.id }}', '{{ product.price_kopecks }}')">Добавить в корзину</button>
-            </div>
         </div>
     </div>
         {% if messages %}

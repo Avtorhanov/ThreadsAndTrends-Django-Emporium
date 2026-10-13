@@ -1,25 +1,31 @@
-import { router, Stack } from "expo-router";
-import { Pressable, Text } from "react-native";
+import { Stack } from "expo-router";
 
-import { colors } from "../../src/components/theme";
-
-function ProfileButton() {
-  return (
-    <Pressable accessibilityRole="button" onPress={() => router.push("/profile")} hitSlop={8}>
-      <Text style={{ color: colors.primary, fontSize: 16 }}>Профиль</Text>
-    </Pressable>
-  );
-}
+import { useAuth } from "../../src/auth/AuthProvider";
+import { CartHeaderButton, CatalogHeaderActions } from "../../src/cart/HeaderActions";
 
 export default function AppLayout() {
+  const { status } = useAuth();
   return (
-    <Stack screenOptions={{ headerBackTitle: "Назад" }}>
-      <Stack.Screen name="index" options={{ title: "Каталог", headerRight: ProfileButton }} />
+    <Stack screenOptions={{ headerBackTitle: "Назад", headerRight: () => <CartHeaderButton /> }}>
+      {/* Каталог и корзина доступны без входа. */}
+      <Stack.Screen
+        name="index"
+        options={{ title: "Каталог", headerRight: () => <CatalogHeaderActions /> }}
+      />
       <Stack.Screen name="products" options={{ title: "Товары" }} />
       <Stack.Screen name="product/[slug]" options={{ title: "" }} />
-      <Stack.Screen name="profile" options={{ title: "Профиль" }} />
-      <Stack.Screen name="change-password" options={{ title: "Смена пароля" }} />
-      <Stack.Screen name="delete-account" options={{ title: "Удаление аккаунта" }} />
+      <Stack.Screen name="cart" options={{ title: "Корзина", headerRight: undefined }} />
+      <Stack.Protected guard={status === "signedIn"}>
+        <Stack.Screen name="profile" options={{ title: "Профиль", headerRight: undefined }} />
+        <Stack.Screen
+          name="change-password"
+          options={{ title: "Смена пароля", headerRight: undefined }}
+        />
+        <Stack.Screen
+          name="delete-account"
+          options={{ title: "Удаление аккаунта", headerRight: undefined }}
+        />
+      </Stack.Protected>
     </Stack>
   );
 }
