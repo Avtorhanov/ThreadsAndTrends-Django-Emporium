@@ -1,5 +1,6 @@
-# Временный workflow сессии 5 (среда разработки без PyPI/npm): регенерирует
-# openapi/schema.yml и коммитит её в ветку. Удаляется до мёржа.
+# Временный workflow сессии 5 (среда разработки без PyPI/npm и без доступа к логам Actions):
+# регенерирует openapi/schema.yml, гоняет тесты и typecheck клиентов, выкладывает вывод
+# в ветку ci-report-session-5 и коммитит схему в рабочую ветку. Удаляется до мёржа.
 name: session-dev
 
 on:
@@ -10,9 +11,30 @@ permissions:
   contents: write
 
 jobs:
-  schema:
+  report:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, '[schema]')"
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: didi
+          POSTGRES_USER: didi
+          POSTGRES_PASSWORD: didi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U didi -d didi"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DB_NAME: didi
+      DB_USER: didi
+      DB_PASSWORD: didi
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DJANGO_SETTINGS_MODULE: myshop.settings.test
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -20,20 +42,36 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: requirements/*.txt
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
       - run: pip install -r requirements/dev.txt
-      - name: Migrations diff
-        run: python manage.py makemigrations --dry-run -v 3 || true
-        env:
-          DJANGO_SETTINGS_MODULE: myshop.settings.test
-      - name: Generate schema
-        run: python manage.py spectacular --validate --file openapi/schema.yml
-        env:
-          DJANGO_SETTINGS_MODULE: myshop.settings.test
-      - name: Commit schema
+      - name: Collect report
         run: |
-          if git diff --quiet openapi/schema.yml; then echo "schema unchanged"; exit 0; fi
+          mkdir -p /tmp/report
+          echo "${GITHUB_SHA}" > /tmp/report/sha.txt
+          python manage.py makemigrations --check --dry-run -v 3 > /tmp/report/migrations.txt 2>&1; echo "exit=$?" >> /tmp/report/migrations.txt
+          python manage.py spectacular --validate --fail-on-warn --file openapi/schema.yml > /tmp/report/schema.txt 2>&1; echo "exit=$?" >> /tmp/report/schema.txt
+          if ! grep -q "exit=0" /tmp/report/schema.txt; then
+            python manage.py spectacular --file openapi/schema.yml >> /tmp/report/schema.txt 2>&1 || true
+          fi
+          pytest -q -p no:cacheprovider --tb=short -rfE > /tmp/report/pytest.txt 2>&1; echo "exit=$?" >> /tmp/report/pytest.txt
+          for app in mobile admin-panel; do
+            (cd $app && npm ci --no-audit --no-fund > /tmp/report/npm-$app.txt 2>&1 && npm run typecheck > /tmp/report/typecheck-$app.txt 2>&1; echo "exit=$?" >> /tmp/report/typecheck-$app.txt)
+          done
+          (cd admin-panel && npx vite build > /tmp/report/build-admin-panel.txt 2>&1; echo "exit=$?" >> /tmp/report/build-admin-panel.txt)
+          git diff --stat openapi/schema.yml > /tmp/report/schema-diff.txt
+      - name: Publish report
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add openapi/schema.yml
-          git commit -m "Регенерация openapi/schema.yml [schema]"
-          git push
+          if ! git diff --quiet openapi/schema.yml; then
+            git add openapi/schema.yml
+            git commit -m "Регенерация openapi/schema.yml [schema]"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
+          cd /tmp/report
+          git init -q -b report
+          git add -A
+          git -c user.name=bot -c user.email=bot@example.com commit -q -m "report ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" report:ci-report-session-5
