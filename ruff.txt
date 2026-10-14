@@ -1,0 +1,41 @@
+E501 Line too long (101 > 100)
+   --> deploy/smoke_checkout.py:180:101
+    |
+179 |     print(f"Покупателей: {args.users}, единиц в продаже: {args.stock}, время: {elapsed:.1f} с")
+180 |     print(f"Заказов: {len(created)} (ожидалось {expected}), отказов «нет в наличии»: {len(refused)}")
+    |                                                                                                     ^
+181 |     print(f"Остаток после теста: {stock_left} (ожидалось {args.stock - len(created)})")
+182 |     if timings:
+    |
+
+E501 Line too long (107 > 100)
+  --> scripts/fetch_demo_images.py:25:101
+   |
+23 | IMAGES = ROOT / "fixtures/demo_images"
+24 | SIZE = 800
+25 | BROWSER = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140 Safari/537.36"
+   |                                                                                                     ^^^^^^^
+
+E501 Line too long (101 > 100)
+   --> store/tests/test_storefront.py:106:101
+    |
+104 |     ]
+105 |     assert slugs(
+106 |         api_client.get(PRODUCTS, {"price_min": 1_500_00, "price_max": 8_000_00, "sort": "price_asc"})
+    |                                                                                                     ^
+107 |     ) == [shop["black_shirt"].slug, shop["runner"].slug]
+    |
+
+Found 3 errors.
+check exit=1
+4 files reformatted, 139 files left unchanged
+E501 Line too long (107 > 100)
+  --> scripts/fetch_demo_images.py:25:101
+   |
+23 | IMAGES = ROOT / "fixtures/demo_images"
+24 | SIZE = 800
+25 | BROWSER = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140 Safari/537.36"
+   |                                                                                                     ^^^^^^^
+
+Found 1 error.
+recheck exit=1

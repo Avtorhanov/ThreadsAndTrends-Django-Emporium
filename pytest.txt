@@ -1,0 +1,25 @@
+........................................................................ [ 20%]
+........................................................................ [ 41%]
+........................................................................ [ 62%]
+........................................................................ [ 82%]
+..................F.F......................................              [100%]
+=================================== FAILURES ===================================
+__________________________ test_search_uses_gin_index __________________________
+store/tests/test_storefront.py:158: in test_search_uses_gin_index
+    assert "product_search_idx" in plan
+E   AssertionError: assert 'product_search_idx' in 'Sort  (cost=13.78..13.79 rows=1 width=997)\n  Sort Key: created_at DESC, id DESC\n  ->  Bitmap Heap Scan on store_pro...x Scan on product_active_deleted_idx  (cost=0.00..8.74 rows=1 width=0)\n              Index Cond: (deleted_at IS NULL)'
+_________________ test_category_tree_is_cached_and_invalidated _________________
+store/tests/test_storefront.py:176: in test_category_tree_is_cached_and_invalidated
+    assert tree[0]["children"][0]["name"] == "Майки и футболки"
+E   AssertionError: assert 'Кроссовки' == 'Майки и футболки'
+E     
+E     - Майки и футболки
+E     + Кроссовки
+=========================== short test summary info ============================
+FAILED store/tests/test_storefront.py::test_search_uses_gin_index - AssertionError: assert 'product_search_idx' in 'Sort  (cost=13.78..13.79 rows=1 width=997)\n  Sort Key: created_at DESC, id DESC\n  ->  Bitmap Heap Scan on store_pro...x Scan on product_active_deleted_idx  (cost=0.00..8.74 rows=1 width=0)\n              Index Cond: (deleted_at IS NULL)'
+FAILED store/tests/test_storefront.py::test_category_tree_is_cached_and_invalidated - AssertionError: assert 'Кроссовки' == 'Майки и футболки'
+  
+  - Майки и футболки
+  + Кроссовки
+2 failed, 345 passed in 16.65s
+exit=1

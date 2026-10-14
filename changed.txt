@@ -1,0 +1,36 @@
+ M deploy/smoke_checkout.py
+ M fixtures/demo_images/CREDITS.md
+ M fixtures/demo_images/credits.json
+ M openapi/schema.yml
+ M store/api/serializers.py
+ M store/services/storefront.py
+ M store/tests/test_storefront.py
+?? fixtures/demo_images/botinki-tayga-1.jpg
+?? fixtures/demo_images/chasy-hronograf-navigator-1.jpg
+?? fixtures/demo_images/chasy-hronograf-navigator-2.jpg
+?? fixtures/demo_images/chasy-klassika-serebristye-1.jpg
+?? fixtures/demo_images/chasy-polnoch-chernye-1.jpg
+?? fixtures/demo_images/chelsi-uteplennye-1.jpg
+?? fixtures/demo_images/futbolka-bazovaya-belaya-1.jpg
+?? fixtures/demo_images/futbolka-gory-1.jpg
+?? fixtures/demo_images/futbolka-oversayz-chernaya-1.jpg
+?? fixtures/demo_images/hudi-na-molnii-chernoe-1.jpg
+?? fixtures/demo_images/hudi-oversayz-seroe-1.jpg
+?? fixtures/demo_images/hudi-oversayz-seroe-2.jpg
+?? fixtures/demo_images/kedy-belye-1.jpg
+?? fixtures/demo_images/krem-dlya-lica-1.jpg
+?? fixtures/demo_images/krossovki-sprint-1.jpg
+?? fixtures/demo_images/krossovki-sprint-2.jpg
+?? fixtures/demo_images/krossovki-strit-1.jpg
+?? fixtures/demo_images/ochki-aviator-1.jpg
+?? fixtures/demo_images/ochki-retro-kruglye-1.jpg
+?? fixtures/demo_images/ochki-veyfarer-1.jpg
+?? fixtures/demo_images/omega-3-1.jpg
+?? fixtures/demo_images/pomada-matovaya-1.jpg
+?? fixtures/demo_images/ryukzak-gorodskoy-1.jpg
+?? fixtures/demo_images/sumka-tout-1.jpg
+?? fixtures/demo_images/sumka-tout-2.jpg
+?? fixtures/demo_images/svitshot-bezhevyy-1.jpg
+?? fixtures/demo_images/syvorotka-vitamin-c-1.jpg
+?? fixtures/demo_images/uggi-zamshevye-1.jpg
+?? fixtures/demo_images/vitamin-d3-1.jpg

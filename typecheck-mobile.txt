@@ -1,0 +1,15 @@
+
+> didi-shop-mobile@1.0.0 pretypecheck
+> npm run gen:api
+
+
+> didi-shop-mobile@1.0.0 gen:api
+> openapi-typescript ../openapi/schema.yml -o src/api/schema.d.ts
+
+✨ openapi-typescript 7.13.0
+🚀 ../openapi/schema.yml → src/api/schema.d.ts [151.8ms]
+
+> didi-shop-mobile@1.0.0 typecheck
+> tsc --noEmit
+
+exit=0
