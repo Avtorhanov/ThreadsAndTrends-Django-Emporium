@@ -177,12 +177,16 @@ def main() -> int:
     expected = min(args.stock, args.users)
 
     print(f"Покупателей: {args.users}, единиц в продаже: {args.stock}, время: {elapsed:.1f} с")
-    print(f"Заказов: {len(created)} (ожидалось {expected}), отказов «нет в наличии»: {len(refused)}")
+    print(
+        f"Заказов: {len(created)} (ожидалось {expected}), отказов «нет в наличии»: {len(refused)}"
+    )
     print(f"Остаток после теста: {stock_left} (ожидалось {args.stock - len(created)})")
     if timings:
         p95 = timings[max(0, int(len(timings) * 0.95) - 1)]
-        print(f"Запросов: {len(timings)}, p50 {statistics.median(timings) * 1000:.0f} мс, "
-              f"p95 {p95 * 1000:.0f} мс, max {timings[-1] * 1000:.0f} мс")
+        print(
+            f"Запросов: {len(timings)}, p50 {statistics.median(timings) * 1000:.0f} мс, "
+            f"p95 {p95 * 1000:.0f} мс, max {timings[-1] * 1000:.0f} мс"
+        )
     for r in other:
         print(f"  этап {r['stage']}: {r['status']} {r.get('data')}")
 

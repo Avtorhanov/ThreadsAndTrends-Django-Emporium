@@ -58,9 +58,7 @@ class ProductFilters:
 
 
 def live_products() -> QuerySet[Product]:
-    return (
-        Product.objects.live().with_stock().select_related("category").prefetch_related("images")
-    )
+    return Product.objects.live().with_stock().select_related("category").prefetch_related("images")
 
 
 def filter_products(filters: ProductFilters) -> QuerySet[Product]:

@@ -101,9 +101,7 @@ class ProductListQuerySerializer(serializers.Serializer):
     price_max = serializers.IntegerField(
         required=False, min_value=0, max_value=MAX_PRICE_KOPECKS, help_text="Цена до, коп."
     )
-    in_stock = serializers.BooleanField(
-        required=False, default=False, help_text="Только в наличии"
-    )
+    in_stock = serializers.BooleanField(required=False, default=False, help_text="Только в наличии")
     sort = serializers.ChoiceField(
         choices=Sort.CHOICES,
         required=False,

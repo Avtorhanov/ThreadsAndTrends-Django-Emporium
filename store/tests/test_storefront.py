@@ -103,7 +103,9 @@ def test_filters_by_category_price_and_stock(api_client, shop):
         shop["runner"].slug
     ]
     assert slugs(
-        api_client.get(PRODUCTS, {"price_min": 1_500_00, "price_max": 8_000_00, "sort": "price_asc"})
+        api_client.get(
+            PRODUCTS, {"price_min": 1_500_00, "price_max": 8_000_00, "sort": "price_asc"}
+        )
     ) == [shop["black_shirt"].slug, shop["runner"].slug]
 
 

@@ -1127,7 +1127,7 @@ paths:
   /api/v1/catalog/categories/:
     get:
       operationId: catalog_categories_list
-      description: 'Дерево активных категорий: корни с подкатегориями.'
+      description: 'Дерево активных категорий: корни с подкатегориями (из кэша).'
       tags:
       - catalog
       security:
@@ -1145,20 +1145,70 @@ paths:
     get:
       operationId: catalog_products_list
       description: |-
-        Публичное чтение (каталог): без аутентификации, чтобы просроченный JWT
-        в заголовке не превращал открытый запрос в 401.
+        Лента товаров: поиск (`q`, только товары в наличии), категория с подкатегориями,
+        цена в копейках, наличие, сортировка. Постранично.
       parameters:
       - in: query
         name: category
         schema:
-          type: string
+          oneOf:
+          - type: string
+            pattern: ^[-a-zA-Z0-9_]+$
+          - type: string
+            maxLength: 0
         description: Slug категории (с подкатегориями)
+      - in: query
+        name: in_stock
+        schema:
+          type: boolean
+          default: false
+        description: Только в наличии
       - name: page
         required: false
         in: query
         description: A page number within the paginated result set.
         schema:
           type: integer
+      - in: query
+        name: price_max
+        schema:
+          type: integer
+          maximum: 10000000000
+          minimum: 0
+          format: int64
+        description: Цена до, коп.
+      - in: query
+        name: price_min
+        schema:
+          type: integer
+          maximum: 10000000000
+          minimum: 0
+          format: int64
+        description: Цена от, коп.
+      - in: query
+        name: q
+        schema:
+          type: string
+          maxLength: 100
+        description: Поиск по названию и описанию (по началу слов, русская морфология).
+          Показывает только товары в наличии.
+      - in: query
+        name: sort
+        schema:
+          enum:
+          - new
+          - price_asc
+          - price_desc
+          - relevance
+          - ''
+          type: string
+        description: |-
+          По умолчанию: с поиском — relevance, без — new.
+
+          * `new` - Сначала новые
+          * `price_asc` - Сначала дешевле
+          * `price_desc` - Сначала дороже
+          * `relevance` - По релевантности (только с поиском)
       tags:
       - catalog
       security:
