@@ -1,0 +1,75 @@
+# Caddy: автоматический HTTPS (Let's Encrypt; для DOMAIN=localhost — локальный сертификат),
+# HTTP → HTTPS, HTTP/3. Переменные DOMAIN и ACME_EMAIL приходят из compose.prod.yml.
+{
+	email {$ACME_EMAIL}
+}
+
+# Витрина и панель хранят токены/сессию в браузере: скрипты только с этого домена (защита от XSS).
+(spa_headers) {
+	header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+	header X-Frame-Options "DENY"
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Фото товаров (до 5 МБ) с запасом на multipart.
+	request_body {
+		max_size 12MB
+	}
+
+	# API и резервная Django admin — gunicorn. Caddy сам выставляет X-Forwarded-For
+	# (реальный IP клиента; заголовок от клиента не доверяется) и X-Forwarded-Proto.
+	@django path /api/* /admin /admin/*
+	handle @django {
+		reverse_proxy app:8000
+	}
+
+	handle_path /static/* {
+		root * /srv/static
+		header Cache-Control "public, max-age=86400"
+		file_server
+	}
+
+	# Имена фото — UUID, файл по адресу не меняется.
+	handle_path /media/* {
+		root * /srv/media
+		header Cache-Control "public, max-age=2592000, immutable"
+		file_server
+	}
+
+	# Панель администратора (SPA, base /panel/).
+	redir /panel /panel/ 308
+	handle /panel/* {
+		import spa_headers
+		root * /srv
+		@assets path /panel/assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		try_files {path} /panel/index.html
+		file_server
+	}
+
+	# Витрина: веб-версия мобильного приложения (SPA, адреса как в приложении).
+	handle {
+		import spa_headers
+		root * /srv/shop
+		@assets path /_expo/* /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@html not path /_expo/* /assets/*
+		header @html Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

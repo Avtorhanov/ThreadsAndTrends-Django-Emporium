@@ -1,0 +1,154 @@
+# Продакшен: `./deploy.sh` (он же — обновление после `git pull`). Настройки — в .env
+# (шаблон .env.prod.example). Наружу открыты только 80 и 443 (Caddy, автоматический HTTPS).
+#
+#   caddy      — HTTPS (Let's Encrypt), витрина (веб-версия приложения), панель /panel/,
+#                статика и фото товаров, прокси /api/ и /admin/ в app
+#   app        — Django + gunicorn; при старте: миграции, администратор, демо-каталог
+#   worker     — фоновые задачи (письма, возвраты)
+#   scheduler  — периодические задачи (автоотмена неоплаченных, сверка платежей)
+#   db         — PostgreSQL 16
+#   backup     — ежедневный бэкап БД и фото в ./backups
+name: didi-shop
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-app: &app
+  build:
+    context: .
+    args:
+      REQUIREMENTS: prod
+  image: didi-shop-app:latest
+  restart: unless-stopped
+  logging: *logging
+  env_file: .env
+  environment: &app-env
+    DJANGO_SETTINGS_MODULE: myshop.settings.prod
+    DB_HOST: db
+    DB_PORT: "5432"
+    DB_NAME: didi
+    DB_USER: didi
+    # Производные от DOMAIN — в .env их задавать не нужно.
+    ALLOWED_HOSTS: ${DOMAIN:?Задайте DOMAIN в .env}
+    CSRF_TRUSTED_ORIGINS: https://${DOMAIN}
+    NUM_PROXIES: "1"
+    # Возврат со страницы оплаты: в приложение (didishop://) и на веб-витрину.
+    PAYMENTS_RETURN_URL_PREFIXES: didishop://,https://${DOMAIN}/
+    PAYMENTS_DEFAULT_RETURN_URL: https://${DOMAIN}/orders/{number}
+    CACHE_URL: ${CACHE_URL:-db://django_cache}
+    TASKS_BACKEND: database
+  volumes:
+    - media:/data/media
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_DB: didi
+      POSTGRES_USER: didi
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Задайте DB_PASSWORD в .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U didi -d didi"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    shm_size: 256m
+
+  app:
+    <<: *app
+    environment:
+      <<: *app-env
+      RUN_MIGRATIONS: "1"
+      ENSURE_ADMIN: "1"
+      LOAD_FIXTURES: ${SEED_DEMO:-0}
+      STATIC_EXPORT_DIR: /srv/static
+      GUNICORN_CMD_ARGS: --workers ${GUNICORN_WORKERS:-3} --timeout 60 --graceful-timeout 30
+    volumes:
+      - media:/data/media
+      - static:/srv/static
+    healthcheck:
+      # Host — домен сайта: запрос проходит ALLOWED_HOSTS; healthcheck исключён из редиректа на HTTPS.
+      test:
+        - CMD
+        - python
+        - -c
+        - "import os,urllib.request as u; u.urlopen(u.Request('http://localhost:8000/api/v1/health/', headers={'Host': os.environ['ALLOWED_HOSTS'].split(',')[0]}), timeout=5)"
+      interval: 15s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+
+  worker:
+    <<: *app
+    command: python manage.py db_worker --queue-name '*'
+    depends_on:
+      app:
+        condition: service_healthy
+
+  scheduler:
+    <<: *app
+    command: python manage.py run_scheduler
+    depends_on:
+      app:
+        condition: service_healthy
+
+  caddy:
+    build:
+      context: .
+      dockerfile: deploy/edge.Dockerfile
+    image: didi-shop-edge:latest
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:-${ADMIN_EMAIL:-}}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+      - static:/srv/static:ro
+      - media:/srv/media:ro
+    depends_on:
+      app:
+        condition: service_healthy
+
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      PGHOST: db
+      PGUSER: didi
+      PGDATABASE: didi
+      PGPASSWORD: ${DB_PASSWORD}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      # Время по UTC: 00:30 UTC = 03:30 МСК.
+      BACKUP_CRON: ${BACKUP_CRON:-30 0 * * *}
+    volumes:
+      - ./backups:/backups
+      - media:/media:ro
+      - ./deploy/backup.sh:/usr/local/bin/backup.sh:ro
+    entrypoint: ["sh", "-c", "echo \"$$BACKUP_CRON sh /usr/local/bin/backup.sh > /proc/1/fd/1 2>&1\" | crontab - && exec crond -f -d 8"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  media:
+  static:
+  caddy_data:
+  caddy_config:

@@ -1,7 +1,5 @@
-import * as Linking from "expo-linking";
-import * as WebBrowser from "expo-web-browser";
-
 import { type OrderDetail, orderService } from "./orderService";
+import { openPaymentPage } from "./paymentPage";
 
 // После возврата со страницы оплаты банк может подтвердить платёж не сразу.
 const POLL_ATTEMPTS = 5;
@@ -24,13 +22,13 @@ export async function checkPayment(number: string, wait: boolean): Promise<Order
   return order;
 }
 
-/** Оплата заказа на странице провайдера во встроенном браузере. Статус заказа меняет только
- * сервер по подтверждению провайдера — приложение лишь просит его сверить оплату. */
+/** Оплата заказа на странице провайдера. Статус заказа меняет только сервер по подтверждению
+ * провайдера — приложение лишь просит его сверить оплату. */
 export async function payOrder(number: string): Promise<OrderDetail> {
-  // В сборке — didishop://orders/<номер>, в Expo Go — exp://…/--/orders/<номер>.
-  const returnUrl = Linking.createURL(`orders/${number}`);
-  const { confirmation_url } = await orderService.pay(number, returnUrl);
-  const result = await WebBrowser.openAuthSessionAsync(confirmation_url, returnUrl);
+  const outcome = await openPaymentPage(
+    number,
+    async (returnUrl) => (await orderService.pay(number, returnUrl)).confirmation_url,
+  );
   // Вернулся по ссылке — платёж скорее всего прошёл, ждём подтверждения; закрыл браузер — одна сверка.
-  return checkPayment(number, result.type === "success");
+  return checkPayment(number, outcome === "returned");
 }

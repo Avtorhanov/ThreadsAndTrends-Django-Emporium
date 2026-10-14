@@ -1,2 +1,4 @@
 -r base.txt
 gunicorn==26.2.0
+# Мониторинг ошибок; включается переменной SENTRY_DSN
+sentry-sdk==2.72.0

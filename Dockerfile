@@ -15,8 +15,8 @@ COPY requirements/ requirements/
 RUN pip install -r requirements/${REQUIREMENTS}.txt
 
 RUN useradd --create-home --uid 1000 app \
-    && mkdir -p /data/media /app/staticfiles \
-    && chown -R app:app /data /app
+    && mkdir -p /data/media /app/staticfiles /srv/static \
+    && chown -R app:app /data /app /srv/static
 
 COPY --chown=app:app . .
 RUN chmod +x docker/entrypoint.sh \

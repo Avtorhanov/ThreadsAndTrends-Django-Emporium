@@ -36,6 +36,16 @@ def env_int(name: str, default: int) -> int:
         raise ImproperlyConfigured(f"{name} должна быть целым числом") from exc
 
 
+def env_float(name: str, default: float) -> float:
+    value = os.environ.get(name)
+    if value is None or value.strip() == "":
+        return default
+    try:
+        return float(value)
+    except ValueError as exc:
+        raise ImproperlyConfigured(f"{name} должна быть числом") from exc
+
+
 def env_list(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in os.environ.get(name, default).split(",") if item.strip()]
 

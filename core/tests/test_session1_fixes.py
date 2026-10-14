@@ -3,7 +3,6 @@
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from django.urls import reverse
 
 from store.models import Cart, CartItem
 from store.tests.factories import make_product
@@ -31,7 +30,7 @@ def test_pages_do_not_create_cart_for_user(client):
     user = User.objects.create_user(email="u@example.com", password="p")
     client.force_login(user)
 
-    response = client.get(reverse("home"))
+    response = client.get("/api/v1/catalog/products/")
 
     assert response.status_code == 200
     assert not Cart.objects.filter(owner=user).exists()

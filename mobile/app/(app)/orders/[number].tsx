@@ -1,7 +1,8 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { confirmAction } from "../../../src/components/confirm";
 import { colors, radius, spacing } from "../../../src/components/theme";
 import { Button, Message, Screen } from "../../../src/components/ui";
 import { useSubmit } from "../../../src/hooks/useSubmit";
@@ -82,17 +83,18 @@ export default function OrderScreen() {
     void check.submit();
   }, [order, check.submit]);
 
-  const confirmCancel = () =>
-    Alert.alert(
-      "Отменить заказ?",
-      order?.payment_status === "succeeded"
-        ? "Деньги вернутся на карту или счёт, с которых вы платили. Отмену нельзя отменить."
-        : "Товары вернутся в продажу. Отмену нельзя отменить.",
-      [
-        { text: "Не отменять", style: "cancel" },
-        { text: "Отменить заказ", style: "destructive", onPress: () => void cancel.submit() },
-      ],
-    );
+  const confirmCancel = async () => {
+    const confirmed = await confirmAction({
+      title: "Отменить заказ?",
+      message:
+        order?.payment_status === "succeeded"
+          ? "Деньги вернутся на карту или счёт, с которых вы платили. Отмену нельзя отменить."
+          : "Товары вернутся в продажу. Отмену нельзя отменить.",
+      confirmText: "Отменить заказ",
+      cancelText: "Не отменять",
+    });
+    if (confirmed) void cancel.submit();
+  };
 
   if (!order) {
     return (

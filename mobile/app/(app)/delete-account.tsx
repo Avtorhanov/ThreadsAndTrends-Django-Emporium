@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Alert } from "react-native";
 
 import { useAuth } from "../../src/auth/AuthProvider";
+import { confirmAction } from "../../src/components/confirm";
 import { Button, Hint, Message, Screen, TextField } from "../../src/components/ui";
 import { useSubmit } from "../../src/hooks/useSubmit";
 
@@ -10,11 +10,14 @@ export default function DeleteAccountScreen() {
   const [password, setPassword] = useState("");
   const { submit, loading, error, fieldErrors } = useSubmit(() => deleteAccount(password));
 
-  const confirm = () =>
-    Alert.alert("Удалить аккаунт?", "Действие необратимо.", [
-      { text: "Отмена", style: "cancel" },
-      { text: "Удалить", style: "destructive", onPress: () => void submit() },
-    ]);
+  const confirm = async () => {
+    const confirmed = await confirmAction({
+      title: "Удалить аккаунт?",
+      message: "Действие необратимо.",
+      confirmText: "Удалить",
+    });
+    if (confirmed) void submit();
+  };
 
   return (
     <Screen>
