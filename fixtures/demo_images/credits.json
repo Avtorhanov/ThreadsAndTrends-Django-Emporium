@@ -54,13 +54,13 @@
   "url": "https://live.staticflickr.com/7349/16295029330_892bece19c_b.jpg"
  },
  "futbolka-bazovaya-belaya-1.jpg": {
-  "author": "Beegee49 (Thanks for 12m views, my account is lock",
-  "author_url": "https://www.flickr.com/photos/66358983@N07",
-  "id": "openverse:3f0c402f-3837-4c73-8387-7b71382848f1",
-  "license": "CC BY-ND 2.0",
+  "author": "Moheen Reeyad",
+  "author_url": "https://commons.wikimedia.org/wiki/File:Wiki_Loves_Bangla_T-Shirt_White.jpg",
+  "id": "commons:169657880",
+  "license": "CC BY-SA 4.0",
   "query": "white t-shirt",
-  "source": "https://www.flickr.com/photos/66358983@N07/35374492122",
-  "url": "https://live.staticflickr.com/4216/35374492122_4f6a24e82f_b.jpg"
+  "source": "https://commons.wikimedia.org/wiki/File:Wiki_Loves_Bangla_T-Shirt_White.jpg",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2b/Wiki_Loves_Bangla_T-Shirt_White.jpg/1920px-Wiki_Loves_Bangla_T-Shirt_White.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
  },
  "futbolka-gory-1.jpg": {
   "author": "nclmar",
@@ -72,40 +72,40 @@
   "url": "https://live.staticflickr.com/4033/4629050026_12a32eca37_b.jpg"
  },
  "futbolka-oversayz-chernaya-1.jpg": {
-  "author": "jordonb28",
-  "author_url": "https://www.flickr.com/photos/113286431@N02",
-  "id": "openverse:608569da-f5ac-45f7-b530-82a3c3f36942",
-  "license": "CC BY 2.0",
+  "author": "Marie-Walt",
+  "author_url": "https://commons.wikimedia.org/wiki/File:Tee_shirt_avec_impression_de_croix_huguenote.jpg",
+  "id": "commons:179324442",
+  "license": "CC BY-SA 4.0",
   "query": "black t-shirt",
-  "source": "https://www.flickr.com/photos/113286431@N02/11746924013",
-  "url": "https://live.staticflickr.com/7363/11746924013_b9f9327dd4_b.jpg"
+  "source": "https://commons.wikimedia.org/wiki/File:Tee_shirt_avec_impression_de_croix_huguenote.jpg",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/af/Tee_shirt_avec_impression_de_croix_huguenote.jpg/1920px-Tee_shirt_avec_impression_de_croix_huguenote.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
  },
  "hudi-na-molnii-chernoe-1.jpg": {
-  "author": "OakandSeen",
-  "author_url": "https://www.flickr.com/photos/48727626@N03",
-  "id": "openverse:2d4f8122-c5c4-4b29-89ed-58db57343a0b",
-  "license": "CC BY 2.0",
-  "query": "black hoodie",
-  "source": "https://www.flickr.com/photos/48727626@N03/5469170195",
-  "url": "https://live.staticflickr.com/5138/5469170195_2106836dec_b.jpg"
+  "author": "Federal Bureau of Investigation agents",
+  "author_url": "https://commons.wikimedia.org/wiki/File:Ted_Kaczynski%27s_hoodie.jpg",
+  "id": "commons:115189278",
+  "license": "Public domain",
+  "query": "zip hoodie",
+  "source": "https://commons.wikimedia.org/wiki/File:Ted_Kaczynski%27s_hoodie.jpg",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/0/03/Ted_Kaczynski%27s_hoodie.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
  },
  "hudi-oversayz-seroe-1.jpg": {
-  "author": "Image Catalog",
-  "author_url": "https://www.flickr.com/photos/132795455@N08",
-  "id": "openverse:04a35e59-b7ea-4210-ab6c-1f0cb28118fa",
-  "license": "CC CC0 1.0",
+  "author": "YoussefTahoun",
+  "author_url": "https://commons.wikimedia.org/wiki/File:Hoodie_m7agar.jpg",
+  "id": "commons:140673215",
+  "license": "CC0",
   "query": "grey hoodie",
-  "source": "https://www.flickr.com/photos/132795455@N08/17797999629",
-  "url": "https://live.staticflickr.com/5343/17797999629_12a1a844c5_b.jpg"
+  "source": "https://commons.wikimedia.org/wiki/File:Hoodie_m7agar.jpg",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/c/c2/Hoodie_m7agar.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
  },
  "hudi-oversayz-seroe-2.jpg": {
-  "author": "jollyUK",
-  "author_url": "https://www.flickr.com/photos/18724406@N06",
-  "id": "openverse:843f6324-a3e9-4d31-9ee3-0509e58fcadf",
-  "license": "CC BY 2.0",
-  "query": "hoodie",
-  "source": "https://www.flickr.com/photos/18724406@N06/1988440171",
-  "url": "https://live.staticflickr.com/2084/1988440171_b05f747417_b.jpg"
+  "author": "Patryk Sobczak",
+  "author_url": "https://stocksnap.io/author/224",
+  "id": "openverse:dfc62647-8a29-45dc-84a2-4e4e6c0e8dd6",
+  "license": "CC0",
+  "query": "hooded sweatshirt",
+  "source": "https://stocksnap.io/photo/dark-grey-B1CD3921D5",
+  "url": "https://cdn.stocksnap.io/img-thumbs/960w/B1CD3921D5.jpg"
  },
  "kedy-belye-1.jpg": {
   "author": "Kristin Hardwick",
@@ -117,13 +117,13 @@
   "url": "https://cdn.stocksnap.io/img-thumbs/960w/U20YIXFQBC.jpg"
  },
  "krem-dlya-lica-1.jpg": {
-  "author": "Naomi King",
-  "author_url": "https://www.flickr.com/photos/22141297@N06",
-  "id": "openverse:415f8e7c-6e31-460b-a727-139edaf33d2c",
-  "license": "CC BY 2.0",
-  "query": "face cream jar",
-  "source": "https://www.flickr.com/photos/22141297@N06/7802735526",
-  "url": "https://live.staticflickr.com/8441/7802735526_15f9c85f54_b.jpg"
+  "author": "Benff",
+  "author_url": "https://commons.wikimedia.org/wiki/File:Day_cream_02.jpg",
+  "id": "commons:121270154",
+  "license": "CC BY-SA 4.0",
+  "query": "cosmetic cream jar",
+  "source": "https://commons.wikimedia.org/wiki/File:Day_cream_02.jpg",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0f/Day_cream_02.jpg/1920px-Day_cream_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
  },
  "krossovki-sprint-1.jpg": {
   "author": "Average Jane",
@@ -225,13 +225,13 @@
   "url": "https://live.staticflickr.com/4114/4782040554_74106db1b0_b.jpg"
  },
  "svitshot-bezhevyy-1.jpg": {
-  "author": "TheUglySweaterShop",
-  "author_url": "https://www.flickr.com/photos/54115831@N07",
-  "id": "openverse:7b8ba9ea-ed04-46b9-818c-e4b361679a27",
-  "license": "CC BY 2.0",
+  "author": "Fanem WOO Huauimgy SAA",
+  "author_url": "https://commons.wikimedia.org/wiki/File:HK_SKD_TKO_%E5%B0%87%E8%BB%8D%E6%BE%B3_Tseung_Kwan_O_%E5%9D%91%E5%8F%A3_Hang_Hau_%E6%9D%B1%E6%B8%AF%E5%9F%8E_East_Point_City_mall_shop_GU_Clothing_Store_%E7%A7%8B%E5%AD%A3%E6%9C%8D%E8%A3%9D_Autumn_fall_fashion_long_sleeve_full_zip_hoodie_September_2022_Px3.jpg",
+  "id": "commons:122915544",
+  "license": "CC BY-SA 4.0",
   "query": "sweatshirt",
-  "source": "https://www.flickr.com/photos/54115831@N07/15485783430",
-  "url": "https://live.staticflickr.com/7539/15485783430_a5b1396cd6_b.jpg"
+  "source": "https://commons.wikimedia.org/wiki/File:HK_SKD_TKO_%E5%B0%87%E8%BB%8D%E6%BE%B3_Tseung_Kwan_O_%E5%9D%91%E5%8F%A3_Hang_Hau_%E6%9D%B1%E6%B8%AF%E5%9F%8E_East_Point_City_mall_shop_GU_Clothing_Store_%E7%A7%8B%E5%AD%A3%E6%9C%8D%E8%A3%9D_Autumn_fall_fashion_long_sleeve_full_zip_hoodie_September_2022_Px3.jpg",
+  "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/98/HK_SKD_TKO_%E5%B0%87%E8%BB%8D%E6%BE%B3_Tseung_Kwan_O_%E5%9D%91%E5%8F%A3_Hang_Hau_%E6%9D%B1%E6%B8%AF%E5%9F%8E_East_Point_City_mall_shop_GU_Clothing_Store_%E7%A7%8B%E5%AD%A3%E6%9C%8D%E8%A3%9D_Autumn_fall_fashion_long_sleeve_full_zip_hoodie_September_2022_Px3.jpg/1920px-thumbnail.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
  },
  "syvorotka-vitamin-c-1.jpg": {
   "author": "неизвестен",
