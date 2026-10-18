@@ -31,12 +31,13 @@ x-app: &app
     DB_PORT: "5432"
     DB_NAME: didi
     DB_USER: didi
-    # Производные от DOMAIN — в .env их задавать не нужно.
-    ALLOWED_HOSTS: ${DOMAIN:?Задайте DOMAIN в .env}
-    CSRF_TRUSTED_ORIGINS: https://${DOMAIN}
+    # Производные от DOMAIN — в .env их задавать не нужно. SITE_HOSTS и RETURN_URL_PREFIXES
+    # пишет deploy.sh: основной адрес + прежние (EXTRA_DOMAINS), чтобы старые APK работали.
+    ALLOWED_HOSTS: ${SITE_HOSTS:?Запускайте через ./deploy.sh}
+    CSRF_TRUSTED_ORIGINS: https://${DOMAIN:?Запускайте через ./deploy.sh}
     NUM_PROXIES: "1"
     # Возврат со страницы оплаты: в приложение (didishop://) и на веб-витрину.
-    PAYMENTS_RETURN_URL_PREFIXES: didishop://,https://${DOMAIN}/
+    PAYMENTS_RETURN_URL_PREFIXES: didishop://,${RETURN_URL_PREFIXES:?Запускайте через ./deploy.sh}
     PAYMENTS_DEFAULT_RETURN_URL: https://${DOMAIN}/orders/{number}
     CACHE_URL: ${CACHE_URL:-db://django_cache}
     TASKS_BACKEND: database
@@ -106,11 +107,14 @@ services:
     build:
       context: .
       dockerfile: deploy/edge.Dockerfile
+      args:
+        # Ссылка «Скачать приложение для Android» в веб-версии (пусто — не показывать).
+        ANDROID_APK_URL: ${ANDROID_APK_URL:-}
     image: didi-shop-edge:latest
     restart: unless-stopped
     logging: *logging
     environment:
-      DOMAIN: ${DOMAIN}
+      SITE_ADDRESSES: ${SITE_HOSTS}
       ACME_EMAIL: ${ACME_EMAIL:-${ADMIN_EMAIL:-}}
     ports:
       - "80:80"

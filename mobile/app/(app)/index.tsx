@@ -1,7 +1,18 @@
 import { router } from "expo-router";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { useCategories } from "../../src/catalog/hooks";
+import { InstallHint } from "../../src/components/InstallHint";
 import { colors, radius, spacing } from "../../src/components/theme";
 import { Button, Message } from "../../src/components/ui";
 
@@ -14,12 +25,32 @@ function openProducts(category?: { slug: string; name: string }) {
 
 export default function CatalogScreen() {
   const { data, loading, error, reload } = useCategories();
+  const [search, setSearch] = useState("");
+
+  const submitSearch = () => {
+    const q = search.trim();
+    if (q) router.push({ pathname: "/products", params: { q } });
+  };
 
   return (
     <ScrollView
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={loading && data !== null} onRefresh={reload} />}
+      keyboardShouldPersistTaps="handled"
     >
+      <InstallHint />
+      <TextInput
+        value={search}
+        onChangeText={setSearch}
+        onSubmitEditing={submitSearch}
+        placeholder="Поиск товаров"
+        placeholderTextColor={colors.muted}
+        accessibilityLabel="Поиск товаров"
+        returnKeyType="search"
+        autoCorrect={false}
+        maxLength={100}
+        style={styles.search}
+      />
       <Pressable style={styles.all} onPress={() => openProducts()} accessibilityRole="button">
         <Text style={styles.allText}>Все товары</Text>
         <Text style={styles.chevron}>›</Text>
@@ -55,6 +86,16 @@ export default function CatalogScreen() {
 
 const styles = StyleSheet.create({
   content: { padding: spacing.md, gap: spacing.md, backgroundColor: colors.background, flexGrow: 1 },
+  search: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: colors.text,
+  },
   all: {
     flexDirection: "row",
     justifyContent: "space-between",

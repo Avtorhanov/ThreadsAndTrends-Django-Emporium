@@ -37,7 +37,8 @@ env_set() {
   fi
 }
 
-random_secret() { LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1"; }
+# `|| true`: head закрывает канал раньше tr (SIGPIPE), что при pipefail считается ошибкой.
+random_secret() { (LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1") || true; }
 
 ensure_docker() {
   if ! command -v docker >/dev/null 2>&1; then
@@ -49,23 +50,53 @@ ensure_docker() {
   docker compose version >/dev/null 2>&1 || die "Нужен Docker Compose v2 (docker compose)."
 }
 
+public_ip() {
+  curl -fsS -4 --max-time 5 https://api.ipify.org 2>/dev/null \
+    || curl -fsS -4 --max-time 5 https://ifconfig.me 2>/dev/null \
+    || true
+}
+
+GENERATED_ADMIN_PASSWORD=""
+
 ensure_env() {
   if [ ! -f "$ENV_FILE" ]; then
     cp .env.prod.example "$ENV_FILE"
-    chmod 600 "$ENV_FILE"
-    die "Создан файл .env. Заполните DOMAIN, ADMIN_EMAIL и ADMIN_PASSWORD (nano .env) и запустите ./deploy.sh снова."
+    echo "Создан файл .env из .env.prod.example."
   fi
   chmod 600 "$ENV_FILE"
 
-  local domain admin_email admin_password
+  # Адрес сайта. Без своего домена — бесплатное имя <IP>.sslip.io: HTTPS-сертификат
+  # выпускается так же, домен подключается позже (DOMAIN в .env + ./deploy.sh).
+  local domain
   domain=$(env_get DOMAIN)
-  admin_email=$(env_get ADMIN_EMAIL)
-  admin_password=$(env_get ADMIN_PASSWORD)
-  [ -n "$domain" ] || die "В .env не задан DOMAIN (например, shop.example.ru)."
+  if [ -z "$domain" ]; then
+    local ip
+    ip=$(public_ip)
+    [ -n "$ip" ] || die "Не удалось определить внешний IP сервера. Укажите DOMAIN в .env."
+    domain="${ip//./-}.sslip.io"
+    env_set DOMAIN "$domain"
+    echo "Свой домен не задан — магазин будет работать по адресу https://$domain"
+  fi
   case "$domain" in
-    http://* | https://* | */*) die "DOMAIN — только имя домена, без https:// и слэшей: $domain" ;;
+    http://* | https://* | */* | *" "* | *,*) die "DOMAIN — только имя домена, без https:// и слэшей: $domain" ;;
   esac
-  [ -n "$admin_email" ] || die "В .env не задан ADMIN_EMAIL."
+
+  local admin_email
+  admin_email=$(env_get ADMIN_EMAIL)
+  if [ -z "$admin_email" ] && [ -t 0 ]; then
+    read -r -p "Email администратора магазина (для входа в панель): " admin_email
+    [ -z "$admin_email" ] || env_set ADMIN_EMAIL "$admin_email"
+  fi
+  case "$admin_email" in
+    *@*.*) ;;
+    *) die "В .env не задан ADMIN_EMAIL (email администратора): nano .env" ;;
+  esac
+  if [ -z "$(env_get ADMIN_PASSWORD)" ]; then
+    GENERATED_ADMIN_PASSWORD="Dd$(random_secret 14)"
+    env_set ADMIN_PASSWORD "$GENERATED_ADMIN_PASSWORD"
+  fi
+  local admin_password
+  admin_password=$(env_get ADMIN_PASSWORD)
   [ ${#admin_password} -ge 8 ] || die "ADMIN_PASSWORD в .env должен быть не короче 8 символов."
 
   if [ -z "$(env_get SECRET_KEY)" ]; then
@@ -80,6 +111,31 @@ ensure_env() {
      { [ -z "$(env_get YOOKASSA_SHOP_ID)" ] || [ -z "$(env_get YOOKASSA_SECRET_KEY)" ]; }; then
     die "ORDERS_ONLINE_PAYMENT_ENABLED=True, но не заданы YOOKASSA_SHOP_ID и YOOKASSA_SECRET_KEY."
   fi
+
+  # Прежний адрес (например, sslip.io до покупки домена) продолжает работать: он зашит
+  # в уже установленные APK. Список — EXTRA_DOMAINS в .env (ненужный адрес можно удалить).
+  local previous extra
+  previous=$(cat .deployed-domain 2>/dev/null || true)
+  extra=$(env_get EXTRA_DOMAINS | tr -d ' ')
+  if [ -n "$previous" ] && [ "$previous" != "$domain" ] && [ "$previous" != "localhost" ]; then
+    case ",$extra," in
+      *",$previous,"*) ;;
+      *)
+        extra="${extra:+$extra,}$previous"
+        env_set EXTRA_DOMAINS "$extra"
+        warn "Адрес сменился: $previous → $domain. Старый адрес тоже продолжит работать (EXTRA_DOMAINS)."
+        warn "Соберите новый APK с адресом https://$domain (docs/LAUNCH.md, шаг «Android»)."
+        ;;
+    esac
+  fi
+  local sites="$domain" prefixes="https://$domain/" host
+  for host in ${extra//,/ }; do
+    [ "$host" = "$domain" ] && continue
+    sites="$sites, $host"
+    prefixes="$prefixes,https://$host/"
+  done
+  env_set SITE_HOSTS "$sites"
+  env_set RETURN_URL_PREFIXES "$prefixes"
 }
 
 ensure_swap() {
@@ -131,6 +187,7 @@ deploy() {
   "${COMPOSE[@]}" up -d --remove-orphans --wait --wait-timeout 600 \
     || { "${COMPOSE[@]}" ps; "${COMPOSE[@]}" logs --tail 80 app; die "Сервисы не запустились (логи выше)."; }
   docker image prune -f >/dev/null 2>&1 || true
+  printf '%s\n' "$domain" > .deployed-domain
 
   say "Проверка"
   local https_opts=(-fsS --max-time 20 --resolve "$domain:443:127.0.0.1")
@@ -151,6 +208,10 @@ deploy() {
   Webhook для ЮKassa:              https://$domain/api/v1/payments/webhook/yookassa/
   Бэкапы:                          $(pwd)/backups (ежедневно)
 EOF
+  if [ -n "$GENERATED_ADMIN_PASSWORD" ]; then
+    printf '\n  Пароль администратора: %s\n  (сохранён в .env как ADMIN_PASSWORD; после входа смените его в панели)\n' \
+      "$GENERATED_ADMIN_PASSWORD"
+  fi
 }
 
 restore() {

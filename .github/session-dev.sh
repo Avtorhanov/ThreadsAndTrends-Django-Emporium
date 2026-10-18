@@ -14,6 +14,9 @@ if ! grep -q '"react-native-web"' mobile/package.json; then
 fi
 
 # --- Фото демо-каталога ---
+if [ -f .github/demo-candidates.txt ]; then
+  step candidates python scripts/fetch_demo_images.py --candidates $R/candidates --only "$(cat .github/demo-candidates.txt)"
+fi
 step fetch-images python scripts/fetch_demo_images.py
 
 # --- Автоисправления ---
@@ -37,7 +40,11 @@ DJANGO_SETTINGS_MODULE=myshop.settings.prod SECRET_KEY=ci-deploy-check-not-a-rea
 
 # --- E2E прод-стека (если есть) ---
 if [ -f deploy/e2e.sh ]; then
-  step e2e bash deploy/e2e.sh $R
+  step e2e bash deploy/e2e.sh $R/e2e
+  cp .env $R/e2e/env.txt 2>/dev/null || true
+  docker compose -f compose.prod.yml logs --no-color --tail 300 > $R/e2e/compose-logs.txt 2>&1 || true
+  docker compose -f compose.prod.yml down -v > /dev/null 2>&1 || true
+  rm -f .env .deployed-domain
 fi
 
 git status --short > $R/changed.txt

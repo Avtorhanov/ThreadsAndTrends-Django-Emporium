@@ -14,3 +14,4 @@ mobile
 admin-panel
 **/node_modules
 backups
+.deployed-domain

@@ -1,5 +1,6 @@
 # Caddy: автоматический HTTPS (Let's Encrypt; для DOMAIN=localhost — локальный сертификат),
-# HTTP → HTTPS, HTTP/3. Переменные DOMAIN и ACME_EMAIL приходят из compose.prod.yml.
+# HTTP → HTTPS, HTTP/3. SITE_ADDRESSES («домен, прежний-адрес») и ACME_EMAIL приходят из
+# compose.prod.yml; значения готовит deploy.sh.
 {
 	email {$ACME_EMAIL}
 }
@@ -10,7 +11,7 @@
 	header X-Frame-Options "DENY"
 }
 
-{$DOMAIN} {
+{$SITE_ADDRESSES} {
 	encode zstd gzip
 
 	header {
@@ -56,13 +57,24 @@
 		file_server
 	}
 
+	# Манифест PWA (установка на экран «Домой»).
+	handle /manifest.webmanifest {
+		import spa_headers
+		header Content-Type "application/manifest+json"
+		header Cache-Control "no-cache"
+		root * /srv/shop
+		file_server
+	}
+
 	# Витрина: веб-версия мобильного приложения (SPA, адреса как в приложении).
 	handle {
 		import spa_headers
 		root * /srv/shop
 		@assets path /_expo/* /assets/*
 		header @assets Cache-Control "public, max-age=31536000, immutable"
-		@html not path /_expo/* /assets/*
+		@icons path /icons/*
+		header @icons Cache-Control "public, max-age=86400"
+		@html not path /_expo/* /assets/* /icons/*
 		header @html Cache-Control "no-cache"
 		try_files {path} /index.html
 		file_server

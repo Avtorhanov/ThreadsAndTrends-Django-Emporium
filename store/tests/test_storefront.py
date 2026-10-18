@@ -148,7 +148,8 @@ def test_search_query_count_is_constant(api_client, shop, django_assert_max_num_
 
 def test_search_uses_gin_index(shop):
     """Выражение запроса совпадает с индексом product_search_idx (иначе — полный перебор)."""
-    query = Product.objects.annotate(search=search_vector()).filter(
+    # all_objects: без условия на deleted_at планировщику остаётся только индекс поиска.
+    query = Product.all_objects.annotate(search=search_vector()).filter(
         search=storefront.build_search_query("кроссовки")
     )
     with connection.cursor() as cursor:
@@ -172,8 +173,8 @@ def test_category_tree_is_cached_and_invalidated(api_client, shop, django_assert
         assert api_client.get(CATEGORIES).json() == first
 
     catalog.update_category(shop["shirts"], name="Майки и футболки")
-    tree = api_client.get(CATEGORIES).json()
-    assert tree[0]["children"][0]["name"] == "Майки и футболки"
+    tree = {root["slug"]: root for root in api_client.get(CATEGORIES).json()}
+    assert tree["odezhda"]["children"][0]["name"] == "Майки и футболки"
 
     catalog.update_category(shop["sneakers"], is_active=False)
     tree = api_client.get(CATEGORIES).json()

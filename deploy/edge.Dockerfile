@@ -16,7 +16,9 @@ COPY mobile/package.json mobile/package-lock.json mobile/.npmrc mobile/
 RUN cd mobile && npm ci --no-audit --no-fund
 COPY mobile/ mobile/
 # API — тот же домен (относительные адреса), поэтому EXPO_PUBLIC_API_URL пустой.
+ARG ANDROID_APK_URL=""
 ENV EXPO_PUBLIC_API_URL="" \
+    EXPO_PUBLIC_ANDROID_APK_URL=${ANDROID_APK_URL} \
     NODE_OPTIONS=--max-old-space-size=1536
 RUN cd mobile && npm run gen:api && npx expo export --platform web --output-dir /out
 

@@ -17,7 +17,11 @@
   "images": [
    {
     "file": "chasy-klassika-serebristye-1.jpg",
-    "query": "silver analog watch"
+    "query": "silver wristwatch",
+    "queries": [
+     "analog watch white background",
+     "steel watch"
+    ]
    }
   ]
  },
@@ -44,7 +48,11 @@
   "images": [
    {
     "file": "ochki-veyfarer-1.jpg",
-    "query": "black sunglasses"
+    "query": "wayfarer sunglasses",
+    "queries": [
+     "sunglasses white background",
+     "black sunglasses table"
+    ]
    }
   ]
  },
@@ -53,7 +61,11 @@
   "images": [
    {
     "file": "ochki-retro-kruglye-1.jpg",
-    "query": "round sunglasses"
+    "query": "round sunglasses",
+    "queries": [
+     "round sunglasses white background",
+     "vintage round glasses"
+    ]
    }
   ]
  },
@@ -75,7 +87,11 @@
   "images": [
    {
     "file": "ryukzak-gorodskoy-1.jpg",
-    "query": "backpack"
+    "query": "backpack product",
+    "queries": [
+     "black backpack",
+     "backpack white background"
+    ]
    }
   ]
  },
@@ -84,7 +100,11 @@
   "images": [
    {
     "file": "futbolka-bazovaya-belaya-1.jpg",
-    "query": "white t-shirt"
+    "query": "white t-shirt mockup",
+    "queries": [
+     "plain white t-shirt",
+     "white tshirt hanger"
+    ]
    }
   ]
  },
@@ -93,7 +113,11 @@
   "images": [
    {
     "file": "futbolka-oversayz-chernaya-1.jpg",
-    "query": "black t-shirt"
+    "query": "black t-shirt mockup",
+    "queries": [
+     "plain black t-shirt",
+     "black tshirt folded"
+    ]
    }
   ]
  },
@@ -111,11 +135,19 @@
   "images": [
    {
     "file": "hudi-oversayz-seroe-1.jpg",
-    "query": "grey hoodie"
+    "query": "grey hoodie mockup",
+    "queries": [
+     "gray hooded sweatshirt",
+     "grey hoodie hanger"
+    ]
    },
    {
     "file": "hudi-oversayz-seroe-2.jpg",
-    "query": "hoodie"
+    "query": "hoodie mockup",
+    "queries": [
+     "hooded sweatshirt flat lay",
+     "hoodie hanging"
+    ]
    }
   ]
  },
@@ -124,7 +156,11 @@
   "images": [
    {
     "file": "svitshot-bezhevyy-1.jpg",
-    "query": "sweatshirt"
+    "query": "beige sweatshirt",
+    "queries": [
+     "crewneck sweatshirt mockup",
+     "sweater flat lay"
+    ]
    }
   ]
  },
@@ -133,7 +169,11 @@
   "images": [
    {
     "file": "hudi-na-molnii-chernoe-1.jpg",
-    "query": "black hoodie"
+    "query": "black zip hoodie",
+    "queries": [
+     "zip up hoodie mockup",
+     "black hooded jacket"
+    ]
    }
   ]
  },
@@ -155,7 +195,11 @@
   "images": [
    {
     "file": "kedy-belye-1.jpg",
-    "query": "white sneakers"
+    "query": "white canvas sneakers",
+    "queries": [
+     "white sneakers pair",
+     "white shoes"
+    ]
    }
   ]
  },
@@ -173,7 +217,11 @@
   "images": [
    {
     "file": "botinki-tayga-1.jpg",
-    "query": "winter boots"
+    "query": "winter boots pair",
+    "queries": [
+     "hiking boots",
+     "leather boots pair"
+    ]
    }
   ]
  },
@@ -182,7 +230,11 @@
   "images": [
    {
     "file": "uggi-zamshevye-1.jpg",
-    "query": "suede boots"
+    "query": "sheepskin boots",
+    "queries": [
+     "ugg boots",
+     "suede winter boots"
+    ]
    }
   ]
  },
@@ -200,7 +252,11 @@
   "images": [
    {
     "file": "krem-dlya-lica-1.jpg",
-    "query": "face cream jar"
+    "query": "face cream jar",
+    "queries": [
+     "cosmetic cream jar",
+     "moisturizer jar"
+    ]
    }
   ]
  },
@@ -218,7 +274,11 @@
   "images": [
    {
     "file": "pomada-matovaya-1.jpg",
-    "query": "lipstick"
+    "query": "lipstick",
+    "queries": [
+     "red lipstick closeup",
+     "lipstick tube"
+    ]
    }
   ]
  },

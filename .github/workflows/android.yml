@@ -1,0 +1,165 @@
+# Сборка приложения для Android (APK) из mobile/.
+#
+#   Выпуск: GitHub → Actions → «Android APK» → Run workflow (адрес магазина — поле api_url или
+#   переменная репозитория API_URL). APK публикуется в Releases под постоянной ссылкой
+#   https://github.com/<владелец>/<репозиторий>/releases/latest/download/didi-shop.apk
+#   Тег v1.2.3 (git push origin v1.2.3) делает то же с версией 1.2.3.
+#
+#   Проверка: при изменениях в mobile/ сборка запускается на ветках и в PR без публикации.
+#
+# Подпись: секреты репозитория ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+# ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD (docs/LAUNCH.md, шаг «Android»). Без них APK
+# подписывается отладочным ключом — только для проверки.
+name: Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: "Адрес магазина, например https://203-0-113-7.sslip.io (пусто — переменная API_URL)"
+        required: false
+  push:
+    tags: ["v*"]
+    branches: ["session-*"]
+    paths: ["mobile/**", "openapi/schema.yml", ".github/workflows/android.yml"]
+  pull_request:
+    paths: ["mobile/**", "openapi/schema.yml", ".github/workflows/android.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      # Публикуем только ручной запуск и теги; ветки и PR — проверка, что сборка не сломана.
+      PUBLISH: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v') }}
+      API_URL: ${{ inputs.api_url || vars.API_URL }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Адрес магазина
+        run: |
+          if [ "$PUBLISH" != "true" ]; then
+            echo "API_URL=https://example.invalid" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          url="${API_URL%/}"
+          case "$url" in
+            https://*) ;;
+            *)
+              echo "::error title=Нет адреса магазина::Укажите api_url при запуске или переменную репозитория API_URL (Settings → Secrets and variables → Actions → Variables), например https://203-0-113-7.sslip.io"
+              exit 1
+              ;;
+          esac
+          echo "API_URL=$url" >> "$GITHUB_ENV"
+          echo "Адрес магазина в приложении: $url"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Зависимости
+        working-directory: mobile
+        run: |
+          npm ci --no-audit --no-fund
+          npm run gen:api
+
+      - name: Версия
+        working-directory: mobile
+        run: |
+          # versionCode растёт с каждой сборкой — Android ставит новую версию поверх старой.
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then version="${GITHUB_REF_NAME#v}"; else version=""; fi
+          node -e '
+            const fs = require("fs");
+            const config = JSON.parse(fs.readFileSync("app.json", "utf8"));
+            if (process.argv[1]) config.expo.version = process.argv[1];
+            config.expo.android.versionCode = Number(process.argv[2]);
+            fs.writeFileSync("app.json", JSON.stringify(config, null, 2));
+            console.log(`версия ${config.expo.version} (${config.expo.android.versionCode})`);
+            fs.appendFileSync(process.env.GITHUB_ENV, `APP_VERSION=${config.expo.version}\n`);
+          ' "$version" "${GITHUB_RUN_NUMBER}"
+
+      - name: Нативный проект (expo prebuild)
+        working-directory: mobile
+        env:
+          EXPO_PUBLIC_API_URL: ${{ env.API_URL }}
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: Ключ подписи
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "SIGNING=release" >> "$GITHUB_ENV"
+          else
+            echo "::warning title=APK подписан отладочным ключом::Секрет ANDROID_KEYSTORE_BASE64 не задан. Такой APK годится для проверки; для раздачи покупателям задайте ключ (docs/LAUNCH.md, шаг «Android»)."
+            echo "SIGNING=debug" >> "$GITHUB_ENV"
+          fi
+
+      - name: Сборка APK
+        working-directory: mobile/android
+        env:
+          # Адрес API встраивается в JS-бандл при сборке (EXPO_PUBLIC_*).
+          EXPO_PUBLIC_API_URL: ${{ env.API_URL }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          # Только ARM: это все реальные телефоны; x86 нужен лишь эмуляторам и удваивает размер.
+          args=(assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a)
+          if [ "$SIGNING" = "release" ]; then
+            # Подпись своим ключом без правки сгенерированного build.gradle.
+            args+=(
+              "-Pandroid.injected.signing.store.file=$RUNNER_TEMP/release.jks"
+              "-Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD"
+              "-Pandroid.injected.signing.key.alias=$KEY_ALIAS"
+              "-Pandroid.injected.signing.key.password=$KEY_PASSWORD"
+            )
+          fi
+          ./gradlew "${args[@]}"
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/didi-shop.apk"
+
+      - name: Проверка APK
+        run: |
+          bt=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          "$bt/apksigner" verify --print-certs didi-shop.apk | head -n 3
+          "$bt/aapt2" dump badging didi-shop.apk | head -n 1
+          size=$(du -h didi-shop.apk | cut -f1)
+          echo "::notice title=APK собран::didi-shop.apk, $size, версия $APP_VERSION ($GITHUB_RUN_NUMBER), адрес $API_URL, подпись: $SIGNING"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: didi-shop-apk
+          path: didi-shop.apk
+          retention-days: 14
+
+      - name: Публикация в Releases
+        if: env.PUBLISH == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            tag="${GITHUB_REF_NAME}"
+          else
+            tag="android-${APP_VERSION}-${GITHUB_RUN_NUMBER}"
+          fi
+          notes="Приложение DiDi-shop для Android, версия ${APP_VERSION} (сборка ${GITHUB_RUN_NUMBER}).
+          Адрес магазина: ${API_URL}. Подпись: ${SIGNING}.
+
+          Установка: откройте ссылку на телефоне, скачайте didi-shop.apk и разрешите установку из этого источника."
+          gh release create "$tag" didi-shop.apk --target "$GITHUB_SHA" --title "DiDi-shop для Android ${APP_VERSION} (${GITHUB_RUN_NUMBER})" --notes "$notes" --latest
+          echo "::notice title=APK опубликован::https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/didi-shop.apk"
