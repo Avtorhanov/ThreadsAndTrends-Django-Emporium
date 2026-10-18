@@ -160,6 +160,8 @@ def admin_sees_order(browser, base: str, number: str, report: Report) -> None:
     page.get_by_label("Email").fill(env_value("ADMIN_EMAIL"))
     page.get_by_label("Пароль").fill(env_value("ADMIN_PASSWORD"))
     page.get_by_role("button", name="Войти", exact=True).click()
+    expect(page.get_by_role("button", name="Выйти")).to_be_visible()
+    page.goto(base + "/panel/orders")
     expect(page.get_by_text(number).first).to_be_visible()
     report.shot(page, "panel-orders")
     page.goto(base + "/panel/catalog/products")
