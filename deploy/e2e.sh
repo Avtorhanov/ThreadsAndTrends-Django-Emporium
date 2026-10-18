@@ -19,7 +19,17 @@ BASE=https://localhost
 COMPOSE=(docker compose -f compose.prod.yml)
 
 step() { printf '\n\033[1;34m### %s\033[0m\n' "$*"; }
-fail() { printf '\n\033[1;31mE2E FAILED: %s\033[0m\n' "$*" >&2; "${COMPOSE[@]}" ps >&2 || true; exit 1; }
+fail() {
+  printf '\n\033[1;31mE2E FAILED: %s\033[0m\n' "$*" >&2
+  "${COMPOSE[@]}" ps >&2 || true
+  # В GitHub Actions — аннотация с причиной и хвостом логов (видна без доступа к логам job).
+  if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+    local tail
+    tail=$("${COMPOSE[@]}" logs --no-color --tail 25 app caddy 2>&1 | tail -n 40 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+    echo "::error title=E2E: $*::$tail"
+  fi
+  exit 1
+}
 k() { curl -fsS --max-time 30 -k "$@"; }
 
 [ ! -f .env ] || grep -q '^DOMAIN=localhost$' .env || fail ".env уже есть и это не тестовый стенд — e2e не запускается."

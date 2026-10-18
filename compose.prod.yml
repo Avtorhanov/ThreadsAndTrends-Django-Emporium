@@ -31,6 +31,9 @@ x-app: &app
     DB_PORT: "5432"
     DB_NAME: didi
     DB_USER: didi
+    # Явно, а не только из env_file: тот же источник, что у POSTGRES_PASSWORD сервиса db
+    # (переменная окружения оболочки иначе переопределила бы пароль только для базы).
+    DB_PASSWORD: ${DB_PASSWORD:?Запускайте через ./deploy.sh}
     # Производные от DOMAIN — в .env их задавать не нужно. SITE_HOSTS и RETURN_URL_PREFIXES
     # пишет deploy.sh: основной адрес + прежние (EXTRA_DOMAINS), чтобы старые APK работали.
     ALLOWED_HOSTS: ${SITE_HOSTS:?Запускайте через ./deploy.sh}

@@ -38,7 +38,7 @@ env_set() {
 }
 
 # `|| true`: head закрывает канал раньше tr (SIGPIPE), что при pipefail считается ошибкой.
-random_secret() { (LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1") || true; }
+random_secret() { (LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom 2>/dev/null | head -c "$1") || true; }
 
 ensure_docker() {
   if ! command -v docker >/dev/null 2>&1; then
