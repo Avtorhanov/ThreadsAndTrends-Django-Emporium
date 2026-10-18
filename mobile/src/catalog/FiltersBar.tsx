@@ -67,8 +67,13 @@ export function FiltersBar({ value, onChange, priceError }: Props) {
           />
         ))}
         <Chip label="В наличии" active={value.inStock || searching} onPress={() => set({ inStock: !value.inStock })} />
+        {changed ? (
+          <Pressable accessibilityRole="button" onPress={() => onChange(EMPTY_FILTERS)} hitSlop={8}>
+            <Text style={styles.reset}>Сбросить</Text>
+          </Pressable>
+        ) : null}
       </View>
-      <View style={styles.row}>
+      <View style={styles.priceRow}>
         <TextInput
           value={value.priceFrom}
           onChangeText={(priceFrom) => set({ priceFrom })}
@@ -87,11 +92,6 @@ export function FiltersBar({ value, onChange, priceError }: Props) {
           keyboardType="numeric"
           style={[styles.price, priceError ? styles.priceError : null]}
         />
-        {changed ? (
-          <Pressable accessibilityRole="button" onPress={() => onChange(EMPTY_FILTERS)} hitSlop={8}>
-            <Text style={styles.reset}>Сбросить</Text>
-          </Pressable>
-        ) : null}
       </View>
       {priceError ? <Text style={styles.error}>{priceError}</Text> : null}
       {searching ? <Text style={styles.hint}>Поиск показывает только товары в наличии.</Text> : null}
@@ -124,9 +124,10 @@ const styles = StyleSheet.create({
   chipText: { color: colors.text, fontSize: 14 },
   chipTextActive: { color: colors.primaryText },
   pressed: { opacity: 0.7 },
+  priceRow: { flexDirection: "row", gap: spacing.sm },
   price: {
-    flexGrow: 1,
-    flexBasis: 110,
+    flex: 1,
+    minWidth: 0,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   priceError: { borderColor: colors.danger },
-  reset: { color: colors.primary, fontSize: 15 },
+  reset: { color: colors.primary, fontSize: 15, paddingHorizontal: spacing.xs },
   error: { color: colors.danger, fontSize: 13 },
   hint: { color: colors.muted, fontSize: 13 },
 });

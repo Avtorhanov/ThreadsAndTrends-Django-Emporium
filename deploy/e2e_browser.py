@@ -19,6 +19,7 @@ from pathlib import Path
 from playwright.sync_api import Page, expect, sync_playwright
 
 TIMEOUT_MS = 30_000
+expect.set_options(timeout=TIMEOUT_MS)
 IPHONE_UA = (
     "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 "
     "(KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
@@ -85,7 +86,7 @@ def shopper(browser, base: str, report: Report):
 
     # 1. Каталог: категории, поиск, подсказка «На экран Домой» для iPhone.
     page.goto(base + "/")
-    expect(page.get_by_text("Все товары")).to_be_visible()
+    expect(page.get_by_text("Все товары", exact=True)).to_be_visible()
     expect(page.get_by_text("Установите магазин на телефон")).to_be_visible()
     report.shot(page, "iphone-catalog")
 
@@ -99,14 +100,14 @@ def shopper(browser, base: str, report: Report):
 
     # 3. Карточка товара: галерея, размер, «В корзину».
     page.get_by_role("button", name=re.compile("Кроссовки")).first.click()
-    expect(page.get_by_text("Размер")).to_be_visible()
+    expect(page.get_by_text("Размер", exact=True)).to_be_visible()
     wait_images(page, 1)
     for size in SIZES:
         chip = page.get_by_role("button", name=size, exact=True)
         if chip.count() and chip.first.is_enabled():
             chip.first.click()
             break
-    page.get_by_role("button", name="В корзину").click()
+    page.get_by_role("button", name="В корзину", exact=True).click()
     expect(page.get_by_text("Товар в корзине.")).to_be_visible()
     report.shot(page, "iphone-product")
 
@@ -126,12 +127,12 @@ def shopper(browser, base: str, report: Report):
     page.get_by_role("button", name="Создать аккаунт").click()
 
     # После регистрации гостевая корзина переносится в аккаунт.
-    checkout = page.get_by_role("button", name="Оформить заказ")
+    checkout = page.get_by_role("button", name="Оформить заказ", exact=True)
     checkout.wait_for()
     checkout.click()
 
     # 5. Оформление: курьер, оплата при получении.
-    expect(page.get_by_text("Получатель")).to_be_visible()
+    expect(page.get_by_text("Получатель", exact=True)).to_be_visible()
     page.get_by_label("Имя и фамилия").fill("Анна Тестова")
     page.get_by_label("Телефон").fill("+7 900 123-45-67")
     page.get_by_label("Адрес доставки").fill("Москва, ул. Тестовая, д. 1, кв. 2")
@@ -140,7 +141,7 @@ def shopper(browser, base: str, report: Report):
     page.get_by_role("button", name=re.compile("Подтвердить заказ")).click()
     page.wait_for_url(re.compile(r"/orders/DD-\d+"))
     number = re.search(r"/orders/(DD-\d+)", page.url).group(1)
-    expect(page.get_by_text("Отменить заказ")).to_be_visible()
+    expect(page.get_by_role("button", name="Отменить заказ")).to_be_visible()
     report.shot(page, "iphone-order")
     print(f"     заказ {number}, покупатель {email}")
 
@@ -155,8 +156,8 @@ def admin_sees_order(browser, base: str, number: str, report: Report) -> None:
     page.goto(base + "/panel/")
     page.get_by_label("Email").fill(env_value("ADMIN_EMAIL"))
     page.get_by_label("Пароль").fill(env_value("ADMIN_PASSWORD"))
-    page.get_by_role("button", name="Войти").click()
-    expect(page.get_by_text(number)).to_be_visible()
+    page.get_by_role("button", name="Войти", exact=True).click()
+    expect(page.get_by_text(number).first).to_be_visible()
     report.shot(page, "panel-orders")
     page.goto(base + "/panel/catalog/products")
     page.wait_for_load_state("networkidle")
@@ -169,7 +170,7 @@ def desktop_grid(browser, base: str, report: Report) -> None:
     page = context.new_page()
     page.set_default_timeout(TIMEOUT_MS)
     page.goto(base + "/")
-    page.get_by_text("Все товары").click()
+    page.get_by_text("Все товары", exact=True).click()
     expect(page.get_by_text(re.compile(r"Найдено товаров: \d+"))).to_be_visible()
     count = wait_images(page, 8)
     print(f"     фото на широком экране: {count}")
