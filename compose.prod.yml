@@ -149,8 +149,10 @@ services:
       - media:/media:ro
       - ./deploy/backup.sh:/usr/local/bin/backup.sh:ro
     entrypoint: ["sh", "-c", "echo \"$$BACKUP_CRON sh /usr/local/bin/backup.sh > /proc/1/fd/1 2>&1\" | crontab - && exec crond -f -d 8"]
+    # После app: том media первым монтирует образ приложения (владелец — пользователь app),
+    # иначе он создаётся от root и Django не может сохранять фото.
     depends_on:
-      db:
+      app:
         condition: service_healthy
 
 volumes:
