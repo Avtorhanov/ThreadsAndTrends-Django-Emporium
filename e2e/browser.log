@@ -1,0 +1,14 @@
+ok   01 iphone-catalog
+     фото в выдаче: 2
+ok   02 iphone-search
+ok   03 iphone-product
+ok   04 iphone-cart
+ok   05 iphone-checkout
+ok   06 iphone-order
+     заказ DD-100004, покупатель e2e-0797f3eb@example.com
+ok   07 panel-orders
+ok   08 panel-products
+ok   09 iphone-order-cancelled
+     фото на широком экране: 20
+ok   10 desktop-products
+BROWSER E2E OK
