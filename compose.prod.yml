@@ -70,6 +70,9 @@ services:
 
   app:
     <<: *app
+    # Стартует от root только чтобы выставить владельца томов, затем работает от app
+    # (docker/entrypoint.sh).
+    user: root
     environment:
       <<: *app-env
       RUN_MIGRATIONS: "1"
@@ -149,8 +152,7 @@ services:
       - media:/media:ro
       - ./deploy/backup.sh:/usr/local/bin/backup.sh:ro
     entrypoint: ["sh", "-c", "echo \"$$BACKUP_CRON sh /usr/local/bin/backup.sh > /proc/1/fd/1 2>&1\" | crontab - && exec crond -f -d 8"]
-    # После app: том media первым монтирует образ приложения (владелец — пользователь app),
-    # иначе он создаётся от root и Django не может сохранять фото.
+    # После app: бэкап имеет смысл, когда база уже мигрирована.
     depends_on:
       app:
         condition: service_healthy

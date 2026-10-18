@@ -232,7 +232,7 @@ restore_noninteractive() {
     || warn "pg_restore сообщил об ошибках (см. выше) — проверьте данные после запуска."
   if [ -n "$media_tar" ]; then
     say "Восстанавливаю фото из $media_tar"
-    "${COMPOSE[@]}" run --rm --no-deps -T --entrypoint sh app \
+    "${COMPOSE[@]}" run --rm --no-deps -T --user app --entrypoint sh app \
       -c 'find /data/media -mindepth 1 -delete && tar -C /data/media -xzf -' < "$media_tar"
   fi
   say "Запускаю приложение"
