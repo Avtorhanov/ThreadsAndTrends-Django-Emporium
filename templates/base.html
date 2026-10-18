@@ -1,0 +1,55 @@
+{% load static %}
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'faviconki/favicon-16x16.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'faviconki/favicon-32x32.png' %}">
+    <title>Emporium</title>
+</head>
+<body>
+
+    <!--Навбар-->
+    <header>
+        <nav>
+                <a href="{% url 'home' %}">Главная</a>
+                <a href="{% url 'all-products' %}">Каталог</a>
+                {% if user.is_superuser %}
+                    <a href="{% url 'admin:index' %}">Админка</a>
+                {% endif %}
+            <form class="search-form" action="{% url 'search_products' %}" method="GET">
+                <input type="text" name="q" class="search-input" placeholder="Поиск...">
+                <button class="search-button" type="submit">Найти</button>
+            </form>
+        </nav>
+    </header>
+
+    <!--контент-->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!--продукт -->
+    {% block product %}
+    {% endblock %}
+
+
+    <!--Подвал-->
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2024 Веб-Магазин. Империя разных товаров.</p>
+            <div class="social-icons">
+                <a href="https://chat.whatsapp.com/E23sogWlISi0UT8TBnOpve" target="_blank"><img src="{% static 'icons/whatsapp3.svg' %}" alt="WhatsApp"></a>
+                <a href="https://t.me/c/1300402125/39839" target="_blank"><img src="{% static 'icons/telegram3.svg' %}" alt="Telegram"></a>
+                <a href="https://accounts.google.com/SignOutOptions?hl=ru&continue=https://mail.google.com/mail&service=mail&ec=GBRAFw" target="_blank"><img src="{% static 'icons/google2.svg' %}" alt="Google Mail"></a>
+            </div>
+        </div>
+    </footer>
+
+    <!--скрипты-->
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

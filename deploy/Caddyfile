@@ -26,13 +26,6 @@
 		max_size 12MB
 	}
 
-	# API и резервная Django admin — gunicorn. Caddy сам выставляет X-Forwarded-For
-	# (реальный IP клиента; заголовок от клиента не доверяется) и X-Forwarded-Proto.
-	@django path /api/* /admin /admin/*
-	handle @django {
-		reverse_proxy app:8000
-	}
-
 	handle_path /static/* {
 		root * /srv/static
 		header Cache-Control "public, max-age=86400"
@@ -57,19 +50,14 @@
 		file_server
 	}
 
-	# Манифест PWA (установка на экран «Домой»).
-	handle /manifest.webmanifest {
-		import spa_headers
-		header Content-Type "application/manifest+json"
-		header Cache-Control "no-cache"
-		root * /srv/shop
-		file_server
-	}
-
-	# Витрина: веб-версия мобильного приложения (SPA, адреса как в приложении).
-	handle {
+	# Веб-версия приложения (Expo web, base /app; на iPhone ставится как PWA).
+	# handle_path убирает /app: внутри пути — относительно /srv/shop.
+	redir /app /app/ 308
+	handle_path /app/* {
 		import spa_headers
 		root * /srv/shop
+		@manifest path /manifest.webmanifest
+		header @manifest Content-Type "application/manifest+json"
 		@assets path /_expo/* /assets/*
 		header @assets Cache-Control "public, max-age=31536000, immutable"
 		@icons path /icons/*
@@ -78,6 +66,13 @@
 		header @html Cache-Control "no-cache"
 		try_files {path} /index.html
 		file_server
+	}
+
+	# Остальное — Django (gunicorn): API, резервная админка, корень сайта и страницы на
+	# шаблонах (веб-витрина — сессия 8). Caddy сам выставляет X-Forwarded-For (реальный IP
+	# клиента; заголовок от клиента не доверяется) и X-Forwarded-Proto.
+	handle {
+		reverse_proxy app:8000
 	}
 
 	log {

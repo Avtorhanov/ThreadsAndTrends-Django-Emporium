@@ -63,7 +63,7 @@ ROOT_URLCONF = "myshop.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -265,3 +265,7 @@ LOGGING = {
         "django.db.backends": {"level": "WARNING"},
     },
 }
+
+# Куда ведёт корень сайта, пока нет веб-витрины (сессия 8): в продакшене — веб-версия
+# приложения `/app/` (compose.prod.yml). Пусто — легаси-главная на шаблонах.
+SITE_ROOT_REDIRECT = env_str("SITE_ROOT_REDIRECT", "")

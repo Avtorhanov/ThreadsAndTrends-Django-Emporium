@@ -202,7 +202,7 @@ deploy() {
   cat <<EOF
 
 Готово.
-  Магазин (веб-версия приложения): https://$domain/
+  Магазин:                         https://$domain/   (ведёт в веб-приложение https://$domain/app/)
   Панель администратора:           https://$domain/panel/   (вход: $(env_get ADMIN_EMAIL))
   Резервная админка Django:        https://$domain/admin/
   Webhook для ЮKassa:              https://$domain/api/v1/payments/webhook/yookassa/

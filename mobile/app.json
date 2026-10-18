@@ -34,6 +34,9 @@
       "expo-secure-store",
       "expo-web-browser"
     ],
-    "scheme": "didishop"
+    "scheme": "didishop",
+    "experiments": {
+      "baseUrl": "/app"
+    }
   }
 }

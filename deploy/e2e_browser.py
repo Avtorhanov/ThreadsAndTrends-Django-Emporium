@@ -85,7 +85,9 @@ def shopper(browser, base: str, report: Report):
     page.on("pageerror", lambda exc: errors.append(str(exc)))
 
     # 1. Каталог: категории, поиск, подсказка «На экран Домой» для iPhone.
+    # Корень сайта ведёт в веб-приложение /app/.
     page.goto(base + "/")
+    page.wait_for_url(re.compile(r"/app/?$"))
     expect(page.get_by_text("Все товары", exact=True)).to_be_visible()
     expect(page.get_by_text("Установите магазин на телефон")).to_be_visible()
     report.shot(page, "iphone-catalog")
@@ -119,10 +121,11 @@ def shopper(browser, base: str, report: Report):
     page.get_by_text("Нет аккаунта? Зарегистрироваться").click()
     email = f"e2e-{uuid.uuid4().hex[:8]}@example.com"
     password = f"E2e-{uuid.uuid4().hex[:10]}"
-    page.get_by_label("Email").fill(email)
+    # Экран входа остаётся смонтированным под регистрацией — берём поля верхнего экрана.
+    page.get_by_label("Email").last.fill(email)
     page.get_by_label("Имя", exact=True).fill("Анна")
     page.get_by_label("Фамилия").fill("Тестова")
-    page.get_by_label("Пароль", exact=True).fill(password)
+    page.get_by_label("Пароль", exact=True).last.fill(password)
     page.get_by_label("Повторите пароль").fill(password)
     page.get_by_role("button", name="Создать аккаунт").click()
 
@@ -139,7 +142,7 @@ def shopper(browser, base: str, report: Report):
     page.get_by_role("radio", name=re.compile("При получении")).click()
     report.shot(page, "iphone-checkout")
     page.get_by_role("button", name=re.compile("Подтвердить заказ")).click()
-    page.wait_for_url(re.compile(r"/orders/DD-\d+"))
+    page.wait_for_url(re.compile(r"/app/orders/DD-\d+"))
     number = re.search(r"/orders/(DD-\d+)", page.url).group(1)
     expect(page.get_by_role("button", name="Отменить заказ")).to_be_visible()
     report.shot(page, "iphone-order")
@@ -169,7 +172,7 @@ def desktop_grid(browser, base: str, report: Report) -> None:
     context = browser.new_context(viewport={"width": 1280, "height": 900}, ignore_https_errors=True)
     page = context.new_page()
     page.set_default_timeout(TIMEOUT_MS)
-    page.goto(base + "/")
+    page.goto(base + "/app/")
     page.get_by_text("Все товары", exact=True).click()
     expect(page.get_by_text(re.compile(r"Найдено товаров: \d+"))).to_be_visible()
     count = wait_images(page, 8)

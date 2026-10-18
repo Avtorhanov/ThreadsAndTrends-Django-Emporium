@@ -1,8 +1,8 @@
 # Продакшен: `./deploy.sh` (он же — обновление после `git pull`). Настройки — в .env
 # (шаблон .env.prod.example). Наружу открыты только 80 и 443 (Caddy, автоматический HTTPS).
 #
-#   caddy      — HTTPS (Let's Encrypt), витрина (веб-версия приложения), панель /panel/,
-#                статика и фото товаров, прокси /api/ и /admin/ в app
+#   caddy      — HTTPS (Let's Encrypt), веб-версия приложения /app/, панель /panel/,
+#                статика и фото товаров; остальное (API, корень сайта) — в app
 #   app        — Django + gunicorn; при старте: миграции, администратор, демо-каталог
 #   worker     — фоновые задачи (письма, возвраты)
 #   scheduler  — периодические задачи (автоотмена неоплаченных, сверка платежей)
@@ -41,7 +41,9 @@ x-app: &app
     NUM_PROXIES: "1"
     # Возврат со страницы оплаты: в приложение (didishop://) и на веб-витрину.
     PAYMENTS_RETURN_URL_PREFIXES: didishop://,${RETURN_URL_PREFIXES:?Запускайте через ./deploy.sh}
-    PAYMENTS_DEFAULT_RETURN_URL: https://${DOMAIN}/orders/{number}
+    PAYMENTS_DEFAULT_RETURN_URL: https://${DOMAIN}/app/orders/{number}
+    # Корень сайта — Django; пока нет веб-витрины (сессия 8), он ведёт в веб-приложение.
+    SITE_ROOT_REDIRECT: ${SITE_ROOT_REDIRECT:-/app/}
     CACHE_URL: ${CACHE_URL:-db://django_cache}
     TASKS_BACKEND: database
   volumes:

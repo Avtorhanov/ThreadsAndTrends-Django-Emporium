@@ -21,8 +21,8 @@
 | Что | Как устроено |
 |---|---|
 | `./deploy.sh` | Docker, секреты, сборка, миграции, администратор, демо-каталог; он же — обновление (`git pull && ./deploy.sh`), `status`, `logs`, `backup`, `restore`, `smoke` |
-| `compose.prod.yml` | `caddy` (HTTPS Let's Encrypt, витрина, панель `/panel/`, статика и фото), `app` (gunicorn), `worker`, `scheduler`, `db` (Postgres 16), `backup` (ночной `pg_dump` + фото, 14 дней) |
-| Витрина | веб-версия `mobile/` (Expo web) по адресу сайта; на iPhone ставится «На экран „Домой“» (PWA: `mobile/public/`) |
+| `compose.prod.yml` | `caddy` (HTTPS Let's Encrypt, веб-приложение `/app/`, панель `/panel/`, статика и фото; остальное — Django), `app` (gunicorn), `worker`, `scheduler`, `db` (Postgres 16), `backup` (ночной `pg_dump` + фото, 14 дней) |
+| Веб-приложение | веб-версия `mobile/` (Expo web, `experiments.baseUrl=/app`) по адресу `https://<домен>/app/`; на iPhone ставится «На экран „Домой“» (PWA: `mobile/public/`). Корень `/` — Django: пока нет веб-витрины (сессия 8), ведёт в `/app/` (`SITE_ROOT_REDIRECT`), страницы на шаблонах (`/products/`, `/product/<slug>/`, …) остаются |
 | Android | `.github/workflows/android.yml` → APK в GitHub Releases (`releases/latest/download/didi-shop.apk`) |
 | Проверка | `bash deploy/e2e.sh` (CI, задание `e2e`): деплой одной командой с `DOMAIN=localhost`, HTTPS и заголовки, PWA, фото каталога, `check --deploy`, нагрузочный smoke оформления, бэкап → восстановление, сценарий покупателя и администратора в Chromium со скриншотами |
 | Мониторинг | `GET /api/v1/health/` (БД + кэш), Sentry по `SENTRY_DSN`, логи — `./deploy.sh logs` |
@@ -218,8 +218,8 @@ EXPO_PUBLIC_API_URL=http://192.168.1.10:8000 npx expo start
 Каталог: поиск на главном экране, в ленте — поиск, сортировка, цена «от/до» в рублях (в API уходят
 копейки, `parseRubles` без float), «В наличии»; сетка 2–4 колонки по ширине экрана.
 
-Веб-версия (она же витрина сайта): `npx expo export --platform web` — собирается в образ Caddy
-(`deploy/edge.Dockerfile`), API — тот же домен. Платформенные файлы `*.web.ts(x)`: хранение токена,
+Веб-версия: `npx expo export --platform web` — собирается в образ Caddy (`deploy/edge.Dockerfile`),
+работает по адресу `/app/` (`experiments.baseUrl`), API — тот же домен. Платформенные файлы `*.web.ts(x)`: хранение токена,
 подтверждения (`window.confirm`), оплата в той же вкладке, подсказка установки на iPhone/Android.
 APK: `.github/workflows/android.yml` (`expo prebuild` + Gradle, адрес магазина — `API_URL`).
 Иконки — `python3 scripts/make_icons.py`.

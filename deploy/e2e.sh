@@ -50,23 +50,29 @@ step "HTTPS, редирект, заголовки"
 k "$BASE/api/v1/health/" | tee "$OUT/health.json" || fail "healthcheck по HTTPS"; echo
 code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost/)
 [ "$code" = "308" ] || fail "http:// не перенаправляет на https:// (код $code)"
-headers=$(k -I "$BASE/")
+headers=$(k -I "$BASE/app/")
 grep -qi '^strict-transport-security:' <<<"$headers" || fail "нет HSTS"
-grep -qi '^content-security-policy:' <<<"$headers" || fail "нет CSP у витрины"
+grep -qi '^content-security-policy:' <<<"$headers" || fail "нет CSP у веб-приложения"
+root=$(curl -sk -o /dev/null -w '%{http_code} %{redirect_url}' "$BASE/")
+[ "$root" = "302 $BASE/app/" ] || fail "корень сайта должен вести в /app/ (получено: $root)"
+legacy=$(k "$BASE/products/")
+grep -q '<html' <<<"$legacy" || fail "страница каталога на шаблонах (Django) не открывается"
 
-step "Витрина как приложение (PWA) и панель"
+step "Веб-приложение /app/ (PWA), корень сайта, панель"
 # Ответы — в переменные: `curl | grep -q` под pipefail ловит SIGPIPE.
-html=$(k "$BASE/")
+html=$(k "$BASE/app/")
 grep -q 'manifest.webmanifest' <<<"$html" || fail "в index.html нет манифеста"
 grep -q 'apple-touch-icon' <<<"$html" || fail "в index.html нет иконки для iPhone"
-manifest_headers=$(k -I "$BASE/manifest.webmanifest")
+manifest_headers=$(k -I "$BASE/app/manifest.webmanifest")
 grep -qi 'content-type: application/manifest+json' <<<"$manifest_headers" || fail "манифест отдаётся не как application/manifest+json"
-k "$BASE/manifest.webmanifest" | python3 -c 'import json,sys; m=json.load(sys.stdin); assert m["display"]=="standalone" and len(m["icons"])>=2'
+k "$BASE/app/manifest.webmanifest" | python3 -c 'import json,sys; m=json.load(sys.stdin); assert m["display"]=="standalone" and len(m["icons"])>=2' \
+  || fail "манифест PWA"
 for icon in apple-touch-icon.png icon-192.png icon-512.png; do
-  k -o /dev/null "$BASE/icons/$icon" || fail "нет иконки $icon"
+  k -o /dev/null "$BASE/app/icons/$icon" || fail "нет иконки $icon"
 done
-spa=$(k "$BASE/orders/DD-1")
-grep -q '<div id="root">' <<<"$spa" || fail "SPA-маршрут /orders/… не отдаёт index.html"
+spa=$(k "$BASE/app/orders/DD-1")
+grep -q '<div id="root">' <<<"$spa" || fail "SPA-маршрут /app/orders/… не отдаёт index.html"
+grep -q '/app/_expo/' <<<"$html" || fail "сборка веб-приложения не учитывает base /app"
 panel=$(k "$BASE/panel/")
 grep -qi 'id="root"' <<<"$panel" || fail "панель не открывается"
 k -o /dev/null "$BASE/static/admin/css/base.css" || fail "статика Django не раздаётся"
