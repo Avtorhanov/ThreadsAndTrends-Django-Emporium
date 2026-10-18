@@ -47,7 +47,7 @@ echo "GUNICORN_WORKERS=2" >> .env
 ./deploy.sh </dev/null 2>&1 | tee "$OUT/deploy.log" || fail "deploy.sh завершился с ошибкой"
 
 step "HTTPS, редирект, заголовки"
-k "$BASE/api/v1/health/" | tee "$OUT/health.json"; echo
+k "$BASE/api/v1/health/" | tee "$OUT/health.json" || fail "healthcheck по HTTPS"; echo
 code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost/)
 [ "$code" = "308" ] || fail "http:// не перенаправляет на https:// (код $code)"
 headers=$(k -I "$BASE/")
@@ -72,7 +72,7 @@ grep -qi 'id="root"' <<<"$panel" || fail "панель не открываетс
 k -o /dev/null "$BASE/static/admin/css/base.css" || fail "статика Django не раздаётся"
 
 step "Демо-каталог с фото"
-python3 - "$BASE" <<'PY'
+python3 - "$BASE" <<'PY' || fail "демо-каталог с фото"
 import json, ssl, sys, urllib.request
 
 base = sys.argv[1]
@@ -96,20 +96,20 @@ print(f"товаров {len(products)}, все с фото, фото отдаю�
 PY
 
 step "manage.py check --deploy"
-"${COMPOSE[@]}" exec -T app python manage.py check --deploy --fail-level WARNING
+"${COMPOSE[@]}" exec -T app python manage.py check --deploy --fail-level WARNING || fail "check --deploy"
 
 step "Нагрузочный smoke оформления заказа"
-python3 deploy/smoke_checkout.py "$BASE" --insecure --users 6 | tee "$OUT/smoke.log"
-grep -q "SMOKE OK" "$OUT/smoke.log" || fail "smoke-тест"
+python3 deploy/smoke_checkout.py "$BASE" --insecure --users 6 | tee "$OUT/smoke.log" \
+  || fail "smoke-тест: $(tail -n 8 "$OUT/smoke.log" | tr '\n' ' ')"
 
 step "Бэкап и восстановление"
 before=$("${COMPOSE[@]}" exec -T db psql -U didi -d didi -tAc "select count(*) from orders_order")
-./deploy.sh backup
+./deploy.sh backup || fail "бэкап"
 db_dump=$(ls -t backups/db-*.dump | head -n 1)
 media_tar=$(ls -t backups/media-*.tar.gz | head -n 1)
 # Изменение после бэкапа должно исчезнуть после восстановления.
 "${COMPOSE[@]}" exec -T db psql -U didi -d didi -c "update store_product set name = 'ПОСЛЕ БЭКАПА'" >/dev/null
-./deploy.sh restore-yes "$db_dump" "$media_tar"
+./deploy.sh restore-yes "$db_dump" "$media_tar" || fail "восстановление"
 after=$("${COMPOSE[@]}" exec -T db psql -U didi -d didi -tAc "select count(*) from orders_order")
 changed=$("${COMPOSE[@]}" exec -T db psql -U didi -d didi -tAc "select count(*) from store_product where name = 'ПОСЛЕ БЭКАПА'")
 [ "$before" = "$after" ] && [ "$changed" = "0" ] || fail "восстановление: заказов $before → $after, изменённых товаров $changed"
@@ -121,7 +121,7 @@ if ! python3 -c "import playwright" 2>/dev/null; then
   python3 -m pip install -q playwright
   python3 -m playwright install --with-deps chromium
 fi
-python3 deploy/e2e_browser.py "$BASE" "$OUT" | tee "$OUT/browser.log"
-grep -q "BROWSER E2E OK" "$OUT/browser.log" || fail "браузерный сценарий"
+python3 deploy/e2e_browser.py "$BASE" "$OUT" 2>&1 | tee "$OUT/browser.log" \
+  || fail "браузерный сценарий: $(tail -n 12 "$OUT/browser.log" | tr '\n' ' ')"
 
 printf '\n\033[1;32mE2E OK\033[0m\n'

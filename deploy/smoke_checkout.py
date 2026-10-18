@@ -86,7 +86,8 @@ def buyer(base: str, insecure: bool, variant_id: int, run: str, n: int) -> dict:
     client = Client(base, insecure)
     email = f"smoke-{run}-{n}@example.com"
     status, data = client.call(
-        "POST", "/api/v1/auth/register/", {"email": email, "password": f"Smoke-{run}-Pass!{n}"}
+        # Пароль не похож на email: иначе его отклонит UserAttributeSimilarityValidator.
+        "POST", "/api/v1/auth/register/", {"email": email, "password": f"Pw!{uuid.uuid4().hex}"}
     )
     if status != 201:
         return {"stage": "register", "status": status, "data": data, "timings": client.timings}
@@ -171,7 +172,8 @@ def main() -> int:
 
     timings = sorted(t for r in results for t in r["timings"])
     created = [r for r in results if r["stage"] == "checkout" and r["status"] == 201]
-    refused = [r for r in results if r["status"] in (400, 409)]
+    # «Нет в наличии» — только отказ на оформлении; ошибки регистрации и корзины — сбой теста.
+    refused = [r for r in results if r["stage"] == "checkout" and r["status"] in (400, 409)]
     server_errors = [r for r in results if r["status"] >= 500]
     other = [r for r in results if r not in created and r not in refused]
     expected = min(args.stock, args.users)
