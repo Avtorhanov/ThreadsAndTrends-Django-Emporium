@@ -87,7 +87,9 @@ def buyer(base: str, insecure: bool, variant_id: int, run: str, n: int) -> dict:
     email = f"smoke-{run}-{n}@example.com"
     status, data = client.call(
         # Пароль не похож на email: иначе его отклонит UserAttributeSimilarityValidator.
-        "POST", "/api/v1/auth/register/", {"email": email, "password": f"Pw!{uuid.uuid4().hex}"}
+        "POST",
+        "/api/v1/auth/register/",
+        {"email": email, "password": f"Pw!{uuid.uuid4().hex}"},
     )
     if status != 201:
         return {"stage": "register", "status": status, "data": data, "timings": client.timings}
