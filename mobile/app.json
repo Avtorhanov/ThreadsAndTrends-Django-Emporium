@@ -7,11 +7,14 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "ru.didishop.app"
     },
     "android": {
+      "package": "ru.didishop.app",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#1F4D3A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -19,6 +22,11 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
+      "name": "DiDi-shop",
+      "shortName": "DiDi-shop",
+      "lang": "ru",
+      "themeColor": "#1F4D3A",
+      "backgroundColor": "#F7F5F2",
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
@@ -26,6 +34,9 @@
       "expo-secure-store",
       "expo-web-browser"
     ],
-    "scheme": "didishop"
+    "scheme": "didishop",
+    "experiments": {
+      "baseUrl": "/app"
+    }
   }
 }

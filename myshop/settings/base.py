@@ -265,3 +265,7 @@ LOGGING = {
         "django.db.backends": {"level": "WARNING"},
     },
 }
+
+# Куда ведёт корень сайта, пока нет веб-витрины (сессия 8): в продакшене — веб-версия
+# приложения `/app/` (compose.prod.yml). Пусто — легаси-главная на шаблонах.
+SITE_ROOT_REDIRECT = env_str("SITE_ROOT_REDIRECT", "")

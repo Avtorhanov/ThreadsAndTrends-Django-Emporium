@@ -64,3 +64,15 @@ class SearchProductsViewTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "main/search_results.html")
         self.assertIn("products", response.context)
+
+
+def test_home_redirects_to_web_app_when_configured(client, settings):
+    settings.SITE_ROOT_REDIRECT = "/app/"
+    response = client.get("/")
+    assert response.status_code == 302
+    assert response["Location"] == "/app/"
+
+
+def test_home_renders_legacy_page_by_default(client, settings, db):
+    settings.SITE_ROOT_REDIRECT = ""
+    assert client.get("/").status_code == 200

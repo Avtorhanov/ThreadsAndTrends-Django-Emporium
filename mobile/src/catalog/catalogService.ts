@@ -8,15 +8,37 @@ export type ProductCard = Schemas["CatalogProduct"];
 export type ProductPage = Schemas["PaginatedCatalogProductList"];
 export type ProductDetail = Schemas["CatalogProductDetail"];
 
+export type ProductSort = "new" | "price_asc" | "price_desc" | "relevance";
+
+/** Фильтры ленты. Цены — копейки (как в API). */
+export type ProductQuery = {
+  category?: string;
+  q?: string;
+  priceMin?: number;
+  priceMax?: number;
+  inStock?: boolean;
+  sort?: ProductSort;
+};
+
 /** Публичный каталог: авторизация не нужна, токен (если есть) сервер игнорирует. */
 export const catalogService = {
   categories(): Promise<CategoryNode[]> {
     return unwrap(api.GET("/api/v1/catalog/categories/"));
   },
-  products(params: { category?: string; page: number }): Promise<ProductPage> {
+  products(query: ProductQuery & { page: number }): Promise<ProductPage> {
     return unwrap(
       api.GET("/api/v1/catalog/products/", {
-        params: { query: { category: params.category, page: params.page } },
+        params: {
+          query: {
+            page: query.page,
+            category: query.category || undefined,
+            q: query.q?.trim() || undefined,
+            price_min: query.priceMin,
+            price_max: query.priceMax,
+            in_stock: query.inStock || undefined,
+            sort: query.sort,
+          },
+        },
       }),
     );
   },

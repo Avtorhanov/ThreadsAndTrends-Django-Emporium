@@ -1,14 +1,18 @@
 """Легаси-витрина (шаблоны). Корзина — только в мобильном приложении (API /api/v1/cart/)."""
 
+from django.conf import settings
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from store.models import Category, Product
 
 
 # Главная
 def home(request):
+    # До веб-витрины сессии 8 корень сайта может вести в веб-версию приложения (/app/).
+    if settings.SITE_ROOT_REDIRECT:
+        return redirect(settings.SITE_ROOT_REDIRECT)
     return render(request, "main/home.html")
 
 

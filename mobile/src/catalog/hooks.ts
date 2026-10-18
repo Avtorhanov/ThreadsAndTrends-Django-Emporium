@@ -6,6 +6,7 @@ import {
   catalogService,
   type ProductCard,
   type ProductDetail,
+  type ProductQuery,
 } from "./catalogService";
 
 function errorText(error: unknown): string {
@@ -48,15 +49,18 @@ export function useProduct(slug: string) {
   return useResource<ProductDetail>(() => catalogService.product(slug), slug);
 }
 
-/** Лента товаров с подгрузкой страниц при прокрутке. */
-export function useProductFeed(category: string | undefined) {
+/** Лента товаров с фильтрами и подгрузкой страниц при прокрутке. */
+export function useProductFeed(query: ProductQuery) {
   const [items, setItems] = useState<ProductCard[]>([]);
+  const [count, setCount] = useState<number | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const page = useRef(0);
   const generation = useRef(0); // ответы для прежнего фильтра отбрасываются
+  // Объект фильтров пересоздаётся на каждый рендер — перезагрузка только при изменении значений.
+  const key = JSON.stringify(query);
 
   const loadPage = useCallback(
     async (reset: boolean) => {
@@ -65,10 +69,11 @@ export function useProductFeed(category: string | undefined) {
       setLoading(true);
       setError(null);
       try {
-        const data = await catalogService.products({ category, page: nextPage });
+        const data = await catalogService.products({ ...(JSON.parse(key) as ProductQuery), page: nextPage });
         if (current !== generation.current) return;
         page.current = nextPage;
         setItems((prev) => (reset ? data.results : [...prev, ...data.results]));
+        setCount(data.count);
         setHasMore(Boolean(data.next));
       } catch (err) {
         if (current === generation.current) setError(errorText(err));
@@ -79,11 +84,12 @@ export function useProductFeed(category: string | undefined) {
         }
       }
     },
-    [category],
+    [key],
   );
 
   useEffect(() => {
     setItems([]);
+    setCount(null);
     setHasMore(true);
     void loadPage(true);
   }, [loadPage]);
@@ -97,5 +103,5 @@ export function useProductFeed(category: string | undefined) {
     void loadPage(true);
   }, [loadPage]);
 
-  return { items, loading, refreshing, error, hasMore, loadMore, refresh };
+  return { items, count, loading, refreshing, error, hasMore, loadMore, refresh };
 }

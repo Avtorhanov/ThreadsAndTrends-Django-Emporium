@@ -7,13 +7,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from "react-native";
 
 import { useCart } from "../../../src/cart/CartProvider";
 import { Price } from "../../../src/catalog/components";
 import { useProduct } from "../../../src/catalog/hooks";
+import { useContentWidth } from "../../../src/components/layout";
 import { colors, radius, spacing } from "../../../src/components/theme";
 import { Button, LinkButton, Message } from "../../../src/components/ui";
 import { useSubmit } from "../../../src/hooks/useSubmit";
@@ -21,7 +21,10 @@ import { useSubmit } from "../../../src/hooks/useSubmit";
 export default function ProductScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data: product, loading, error, reload } = useProduct(slug);
-  const { width } = useWindowDimensions();
+  // Широкий экран (браузер, планшет): галерея слева, описание справа.
+  const contentWidth = useContentWidth();
+  const wide = contentWidth >= 820;
+  const width = wide ? Math.floor(contentWidth / 2) : contentWidth;
   const [selected, setSelected] = useState<number | null>(null);
   const [added, setAdded] = useState(false);
   const cart = useCart();
@@ -60,7 +63,8 @@ export default function ProductScreen() {
   return (
     <>
       <Stack.Screen options={{ title: product.name }} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, wide && styles.contentWide]}>
+        <View style={{ width }}>
         {product.images.length ? (
           <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
             {product.images.map((image) => (
@@ -78,8 +82,9 @@ export default function ProductScreen() {
             <Text style={styles.muted}>Нет фото</Text>
           </View>
         )}
+        </View>
 
-        <View style={styles.body}>
+        <View style={[styles.body, wide && styles.bodyWide]}>
           <Text style={styles.category}>{product.category.name}</Text>
           <Text style={styles.title}>{product.name}</Text>
           <Price price={product.price_kopecks} compareAt={product.compare_at_kopecks} large />
@@ -153,6 +158,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: { backgroundColor: colors.background, flexGrow: 1 },
+  contentWide: { flexDirection: "row", alignItems: "flex-start" },
+  bodyWide: { flex: 1 },
   noPhoto: { alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
   body: { padding: spacing.lg, gap: spacing.sm },
   category: { color: colors.muted, fontSize: 14 },

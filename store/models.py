@@ -2,9 +2,12 @@ import uuid
 from pathlib import PurePosixPath
 
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.db.models import F, Q, Sum
 from django.utils import timezone
+
+from store.search import search_vector
 
 # Глубина дерева категорий: корень → подкатегория. Товары — только в конечных категориях.
 MAX_CATEGORY_DEPTH = 2
@@ -91,6 +94,10 @@ class Product(models.Model):
                 name="product_live_category_idx",
                 condition=Q(is_active=True, deleted_at__isnull=True),
             ),
+            # Полнотекстовый поиск витрины (store.services.storefront).
+            GinIndex(search_vector(), name="product_search_idx"),
+            # Сортировка и фильтр по цене.
+            models.Index(fields=["price_kopecks"], name="product_price_idx"),
         ]
         constraints = [
             models.CheckConstraint(condition=Q(price_kopecks__gt=0), name="product_price_positive"),

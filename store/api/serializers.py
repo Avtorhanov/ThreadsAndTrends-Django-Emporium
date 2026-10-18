@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from store.models import Category, Product, ProductImage, ProductVariant
 from store.services.catalog import MAX_PRICE_KOPECKS
+from store.services.storefront import Sort
 
 
 def absolute_url(context, file) -> str | None:
@@ -79,6 +80,40 @@ class CatalogProductSerializer(serializers.ModelSerializer):
     def get_cover_url(self, obj):
         cover = obj.cover
         return absolute_url(self.context, cover.image) if cover else None
+
+
+class ProductListQuerySerializer(serializers.Serializer):
+    """Параметры ленты товаров. Цены — копейки."""
+
+    q = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=100,
+        help_text="Поиск по названию и описанию (по началу слов, русская морфология). "
+        "Показывает только товары в наличии.",
+    )
+    category = serializers.SlugField(
+        required=False, allow_blank=True, help_text="Slug категории (с подкатегориями)"
+    )
+    price_min = serializers.IntegerField(
+        required=False, min_value=0, max_value=MAX_PRICE_KOPECKS, help_text="Цена от, коп."
+    )
+    price_max = serializers.IntegerField(
+        required=False, min_value=0, max_value=MAX_PRICE_KOPECKS, help_text="Цена до, коп."
+    )
+    in_stock = serializers.BooleanField(required=False, default=False, help_text="Только в наличии")
+    sort = serializers.ChoiceField(
+        choices=Sort.CHOICES,
+        required=False,
+        allow_blank=True,
+        help_text="По умолчанию: с поиском — relevance, без — new.",
+    )
+
+    def validate(self, attrs):
+        low, high = attrs.get("price_min"), attrs.get("price_max")
+        if low is not None and high is not None and low > high:
+            raise serializers.ValidationError({"price_max": ["Меньше, чем «цена от»."]})
+        return attrs
 
 
 class CatalogProductDetailSerializer(CatalogProductSerializer):

@@ -126,3 +126,26 @@ jobs:
       - name: Stop dev stack
         if: always()
         run: docker compose down -v
+
+  # Продакшен-стек одной командой (./deploy.sh, DOMAIN=localhost): HTTPS, PWA, фото каталога,
+  # check --deploy, нагрузочный smoke оформления, бэкап → восстановление, браузерный сценарий
+  # покупателя и администратора. Скриншоты — в артефакте e2e-report.
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: deploy.sh → проверки → браузер
+        run: bash deploy/e2e.sh e2e-report
+      - name: Compose logs on failure
+        if: failure()
+        run: docker compose -f compose.prod.yml logs --no-color --tail 200
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-report
+          path: e2e-report
+          retention-days: 14

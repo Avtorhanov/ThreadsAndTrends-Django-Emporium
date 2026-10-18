@@ -1,0 +1,9 @@
+# Контекст образа Caddy: только клиенты, схема API и конфигурация Caddy.
+*
+!openapi/
+!admin-panel/
+!mobile/
+!deploy/Caddyfile
+**/node_modules
+**/dist
+mobile/.expo

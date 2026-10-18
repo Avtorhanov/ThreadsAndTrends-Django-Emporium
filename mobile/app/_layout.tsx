@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AuthProvider, useAuth } from "../src/auth/AuthProvider";
 import { CartProvider } from "../src/cart/CartProvider";
+import { MAX_CONTENT_WIDTH } from "../src/components/layout";
 import { colors, spacing } from "../src/components/theme";
 import { Button } from "../src/components/ui";
 
@@ -46,7 +47,12 @@ export default function RootLayout() {
       <AuthProvider>
         <CartProvider>
           <StatusBar style="dark" />
-          <RootNavigator />
+          {/* В браузере на широком экране приложение — колонка по центру. */}
+          <View style={styles.page}>
+            <View style={styles.column}>
+              <RootNavigator />
+            </View>
+          </View>
         </CartProvider>
       </AuthProvider>
     </SafeAreaProvider>
@@ -54,6 +60,14 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  page: { flex: 1, backgroundColor: colors.border },
+  column: {
+    flex: 1,
+    width: "100%",
+    maxWidth: MAX_CONTENT_WIDTH,
+    alignSelf: "center",
+    backgroundColor: colors.background,
+  },
   center: {
     flex: 1,
     alignItems: "center",

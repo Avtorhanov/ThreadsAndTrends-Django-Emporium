@@ -17,3 +17,7 @@ db.sqlite3
 .vscode/
 
 assistant.py
+
+# Продакшен: бэкапы и служебный файл deploy.sh
+/backups/
+.deployed-domain
