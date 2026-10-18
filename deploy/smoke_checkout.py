@@ -174,8 +174,11 @@ def main() -> int:
 
     timings = sorted(t for r in results for t in r["timings"])
     created = [r for r in results if r["stage"] == "checkout" and r["status"] == 201]
-    # «Нет в наличии» — только отказ на оформлении; ошибки регистрации и корзины — сбой теста.
-    refused = [r for r in results if r["stage"] == "checkout" and r["status"] in (400, 409)]
+    # «Нет в наличии» — отказ при добавлении в корзину (товар уже раскупили) или на оформлении;
+    # ошибка регистрации — сбой теста.
+    refused = [
+        r for r in results if r["stage"] in ("cart", "checkout") and r["status"] in (400, 409)
+    ]
     server_errors = [r for r in results if r["status"] >= 500]
     other = [r for r in results if r not in created and r not in refused]
     expected = min(args.stock, args.users)
@@ -199,7 +202,7 @@ def main() -> int:
         and len(created) == expected
         and stock_left == args.stock - len(created)
         and all(r.get("repeat_ok") for r in created)
-        and not [r for r in other if r["stage"] != "checkout"]
+        and not other
     )
     print("SMOKE OK" if ok else "SMOKE FAILED")
     return 0 if ok else 1

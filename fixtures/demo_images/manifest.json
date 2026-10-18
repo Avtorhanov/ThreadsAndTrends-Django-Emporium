@@ -233,7 +233,8 @@
      "leather boots",
      "winter boots",
      "work boots"
-    ]
+    ],
+    "pick": "commons:4832045"
    }
   ]
  },
@@ -246,7 +247,8 @@
     "queries": [
      "sheepskin boots",
      "suede boots"
-    ]
+    ],
+    "pick": "commons:84022802"
    }
   ]
  },
