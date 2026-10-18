@@ -108,7 +108,8 @@
     "queries": [
      "plain white t-shirt product",
      "white tee shirt"
-    ]
+    ],
+    "pick": "commons:169657880"
    }
   ]
  },
@@ -121,7 +122,8 @@
     "queries": [
      "plain black t-shirt product",
      "black tee shirt"
-    ]
+    ],
+    "pick": "commons:179324442"
    }
   ]
  },
@@ -143,7 +145,8 @@
     "queries": [
      "gray hooded sweatshirt",
      "hoodie product"
-    ]
+    ],
+    "pick": "commons:140673215"
    },
    {
     "file": "hudi-oversayz-seroe-2.jpg",
@@ -151,7 +154,8 @@
     "queries": [
      "hoodie isolated",
      "sweatshirt hood"
-    ]
+    ],
+    "pick": "openverse:dfc62647-8a29-45dc-84a2-4e4e6c0e8dd6"
    }
   ]
  },
@@ -164,7 +168,8 @@
     "queries": [
      "crewneck sweatshirt",
      "beige sweater"
-    ]
+    ],
+    "pick": "commons:122915544"
    }
   ]
  },
@@ -177,7 +182,8 @@
     "queries": [
      "black hooded sweatshirt",
      "hoodie zipper"
-    ]
+    ],
+    "pick": "commons:115189278"
    }
   ]
  },
@@ -263,7 +269,8 @@
     "queries": [
      "face cream",
      "skin cream container"
-    ]
+    ],
+    "pick": "commons:121270154"
    }
   ]
  },

@@ -23,6 +23,7 @@ import json
 import re
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -47,8 +48,16 @@ COMMONS_UA = (
 def get(url: str, accept: str = "*/*") -> bytes:
     agent = COMMONS_UA if "wikimedia.org" in url else BROWSER
     request = urllib.request.Request(url, headers={"User-Agent": agent, "Accept": accept})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return response.read()
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return response.read()
+        except urllib.error.HTTPError as exc:
+            # Лимит запросов (Openverse — 20 в минуту без ключа): ждём и повторяем.
+            if exc.code != 429 or attempt == 3:
+                raise
+            time.sleep(30)
+    raise RuntimeError("unreachable")
 
 
 def unsplash_item(photo: str) -> dict:
