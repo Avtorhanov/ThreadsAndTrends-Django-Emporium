@@ -21,7 +21,8 @@
     "queries": [
      "analog watch white background",
      "steel watch"
-    ]
+    ],
+    "pick": "openverse:59dc09b7-e683-4822-8807-a56ea9ce12cb"
    }
   ]
  },
@@ -52,7 +53,8 @@
     "queries": [
      "sunglasses white background",
      "black sunglasses table"
-    ]
+    ],
+    "pick": "openverse:c3be2579-9b4a-46fc-b8aa-37dd350106fc"
    }
   ]
  },
@@ -65,7 +67,8 @@
     "queries": [
      "round sunglasses white background",
      "vintage round glasses"
-    ]
+    ],
+    "pick": "openverse:be60f140-05d4-4346-91f3-60f781696b7c"
    }
   ]
  },
@@ -91,7 +94,8 @@
     "queries": [
      "black backpack",
      "backpack white background"
-    ]
+    ],
+    "pick": "openverse:e5371491-9f28-4c93-bcf7-c17e479e108c"
    }
   ]
  },
@@ -100,10 +104,10 @@
   "images": [
    {
     "file": "futbolka-bazovaya-belaya-1.jpg",
-    "query": "white t-shirt mockup",
+    "query": "white t-shirt",
     "queries": [
-     "plain white t-shirt",
-     "white tshirt hanger"
+     "plain white t-shirt product",
+     "white tee shirt"
     ]
    }
   ]
@@ -113,10 +117,10 @@
   "images": [
    {
     "file": "futbolka-oversayz-chernaya-1.jpg",
-    "query": "black t-shirt mockup",
+    "query": "black t-shirt",
     "queries": [
-     "plain black t-shirt",
-     "black tshirt folded"
+     "plain black t-shirt product",
+     "black tee shirt"
     ]
    }
   ]
@@ -135,18 +139,18 @@
   "images": [
    {
     "file": "hudi-oversayz-seroe-1.jpg",
-    "query": "grey hoodie mockup",
+    "query": "grey hoodie",
     "queries": [
      "gray hooded sweatshirt",
-     "grey hoodie hanger"
+     "hoodie product"
     ]
    },
    {
     "file": "hudi-oversayz-seroe-2.jpg",
-    "query": "hoodie mockup",
+    "query": "hooded sweatshirt",
     "queries": [
-     "hooded sweatshirt flat lay",
-     "hoodie hanging"
+     "hoodie isolated",
+     "sweatshirt hood"
     ]
    }
   ]
@@ -156,10 +160,10 @@
   "images": [
    {
     "file": "svitshot-bezhevyy-1.jpg",
-    "query": "beige sweatshirt",
+    "query": "sweatshirt",
     "queries": [
-     "crewneck sweatshirt mockup",
-     "sweater flat lay"
+     "crewneck sweatshirt",
+     "beige sweater"
     ]
    }
   ]
@@ -169,10 +173,10 @@
   "images": [
    {
     "file": "hudi-na-molnii-chernoe-1.jpg",
-    "query": "black zip hoodie",
+    "query": "zip hoodie",
     "queries": [
-     "zip up hoodie mockup",
-     "black hooded jacket"
+     "black hooded sweatshirt",
+     "hoodie zipper"
     ]
    }
   ]
@@ -199,7 +203,8 @@
     "queries": [
      "white sneakers pair",
      "white shoes"
-    ]
+    ],
+    "pick": "openverse:7b78ba66-6ee6-46cd-bbc7-d5610719ea04"
    }
   ]
  },
@@ -221,7 +226,8 @@
     "queries": [
      "hiking boots",
      "leather boots pair"
-    ]
+    ],
+    "pick": "openverse:c46e52e1-6aff-4f30-afbd-63bdf08f3fb0"
    }
   ]
  },
@@ -234,7 +240,8 @@
     "queries": [
      "ugg boots",
      "suede winter boots"
-    ]
+    ],
+    "pick": "openverse:f006d5a9-1cde-4019-b648-a298601738a6"
    }
   ]
  },
@@ -252,10 +259,10 @@
   "images": [
    {
     "file": "krem-dlya-lica-1.jpg",
-    "query": "face cream jar",
+    "query": "cosmetic cream jar",
     "queries": [
-     "cosmetic cream jar",
-     "moisturizer jar"
+     "face cream",
+     "skin cream container"
     ]
    }
   ]
@@ -278,7 +285,8 @@
     "queries": [
      "red lipstick closeup",
      "lipstick tube"
-    ]
+    ],
+    "pick": "openverse:ca3cd467-71ff-4384-8865-1ee995c08536"
    }
   ]
  },

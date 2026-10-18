@@ -13,6 +13,20 @@
 (`is_staff`, панель администратора, вход по сессии). Стандартная Django admin оставлена
 только как резервный вход суперпользователя.
 
+## Продакшен
+
+Запуск на сервере — **[docs/LAUNCH.md](docs/LAUNCH.md)** (пошагово, для владельца): VPS → `.env` →
+`./deploy.sh` → ЮKassa. Домен не обязателен: без него магазин работает на `https://<IP>.sslip.io`.
+
+| Что | Как устроено |
+|---|---|
+| `./deploy.sh` | Docker, секреты, сборка, миграции, администратор, демо-каталог; он же — обновление (`git pull && ./deploy.sh`), `status`, `logs`, `backup`, `restore`, `smoke` |
+| `compose.prod.yml` | `caddy` (HTTPS Let's Encrypt, витрина, панель `/panel/`, статика и фото), `app` (gunicorn), `worker`, `scheduler`, `db` (Postgres 16), `backup` (ночной `pg_dump` + фото, 14 дней) |
+| Витрина | веб-версия `mobile/` (Expo web) по адресу сайта; на iPhone ставится «На экран „Домой“» (PWA: `mobile/public/`) |
+| Android | `.github/workflows/android.yml` → APK в GitHub Releases (`releases/latest/download/didi-shop.apk`) |
+| Проверка | `bash deploy/e2e.sh` (CI, задание `e2e`): деплой одной командой с `DOMAIN=localhost`, HTTPS и заголовки, PWA, фото каталога, `check --deploy`, нагрузочный smoke оформления, бэкап → восстановление, сценарий покупателя и администратора в Chromium со скриншотами |
+| Мониторинг | `GET /api/v1/health/` (БД + кэш), Sentry по `SENTRY_DSN`, логи — `./deploy.sh logs` |
+
 ## Быстрый старт (Docker)
 
 ```bash
@@ -64,7 +78,7 @@ python manage.py runserver
 
 | Клиент | Эндпоинты | Доступ |
 |---|---|---|
-| Мобильное приложение | `/api/v1/catalog/categories/`, `/api/v1/catalog/products/?category=<slug>`, `/api/v1/catalog/products/<slug>/` | без аутентификации |
+| Мобильное приложение и веб-витрина | `/api/v1/catalog/categories/` (из кэша), `/api/v1/catalog/products/?q=&category=&price_min=&price_max=&in_stock=&sort=`, `/api/v1/catalog/products/<slug>/` | без аутентификации |
 | Панель администратора | `/api/v1/admin/catalog/{categories,products,variants,images}/…` | сессия + `IsAdmin` |
 
 - Деньги — целые копейки (`price_kopecks`, `compare_at_kopecks` — «старая цена»), API отдаёт и
@@ -78,7 +92,13 @@ python manage.py runserver
 - Удаление товара мягкое (`deleted_at`): `Product.objects` скрывает удалённые, `Product.all_objects` —
   все; история заказов сохраняется (`OrderItem.product` — `PROTECT`). Категорию с товарами
   (в т.ч. удалёнными) удалить нельзя — только скрыть.
+- Поиск — полнотекстовый Postgres (русская морфология, по началу слов, название важнее описания,
+  GIN-индекс `product_search_idx`); с поиском показываются только товары в наличии. Фильтры: категория
+  с подкатегориями, цена в копейках, наличие; сортировка `new`, `price_asc`, `price_desc`, `relevance`.
+  Логика — `store/services/storefront.py`.
 - Бизнес-правила — `store/services/catalog.py`, API — `store/api/`.
+- Демо-каталог: `python manage.py seed_demo` — товары из `fixtures/catalog.json` и фото
+  `fixtures/demo_images/` (источники и лицензии — `CREDITS.md`, обновление — `scripts/fetch_demo_images.py`).
 
 ## Корзина
 
@@ -172,7 +192,7 @@ python manage.py runserver
    (`PAYMENTS_RETURN_URL_PREFIXES=didishop://,exp://`); в prod — только `didishop://` (сборка приложения).
 4. Локально (без публичного адреса) оплата подтверждается сверкой: приложение вызывает `pay/refresh/` после
    возврата из браузера, а `sync_pending` раз в минуту проверяет зависшие платежи. Уведомления включаются
-   после деплоя (сессия 7): в кабинете ЮKassa → Интеграция → HTTP-уведомления — адрес
+   после деплоя ([docs/LAUNCH.md](docs/LAUNCH.md), шаг 8): в кабинете ЮKassa → Интеграция → HTTP-уведомления — адрес
    `https://<домен>/api/v1/payments/webhook/yookassa/`, события `payment.succeeded`, `payment.canceled`,
    `refund.succeeded`.
 5. Боевые ключи — только после проверки полного цикла на тестовом магазине.
@@ -194,6 +214,15 @@ EXPO_PUBLIC_API_URL=http://192.168.1.10:8000 npx expo start
 и отмена заказа — только после входа. Оплата — кнопка «Оплатить» на экране заказа (`src/orders/payment.ts`):
 страница ЮKassa во встроенном браузере (`expo-web-browser`), возврат по deep link, затем сверка на сервере.
 Переход на Swift/Kotlin не затрагивает бэкенд: клиент для них генерируется из той же OpenAPI-схемы.
+
+Каталог: поиск на главном экране, в ленте — поиск, сортировка, цена «от/до» в рублях (в API уходят
+копейки, `parseRubles` без float), «В наличии»; сетка 2–4 колонки по ширине экрана.
+
+Веб-версия (она же витрина сайта): `npx expo export --platform web` — собирается в образ Caddy
+(`deploy/edge.Dockerfile`), API — тот же домен. Платформенные файлы `*.web.ts(x)`: хранение токена,
+подтверждения (`window.confirm`), оплата в той же вкладке, подсказка установки на iPhone/Android.
+APK: `.github/workflows/android.yml` (`expo prebuild` + Gradle, адрес магазина — `API_URL`).
+Иконки — `python3 scripts/make_icons.py`.
 
 ## Панель администратора (`admin-panel/`)
 

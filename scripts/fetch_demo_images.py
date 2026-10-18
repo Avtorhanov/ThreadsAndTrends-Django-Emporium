@@ -11,8 +11,9 @@
 ("query" и "queries") и кладёт в OUT контактный лист с номерами и candidates.json — по нему
 выбирается "pick".
 
-Источники: Openverse (только лицензии, разрешающие коммерческое использование: CC0, PDM,
-CC BY, CC BY-SA) и Unsplash (Unsplash License). Авторы и лицензии — в CREDITS.md.
+Источники: Wikimedia Commons и Openverse (только лицензии, разрешающие коммерческое
+использование: CC0, PD, CC BY, CC BY-SA) и Unsplash (Unsplash License). Авторы и лицензии —
+в CREDITS.md.
 Нужны интернет и Pillow (обрезка до квадрата 800×800).
 """
 
@@ -36,10 +37,16 @@ BROWSER = (
     "(KHTML, like Gecko) Chrome/140 Safari/537.36"
 )
 OPENVERSE = "https://api.openverse.org/v1/images/"
+COMMONS = "https://commons.wikimedia.org/w/api.php"
+# Wikimedia требует User-Agent с контактом проекта.
+COMMONS_UA = (
+    "DiDi-shop-demo-seed/1.0 (https://github.com/Avtorhanov/ThreadsAndTrends-Django-Emporium)"
+)
 
 
 def get(url: str, accept: str = "*/*") -> bytes:
-    request = urllib.request.Request(url, headers={"User-Agent": BROWSER, "Accept": accept})
+    agent = COMMONS_UA if "wikimedia.org" in url else BROWSER
+    request = urllib.request.Request(url, headers={"User-Agent": agent, "Accept": accept})
     with urllib.request.urlopen(request, timeout=30) as response:
         return response.read()
 
@@ -90,11 +97,60 @@ def openverse(query: str) -> list[dict]:
         }
     )
     data = json.loads(get(f"{OPENVERSE}?{params}", "application/json"))
+    # Размер известен не у всех источников (rawpixel) — неизвестный не отсекаем.
     return [
         openverse_item(item)
         for item in data.get("results", [])
-        if (item.get("width") or 0) >= 600 and (item.get("height") or 0) >= 600
+        if (item.get("width") or 600) >= 600 and (item.get("height") or 600) >= 600
     ]
+
+
+def commons_items(params: dict) -> list[dict]:
+    query = {
+        "action": "query",
+        "format": "json",
+        "prop": "imageinfo",
+        "iiprop": "url|size|extmetadata",
+        "iiurlwidth": SIZE * 2,
+        **params,
+    }
+    data = json.loads(get(f"{COMMONS}?{urllib.parse.urlencode(query)}", "application/json"))
+    pages = sorted(data.get("query", {}).get("pages", {}).values(), key=lambda p: p.get("index", 0))
+    items = []
+    for page in pages:
+        info = (page.get("imageinfo") or [{}])[0]
+        meta = info.get("extmetadata", {})
+        license_name = meta.get("LicenseShortName", {}).get("value", "")
+        # На Commons только свободные лицензии; NC/ND на всякий случай отсекаются.
+        if not license_name or "NC" in license_name or "ND" in license_name:
+            continue
+        if info.get("width", 0) < 600 or info.get("height", 0) < 600:
+            continue
+        url = info.get("thumburl") or info["url"]
+        author = re.sub(r"<[^>]+>", "", meta.get("Artist", {}).get("value", "")).strip()
+        items.append(
+            {
+                "id": f"commons:{page['pageid']}",
+                "url": url,
+                "thumb": url.replace(f"/{SIZE * 2}px-", "/300px-"),
+                "author": author or "неизвестен",
+                "author_url": info.get("descriptionurl", ""),
+                "source": info.get("descriptionurl", url),
+                "license": license_name,
+            }
+        )
+    return items
+
+
+def commons(query: str) -> list[dict]:
+    return commons_items(
+        {
+            "generator": "search",
+            "gsrsearch": f"{query} filetype:bitmap",
+            "gsrnamespace": 6,
+            "gsrlimit": 20,
+        }
+    )
 
 
 def resolve(pick: str) -> dict:
@@ -104,6 +160,8 @@ def resolve(pick: str) -> dict:
         return unsplash_item(key)
     if source == "openverse":
         return openverse_item(json.loads(get(f"{OPENVERSE}{key}/", "application/json")))
+    if source == "commons":
+        return commons_items({"pageids": key})[0]
     raise ValueError(f"неизвестный источник: {pick}")
 
 
@@ -120,7 +178,7 @@ def square_jpeg(raw: bytes, size: int = SIZE) -> bytes:
 def search_all(queries: list[str]) -> list[dict]:
     found: dict[str, dict] = {}
     for query in queries:
-        for source in (unsplash, openverse):
+        for source in (commons, openverse, unsplash):
             try:
                 for item in source(query)[:8]:
                     found.setdefault(item["id"], item)
@@ -189,8 +247,9 @@ def write_credits(credits: dict) -> None:
         "# Фото демо-каталога",
         "",
         "Только для демонстрации витрины — перед запуском замените на фото своих товаров.",
-        "Источники: [Unsplash](https://unsplash.com/license) и [Openverse](https://openverse.org)",
-        "(лицензии, разрешающие коммерческое использование).",
+        "Источники: [Wikimedia Commons](https://commons.wikimedia.org),",
+        "[Openverse](https://openverse.org) и [Unsplash](https://unsplash.com/license) —",
+        "лицензии, разрешающие коммерческое использование.",
         "",
         "| Файл | Автор | Лицензия | Источник |",
         "|---|---|---|---|",
