@@ -184,10 +184,13 @@ def square_jpeg(raw: bytes, size: int = SIZE) -> bytes:
     return out.getvalue()
 
 
+SOURCES: dict = {}  # источники поиска по порядку, задаются в main() (--sources)
+
+
 def search_all(queries: list[str]) -> list[dict]:
     found: dict[str, dict] = {}
     for query in queries:
-        for source in (commons, openverse, unsplash):
+        for source in SOURCES.values():
             try:
                 for item in source(query)[:8]:
                     found.setdefault(item["id"], item)
@@ -306,11 +309,19 @@ def fetch(manifest: list[dict], force: bool) -> int:
 
 
 def main() -> int:
+    global SOURCES
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument(
+        "--sources",
+        default="commons,openverse,unsplash",
+        help="Источники поиска через запятую, по порядку",
+    )
     parser.add_argument("--force", action="store_true", help="Скачать заново все фото")
     parser.add_argument("--candidates", type=Path, help="Папка для контактных листов кандидатов")
     parser.add_argument("--only", default="", help="Файлы через запятую (для --candidates)")
     args = parser.parse_args()
+    available = {"commons": commons, "openverse": openverse, "unsplash": unsplash}
+    SOURCES = {name: available[name] for name in args.sources.split(",") if name in available}
     manifest = json.loads((IMAGES / "manifest.json").read_text(encoding="utf-8"))
     if args.candidates:
         return candidates(manifest, set(filter(None, args.only.split(","))), args.candidates)

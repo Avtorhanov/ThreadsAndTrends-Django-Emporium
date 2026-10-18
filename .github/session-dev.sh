@@ -15,9 +15,9 @@ fi
 
 # --- Фото демо-каталога ---
 if [ -f .github/demo-candidates.txt ]; then
-  step candidates python scripts/fetch_demo_images.py --candidates $R/candidates --only "$(cat .github/demo-candidates.txt)"
+  step candidates python scripts/fetch_demo_images.py --sources commons --candidates $R/candidates --only "$(cat .github/demo-candidates.txt)"
 fi
-step fetch-images python scripts/fetch_demo_images.py
+step fetch-images python scripts/fetch_demo_images.py --sources commons
 
 # --- Автоисправления ---
 ruff check --fix . > $R/ruff.txt 2>&1; echo "check exit=$?" >> $R/ruff.txt

@@ -228,12 +228,12 @@
   "images": [
    {
     "file": "botinki-tayga-1.jpg",
-    "query": "winter boots pair",
+    "query": "hiking boots",
     "queries": [
-     "hiking boots",
-     "leather boots pair"
-    ],
-    "pick": "openverse:c46e52e1-6aff-4f30-afbd-63bdf08f3fb0"
+     "leather boots",
+     "winter boots",
+     "work boots"
+    ]
    }
   ]
  },
@@ -242,12 +242,11 @@
   "images": [
    {
     "file": "uggi-zamshevye-1.jpg",
-    "query": "sheepskin boots",
+    "query": "ugg boots",
     "queries": [
-     "ugg boots",
-     "suede winter boots"
-    ],
-    "pick": "openverse:f006d5a9-1cde-4019-b648-a298601738a6"
+     "sheepskin boots",
+     "suede boots"
+    ]
    }
   ]
  },
