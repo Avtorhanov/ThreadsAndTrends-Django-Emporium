@@ -7,7 +7,7 @@
 
 | Файл | Автор | Лицензия | Источник |
 |---|---|---|---|
-| botinki-tayga-1.jpg | [Clean Wal-Mart](https://www.flickr.com/photos/33677599@N00) | CC BY 2.0 | https://www.flickr.com/photos/33677599@N00/404213744 |
+| botinki-tayga-1.jpg | [DocteurCosmos](https://commons.wikimedia.org/wiki/File:Hiking_shoes_Lowa.jpg) | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:Hiking_shoes_Lowa.jpg |
 | chasy-hronograf-navigator-1.jpg | [GuySie](https://www.flickr.com/photos/76491533@N00) | CC BY-SA 2.0 | https://www.flickr.com/photos/76491533@N00/3210304429 |
 | chasy-hronograf-navigator-2.jpg | [неизвестен](https://www.rawpixel.com/image/6113759/photo-image-background-public-domain-fashion) | CC CC0 1.0 | https://www.rawpixel.com/image/6113759/photo-image-background-public-domain-fashion |
 | chasy-klassika-serebristye-1.jpg | [неизвестен](https://www.rawpixel.com/image/6112992/casio-wristwatch-location-unknown-june-2016) | CC0 | https://www.rawpixel.com/image/6112992/casio-wristwatch-location-unknown-june-2016 |
@@ -34,5 +34,5 @@
 | sumka-tout-2.jpg | [Mike Prince](https://www.flickr.com/photos/70804987@N00) | CC BY 2.0 | https://www.flickr.com/photos/70804987@N00/4782040554 |
 | svitshot-bezhevyy-1.jpg | [Fanem WOO Huauimgy SAA](https://commons.wikimedia.org/wiki/File:HK_SKD_TKO_%E5%B0%87%E8%BB%8D%E6%BE%B3_Tseung_Kwan_O_%E5%9D%91%E5%8F%A3_Hang_Hau_%E6%9D%B1%E6%B8%AF%E5%9F%8E_East_Point_City_mall_shop_GU_Clothing_Store_%E7%A7%8B%E5%AD%A3%E6%9C%8D%E8%A3%9D_Autumn_fall_fashion_long_sleeve_full_zip_hoodie_September_2022_Px3.jpg) | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:HK_SKD_TKO_%E5%B0%87%E8%BB%8D%E6%BE%B3_Tseung_Kwan_O_%E5%9D%91%E5%8F%A3_Hang_Hau_%E6%9D%B1%E6%B8%AF%E5%9F%8E_East_Point_City_mall_shop_GU_Clothing_Store_%E7%A7%8B%E5%AD%A3%E6%9C%8D%E8%A3%9D_Autumn_fall_fashion_long_sleeve_full_zip_hoodie_September_2022_Px3.jpg |
 | syvorotka-vitamin-c-1.jpg | [неизвестен](https://www.rawpixel.com/image/11515770/dropper-bottle-blank-retro-label) | CC CC0 1.0 | https://www.rawpixel.com/image/11515770/dropper-bottle-blank-retro-label |
-| uggi-zamshevye-1.jpg | [nikoretro](https://www.flickr.com/photos/22768390@N00) | CC BY-SA 2.0 | https://www.flickr.com/photos/22768390@N00/107403440 |
+| uggi-zamshevye-1.jpg | [FASTILY](https://commons.wikimedia.org/wiki/File:Ugg_boots_2_2019-11-16.jpg) | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Ugg_boots_2_2019-11-16.jpg |
 | vitamin-d3-1.jpg | [seanmichaelragan](https://www.flickr.com/photos/41031639@N08) | CC BY 2.0 | https://www.flickr.com/photos/41031639@N08/6254362902 |
