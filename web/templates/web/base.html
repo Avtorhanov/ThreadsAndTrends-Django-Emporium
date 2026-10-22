@@ -1,0 +1,45 @@
+{% load static storefront %}<!doctype html>
+<html lang="ru"{% if theme %} data-theme="{{ theme }}"{% endif %}>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}DiDi-shop — интернет-магазин одежды, обуви и аксессуаров{% endblock %}</title>
+  <meta name="description" content="{% block description %}Одежда, обувь, аксессуары и уход с доставкой курьером. Оплата онлайн или при получении.{% endblock %}">
+  {% if noindex %}<meta name="robots" content="noindex, follow">{% endif %}
+  {% block canonical %}{% endblock %}
+  {% if theme == "dark" %}<meta name="theme-color" content="#070E0A">{% elif theme == "light" %}<meta name="theme-color" content="#EBF1E2">{% else %}
+  <meta name="theme-color" content="#EBF1E2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#070E0A" media="(prefers-color-scheme: dark)">{% endif %}
+  <meta name="color-scheme" content="{% if theme %}{{ theme }}{% else %}light dark{% endif %}">
+  <meta property="og:site_name" content="DiDi-shop">
+  <meta property="og:locale" content="ru_RU">
+  {% block og %}
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="DiDi-shop">
+  <meta property="og:image" content="{% absolute_static 'web/icons/icon-512.png' %}">
+  {% endblock %}
+  <link rel="preload" href="{% static 'web/fonts/manrope-cyrillic-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'web/fonts/unbounded-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'web/css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'web/css/site.css' %}">
+  <link rel="icon" type="image/png" sizes="48x48" href="{% static 'web/icons/favicon-48.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'web/icons/apple-touch-icon.png' %}">
+  {# htmx без eval и без исполнения скриптов из ответов: CSP запрещает inline-скрипты. #}
+  <meta name="htmx-config" content='{"includeIndicatorStyles":false,"allowEval":false,"allowScriptTags":false,"historyCacheSize":0,"selfRequestsOnly":true}'>
+  <script src="{% static 'web/vendor/htmx-2.0.8.min.js' %}" defer></script>
+  <script src="{% static 'web/js/site.js' %}" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip" href="#main">К содержимому</a>
+  {% include "web/partials/icons.html" %}
+  {% include "web/partials/banner.html" %}
+  {% block header %}{% include "web/partials/header.html" with compact=True %}{% endblock %}
+  <main id="main" class="main" tabindex="-1">
+    {% include "web/partials/messages.html" %}
+    {% block content %}{% endblock %}
+  </main>
+  {% include "web/partials/footer.html" %}
+  {% include "web/partials/tabbar.html" %}
+</body>
+</html>

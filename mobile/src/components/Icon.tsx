@@ -15,7 +15,13 @@ export type IconName =
   | "minus"
   | "chevron"
   | "check"
-  | "box";
+  | "box"
+  | "chat"
+  | "send"
+  | "people"
+  | "phone"
+  | "mail"
+  | "help";
 
 type Props = { name: IconName; size?: number; color: string; strokeWidth?: number };
 
@@ -72,6 +78,46 @@ export function Icon({ name, size = 22, color, strokeWidth = 2 }: Props) {
       {name === "minus" ? <Path d="M5 12h14" {...common} /> : null}
       {name === "chevron" ? <Path d="m9 5 7 7-7 7" {...common} /> : null}
       {name === "check" ? <Path d="m5 12.5 4.5 4.5L19 7" {...common} /> : null}
+      {name === "chat" ? (
+        <>
+          <Path d="M4 20l1.3-3.9A8 8 0 1 1 8 19.1L4 20Z" {...common} />
+          <Path
+            d="M9.5 9.5c.3 1.8 2.2 3.8 4 4.2l1.1-1.1 1.9.8-.3 1.3c-3 .4-7.5-4-7-7l1.3-.3.8 1.9-1 1.2"
+            {...common}
+          />
+        </>
+      ) : null}
+      {name === "send" ? (
+        <>
+          <Path d="M21 3 3 10.5l7 2.5 2.5 7L21 3Z" {...common} />
+          <Path d="m10 13 4.5-4.5" {...common} />
+        </>
+      ) : null}
+      {name === "people" ? (
+        <>
+          <Circle cx={9} cy={8} r={3.5} {...common} />
+          <Path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5" {...common} />
+          <Path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.7.8 2.9 2.5 3.5 5.2" {...common} />
+        </>
+      ) : null}
+      {name === "phone" ? (
+        <Path
+          d="M5 3h3.5l1.5 4.5-2.2 1.4a11 11 0 0 0 5.3 5.3l1.4-2.2L19 13.5V17a2 2 0 0 1-2 2A14 14 0 0 1 3 5a2 2 0 0 1 2-2Z"
+          {...common}
+        />
+      ) : null}
+      {name === "mail" ? (
+        <>
+          <Rect x={3} y={5} width={18} height={14} rx={3} {...common} />
+          <Path d="m4 7 8 6 8-6" {...common} />
+        </>
+      ) : null}
+      {name === "help" ? (
+        <>
+          <Circle cx={12} cy={12} r={9} {...common} />
+          <Path d="M9.5 9.5a2.5 2.5 0 0 1 4.8 1c0 1.7-2.3 2-2.3 3.5M12 17h.01" {...common} />
+        </>
+      ) : null}
       {name === "box" ? (
         <>
           <Path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5v-9Z" {...common} />

@@ -6,6 +6,13 @@ from .base import *  # noqa: F403
 
 DEBUG = False
 
+# Статика с хэшем содержимого в имени (site.3f2a….css): Caddy отдаёт её с долгим кэшем,
+# после обновления браузер сразу получает новые файлы. Манифест строит collectstatic в образе.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"},
+}
+
 # За reverse proxy (Caddy, deploy/Caddyfile) с терминацией TLS. Caddy передаёт реальный IP
 # клиента в X-Forwarded-For (входящий заголовок от клиента отбрасывает) — NUM_PROXIES=1.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

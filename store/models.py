@@ -196,6 +196,11 @@ class ProductImage(models.Model):
     image = models.ImageField(upload_to=product_image_path, verbose_name="Изображение")
     position = models.PositiveIntegerField(default=0, verbose_name="Порядок")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Загружено")
+    # Заполняет store.services.images после загрузки: размеры оригинала (для width/height
+    # в разметке — страница не прыгает) и готовность уменьшенных копий WebP.
+    width = models.PositiveIntegerField(null=True, blank=True, verbose_name="Ширина, px")
+    height = models.PositiveIntegerField(null=True, blank=True, verbose_name="Высота, px")
+    thumbs_ready = models.BooleanField(default=False, verbose_name="Превью готовы")
 
     class Meta:
         verbose_name = "Изображение товара"
@@ -204,6 +209,13 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"{self.product} #{self.position}"
+
+    @property
+    def sources(self) -> list[tuple[str, int]]:
+        """(url, ширина) для srcset: уменьшенные копии + оригинал. Без превью — только оригинал."""
+        from store.services.images import thumb_sources
+
+        return thumb_sources(self)
 
 
 class Cart(models.Model):

@@ -1,0 +1,75 @@
+{% extends "web/base.html" %}
+{% load storefront %}
+{% block title %}{% if search %}{% if values.q %}«{{ values.q }}» — поиск{% else %}Поиск{% endif %}{% elif category %}{{ category.name }}{% if category.parent %} — {{ category.parent.name }}{% endif %}{% else %}Все товары{% endif %}{% if page_number > 1 %}, страница {{ page_number }}{% endif %} — DiDi-shop{% endblock %}
+{% block description %}{% if category %}{{ category.name }} в DiDi-shop: цены, наличие и доставка курьером. Оплата онлайн или при получении.{% else %}Каталог DiDi-shop: одежда, обувь, аксессуары и уход. Доставка курьером, оплата онлайн или при получении.{% endif %}{% endblock %}
+{% block canonical %}{% if not search %}<link rel="canonical" href="{% absolute canonical %}">{% endif %}{% endblock %}
+{% block og %}
+<meta property="og:type" content="website">
+<meta property="og:title" content="{% if category %}{{ category.name }}{% else %}Все товары{% endif %} — DiDi-shop">
+{% if not search %}<meta property="og:url" content="{% absolute canonical %}">{% endif %}
+<meta property="og:image" content="{% absolute_static 'web/icons/icon-512.png' %}">
+{% endblock %}
+{% block body_class %}{% if not search %}page-feed{% endif %}{% endblock %}
+{% block header %}{% include "web/partials/header.html" with compact=search %}{% endblock %}
+{% block content %}
+<section class="feed">
+  {% if category %}
+  <nav class="crumbs" aria-label="Навигация">
+    <a href="{% url 'web:home' %}">Каталог</a>
+    {% if category.parent %}<svg class="ic" width="14" height="14"><use href="#i-chevron"/></svg><a href="{% url 'web:category' category.parent.slug %}">{{ category.parent.name }}</a>{% endif %}
+  </nav>
+  {% endif %}
+  <header class="section-head">
+    <p class="overline">{% if search %}Поиск{% elif category %}Категория{% else %}Каталог{% endif %}</p>
+    <h1 class="h1">{% if search %}{% if values.q %}«{{ values.q }}»{% else %}Найти товар{% endif %}{% elif category %}{{ category.name }}{% else %}Все товары{% endif %}</h1>
+  </header>
+
+  {% if root %}
+  {% with children=root|subcategories %}{% if children %}
+  <nav class="chips" aria-label="Подкатегории">
+    <a class="chip{% if category == root %} is-on{% endif %}" href="{% url 'web:category' root.slug %}">Все</a>
+    {% for child in children %}
+    <a class="chip{% if category.slug == child.slug %} is-on{% endif %}" href="{% url 'web:category' child.slug %}">{{ child.name }}</a>
+    {% endfor %}
+  </nav>
+  {% endif %}{% endwith %}
+  {% endif %}
+
+  <form class="filters" method="get" action="" role="search" data-filters>
+    {% if search %}
+    <label class="search search--page">
+      <svg class="ic" width="20" height="20"><use href="#i-search"/></svg>
+      <input type="search" name="q" value="{{ values.q }}" placeholder="Футболка, кеды, панама…" aria-label="Поиск по каталогу" maxlength="100" enterkeyhint="search"{% if not values.q and not filters_open %} autofocus{% endif %}>
+      <button class="search__go" type="submit" aria-label="Найти"><svg class="ic" width="18" height="18"><use href="#i-chevron"/></svg></button>
+    </label>
+    {% endif %}
+    <details class="filters__panel"{% if filters_open %} open{% endif %}>
+      <summary class="filters__toggle"><svg class="ic" width="18" height="18"><use href="#i-filter"/></svg>Фильтры и сортировка</summary>
+      <div class="filters__body">
+        <label class="field">
+          <span class="field__label">Сортировка</span>
+          <select name="sort" class="input">
+            <option value="">{{ default_sort }}</option>
+            {% for value, label in sort_choices %}
+            <option value="{{ value }}"{% if values.sort == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </label>
+        <div class="field field--pair">
+          <label><span class="field__label">Цена от, ₽</span><input class="input" name="price_min" value="{{ price_min }}" inputmode="decimal" autocomplete="off"></label>
+          <label><span class="field__label">до, ₽</span><input class="input" name="price_max" value="{{ price_max }}" inputmode="decimal" autocomplete="off"></label>
+        </div>
+        <label class="check">
+          <input type="checkbox" name="in_stock" value="1"{% if values.in_stock %} checked{% endif %}>
+          <span>Только в наличии</span>
+        </label>
+        <div class="filters__actions">
+          <button class="btn btn--dark" type="submit">Показать</button>
+          <a class="btn btn--ghost" href="{{ request.path }}{% if search and values.q %}?q={{ values.q|urlencode }}{% endif %}">Сбросить</a>
+        </div>
+      </div>
+    </details>
+  </form>
+
+  {{ grid }}
+</section>
+{% endblock %}

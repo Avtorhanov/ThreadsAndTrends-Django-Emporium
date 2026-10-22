@@ -21,7 +21,7 @@ type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>["tabBar"]>
 
 const TABS: Record<string, { label: string; icon: IconName }> = {
   index: { label: "Каталог", icon: "grid" },
-  search: { label: "Поиск", icon: "search" },
+  contacts: { label: "Контакты", icon: "chat" },
   cart: { label: "Корзина", icon: "bag" },
   profile: { label: "Профиль", icon: "user" },
 };
@@ -196,7 +196,8 @@ const useStyles = makeStyles(({ c, shadow }) => ({
     overflow: "hidden",
   },
   // Не сжимается: пока вкладка расширяется, лишнее обрезает overflow, а не многоточие.
-  label: { fontFamily: fonts.text800, fontSize: 13, flexShrink: 0 },
+  // Отступ справа: контур последней буквы («ы» в «Контакты») выходит за ширину текста.
+  label: { fontFamily: fonts.text800, fontSize: 13, flexShrink: 0, paddingRight: 3 },
   badge: {
     position: "absolute",
     top: -6,

@@ -25,7 +25,7 @@ ORDERS_UNPAID_TIMEOUT_MINUTES = 30
 # Ключи тестового окружения: провайдер в тестах подменяется фейком (payments/tests/fake.py).
 YOOKASSA_SHOP_ID = "test-shop"
 YOOKASSA_SECRET_KEY = "test-secret"
-PAYMENTS_RETURN_URL_PREFIXES = ["didishop://", "exp://"]
+PAYMENTS_RETURN_URL_PREFIXES = ["didishop://", "exp://", "http://testserver/"]
 PAYMENTS_RECEIPTS_ENABLED = True
 PAYMENTS_TAX_SYSTEM_CODE = 2
 PAYMENTS_VAT_CODE = 1

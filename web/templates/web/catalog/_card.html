@@ -1,0 +1,15 @@
+{% load money storefront %}
+<a class="card" href="{% url 'web:product' p.slug %}">
+  <span class="card__img tone-{{ p.slug|tone }}">
+    {% with cover=p.cover %}{% if cover %}{% if eager %}{% product_img cover "(min-width: 1200px) 280px, (min-width: 900px) 25vw, (min-width: 600px) 33vw, 50vw" css="card__photo" eager=True %}{% else %}{% product_img cover "(min-width: 1200px) 280px, (min-width: 900px) 25vw, (min-width: 600px) 33vw, 50vw" css="card__photo" %}{% endif %}{% endif %}{% endwith %}
+    {% with off=p|discount %}{% if off %}<span class="sale">−{{ off }}%</span>{% endif %}{% endwith %}
+    {% if not p.in_stock %}<span class="soldout">Нет в наличии</span>{% endif %}
+  </span>
+  <span class="card__body">
+    <span class="card__title">{{ p.name }}</span>
+    <span class="price">
+      <span class="price__now">{{ p.price_kopecks|rub }}&nbsp;₽</span>
+      {% if p.compare_at_kopecks %}<s class="price__old"><span class="sr">Старая цена </span>{{ p.compare_at_kopecks|rub }}&nbsp;₽</s>{% endif %}
+    </span>
+  </span>
+</a>

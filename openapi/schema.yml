@@ -484,6 +484,228 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/admin/content/article-images/{id}/:
+    delete:
+      operationId: admin_content_article_images_destroy
+      description: |-
+        API панели администратора: только сессия Django (+ CSRF) и роль администратора.
+        JWT мобильного клиента не принимается.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Фото статьи.
+        required: true
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: Фото и файл удалены
+  /api/v1/admin/content/articles/:
+    get:
+      operationId: admin_content_articles_list
+      description: Статьи, включая черновики и удалённые (фильтр status).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Поиск по заголовку
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - deleted
+          - draft
+          - published
+        description: По умолчанию — кроме удалённых
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdminArticleList'
+          description: ''
+    post:
+      operationId: admin_content_articles_create
+      description: Статьи, включая черновики и удалённые (фильтр status).
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminArticleWriteRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminArticleDetail'
+          description: ''
+  /api/v1/admin/content/articles/{id}/:
+    get:
+      operationId: admin_content_articles_retrieve
+      description: Статьи, включая черновики и удалённые (фильтр status).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статья.
+        required: true
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminArticleDetail'
+          description: ''
+    patch:
+      operationId: admin_content_articles_partial_update
+      description: Статьи, включая черновики и удалённые (фильтр status).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статья.
+        required: true
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminArticleWriteRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminArticleDetail'
+          description: ''
+    delete:
+      operationId: admin_content_articles_destroy
+      description: 'Мягкое удаление: статья пропадает с сайта и из приложения.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статья.
+        required: true
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/content/articles/{id}/images/:
+    post:
+      operationId: admin_content_articles_images_create
+      description: Загрузить фото в конец (JPEG/PNG/WebP, до 5 МБ, до 6 фото); первое
+        — обложка.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статья.
+        required: true
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminArticleImageUploadRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminArticleImage'
+          description: ''
+  /api/v1/admin/content/articles/{id}/images/reorder/:
+    post:
+      operationId: admin_content_articles_images_reorder_create
+      description: Статьи, включая черновики и удалённые (фильтр status).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статья.
+        required: true
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminArticleImageReorderRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminArticleImage'
+          description: ''
+  /api/v1/admin/content/articles/{id}/restore/:
+    post:
+      operationId: admin_content_articles_restore_create
+      description: Статьи, включая черновики и удалённые (фильтр status).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статья.
+        required: true
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminArticleDetail'
+          description: ''
   /api/v1/admin/customers/:
     get:
       operationId: admin_customers_list
@@ -1243,6 +1465,61 @@ paths:
               schema:
                 $ref: '#/components/schemas/CatalogProductDetail'
           description: ''
+  /api/v1/content/articles/:
+    get:
+      operationId: content_articles_list
+      description: Опубликованные статьи, новые сверху (до 100, без страниц).
+      tags:
+      - content
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Article'
+          description: ''
+  /api/v1/content/articles/{slug}/:
+    get:
+      operationId: content_articles_retrieve
+      description: Статья с абзацами и фото. Черновик и удалённая — 404.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - content
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleDetail'
+          description: ''
+  /api/v1/content/contacts/:
+    get:
+      operationId: content_contacts_list
+      description: Каналы связи магазина (настройки сервера). Пустые не возвращаются.
+      tags:
+      - content
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contact'
+          description: ''
   /api/v1/health/:
     get:
       operationId: health_retrieve
@@ -1436,6 +1713,197 @@ paths:
           description: ''
 components:
   schemas:
+    AdminArticle:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          readOnly: true
+          title: Заголовок
+        excerpt:
+          type: string
+          readOnly: true
+          title: Короткое описание
+        is_published:
+          type: boolean
+          readOnly: true
+          title: Опубликована
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Опубликована
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создана
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Изменена
+        deleted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Удалена
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+        images_count:
+          type: integer
+          readOnly: true
+      required:
+      - cover_url
+      - created_at
+      - deleted_at
+      - excerpt
+      - id
+      - images_count
+      - is_published
+      - published_at
+      - slug
+      - title
+      - updated_at
+    AdminArticleDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          readOnly: true
+          title: Заголовок
+        excerpt:
+          type: string
+          readOnly: true
+          title: Короткое описание
+        is_published:
+          type: boolean
+          readOnly: true
+          title: Опубликована
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Опубликована
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создана
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Изменена
+        deleted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Удалена
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+        images_count:
+          type: integer
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
+          title: Текст
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminArticleImage'
+          readOnly: true
+      required:
+      - body
+      - cover_url
+      - created_at
+      - deleted_at
+      - excerpt
+      - id
+      - images
+      - images_count
+      - is_published
+      - published_at
+      - slug
+      - title
+      - updated_at
+    AdminArticleImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+        position:
+          type: integer
+          readOnly: true
+          title: Порядок
+      required:
+      - id
+      - position
+      - url
+    AdminArticleImageReorderRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          description: Все id фото статьи в новом порядке
+      required:
+      - ids
+    AdminArticleImageUploadRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          format: binary
+          description: JPEG, PNG или WebP, до 5 МБ
+      required:
+      - image
+    AdminArticleWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        excerpt:
+          type: string
+          maxLength: 300
+        body:
+          type: string
+          description: Абзацы через пустую строку, без HTML
+          maxLength: 20000
+        is_published:
+          type: boolean
+      required:
+      - title
     AdminCategory:
       type: object
       properties:
@@ -2122,6 +2590,113 @@ components:
         position:
           type: integer
           minimum: 0
+    Article:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          readOnly: true
+          title: Заголовок
+        excerpt:
+          type: string
+          readOnly: true
+          title: Короткое описание
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Опубликована
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - cover_url
+      - excerpt
+      - id
+      - published_at
+      - slug
+      - title
+    ArticleDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          readOnly: true
+          title: Заголовок
+        excerpt:
+          type: string
+          readOnly: true
+          title: Короткое описание
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Опубликована
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+        paragraphs:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          description: Абзацы текста (без HTML)
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArticleImage'
+          readOnly: true
+      required:
+      - cover_url
+      - excerpt
+      - id
+      - images
+      - paragraphs
+      - published_at
+      - slug
+      - title
+    ArticleImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+        width:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Ширина, px
+        height:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Высота, px
+      required:
+      - height
+      - id
+      - url
+      - width
     AuthResult:
       type: object
       properties:
@@ -2590,6 +3165,41 @@ components:
       - delivery_options
       - free_delivery_from_kopecks
       - payment_methods
+    Contact:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/ContactKindEnum'
+        title:
+          type: string
+        url:
+          type: string
+          description: https://wa.me/…, https://t.me/…, tel:…, mailto:…
+        handle:
+          type: string
+          description: 'Как показать: номер, @имя, адрес'
+        note:
+          type: string
+      required:
+      - handle
+      - kind
+      - note
+      - title
+      - url
+    ContactKindEnum:
+      enum:
+      - whatsapp
+      - telegram
+      - vk
+      - phone
+      - email
+      type: string
+      description: |-
+        * `whatsapp` - WhatsApp
+        * `telegram` - Telegram
+        * `vk` - ВКонтакте
+        * `phone` - Телефон
+        * `email` - Почта
     Customer:
       type: object
       properties:
@@ -2982,6 +3592,29 @@ components:
         * `ready_for_pickup` - Готов к выдаче
         * `delivered` - Получен
         * `cancelled` - Отменён
+    PaginatedAdminArticleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminArticle'
     PaginatedAdminOrderListList:
       type: object
       required:
@@ -3125,6 +3758,22 @@ components:
           minLength: 1
       required:
       - email
+    PatchedAdminArticleWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        excerpt:
+          type: string
+          maxLength: 300
+        body:
+          type: string
+          description: Абзацы через пустую строку, без HTML
+          maxLength: 20000
+        is_published:
+          type: boolean
     PatchedAdminCategoryRequest:
       type: object
       properties:

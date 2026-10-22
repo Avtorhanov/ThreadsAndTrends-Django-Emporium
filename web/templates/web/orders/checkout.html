@@ -1,0 +1,79 @@
+{% extends "web/base.html" %}
+{% load money storefront %}
+{% block title %}Оформление заказа — DiDi-shop{% endblock %}
+{% block content %}
+<section class="page">
+  <header class="section-head">
+    <p class="overline">Корзина</p>
+    <h1 class="h1">Оформление</h1>
+  </header>
+
+  <form class="checkout" method="post" action="{% url 'web:checkout' %}" data-checkout novalidate>
+    {% csrf_token %}
+    {{ form.expected_total }}{{ form.idempotency_key }}
+    {% include "web/partials/form_errors.html" %}
+
+    <div class="checkout__main">
+      <fieldset class="panel">
+        <legend class="panel__title">Получатель</legend>
+        {% include "web/partials/field.html" with field=form.recipient_name %}
+        {% include "web/partials/field.html" with field=form.recipient_phone placeholder="+7 900 123-45-67" %}
+      </fieldset>
+
+      <fieldset class="panel">
+        <legend class="panel__title">Доставка</legend>
+        <div class="choices">
+          {% for option in options %}
+          <label class="choice">
+            <input type="radio" name="delivery_method" value="{{ option.method }}" data-cost="{{ option.cost_kopecks }}"{% if form.delivery_method.value == option.method %} checked{% endif %} required>
+            <span class="choice__body">
+              <span class="choice__title">{{ option.title }}</span>
+              {% if option.address %}<span class="choice__hint">{{ option.address }}</span>{% elif option.cost_kopecks == 0 %}<span class="choice__hint">Бесплатно — заказ от {{ free_from|rub }}&nbsp;₽</span>{% else %}<span class="choice__hint">Бесплатно от {{ free_from|rub }}&nbsp;₽</span>{% endif %}
+            </span>
+            <span class="choice__price">{% if option.cost_kopecks %}{{ option.cost_kopecks|rub }}&nbsp;₽{% else %}0&nbsp;₽{% endif %}</span>
+          </label>
+          {% endfor %}
+        </div>
+        {% for error in form.delivery_method.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+        <div data-address>
+          {% include "web/partials/field.html" with field=form.delivery_address placeholder="Город, улица, дом, квартира" always_required=True %}
+        </div>
+      </fieldset>
+
+      <fieldset class="panel">
+        <legend class="panel__title">Оплата</legend>
+        <div class="choices">
+          {% for value, label in form.fields.payment_method.choices %}
+          <label class="choice">
+            <input type="radio" name="payment_method" value="{{ value }}"{% if form.payment_method.value == value %} checked{% endif %} required>
+            <span class="choice__body">
+              <span class="choice__title">{{ label }}</span>
+              <span class="choice__hint">{% if value == "online" %}Картой или через СБП на странице ЮKassa{% else %}Курьеру или в пункте выдачи{% endif %}</span>
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+        {% for error in form.payment_method.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+      </fieldset>
+
+      <fieldset class="panel">
+        <legend class="panel__title">Комментарий</legend>
+        {% include "web/partials/field.html" with field=form.comment placeholder="Код домофона, удобное время" %}
+      </fieldset>
+    </div>
+
+    <aside class="summary checkout__summary">
+      <ul class="mini">
+        {% for line in cart.lines %}
+        <li><span>{{ line.product.name }}{% if line.size %}, {{ line.size }}{% endif %} × {{ line.quantity }}</span><span>{{ line.line_total_kopecks|rub }}&nbsp;₽</span></li>
+        {% endfor %}
+      </ul>
+      <p class="summary__row"><span>Товары</span><span>{{ items_total|rub }}&nbsp;₽</span></p>
+      <p class="summary__row"><span>Доставка</span><span data-delivery-cost>{% with cost=form.delivery_method.value|delivery_cost:options %}{{ cost|rub }}&nbsp;₽{% endwith %}</span></p>
+      <p class="summary__row summary__total"><span>Итого</span><span data-total data-items="{{ items_total }}">{% with cost=form.delivery_method.value|delivery_cost:options %}{{ items_total|add:cost|rub }}&nbsp;₽{% endwith %}</span></p>
+      <button class="cta" type="submit"><span class="cta__label">Оформить заказ</span></button>
+      <p class="summary__hint">Нажимая «Оформить заказ», вы принимаете условия <a href="{% url 'web:offer' %}">оферты</a> и даёте согласие на обработку персональных данных по <a href="{% url 'web:privacy' %}">политике</a>.</p>
+    </aside>
+  </form>
+</section>
+{% endblock %}

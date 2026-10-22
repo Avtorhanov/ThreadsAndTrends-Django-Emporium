@@ -1,4 +1,5 @@
-"""Корзина: одна логика для клиента (корзина в БД) и гостя (позиции хранятся на устройстве).
+"""Корзина: одна логика для клиента (корзина в БД) и гостя (позиции хранит клиент: устройство
+в приложении, сессия на веб-витрине — операции guest_* ниже).
 
 Цена в корзине не хранится — сумма всегда считается от текущей цены товара. Состояние
 корзины (CartSummary) строит одна функция `_summarize` и для сохранённой корзины, и для
@@ -9,7 +10,7 @@
 """
 
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -257,11 +258,7 @@ def add(user, variant_id: int, quantity: int = 1) -> CartSummary:
         _check_items_limit(cart.items.count() + 1)
 
     current = item.quantity if item else 0
-    if current + quantity > limit:
-        already = f" В корзине уже {current}." if current else ""
-        raise ValidationError(
-            f"Можно добавить не больше {limit} шт.{already}", code="quantity_limit"
-        )
+    _check_addable(current, quantity, limit)
 
     price = variant.product.price_kopecks
     if item is None:
@@ -275,12 +272,24 @@ def add(user, variant_id: int, quantity: int = 1) -> CartSummary:
     return get_summary(user)
 
 
+def _check_addable(current: int, quantity: int, limit: int) -> None:
+    if current + quantity > limit:
+        already = f" В корзине уже {current}." if current else ""
+        raise ValidationError(
+            f"Можно добавить не больше {limit} шт.{already}", code="quantity_limit"
+        )
+
+
+def _check_quantity(quantity: int, limit: int) -> None:
+    if not 1 <= quantity <= limit:
+        raise ValidationError(f"Укажите количество от 1 до {limit}.", code="quantity_limit")
+
+
 @transaction.atomic
 def set_quantity(user, item_id: int, quantity: int) -> CartSummary:
     item = _owned_item(user, item_id)
     _, limit = _sellable_variant(item.variant_id)
-    if not 1 <= quantity <= limit:
-        raise ValidationError(f"Укажите количество от 1 до {limit}.", code="quantity_limit")
+    _check_quantity(quantity, limit)
     item.quantity = quantity
     item.save(update_fields=["quantity"])
     return get_summary(user)
@@ -351,3 +360,58 @@ def merge(user, lines: Iterable[LineInput]) -> MergeResult:
         count += 1
 
     return MergeResult(get_summary(user), notices)
+
+
+# --- Гостевая корзина: те же правила, позиции хранит вызывающий (сессия сайта) ---
+
+
+def guest_add(lines: Iterable[LineInput], variant_id: int, quantity: int = 1) -> list[LineInput]:
+    """Как add(): товар продаётся, количество не больше доступного, позиций не больше лимита.
+    Возвращает новый список позиций; «увиденная» цена — текущая цена товара."""
+    if quantity < 1:
+        raise ValidationError("Количество должно быть не меньше 1.", code="invalid_quantity")
+    lines = _normalize(lines)
+    variant, limit = _sellable_variant(variant_id)
+    current = next((line for line in lines if line.variant_id == variant.pk), None)
+    if current is None:
+        _check_items_limit(len(lines) + 1)
+    _check_addable(current.quantity if current else 0, quantity, limit)
+    price = variant.product.price_kopecks
+    if current is None:
+        return [*lines, LineInput(variant.pk, quantity, price)]
+    updated = LineInput(variant.pk, current.quantity + quantity, price)
+    return [updated if line.variant_id == variant.pk else line for line in lines]
+
+
+def guest_set_quantity(
+    lines: Iterable[LineInput], variant_id: int, quantity: int
+) -> list[LineInput]:
+    lines = _normalize(lines)
+    if not any(line.variant_id == variant_id for line in lines):
+        raise Http404("Позиция корзины не найдена.")
+    _, limit = _sellable_variant(variant_id)
+    _check_quantity(quantity, limit)
+    return [
+        replace(line, quantity=quantity) if line.variant_id == variant_id else line
+        for line in lines
+    ]
+
+
+def guest_remove(lines: Iterable[LineInput], variant_id: int) -> list[LineInput]:
+    lines = _normalize(lines)
+    remaining = [line for line in lines if line.variant_id != variant_id]
+    if len(remaining) == len(lines):
+        raise Http404("Позиция корзины не найдена.")
+    return remaining
+
+
+def guest_ack_prices(lines: Iterable[LineInput]) -> list[LineInput]:
+    """Предупреждение «цена изменилась» снимается: увиденная цена = текущая."""
+    lines = _normalize(lines)
+    variants = _load_variants(line.variant_id for line in lines)
+    return [
+        replace(line, seen_price_kopecks=variants[line.variant_id].product.price_kopecks)
+        if line.variant_id in variants
+        else line
+        for line in lines
+    ]

@@ -1,0 +1,83 @@
+{% extends "web/base.html" %}
+{% load money storefront %}
+{% block title %}Заказ {{ order.number }} — DiDi-shop{% endblock %}
+{% block content %}
+<section class="page">
+  <a class="back-link" href="{% url 'web:orders' %}"><svg class="ic flip" width="16" height="16"><use href="#i-chevron"/></svg>Мои заказы</a>
+  <header class="section-head section-head--row">
+    <div>
+      <p class="overline">{{ order.created_at|date:"j E Y, H:i" }}</p>
+      <h1 class="h1">Заказ <span class="nowrap">{{ order.number }}</span></h1>
+    </div>
+    <span class="status status--{{ order.status|status_tone }}">{{ order.get_status_display }}</span>
+  </header>
+
+  {% if order.payment_method == "online" %}
+  <div class="panel pay">
+    {% if payment.can_pay %}
+    <p class="pay__text">Оплатите заказ до {{ payment.pay_until|date:"H:i" }} — после этого он отменится автоматически.</p>
+    <form method="post" action="{% url 'web:order_pay' order.number %}">
+      {% csrf_token %}
+      <button class="cta" type="submit"><span class="cta__label">Оплатить</span><span class="cta__price">{{ order.total_kopecks|rub }}&nbsp;₽</span></button>
+    </form>
+    {% if payment.payment_status == "pending" %}<a class="btn btn--ghost btn--sm" href="{% url 'web:order' order.number %}">Проверить оплату</a>{% endif %}
+    {% elif order.status == "cancelled" and payment.refund_status %}
+    <p class="pay__text">Возврат денег: <b>{% if payment.refund_status == "succeeded" %}выполнен{% elif payment.refund_status == "pending" %}выполняется{% else %}задерживается — мы свяжемся с вами{% endif %}</b>.</p>
+    {% elif payment.payment_status == "succeeded" or payment.payment_status == "refunded" %}
+    <p class="pay__text"><svg class="ic" width="18" height="18"><use href="#i-check"/></svg> Оплачено онлайн</p>
+    {% elif returned and order.status == "awaiting_payment" %}
+    <p class="pay__text">Ждём подтверждения оплаты от банка. <a href="{% url 'web:order' order.number %}">Обновить</a></p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <ul class="lines lines--static">
+    {% for item in items %}
+    <li class="line">
+      <span class="line__img tone-{{ item.product.slug|tone }}" aria-hidden="true">
+        {% with cover=item.product.cover %}{% if cover %}{% product_img cover "96px" css="line__photo" %}{% endif %}{% endwith %}
+      </span>
+      <div class="line__body">
+        <p class="line__title">{{ item.product_name }}</p>
+        <p class="line__meta">{% if item.size %}Размер {{ item.size }} · {% endif %}{{ item.quantity }} × {{ item.price_kopecks|rub }}&nbsp;₽</p>
+      </div>
+      <p class="line__price">{{ item.line_total_kopecks|rub }}&nbsp;₽</p>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <div class="order-info">
+    <div class="panel">
+      <p class="panel__title">Получение</p>
+      <p>{{ order.get_delivery_method_display }}</p>
+      {% if order.delivery_address %}<p class="muted">{{ order.delivery_address }}</p>{% endif %}
+      <p class="muted">{{ order.recipient_name }}{% if order.recipient_phone %}, {{ order.recipient_phone }}{% endif %}</p>
+      {% if order.comment %}<p class="muted">«{{ order.comment }}»</p>{% endif %}
+    </div>
+    <div class="panel">
+      <p class="summary__row"><span>Товары</span><span>{{ order.items_total_kopecks|rub }}&nbsp;₽</span></p>
+      <p class="summary__row"><span>Доставка</span><span>{{ order.delivery_kopecks|rub }}&nbsp;₽</span></p>
+      <p class="summary__row summary__total"><span>Итого</span><span>{{ order.total_kopecks|rub }}&nbsp;₽</span></p>
+      <p class="muted">{{ order.get_payment_method_display }}</p>
+    </div>
+  </div>
+
+  {% if history %}
+  <div class="panel">
+    <p class="panel__title">История</p>
+    <ol class="history">
+      {% for change in history %}
+      <li><span class="status status--{{ change.to_status|status_tone }}">{{ change.get_to_status_display }}</span><span class="muted">{{ change.created_at|date:"j E, H:i" }}</span></li>
+      {% endfor %}
+    </ol>
+  </div>
+  {% endif %}
+
+  {% if can_cancel %}
+  <form class="cancel" method="post" action="{% url 'web:order_cancel' order.number %}" data-confirm="Отменить заказ {{ order.number }}?{% if payment.payment_status == 'succeeded' %} Деньги вернутся на карту.{% endif %}">
+    {% csrf_token %}
+    <button class="btn btn--danger" type="submit">Отменить заказ</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

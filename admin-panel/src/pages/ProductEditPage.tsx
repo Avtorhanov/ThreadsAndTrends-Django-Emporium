@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
-import { productsService } from "../api/catalog";
+import { imagesService, productsService } from "../api/catalog";
 import { ApiError } from "../api/errors";
 import { ImagesEditor } from "../components/catalog/ImagesEditor";
 import { ProductForm, type ProductFormValues } from "../components/catalog/ProductForm";
@@ -44,6 +44,7 @@ export function ProductEditPage() {
     }
   }
 
+  const current = product.data;
   const loading = categories.loading || product.loading;
   const error = categories.error ?? product.error;
   const ready = categories.data && (productId === null || product.data);
@@ -81,14 +82,23 @@ export function ProductEditPage() {
         />
       ) : null}
 
-      {product.data ? (
+      {current ? (
         <>
           <VariantsEditor
-            productId={product.data.id}
-            variants={product.data.variants}
+            productId={current.id}
+            variants={current.variants}
             onChanged={product.reload}
           />
-          <ImagesEditor productId={product.data.id} images={product.data.images} onChanged={product.reload} />
+          <ImagesEditor
+            images={current.images}
+            hint="Первое фото — обложка в каталоге. JPEG, PNG или WebP до 5 МБ, не больше 10 штук."
+            service={{
+              upload: (file) => imagesService.upload(current.id, file),
+              reorder: (ids) => imagesService.reorder(current.id, ids),
+              remove: (id) => imagesService.remove(id),
+            }}
+            onChanged={product.reload}
+          />
         </>
       ) : null}
     </section>

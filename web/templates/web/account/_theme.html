@@ -1,0 +1,17 @@
+{# Тема: как в системе / светлая / тёмная (cookie — сервер сразу рисует нужную тему). #}
+<form class="panel" method="post" action="{% url 'web:theme' %}" data-theme-select>
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.path }}">
+  <fieldset>
+    <legend class="panel__title">Оформление</legend>
+    <div class="segments" role="radiogroup">
+      {% for value, label in theme_choices %}
+      <label class="segment">
+        <input type="radio" name="theme" value="{{ value }}"{% if theme_value == value %} checked{% endif %}>
+        <span>{{ label }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  <noscript><button class="btn btn--ghost btn--sm" type="submit">Применить</button></noscript>
+</form>

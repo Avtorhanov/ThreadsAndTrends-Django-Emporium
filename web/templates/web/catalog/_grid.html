@@ -1,0 +1,28 @@
+{% load storefront %}
+{% if products %}
+<div class="grid">
+  {% for p in products %}
+  {% if forloop.counter <= eager %}{% include "web/catalog/_card.html" with eager=True %}{% else %}{% include "web/catalog/_card.html" with eager=False %}{% endif %}
+  {% endfor %}
+</div>
+{% if page_links %}
+<nav class="pager" aria-label="Страницы">
+  {% if prev_url %}<a class="pager__step" href="{{ prev_url }}" rel="prev" aria-label="Предыдущая страница"><svg class="ic flip" width="18" height="18"><use href="#i-chevron"/></svg></a>{% endif %}
+  {% for link in page_links %}
+    {% if link.number is None %}<span class="pager__gap" aria-hidden="true">…</span>
+    {% elif link.current %}<span class="pager__num is-on" aria-current="page">{{ link.number }}</span>
+    {% else %}<a class="pager__num" href="{{ link.url }}">{{ link.number }}</a>{% endif %}
+  {% endfor %}
+  {% if next_url %}<a class="pager__step" href="{{ next_url }}" rel="next" aria-label="Следующая страница"><svg class="ic" width="18" height="18"><use href="#i-chevron"/></svg></a>{% endif %}
+</nav>
+{% endif %}
+{% if more_url %}
+<p class="more"><a class="btn btn--ghost" href="{{ more_url }}">Весь каталог<svg class="ic" width="18" height="18"><use href="#i-chevron"/></svg></a></p>
+{% endif %}
+{% else %}
+<div class="empty">
+  <svg class="ic empty__ic" width="40" height="40"><use href="#i-box"/></svg>
+  <p class="empty__title">Ничего не нашлось</p>
+  <p class="empty__text">Попробуйте изменить запрос или фильтры.</p>
+</div>
+{% endif %}

@@ -1,0 +1,96 @@
+{% extends "web/base.html" %}
+{% load money storefront %}
+{% block title %}{{ product.name }} — купить за {{ product.price_kopecks|rub }} ₽ в DiDi-shop{% endblock %}
+{% block description %}{% if product.description %}{{ product.description|truncatechars:155 }}{% else %}{{ product.name }} — {{ product.price_kopecks|rub }} ₽. {{ product.category.name }} в DiDi-shop с доставкой курьером.{% endif %}{% endblock %}
+{% block canonical %}<link rel="canonical" href="{% absolute request.path %}">{% endblock %}
+{% block og %}
+<meta property="og:type" content="product">
+<meta property="og:title" content="{{ product.name }}">
+<meta property="og:description" content="{{ product.price_kopecks|rub }} ₽ · {{ product.category.name }}">
+<meta property="og:url" content="{% absolute request.path %}">
+{% if images %}<meta property="og:image" content="{% absolute images.0.image.url %}">{% else %}<meta property="og:image" content="{% absolute_static 'web/icons/icon-512.png' %}">{% endif %}
+<meta property="product:price:amount" content="{{ product.price_kopecks|schema_price }}">
+<meta property="product:price:currency" content="RUB">
+{% endblock %}
+{% block head %}{{ json_ld|ld_json }}{% endblock %}
+{% block body_class %}page-product{% endblock %}
+{% block content %}
+<article class="pd">
+  <div class="pd__gallery">
+    <a class="glass-btn pd__back" href="{% url 'web:category' product.category.slug %}" data-back aria-label="Назад к категории {{ product.category.name }}">
+      <svg class="ic" width="22" height="22"><use href="#i-back"/></svg>
+    </a>
+    <div class="hero tone-{{ product.slug|tone }}">
+      {% if images %}
+      <div class="hero__track" data-gallery tabindex="0" aria-label="Фото товара, {{ images|length }} шт.">
+        {% for image in images %}
+        <figure class="hero__slide" id="photo-{{ forloop.counter }}">
+          {% if forloop.first %}{% product_img image "(min-width: 900px) 560px, 100vw" css="hero__photo" eager=True alt=product.name %}{% else %}{% product_img image "(min-width: 900px) 560px, 100vw" css="hero__photo" alt=product.name %}{% endif %}
+        </figure>
+        {% endfor %}
+      </div>
+      {% if images|length > 1 %}
+      <div class="hero__dots" aria-hidden="true">
+        {% for image in images %}<a href="#photo-{{ forloop.counter }}" tabindex="-1" class="{% if forloop.first %}is-on{% endif %}"></a>{% endfor %}
+      </div>
+      {% endif %}
+      {% else %}
+      <div class="hero__empty"><svg class="ic" width="56" height="56"><use href="#i-box"/></svg></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="pd__info">
+    <div class="rise r1">
+      <nav class="crumbs" aria-label="Навигация">
+        <a href="{% url 'web:home' %}">Каталог</a>
+        {% if product.category.parent %}<svg class="ic" width="14" height="14"><use href="#i-chevron"/></svg><a href="{% url 'web:category' product.category.parent.slug %}">{{ product.category.parent.name }}</a>{% endif %}
+      </nav>
+      <a class="tag" href="{% url 'web:category' product.category.slug %}">{{ product.category.name }}</a>
+      <h1 class="pd__title">{{ product.name }}</h1>
+      <p class="price price--detail">
+        <span class="price__now">{{ product.price_kopecks|rub }}&nbsp;₽</span>
+        {% if product.compare_at_kopecks %}<s class="price__old"><span class="sr">Старая цена </span>{{ product.compare_at_kopecks|rub }}&nbsp;₽</s>
+        {% with off=product|discount %}{% if off %}<span class="sale sale--inline">−{{ off }}%</span>{% endif %}{% endwith %}{% endif %}
+      </p>
+    </div>
+
+    <form class="buy" method="post" action="{% url 'web:cart_add' %}"
+          hx-post="{% url 'web:cart_add' %}" hx-target="#buy-result" hx-swap="innerHTML" data-buy>
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+      {% if single_variant %}
+      <input type="hidden" name="variant" value="{{ single_variant.pk }}">
+      {% elif sizes %}
+      <fieldset class="rise r2 sizes">
+        <legend class="label">Размер</legend>
+        <div class="sizes__list">
+          {% for size in sizes %}
+          <label class="sz{% if not size.available %} is-off{% endif %}">
+            <input type="radio" name="variant" value="{{ size.variant.pk }}"{% if not size.available %} disabled{% endif %} required>
+            <span>{{ size.variant.size_label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      {% endif %}
+
+      {% if product.description %}
+      <div class="rise r3 pd__desc">{{ product.description|linebreaks }}</div>
+      {% endif %}
+
+      <div class="rise r4 buy__bar">
+        {% if in_stock %}
+        <button class="cta" type="submit" data-cta>
+          <span class="cta__label">В корзину</span>
+          <span class="cta__price">{{ product.price_kopecks|rub }}&nbsp;₽</span>
+        </button>
+        {% else %}
+        <button class="cta" type="button" disabled><span class="cta__label">Нет в наличии</span></button>
+        {% endif %}
+        <div id="buy-result" class="buy__result" aria-live="polite"></div>
+      </div>
+    </form>
+  </div>
+</article>
+{% endblock %}

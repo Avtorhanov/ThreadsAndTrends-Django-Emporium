@@ -1,0 +1,40 @@
+{% extends "web/base.html" %}
+{% load money storefront %}
+{% block title %}Мои заказы — DiDi-shop{% endblock %}
+{% block content %}
+<section class="page">
+  <header class="section-head">
+    <p class="overline">Профиль</p>
+    <h1 class="h1">Мои заказы</h1>
+  </header>
+  {% if orders %}
+  <ul class="orders">
+    {% for order in orders %}
+    <li>
+      <a class="order-card" href="{% url 'web:order' order.number %}">
+        <span class="order-card__head">
+          <span class="order-card__num">{{ order.number }}</span>
+          <span class="status status--{{ order.status|status_tone }}">{{ order.get_status_display }}</span>
+        </span>
+        <span class="order-card__meta">{{ order.created_at|date:"j E Y, H:i" }} · {{ order.items_count|default:0|ru_plural:"товар,товара,товаров" }}</span>
+        <span class="order-card__total">{{ order.total_kopecks|rub }}&nbsp;₽</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if page.has_other_pages %}
+  <nav class="pager" aria-label="Страницы">
+    {% if page.has_previous %}<a class="pager__step" href="?page={{ page.previous_page_number }}" aria-label="Предыдущая страница"><svg class="ic flip" width="18" height="18"><use href="#i-chevron"/></svg></a>{% endif %}
+    <span class="pager__num is-on">{{ page.number }}</span>
+    {% if page.has_next %}<a class="pager__step" href="?page={{ page.next_page_number }}" aria-label="Следующая страница"><svg class="ic" width="18" height="18"><use href="#i-chevron"/></svg></a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+  <div class="empty">
+    <svg class="ic empty__ic" width="40" height="40"><use href="#i-box"/></svg>
+    <p class="empty__title">Заказов пока нет</p>
+    <a class="btn btn--dark" href="{% url 'web:home' %}">В каталог</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

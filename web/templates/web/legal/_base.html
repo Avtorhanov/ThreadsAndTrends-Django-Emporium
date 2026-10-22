@@ -1,0 +1,16 @@
+{% extends "web/base.html" %}
+{% load storefront %}
+{% block title %}{{ title }} — DiDi-shop{% endblock %}
+{% block canonical %}<link rel="canonical" href="{% absolute request.path %}">{% endblock %}
+{% block content %}
+<article class="page page--text legal">
+  <header class="section-head">
+    <p class="overline">Покупателям</p>
+    <h1 class="h1">{{ title }}</h1>
+  </header>
+  {# ЗАГОТОВКА. Текст и реквизиты проверяет юрист до запуска; реквизиты — SELLER_* в .env. #}
+  <div class="note note--warning legal__draft">Черновик: текст будет проверен юристом.</div>
+  {% block legal %}{% endblock %}
+  <p class="muted">Редакция от {% block revision %}[дата редакции]{% endblock %}.</p>
+</article>
+{% endblock %}

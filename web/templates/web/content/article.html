@@ -1,0 +1,39 @@
+{% extends "web/base.html" %}
+{% load storefront %}
+{% block title %}{{ article.title }} — DiDi-shop{% endblock %}
+{% block description %}{% if article.excerpt %}{{ article.excerpt }}{% else %}{{ article.body|truncatechars:155 }}{% endif %}{% endblock %}
+{% block canonical %}<link rel="canonical" href="{% absolute request.path %}">{% endblock %}
+{% block og %}
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ article.title }}">
+{% if article.excerpt %}<meta property="og:description" content="{{ article.excerpt }}">{% endif %}
+<meta property="og:url" content="{% absolute request.path %}">
+{% if images %}<meta property="og:image" content="{% absolute images.0.image.url %}">{% else %}<meta property="og:image" content="{% absolute_static 'web/icons/icon-512.png' %}">{% endif %}
+{% if article.published_at %}<meta property="article:published_time" content="{{ article.published_at|date:'c' }}">{% endif %}
+{% endblock %}
+{% block head %}{{ json_ld|ld_json }}{% endblock %}
+{% block content %}
+<article class="page page--text post">
+  <a class="back-link" href="{% url 'web:contacts' %}"><svg class="ic flip" width="16" height="16"><use href="#i-chevron"/></svg>Контакты и статьи</a>
+  {% if images %}
+  <figure class="post__hero hero tone-{{ article.slug|tone }}">
+    {% product_img images.0 "(min-width: 760px) 712px, 100vw" css="hero__photo" eager=True alt=article.title %}
+  </figure>
+  {% endif %}
+  <header class="section-head rise r1">
+    {% if article.published_at %}<p class="overline">{{ article.published_at|date:"j E Y" }}</p>{% endif %}
+    <h1 class="h1">{{ article.title }}</h1>
+    {% if article.excerpt %}<p class="post__lead">{{ article.excerpt }}</p>{% endif %}
+  </header>
+  <div class="post__body rise r2">
+    {% for paragraph in article.paragraphs %}<p>{{ paragraph|linebreaksbr }}</p>{% endfor %}
+  </div>
+  {% if images|length > 1 %}
+  <div class="post__gallery rise r3">
+    {% for image in images|slice:"1:" %}
+    <figure class="post__photo tone-{{ article.slug|tone }}">{% product_img image "(min-width: 760px) 350px, 50vw" css="card__photo" alt="" %}</figure>
+    {% endfor %}
+  </div>
+  {% endif %}
+</article>
+{% endblock %}

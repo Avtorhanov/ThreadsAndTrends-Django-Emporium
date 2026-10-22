@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sitemaps",
     # third-party
     "rest_framework",
     "drf_spectacular",
@@ -46,6 +47,10 @@ INSTALLED_APPS = [
     "accounts",
     "orders",
     "payments",
+    # Статьи и контакты (вкладка «Контакты» на сайте и в приложении)
+    "content",
+    # Веб-витрина (Django-шаблоны + htmx): каталог, корзина, оформление, кабинет, SEO.
+    "web",
 ]
 
 MIDDLEWARE = [
@@ -56,6 +61,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "web.middleware.StorefrontHeadersMiddleware",
 ]
 
 ROOT_URLCONF = "myshop.urls"
@@ -63,7 +69,7 @@ ROOT_URLCONF = "myshop.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -72,6 +78,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.static",
+                "web.context_processors.storefront",
             ],
         },
     },
@@ -102,9 +109,8 @@ PERIODIC_TASKS: list[dict] = [
 
 # --- Пользователи ---
 AUTH_USER_MODEL = "accounts.User"
-# Шаблонные страницы входа отключены (клиент — мобильное приложение); login_required
-# легаси-страниц ведёт на вход в резервную админку.
-LOGIN_URL = "admin:login"
+# Вход покупателя на веб-витрине (сессия Django). Администратор входит в панель /panel/.
+LOGIN_URL = "web:login"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -234,6 +240,7 @@ SPECTACULAR_SETTINGS = {
         "PaymentStatusEnum": "payments.models.PaymentStatus.choices",
         "RefundStatusEnum": "payments.models.RefundStatus.choices",
         "RefundReasonEnum": "payments.models.RefundReason.choices",
+        "ContactKindEnum": "content.contacts.ContactKind.CHOICES",
     },
 }
 
@@ -266,6 +273,32 @@ LOGGING = {
     },
 }
 
-# Куда ведёт корень сайта, пока нет веб-витрины (сессия 8): в продакшене — веб-версия
-# приложения `/app/` (compose.prod.yml). Пусто — легаси-главная на шаблонах.
-SITE_ROOT_REDIRECT = env_str("SITE_ROOT_REDIRECT", "")
+# --- Веб-витрина ---
+# Основной адрес сайта (https://домен) для canonical, sitemap и Open Graph. Пусто — адрес из
+# запроса. В продакшене задаёт compose.prod.yml из DOMAIN: прежние адреса (EXTRA_DOMAINS)
+# продолжают работать, но поисковики видят один.
+SITE_URL = env_str("SITE_URL", "").rstrip("/")
+# Ссылка «Скачать для Android» в баннере на телефонах (пусто — Android-баннер не показывается).
+ANDROID_APK_URL = env_str("ANDROID_APK_URL", "")
+# Товаров на странице каталога и поиска.
+WEB_PAGE_SIZE = env_int("WEB_PAGE_SIZE", 24)
+# Сколько секунд хранится готовая сетка товаров (сбрасывается при изменении каталога).
+WEB_CATALOG_CACHE_SECONDS = env_int("WEB_CATALOG_CACHE_SECONDS", 300)
+# Реквизиты продавца: подвал сайта и юридические страницы (оферта, политика ПДн, доставка).
+# Обязательны до подключения ЮKassa; тексты страниц — заготовки, их проверяет юрист.
+SELLER_NAME = env_str("SELLER_NAME", "")
+SELLER_INN = env_str("SELLER_INN", "")
+SELLER_OGRN = env_str("SELLER_OGRN", "")
+SELLER_ADDRESS = env_str("SELLER_ADDRESS", "")
+SELLER_EMAIL = env_str("SELLER_EMAIL", "")
+SELLER_PHONE = env_str("SELLER_PHONE", "")
+# Вкладка «Контакты» (сайт и приложение): пусто — канал не показывается. Подписи — свои
+# у каждого канала (пусто — подпись по умолчанию). Телефон и email — SELLER_PHONE/SELLER_EMAIL.
+CONTACT_WHATSAPP = env_str("CONTACT_WHATSAPP", "")  # номер: +7 900 123-45-67
+CONTACT_WHATSAPP_NOTE = env_str("CONTACT_WHATSAPP_NOTE", "")
+CONTACT_TELEGRAM = env_str("CONTACT_TELEGRAM", "")  # @имя или https://t.me/имя
+CONTACT_TELEGRAM_NOTE = env_str("CONTACT_TELEGRAM_NOTE", "")
+CONTACT_VK = env_str("CONTACT_VK", "")  # короткое имя или https://vk.com/имя
+CONTACT_VK_NOTE = env_str("CONTACT_VK_NOTE", "")
+CONTACT_PHONE_NOTE = env_str("CONTACT_PHONE_NOTE", "")
+CONTACT_EMAIL_NOTE = env_str("CONTACT_EMAIL_NOTE", "")

@@ -9,7 +9,9 @@
 # 4. manage.py check --deploy внутри контейнера;
 # 5. нагрузочный smoke оформления (deploy/smoke_checkout.py);
 # 6. бэкап и восстановление из него;
-# 7. браузерный сценарий покупателя и администратора (deploy/e2e_browser.py, скриншоты).
+# 7. браузерный сценарий покупателя и администратора (deploy/e2e_browser.py, скриншоты);
+# 8. веб-витрина в браузере: телефон и десктоп, обе темы (deploy/e2e_storefront.py);
+# 9. Lighthouse (мобильный) на странице товара: SEO ≥ 95, Performance ≥ 80.
 #
 # Внимание: перезаписывает .env и данные стека в этой папке. Не запускайте на сервере магазина.
 set -euo pipefail
@@ -44,6 +46,13 @@ sed -i \
   -e 's/^SEED_DEMO=.*/SEED_DEMO=1/' \
   .env
 echo "GUNICORN_WORKERS=2" >> .env
+# Контакты для вкладки «Контакты» (сайт и приложение).
+sed -i \
+  -e 's/^CONTACT_WHATSAPP=.*/CONTACT_WHATSAPP=+79001234567/' \
+  -e 's/^CONTACT_TELEGRAM=.*/CONTACT_TELEGRAM=@didishop/' \
+  -e 's/^CONTACT_VK=.*/CONTACT_VK=didishop/' \
+  -e 's/^SELLER_EMAIL=.*/SELLER_EMAIL=shop@example.com/' \
+  .env
 ./deploy.sh </dev/null 2>&1 | tee "$OUT/deploy.log" || fail "deploy.sh завершился с ошибкой"
 
 step "HTTPS, редирект, заголовки"
@@ -53,10 +62,28 @@ code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost/)
 headers=$(k -I "$BASE/app/")
 grep -qi '^strict-transport-security:' <<<"$headers" || fail "нет HSTS"
 grep -qi '^content-security-policy:' <<<"$headers" || fail "нет CSP у веб-приложения"
-root=$(curl -sk -o /dev/null -w '%{http_code} %{redirect_url}' "$BASE/")
-[ "$root" = "302 $BASE/app/" ] || fail "корень сайта должен вести в /app/ (получено: $root)"
-legacy=$(k "$BASE/products/")
-grep -q '<html' <<<"$legacy" || fail "страница каталога на шаблонах (Django) не открывается"
+
+step "Веб-витрина: корень, SEO, статика"
+root_headers=$(k -I "$BASE/")
+grep -qi "^content-security-policy: default-src 'self'" <<<"$root_headers" || fail "нет CSP у витрины"
+home=$(k "$BASE/")
+grep -q '<html lang="ru"' <<<"$home" || fail "корень сайта — не витрина"
+grep -q '<link rel="canonical" href="https://localhost/">' <<<"$home" || fail "нет canonical на главной"
+css=$(grep -o '/static/web/css/site\.[0-9a-f]\{12\}\.css' <<<"$home" | head -n 1)
+[ -n "$css" ] || fail "стили витрины без хэша в имени (ManifestStaticFilesStorage)"
+css_headers=$(k -I "$BASE$css")
+grep -qi 'cache-control: public, max-age=31536000, immutable' <<<"$css_headers" || fail "статика без долгого кэша"
+sitemap=$(k "$BASE/sitemap.xml")
+grep -q '<loc>https://localhost/product/' <<<"$sitemap" || fail "в sitemap.xml нет товаров"
+grep -q '<loc>https://localhost/category/' <<<"$sitemap" || fail "в sitemap.xml нет категорий"
+robots=$(k "$BASE/robots.txt")
+grep -q '^Sitemap: https://localhost/sitemap.xml' <<<"$robots" || fail "robots.txt без Sitemap"
+product_url=$(grep -o '<loc>https://localhost/product/[^<]*' <<<"$sitemap" | head -n 1 | sed 's/<loc>//')
+product=$(k "$product_url")
+grep -q 'application/ld+json' <<<"$product" || fail "у товара нет schema.org"
+missing=$(curl -sk -o /dev/null -w '%{http_code}' "$BASE/product/net-takogo-tovara/")
+[ "$missing" = "404" ] || fail "несуществующий товар — не 404 ($missing)"
+echo "витрина: CSP, canonical, sitemap, robots.txt, schema.org, статика с хэшем — ок"
 
 step "Веб-приложение /app/ (PWA), корень сайта, панель"
 # Ответы — в переменные: `curl | grep -q` под pipefail ловит SIGPIPE.
@@ -129,5 +156,29 @@ if ! python3 -c "import playwright" 2>/dev/null; then
 fi
 python3 deploy/e2e_browser.py "$BASE" "$OUT" 2>&1 | tee "$OUT/browser.log" \
   || fail "браузерный сценарий: $(tail -n 12 "$OUT/browser.log" | tr '\n' ' ')"
+
+step "Браузер: веб-витрина (телефон и десктоп, обе темы)"
+python3 deploy/e2e_storefront.py "$BASE" "$OUT/storefront" 2>&1 | tee "$OUT/storefront.log" \
+  || fail "витрина в браузере: $(tail -n 12 "$OUT/storefront.log" | tr '\n' ' ')"
+
+step "Lighthouse (мобильный): страница товара"
+if command -v npx >/dev/null; then
+  chrome=$(python3 -c "from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()")
+  CHROME_PATH="$chrome" npx --yes lighthouse@12 "$product_url" \
+    --only-categories=seo,performance,accessibility,best-practices --form-factor=mobile \
+    --chrome-flags="--headless=new --no-sandbox --ignore-certificate-errors" \
+    --output=json --output=html --output-path="$OUT/lighthouse-product" --quiet \
+    || fail "Lighthouse не запустился"
+  python3 - "$OUT/lighthouse-product.report.json" <<'PY' || fail "Lighthouse ниже порога (отчёт — lighthouse-product.report.html)"
+import json, sys
+report = json.load(open(sys.argv[1]))
+scores = {key: round(value["score"] * 100) for key, value in report["categories"].items()}
+print("Lighthouse:", scores)
+assert scores["seo"] >= 95, f"SEO {scores['seo']} < 95"
+assert scores["performance"] >= 80, f"Performance {scores['performance']} < 80"
+PY
+else
+  echo "npx нет — Lighthouse пропущен"
+fi
 
 printf '\n\033[1;32mE2E OK\033[0m\n'

@@ -1,0 +1,8 @@
+{# Блок «Помощь»: профиль и вкладка «Контакты». На телефоне подвал закрыт нижней панелью — здесь те же ссылки. #}
+<nav class="menu menu--help" aria-label="Помощь">
+  <p class="overline menu__head">Помощь</p>
+  <a class="menu__item" href="{% url 'web:delivery' %}"><svg class="ic" width="20" height="20"><use href="#i-box"/></svg>Доставка, оплата и возврат<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
+  {% if tab != "contacts" %}<a class="menu__item" href="{% url 'web:contacts' %}"><svg class="ic" width="20" height="20"><use href="#i-chat"/></svg>Контакты и статьи<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>{% endif %}
+  <a class="menu__item" href="{% url 'web:offer' %}"><svg class="ic" width="20" height="20"><use href="#i-help"/></svg>Публичная оферта<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
+  <a class="menu__item" href="{% url 'web:privacy' %}"><svg class="ic" width="20" height="20"><use href="#i-help"/></svg>Политика обработки данных<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
+</nav>

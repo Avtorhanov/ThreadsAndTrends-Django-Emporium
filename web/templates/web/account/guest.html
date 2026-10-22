@@ -1,0 +1,17 @@
+{% extends "web/base.html" %}
+{% block title %}Профиль — DiDi-shop{% endblock %}
+{% block content %}
+<section class="page page--narrow">
+  <header class="section-head">
+    <p class="overline">Профиль</p>
+    <h1 class="h1">Добро пожаловать</h1>
+  </header>
+  <div class="panel form">
+    <p>Войдите, чтобы оформлять заказы и следить за ними. Корзина сохранится.</p>
+    <a class="cta cta--link" href="{% url 'web:login' %}"><span class="cta__label">Войти</span></a>
+    <a class="btn btn--ghost btn--block" href="{% url 'web:register' %}">Зарегистрироваться</a>
+  </div>
+  {% include "web/account/_theme.html" %}
+  {% include "web/partials/help.html" %}
+</section>
+{% endblock %}

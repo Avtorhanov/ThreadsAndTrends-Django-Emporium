@@ -1,0 +1,27 @@
+{% extends "web/base.html" %}
+{% block title %}Регистрация — DiDi-shop{% endblock %}
+{% block content %}
+<section class="page page--narrow">
+  <header class="section-head">
+    <p class="overline">Аккаунт</p>
+    <h1 class="h1">Регистрация</h1>
+  </header>
+  <form class="panel form" method="post" action="{% url 'web:register' %}" novalidate>
+    {% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    {% include "web/partials/form_errors.html" %}
+    {% include "web/partials/field.html" with field=form.first_name %}
+    {% include "web/partials/field.html" with field=form.email %}
+    {% include "web/partials/field.html" with field=form.password %}
+    <div class="field{% if form.consent.errors %} has-error{% endif %}">
+      <label class="check">
+        {{ form.consent }}
+        <span>Согласен на обработку персональных данных в соответствии с <a href="{% url 'web:privacy' %}">политикой</a> и принимаю условия <a href="{% url 'web:offer' %}">оферты</a></span>
+      </label>
+      {% for error in form.consent.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+    </div>
+    <button class="cta" type="submit"><span class="cta__label">Зарегистрироваться</span></button>
+    <p class="form__links"><a href="{% url 'web:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Уже есть аккаунт? Войти</a></p>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,6 @@
+<p>
+  <b>Продавец:</b> {{ seller.name|default:"[наименование продавца: ИП или ООО]" }}<br>
+  ИНН: {{ seller.inn|default:"[ИНН]" }}{% if seller.ogrn or not seller.name %}, ОГРН/ОГРНИП: {{ seller.ogrn|default:"[ОГРН]" }}{% endif %}<br>
+  Адрес: {{ seller.address|default:"[юридический адрес]" }}<br>
+  Email: {{ seller.email|default:"[email для обращений]" }}{% if seller.phone %}, телефон: {{ seller.phone }}{% endif %}
+</p>

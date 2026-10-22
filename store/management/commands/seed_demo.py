@@ -6,11 +6,14 @@ from django.core.files import File
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
+from content import services as content
+from content.models import Article
 from store.models import Product
 from store.services import catalog
 
 FIXTURE = Path(settings.BASE_DIR) / "fixtures/catalog.json"
 IMAGES = Path(settings.BASE_DIR) / "fixtures/demo_images"
+ARTICLES = Path(settings.BASE_DIR) / "fixtures/demo_articles.json"
 
 
 def demo_slugs() -> set[str]:
@@ -21,8 +24,9 @@ def demo_slugs() -> set[str]:
 class Command(BaseCommand):
     help = (
         "Демо-каталог: категории, товары с размерами и остатками (fixtures/catalog.json) "
-        "и фото (fixtures/demo_images). Повторный запуск безопасен: фото добавляются "
-        "только товарам без фото."
+        "и фото (fixtures/demo_images), демо-статьи (fixtures/demo_articles.json). Повторный "
+        "запуск безопасен: фото добавляются только товарам без фото, статьи — только если "
+        "статей ещё нет."
     )
 
     def add_arguments(self, parser):
@@ -54,5 +58,30 @@ class Command(BaseCommand):
                 with path.open("rb") as fh:
                     catalog.add_product_image(product, File(fh, name=path.name))
                 added += 1
+        articles = self._seed_articles()
         total = Product.objects.count()
-        self.stdout.write(self.style.SUCCESS(f"Демо-каталог: товаров {total}, новых фото {added}"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Демо-каталог: товаров {total}, новых фото {added}, новых статей {articles}"
+            )
+        )
+
+    def _seed_articles(self) -> int:
+        # Статьи пишет владелец: демо-статьи — только в пустой раздел (свои не трогаем).
+        if Article.all_objects.exists():
+            return 0
+        entries = json.loads(ARTICLES.read_text(encoding="utf-8"))
+        # С конца: первая статья файла публикуется последней и стоит в списке первой.
+        for entry in reversed(entries):
+            article = content.create_article(
+                title=entry["title"],
+                excerpt=entry["excerpt"],
+                body=entry["body"],
+                is_published=True,
+            )
+            for file in entry["images"]:
+                path = IMAGES / file
+                if path.exists():
+                    with path.open("rb") as fh:
+                        content.add_article_image(article, File(fh, name=path.name))
+        return len(entries)

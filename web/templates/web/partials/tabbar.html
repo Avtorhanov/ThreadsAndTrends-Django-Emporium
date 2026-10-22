@@ -1,0 +1,18 @@
+{# Плавающая нижняя панель — на телефонах (на десктопе разделы в шапке). Активная вкладка шире и с подписью. #}
+<nav class="tabbar" aria-label="Разделы">
+  <a class="tab{% if tab == 'catalog' %} is-on{% endif %}" href="{% url 'web:home' %}"{% if tab == "catalog" %} aria-current="page"{% endif %}>
+    <svg class="ic" width="22" height="22"><use href="#i-grid"/></svg><span>Каталог</span>
+  </a>
+  <a class="tab{% if tab == 'contacts' %} is-on{% endif %}" href="{% url 'web:contacts' %}"{% if tab == "contacts" %} aria-current="page"{% endif %}>
+    <svg class="ic" width="22" height="22"><use href="#i-chat"/></svg><span>Контакты</span>
+  </a>
+  <a class="tab{% if tab == 'cart' %} is-on{% endif %}" href="{% url 'web:cart' %}"{% if tab == "cart" %} aria-current="page"{% endif %}>
+    <span class="tab__icon">
+      <svg class="ic" width="22" height="22"><use href="#i-bag"/></svg>
+      {% include "web/partials/cart_badge.html" with badge_id="cart-badge-tab" count=cart_count %}
+    </span><span>Корзина</span>
+  </a>
+  <a class="tab{% if tab == 'profile' %} is-on{% endif %}" href="{% url 'web:profile' %}"{% if tab == "profile" %} aria-current="page"{% endif %}>
+    <svg class="ic" width="22" height="22"><use href="#i-user"/></svg><span>Профиль</span>
+  </a>
+</nav>

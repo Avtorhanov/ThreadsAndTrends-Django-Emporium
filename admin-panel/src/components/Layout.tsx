@@ -12,6 +12,7 @@ export function Layout() {
           <NavLink to="/orders">Заказы</NavLink>
           <NavLink to="/catalog/products">Товары</NavLink>
           <NavLink to="/catalog/categories">Категории</NavLink>
+          <NavLink to="/content/articles">Статьи</NavLink>
           <NavLink to="/customers">Клиенты</NavLink>
         </nav>
         <div className="topbar-user">

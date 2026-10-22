@@ -5,7 +5,8 @@
 
 Выход:
 - mobile/src/theme/tokens.ts — типизированные токены для приложения (React Native);
-- docs/design/lime-tech/tokens.css — CSS-переменные для веб-витрины (сессия 9).
+- docs/design/lime-tech/tokens.css — CSS-переменные (справочная копия рядом с tokens.json);
+- web/static/web/css/tokens.css — те же переменные для веб-витрины (статика Django).
 
 Единственный источник значений — tokens.json; сгенерированные файлы руками не правятся.
 """
@@ -21,6 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "docs/design/lime-tech/tokens.json"
 TS_OUT = ROOT / "mobile/src/theme/tokens.ts"
 CSS_OUT = ROOT / "docs/design/lime-tech/tokens.css"
+WEB_CSS_OUT = ROOT / "web/static/web/css/tokens.css"
 HEADER = (
     "Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать."
 )
@@ -232,7 +234,8 @@ def main() -> int:
     check = "--check" in sys.argv[1:]
     tokens = json.loads(SOURCE.read_text(encoding="utf-8"))
     problems = check_contrast(tokens)
-    outputs = {TS_OUT: render_ts(tokens), CSS_OUT: render_css(tokens)}
+    css = render_css(tokens)
+    outputs = {TS_OUT: render_ts(tokens), CSS_OUT: css, WEB_CSS_OUT: css}
 
     if check:
         for path, content in outputs.items():

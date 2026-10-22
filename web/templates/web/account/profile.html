@@ -1,0 +1,50 @@
+{% extends "web/base.html" %}
+{% load money storefront %}
+{% block title %}Профиль — DiDi-shop{% endblock %}
+{% block content %}
+<section class="page page--narrow">
+  <header class="section-head">
+    <p class="overline">Профиль</p>
+    <h1 class="h1">{% if user.first_name %}{{ user.first_name }}{% else %}Мой аккаунт{% endif %}</h1>
+    <p class="muted">{{ user.email }}</p>
+  </header>
+
+  {% if current_order %}
+  <a class="order-card order-card--current" href="{% url 'web:order' current_order.number %}">
+    <span class="overline">Текущий заказ</span>
+    <span class="order-card__head">
+      <span class="order-card__num">{{ current_order.number }}</span>
+      <span class="status status--{{ current_order.status|status_tone }}">{{ current_order.get_status_display }}</span>
+    </span>
+    <span class="order-card__meta">{{ current_order.created_at|date:"j E, H:i" }} · {{ current_order.get_delivery_method_display }}</span>
+    <span class="order-card__total">{{ current_order.total_kopecks|rub }}&nbsp;₽</span>
+  </a>
+  {% endif %}
+
+  <nav class="menu" aria-label="Аккаунт">
+    <a class="menu__item" href="{% url 'web:orders' %}"><svg class="ic" width="20" height="20"><use href="#i-box"/></svg>Мои заказы<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
+    <a class="menu__item" href="{% url 'web:password_change' %}"><svg class="ic" width="20" height="20"><use href="#i-user"/></svg>Сменить пароль<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
+  </nav>
+
+  <form class="panel form" method="post" action="{% url 'web:profile' %}" novalidate>
+    {% csrf_token %}
+    <p class="panel__title">Личные данные</p>
+    {% include "web/partials/form_errors.html" %}
+    {% include "web/partials/field.html" with field=form.first_name %}
+    {% include "web/partials/field.html" with field=form.last_name %}
+    <button class="btn btn--dark" type="submit">Сохранить</button>
+  </form>
+
+  {% include "web/account/_theme.html" %}
+
+  {% include "web/partials/help.html" %}
+
+  <div class="panel form">
+    <form method="post" action="{% url 'web:logout' %}">
+      {% csrf_token %}
+      <button class="btn btn--ghost btn--block" type="submit">Выйти</button>
+    </form>
+    <a class="danger-link" href="{% url 'web:delete_account' %}">Удалить аккаунт</a>
+  </div>
+</section>
+{% endblock %}
