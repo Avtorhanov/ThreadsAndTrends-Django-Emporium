@@ -1,0 +1,56 @@
+{% extends "web/base.html" %}
+{% load storefront %}
+{% block title %}Контакты и статьи — DiDi-shop{% endblock %}
+{% block description %}Как связаться с DiDi-shop: мессенджеры, телефон и почта. Статьи о выборе размера, уходе за вещами и доставке.{% endblock %}
+{% block canonical %}<link rel="canonical" href="{% absolute request.path %}">{% endblock %}
+{% block content %}
+<section class="page">
+  <header class="section-head">
+    <p class="overline">Мы на связи</p>
+    <h1 class="h1">Контакты</h1>
+  </header>
+
+  {% if channels %}
+  <ul class="channels">
+    {% for item in channels %}
+    <li>
+      <a class="channel" href="{{ item.contact.url }}"{% if item.contact.kind != "phone" and item.contact.kind != "email" %} target="_blank" rel="noopener noreferrer"{% endif %}>
+        <span class="channel__icon" aria-hidden="true"><svg class="ic" width="24" height="24"><use href="#i-{{ item.icon }}"/></svg></span>
+        <span class="channel__body">
+          <span class="channel__title">{{ item.contact.title }}</span>
+          <span class="channel__handle">{{ item.contact.handle }}</span>
+          <span class="channel__note">{{ item.contact.note }}</span>
+        </span>
+        <svg class="ic channel__go" width="18" height="18" aria-hidden="true"><use href="#i-chevron"/></svg>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="note note--info">Контакты скоро появятся.</p>
+  {% endif %}
+
+  {% if articles %}
+  <header class="section-head section-head--sub">
+    <p class="overline">Журнал</p>
+    <h2 class="h1 h1--sub">Статьи</h2>
+  </header>
+  <div class="articles">
+    {% for article in articles %}
+    <a class="article-card" href="{% url 'web:article' article.slug %}">
+      <span class="article-card__img tone-{{ article.slug|tone }}">
+        {% with cover=article.cover %}{% if cover %}{% product_img cover "(min-width: 900px) 380px, (min-width: 600px) 50vw, 100vw" css="card__photo" alt="" %}{% else %}<svg class="ic article-card__ph" width="40" height="40" aria-hidden="true"><use href="#i-box"/></svg>{% endif %}{% endwith %}
+      </span>
+      <span class="article-card__body">
+        {% if article.published_at %}<span class="article-card__date">{{ article.published_at|date:"j E Y" }}</span>{% endif %}
+        <span class="article-card__title">{{ article.title }}</span>
+        {% if article.excerpt %}<span class="article-card__text">{{ article.excerpt }}</span>{% endif %}
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% include "web/partials/help.html" %}
+</section>
+{% endblock %}

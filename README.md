@@ -6,6 +6,7 @@
 |---|---|
 | корень | бэкенд: Django 5.2 LTS, PostgreSQL, DRF API `/api/v1/` |
 | `web/` | веб-витрина: Django-шаблоны + htmx, дизайн «Лайм-тек» (`web/static/web/css/tokens.css` генерирует `scripts/gen_tokens.py`), SEO |
+| `content/` | статьи (раздел «Статьи» в панели) и контакты магазина из `.env` — вкладка «Контакты» на сайте и в приложении |
 | `mobile/` | мобильное приложение клиента: Expo (React Native), expo-router |
 | `admin-panel/` | панель администратора: React + Vite |
 | `openapi/schema.yml` | OpenAPI-схема API; из неё генерируются типы обоих клиентов |

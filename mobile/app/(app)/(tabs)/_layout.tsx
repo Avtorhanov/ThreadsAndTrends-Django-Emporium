@@ -17,7 +17,7 @@ export default function TabsLayout() {
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: c.bg } }}
       >
         <Tabs.Screen name="index" options={{ title: "Каталог" }} />
-        <Tabs.Screen name="search" options={{ title: "Поиск" }} />
+        <Tabs.Screen name="contacts" options={{ title: "Контакты" }} />
         <Tabs.Screen name="cart" options={{ title: "Корзина" }} />
         <Tabs.Screen name="profile" options={{ title: "Профиль" }} />
       </Tabs>

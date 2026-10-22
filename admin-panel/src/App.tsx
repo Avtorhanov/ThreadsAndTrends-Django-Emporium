@@ -3,6 +3,8 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { Layout } from "./components/Layout";
+import { ArticleEditPage } from "./pages/ArticleEditPage";
+import { ArticlesPage } from "./pages/ArticlesPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { CustomersPage } from "./pages/CustomersPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -56,6 +58,9 @@ export function App() {
               <Route path="/catalog/products/new" element={<ProductEditPage />} />
               <Route path="/catalog/products/:id" element={<ProductEditPage />} />
               <Route path="/catalog/categories" element={<CategoriesPage />} />
+              <Route path="/content/articles" element={<ArticlesPage />} />
+              <Route path="/content/articles/new" element={<ArticleEditPage />} />
+              <Route path="/content/articles/:id" element={<ArticleEditPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

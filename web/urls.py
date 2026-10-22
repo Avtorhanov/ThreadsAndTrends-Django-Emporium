@@ -2,7 +2,7 @@ from django.contrib.sitemaps.views import sitemap
 from django.urls import path
 
 from .seo import SITEMAPS
-from .views import account, cart, catalog, orders, pages
+from .views import account, cart, catalog, content, orders, pages
 
 app_name = "web"
 
@@ -13,6 +13,9 @@ urlpatterns = [
     path("search/", catalog.search, name="search"),
     path("category/<slug:slug>/", catalog.category, name="category"),
     path("product/<slug:slug>/", catalog.product, name="product"),
+    # Контакты и статьи
+    path("contacts/", content.contacts, name="contacts"),
+    path("articles/<slug:slug>/", content.article, name="article"),
     # Корзина
     path("cart/", cart.cart_page, name="cart"),
     path("cart/add/", cart.add, name="cart_add"),

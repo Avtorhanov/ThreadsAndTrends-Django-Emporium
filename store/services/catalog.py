@@ -295,8 +295,9 @@ def delete_variant(variant: ProductVariant) -> None:
 # --- Изображения ---
 
 
-def _inspect_image(uploaded) -> str:
-    """Проверяет файл и возвращает правильное расширение по фактическому формату."""
+def inspect_image(uploaded) -> str:
+    """Проверяет файл и возвращает правильное расширение по фактическому формату.
+    Общая проверка фото: товары и статьи (content.services)."""
     if uploaded.size > MAX_IMAGE_BYTES:
         raise ValidationError({"image": "Файл больше 5 МБ."})
     try:
@@ -321,7 +322,7 @@ def add_product_image(product: Product, uploaded) -> ProductImage:
     product = _lock_product(product)
     if ProductImage.objects.filter(product=product).count() >= MAX_IMAGES_PER_PRODUCT:
         raise ValidationError({"image": f"Не больше {MAX_IMAGES_PER_PRODUCT} изображений."})
-    extension = _inspect_image(uploaded)
+    extension = inspect_image(uploaded)
     # Имя от клиента не доверяем: путь строит product_image_path, расширение — по формату.
     uploaded.name = f"upload{extension}"
     last = ProductImage.objects.filter(product=product).aggregate(m=Max("position"))["m"]

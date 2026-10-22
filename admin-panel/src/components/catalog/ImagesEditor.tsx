@@ -1,11 +1,20 @@
 import { type ChangeEvent, useState } from "react";
 
-import { imagesService, type ProductImage } from "../../api/catalog";
 import { ApiError } from "../../api/errors";
 
+type Image = { id: number; url: string };
+
+/** Операции с галереей: фото товара или статьи (общий редактор). */
+export type ImagesApi = {
+  upload: (file: File) => Promise<unknown>;
+  reorder: (ids: number[]) => Promise<unknown>;
+  remove: (id: number) => Promise<unknown>;
+};
+
 type Props = {
-  productId: number;
-  images: ProductImage[];
+  images: Image[];
+  service: ImagesApi;
+  hint: string;
   onChanged: () => void;
 };
 
@@ -17,7 +26,7 @@ function message(error: unknown): string {
   return Object.values(error.fieldErrors)[0]?.[0] ?? error.message;
 }
 
-export function ImagesEditor({ productId, images, onChanged }: Props) {
+export function ImagesEditor({ images, service, hint, onChanged }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +53,7 @@ export function ImagesEditor({ productId, images, onChanged }: Props) {
     }
     void run(async () => {
       // По одному: порядок загрузки = порядок в галерее, ошибка не теряет уже загруженные.
-      for (const file of files) await imagesService.upload(productId, file);
+      for (const file of files) await service.upload(file);
     });
   }
 
@@ -56,13 +65,13 @@ export function ImagesEditor({ productId, images, onChanged }: Props) {
     if (current === undefined || other === undefined) return;
     ids[index] = other;
     ids[target] = current;
-    void run(() => imagesService.reorder(productId, ids));
+    void run(() => service.reorder(ids));
   }
 
   return (
     <div className="card">
       <h2>Фото</h2>
-      <p className="muted">Первое фото — обложка в каталоге. JPEG, PNG или WebP до 5 МБ, не больше 10 штук.</p>
+      <p className="muted">{hint}</p>
       {error ? <p className="alert">{error}</p> : null}
       <div className="gallery">
         {images.map((image, index) => (
@@ -92,7 +101,7 @@ export function ImagesEditor({ productId, images, onChanged }: Props) {
                 className="button button-danger"
                 disabled={busy}
                 onClick={() => {
-                  if (window.confirm("Удалить фото?")) void run(() => imagesService.remove(image.id));
+                  if (window.confirm("Удалить фото?")) void run(() => service.remove(image.id));
                 }}
               >
                 Удалить

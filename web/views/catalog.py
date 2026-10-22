@@ -186,7 +186,8 @@ def _listing(request, *, category: Category | None, search: bool):
             "noindex": noindex,
             "canonical": canonical,
             "page_number": page_number,
-            "tab": "search" if search else "catalog",
+            # Поиск — не вкладка: открывается из шапки, в нижней панели подсвечен «Каталог».
+            "tab": "catalog",
             "filters_open": request.GET.get("filters") == "1" or _filtered(values),
         },
     )

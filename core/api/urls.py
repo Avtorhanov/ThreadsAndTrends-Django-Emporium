@@ -2,6 +2,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from accounts.api.urls import admin_urlpatterns, auth_urlpatterns
+from content.api.urls import admin_content_urlpatterns, content_urlpatterns
 from orders.api.urls import admin_orders_urlpatterns, orders_urlpatterns
 from payments.api.urls import order_payment_urlpatterns, payment_urlpatterns
 from store.api.urls import admin_catalog_urlpatterns, cart_urlpatterns, catalog_urlpatterns
@@ -18,6 +19,8 @@ urlpatterns = [
     path("auth/", include(auth_urlpatterns)),
     # Публичный каталог (без аутентификации)
     path("catalog/", include(catalog_urlpatterns)),
+    # Статьи и контакты магазина (без аутентификации)
+    path("content/", include(content_urlpatterns)),
     # Корзина: клиент (JWT); расчёт гостевой корзины quote/ — без аутентификации
     path("cart/", include(cart_urlpatterns)),
     # Заказы клиента (JWT)
@@ -28,6 +31,7 @@ urlpatterns = [
     path("payments/", include(payment_urlpatterns)),
     # Панель администратора (сессия + CSRF)
     path("admin/catalog/", include(admin_catalog_urlpatterns)),
+    path("admin/content/", include(admin_content_urlpatterns)),
     path("admin/", include(admin_orders_urlpatterns)),
     path("admin/", include(admin_urlpatterns)),
 ]

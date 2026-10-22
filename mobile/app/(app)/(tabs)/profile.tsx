@@ -1,10 +1,14 @@
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { Text, View } from "react-native";
 
 import { useAuth } from "../../../src/auth/AuthProvider";
 import { Icon, type IconName } from "../../../src/components/Icon";
 import { Segmented } from "../../../src/components/Segmented";
+import { HelpCard } from "../../../src/content/HelpCard";
+import { formatKopecks } from "../../../src/lib/money";
+import { formatDateTime, StatusBadge } from "../../../src/orders/components";
+import { type OrderSummary, orderService } from "../../../src/orders/orderService";
 import { Button, Card, LinkButton, Message, PressScale, Screen, TextField } from "../../../src/components/ui";
 import { useSubmit } from "../../../src/hooks/useSubmit";
 import { fonts } from "../../../src/theme/fonts";
@@ -45,6 +49,51 @@ function MenuRow({ icon, title, onPress }: { icon: IconName; title: string; onPr
   );
 }
 
+const FINISHED = new Set(["delivered", "cancelled"]);
+
+/** Текущий (незавершённый) заказ — карточка сверху профиля; обновляется при каждом открытии. */
+function CurrentOrder() {
+  const s = useStyles();
+  const [order, setOrder] = useState<OrderSummary | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      orderService
+        .list(1)
+        .then((page) => {
+          if (!cancelled) setOrder(page.results.find((item) => !FINISHED.has(item.status)) ?? null);
+        })
+        .catch(() => undefined); // без сети карточка просто не показывается
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
+
+  if (!order) return null;
+  return (
+    <PressScale
+      accessibilityRole="button"
+      accessibilityLabel={`Текущий заказ ${order.number}, ${order.status_display}`}
+      onPress={() => router.push({ pathname: "/orders/[number]", params: { number: order.number } })}
+      scale={0.98}
+    >
+      <Card style={[s.card, s.current]}>
+        <Text style={s.caption}>ТЕКУЩИЙ ЗАКАЗ</Text>
+        <View style={s.currentTop}>
+          <Text style={s.currentNumber}>{order.number}</Text>
+          <StatusBadge status={order.status} label={order.status_display} />
+        </View>
+        <View style={s.currentTop}>
+          <Text style={s.muted}>{formatDateTime(order.created_at)}</Text>
+          <Text style={s.currentTotal}>{formatKopecks(order.total_kopecks)}</Text>
+        </View>
+      </Card>
+    </PressScale>
+  );
+}
+
 function GuestProfile() {
   const s = useStyles();
   return (
@@ -56,6 +105,7 @@ function GuestProfile() {
         <Button title="Зарегистрироваться" variant="secondary" onPress={() => router.push("/sign-up")} />
       </Card>
       <ThemeCard />
+      <HelpCard />
     </Screen>
   );
 }
@@ -85,6 +135,7 @@ function SignedInProfile() {
 
   return (
     <Screen tabs title={name || "Профиль"} overline="Аккаунт">
+      <CurrentOrder />
       <Card style={s.card}>
         <Text style={s.caption}>Email</Text>
         <Text style={s.email}>{user.email}</Text>
@@ -120,6 +171,8 @@ function SignedInProfile() {
 
       <ThemeCard />
 
+      <HelpCard />
+
       <Button title="Выйти" variant="secondary" onPress={() => void signOut.submit()} loading={signOut.loading} />
       <LinkButton title="Удалить аккаунт" tone="danger" onPress={() => router.push("/delete-account")} />
     </Screen>
@@ -151,4 +204,8 @@ const useStyles = makeStyles(({ c }) => ({
   },
   menuText: { flex: 1, fontFamily: fonts.text700, fontSize: 16, color: c.ink },
   menuDivider: { height: 1, marginHorizontal: 8, backgroundColor: c.border },
+  current: { borderWidth: 1.5, borderColor: c.brand },
+  currentTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
+  currentNumber: { fontFamily: fonts.display700, fontSize: 18, color: c.ink },
+  currentTotal: { fontFamily: fonts.display700, fontSize: 17, color: c.ink },
 }));

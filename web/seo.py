@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
+from content.models import Article
 from store.models import Product
 from store.services.storefront import active_categories
 
@@ -53,6 +54,25 @@ def product_json_ld(request, product: Product, images, in_stock: bool) -> dict:
     return data
 
 
+def article_json_ld(request, article: Article, images) -> dict:
+    url = absolute_url(request, reverse("web:article", args=[article.slug]))
+    data = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": article.title[:110],
+        "url": url,
+        "mainEntityOfPage": url,
+        "datePublished": article.published_at.isoformat() if article.published_at else None,
+        "dateModified": article.updated_at.isoformat(),
+        "publisher": {"@type": "Organization", "name": SITE_NAME},
+    }
+    if article.excerpt:
+        data["description"] = article.excerpt
+    if images:
+        data["image"] = [absolute_url(request, image.image.url) for image in images]
+    return data
+
+
 class _SiteSitemap(Sitemap):
     """Адреса — на основном домене (SITE_URL), если он задан."""
 
@@ -71,7 +91,7 @@ class StaticSitemap(_SiteSitemap):
     changefreq = "daily"
 
     def items(self):
-        return ["web:home", "web:products"]
+        return ["web:home", "web:products", "web:contacts"]
 
     def location(self, item):
         return reverse(item)
@@ -105,4 +125,23 @@ class ProductSitemap(_SiteSitemap):
         return item.updated_at
 
 
-SITEMAPS = {"static": StaticSitemap, "categories": CategorySitemap, "products": ProductSitemap}
+class ArticleSitemap(_SiteSitemap):
+    changefreq = "monthly"
+
+    def items(self):
+        # Только опубликованные: черновики и удалённые статьи в sitemap не попадают.
+        return Article.objects.published().only("slug", "updated_at").order_by("pk")
+
+    def location(self, item):
+        return reverse("web:article", args=[item.slug])
+
+    def lastmod(self, item):
+        return item.updated_at
+
+
+SITEMAPS = {
+    "static": StaticSitemap,
+    "categories": CategorySitemap,
+    "products": ProductSitemap,
+    "articles": ArticleSitemap,
+}

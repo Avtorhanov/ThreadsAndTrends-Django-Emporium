@@ -14,6 +14,7 @@ from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 
 from accounts import services as accounts
+from orders.models import Order
 from store.services.cart import MergeNoticeReason
 
 from .. import cart as web_cart
@@ -204,11 +205,13 @@ def profile(request):
         )
         messages.success(request, "Профиль сохранён.")
         return redirect("web:profile")
+    current = Order.objects.filter(owner=user).unfinished().order_by("-created_at", "-id").first()
     return render(
         request,
         "web/account/profile.html",
         {
             "form": form,
+            "current_order": current,
             "theme_choices": theme.CHOICES,
             "theme_value": theme.get_theme(request) or theme.SYSTEM,
             "tab": "profile",

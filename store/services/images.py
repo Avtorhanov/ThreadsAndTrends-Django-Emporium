@@ -1,4 +1,6 @@
-"""Уменьшенные копии фото товаров для витрины (WebP 480 и 960 px по ширине).
+"""Уменьшенные копии фото для витрины (WebP 480 и 960 px по ширине): фото товаров
+(store.ProductImage) и статей (content.ArticleImage) — у обеих моделей поля image, width,
+height, thumbs_ready.
 
 Оригинал (до 5 МБ) остаётся как есть; копии лежат рядом: products/2026/10/<uuid>.w480.webp.
 Создаются фоновой задачей после загрузки фото (store.tasks.make_image_thumbnails), для уже
@@ -12,8 +14,6 @@ from pathlib import PurePosixPath
 from django.core.files.base import ContentFile
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-from store.models import ProductImage
-
 logger = logging.getLogger(__name__)
 
 THUMB_WIDTHS = (480, 960)
@@ -25,12 +25,12 @@ def thumb_name(name: str, width: int) -> str:
     return str(path.with_name(f"{path.stem}.w{width}.webp"))
 
 
-def _widths_for(image: ProductImage) -> list[int]:
+def _widths_for(image) -> list[int]:
     # Копия шире оригинала не нужна: браузер возьмёт оригинал.
     return [w for w in THUMB_WIDTHS if image.width and w < image.width]
 
 
-def thumb_sources(image: ProductImage) -> list[tuple[str, int]]:
+def thumb_sources(image) -> list[tuple[str, int]]:
     storage = image.image.storage
     sources = []
     if image.thumbs_ready:
@@ -39,7 +39,7 @@ def thumb_sources(image: ProductImage) -> list[tuple[str, int]]:
     return sources
 
 
-def make_thumbnails(image: ProductImage) -> bool:
+def make_thumbnails(image) -> bool:
     """Создать копии и записать размеры оригинала. Повторный вызов перезаписывает копии."""
     storage = image.image.storage
     try:

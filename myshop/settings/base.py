@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     "accounts",
     "orders",
     "payments",
+    # Статьи и контакты (вкладка «Контакты» на сайте и в приложении)
+    "content",
     # Веб-витрина (Django-шаблоны + htmx): каталог, корзина, оформление, кабинет, SEO.
     "web",
 ]
@@ -238,6 +240,7 @@ SPECTACULAR_SETTINGS = {
         "PaymentStatusEnum": "payments.models.PaymentStatus.choices",
         "RefundStatusEnum": "payments.models.RefundStatus.choices",
         "RefundReasonEnum": "payments.models.RefundReason.choices",
+        "ContactKindEnum": "content.contacts.ContactKind.CHOICES",
     },
 }
 
@@ -289,3 +292,13 @@ SELLER_OGRN = env_str("SELLER_OGRN", "")
 SELLER_ADDRESS = env_str("SELLER_ADDRESS", "")
 SELLER_EMAIL = env_str("SELLER_EMAIL", "")
 SELLER_PHONE = env_str("SELLER_PHONE", "")
+# Вкладка «Контакты» (сайт и приложение): пусто — канал не показывается. Подписи — свои
+# у каждого канала (пусто — подпись по умолчанию). Телефон и email — SELLER_PHONE/SELLER_EMAIL.
+CONTACT_WHATSAPP = env_str("CONTACT_WHATSAPP", "")  # номер: +7 900 123-45-67
+CONTACT_WHATSAPP_NOTE = env_str("CONTACT_WHATSAPP_NOTE", "")
+CONTACT_TELEGRAM = env_str("CONTACT_TELEGRAM", "")  # @имя или https://t.me/имя
+CONTACT_TELEGRAM_NOTE = env_str("CONTACT_TELEGRAM_NOTE", "")
+CONTACT_VK = env_str("CONTACT_VK", "")  # короткое имя или https://vk.com/имя
+CONTACT_VK_NOTE = env_str("CONTACT_VK_NOTE", "")
+CONTACT_PHONE_NOTE = env_str("CONTACT_PHONE_NOTE", "")
+CONTACT_EMAIL_NOTE = env_str("CONTACT_EMAIL_NOTE", "")

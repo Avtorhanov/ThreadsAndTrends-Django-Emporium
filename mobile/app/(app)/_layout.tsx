@@ -16,8 +16,11 @@ export default function AppLayout() {
           contentStyle: { backgroundColor: c.bg },
         }}
       >
-        {/* Каталог, поиск, корзина и профиль (гостю — приглашение войти) — вкладки. */}
+        {/* Каталог, контакты, корзина и профиль (гостю — приглашение войти) — вкладки. */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* Поиск — из шапки каталога (лаймовая кнопка, поле, фильтры); статьи — из «Контактов». */}
+        <Stack.Screen name="search" options={{ title: "Поиск" }} />
+        <Stack.Screen name="articles/[slug]" options={{ title: "Статья" }} />
         {/* Товар — лист снизу поверх вкладок; анимацию и затемнение рисует сам экран. */}
         <Stack.Screen
           name="product/[slug]"

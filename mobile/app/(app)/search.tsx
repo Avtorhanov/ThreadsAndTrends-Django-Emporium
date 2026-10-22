@@ -3,25 +3,24 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import type { ProductQuery } from "../../../src/catalog/catalogService";
-import { ProductCard } from "../../../src/catalog/components";
+import type { ProductQuery } from "../../src/catalog/catalogService";
+import { ProductCard } from "../../src/catalog/components";
 import {
   EMPTY_FILTERS,
   FiltersBar,
   type FiltersDraft,
   filtersChanged,
-} from "../../../src/catalog/FiltersBar";
-import { useCategories, useProductFeed } from "../../../src/catalog/hooks";
-import { Icon } from "../../../src/components/Icon";
-import { useGridColumns } from "../../../src/components/layout";
-import { Segmented } from "../../../src/components/Segmented";
-import { Button, Loading, Message, PressScale, ScreenTitle, TAB_BAR_SPACE } from "../../../src/components/ui";
-import { useDebouncedValue } from "../../../src/hooks/useDebouncedValue";
-import { parseRubles } from "../../../src/lib/money";
-import { useTabPress } from "../../../src/navigation/useTabPress";
-import { fonts } from "../../../src/theme/fonts";
-import { makeStyles, useTheme } from "../../../src/theme/ThemeProvider";
-import { radius, size, space } from "../../../src/theme/tokens";
+} from "../../src/catalog/FiltersBar";
+import { useCategories, useProductFeed } from "../../src/catalog/hooks";
+import { Icon } from "../../src/components/Icon";
+import { useGridColumns } from "../../src/components/layout";
+import { Segmented } from "../../src/components/Segmented";
+import { Button, Loading, Message, PressScale } from "../../src/components/ui";
+import { useDebouncedValue } from "../../src/hooks/useDebouncedValue";
+import { parseRubles } from "../../src/lib/money";
+import { fonts } from "../../src/theme/fonts";
+import { makeStyles, useTheme } from "../../src/theme/ThemeProvider";
+import { radius, size, space } from "../../src/theme/tokens";
 
 /** Поля фильтра → параметры API (цены — копейки). Неверная цена не уходит в запрос. */
 function toQuery(category: string, draft: FiltersDraft): { query: ProductQuery; priceError: string | null } {
@@ -44,7 +43,8 @@ function toQuery(category: string, draft: FiltersDraft): { query: ProductQuery; 
   };
 }
 
-/** Вкладка «Поиск»: поле с фокусом, категории, сортировка и цена, сетка результатов. */
+/** Поиск (экран поверх вкладок; открывается из шапки каталога): поле с фокусом, категории,
+ * сортировка и цена, сетка результатов. */
 export default function SearchScreen() {
   const s = useStyles();
   const { c } = useTheme();
@@ -67,7 +67,6 @@ export default function SearchScreen() {
   useEffect(() => {
     if (params.filters === "1") setShowFilters(true);
   }, [params.filters]);
-  useTabPress(() => input.current?.focus());
 
   // Запрос уходит после паузы во вводе, а не на каждую букву.
   const debounced = useDebouncedValue(draft, 400);
@@ -82,7 +81,7 @@ export default function SearchScreen() {
   ];
 
   return (
-    <SafeAreaView style={s.screen} edges={["top"]}>
+    <SafeAreaView style={s.screen} edges={["bottom"]}>
       <FlatList
         // Число колонок нельзя менять у смонтированного списка — новый key пересоздаёт его.
         key={`grid-${columns}`}
@@ -97,7 +96,6 @@ export default function SearchScreen() {
         onRefresh={feed.refresh}
         ListHeaderComponent={
           <View style={s.head}>
-            <ScreenTitle overline="Поиск" title="Найти товар" />
             <View style={s.searchRow}>
               <View style={[s.search, focused && s.searchFocused]}>
                 <Icon name="search" size={20} color={c.muted} />
@@ -179,7 +177,7 @@ export default function SearchScreen() {
 
 const useStyles = makeStyles(({ c, shadow }) => ({
   screen: { flex: 1, backgroundColor: c.bg },
-  content: { paddingHorizontal: space.feedSide, paddingBottom: TAB_BAR_SPACE, gap: space.gridGap },
+  content: { paddingHorizontal: space.feedSide, paddingBottom: 24, gap: space.gridGap },
   head: { gap: 14, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 6 },
   searchRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   searchFocused: { borderColor: c.brand },

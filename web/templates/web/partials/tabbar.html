@@ -3,8 +3,8 @@
   <a class="tab{% if tab == 'catalog' %} is-on{% endif %}" href="{% url 'web:home' %}"{% if tab == "catalog" %} aria-current="page"{% endif %}>
     <svg class="ic" width="22" height="22"><use href="#i-grid"/></svg><span>Каталог</span>
   </a>
-  <a class="tab{% if tab == 'search' %} is-on{% endif %}" href="{% url 'web:search' %}"{% if tab == "search" %} aria-current="page"{% endif %}>
-    <svg class="ic" width="22" height="22"><use href="#i-search"/></svg><span>Поиск</span>
+  <a class="tab{% if tab == 'contacts' %} is-on{% endif %}" href="{% url 'web:contacts' %}"{% if tab == "contacts" %} aria-current="page"{% endif %}>
+    <svg class="ic" width="22" height="22"><use href="#i-chat"/></svg><span>Контакты</span>
   </a>
   <a class="tab{% if tab == 'cart' %} is-on{% endif %}" href="{% url 'web:cart' %}"{% if tab == "cart" %} aria-current="page"{% endif %}>
     <span class="tab__icon">

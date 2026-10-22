@@ -17,7 +17,7 @@ function errorMessage(error: unknown, fallback: string): string {
 }
 
 /** Загрузка по ключу; ответ на устаревший ключ (быстрый ввод в фильтрах) отбрасывается. */
-function useLoader<T>(load: () => Promise<T>, key: string, fallbackError: string) {
+export function useLoader<T>(load: () => Promise<T>, key: string, fallbackError: string) {
   const [state, setState] = useState<State<T>>({ data: null, loading: true, error: null });
   const [version, setVersion] = useState(0);
 

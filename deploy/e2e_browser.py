@@ -210,6 +210,29 @@ def dark_theme(browser, base: str, report: Report) -> None:
     context.close()
 
 
+def contacts_tab(browser, base: str, report: Report, scheme: str) -> None:
+    """Вкладка «Контакты»: мессенджеры из .env, статьи (демо), экран статьи."""
+    context = iphone(browser, scheme)
+    page = context.new_page()
+    page.set_default_timeout(TIMEOUT_MS)
+    page.goto(base + "/app/")
+    page.get_by_role("tab", name="Контакты").click()
+    expect(page.get_by_text("Мы на связи")).to_be_visible()
+    expect(page.get_by_role("link", name=re.compile("^Telegram"))).to_be_visible()
+    expect(page.get_by_text("Статьи", exact=True)).to_be_visible()
+    wait_images(page, 1)
+    report.shot(page, f"{scheme}-contacts")
+    page.get_by_role("button", name="Как выбрать размер одежды").click()
+    expect(page.get_by_text(re.compile("Перед заказом снимите три мерки"))).to_be_visible()
+    wait_images(page, 1)
+    page.wait_for_timeout(500)
+    report.shot(page, f"{scheme}-article")
+    # Поиск больше не вкладка: открывается из шапки каталога экраном поверх вкладок.
+    page.goto(base + "/app/search?q=кеды")
+    expect(page.get_by_text(re.compile(r"Найдено товаров: [1-9]"))).to_be_visible()
+    context.close()
+
+
 def admin_sees_order(browser, base: str, number: str, report: Report) -> None:
     context = browser.new_context(viewport={"width": 1280, "height": 800}, ignore_https_errors=True)
     page = context.new_page()
@@ -225,6 +248,13 @@ def admin_sees_order(browser, base: str, number: str, report: Report) -> None:
     page.goto(base + "/panel/catalog/products")
     page.wait_for_load_state("networkidle")
     report.shot(page, "panel-products")
+    page.goto(base + "/panel/content/articles")
+    expect(page.get_by_role("link", name="Как выбрать размер одежды")).to_be_visible()
+    report.shot(page, "panel-articles")
+    page.get_by_role("link", name="Как выбрать размер одежды").click()
+    expect(page.get_by_label("Заголовок")).to_have_value("Как выбрать размер одежды")
+    page.wait_for_load_state("networkidle")
+    report.shot(page, "panel-article-edit")
     context.close()
 
 
@@ -256,6 +286,8 @@ def main() -> int:
         context.close()
 
         dark_theme(browser, base, report)
+        contacts_tab(browser, base, report, "light")
+        contacts_tab(browser, base, report, "dark")
         desktop_grid(browser, base, report)
         browser.close()
     print("BROWSER E2E OK")

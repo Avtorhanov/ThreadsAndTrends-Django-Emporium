@@ -46,6 +46,13 @@ sed -i \
   -e 's/^SEED_DEMO=.*/SEED_DEMO=1/' \
   .env
 echo "GUNICORN_WORKERS=2" >> .env
+# Контакты для вкладки «Контакты» (сайт и приложение).
+sed -i \
+  -e 's/^CONTACT_WHATSAPP=.*/CONTACT_WHATSAPP=+79001234567/' \
+  -e 's/^CONTACT_TELEGRAM=.*/CONTACT_TELEGRAM=@didishop/' \
+  -e 's/^CONTACT_VK=.*/CONTACT_VK=didishop/' \
+  -e 's/^SELLER_EMAIL=.*/SELLER_EMAIL=shop@example.com/' \
+  .env
 ./deploy.sh </dev/null 2>&1 | tee "$OUT/deploy.log" || fail "deploy.sh завершился с ошибкой"
 
 step "HTTPS, редирект, заголовки"

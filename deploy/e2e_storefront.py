@@ -5,8 +5,9 @@
 Телефон (iPhone, светлая тема): главная с фото → свёрнутая шапка → быстрый поиск из лаймовой
 кнопки → результаты → товар → размер → «В корзину» (htmx, счётчик) → корзина гостя → оформление
 → вход → регистрация → оформление «при получении» → заказ → отмена. Логотип — наверх коротким
-путём. Тёмная тема (prefers-color-scheme) и переключатель в шапке. Десктоп в обеих темах:
-верхняя навигация, сетка 4 колонки, карточка товара в две колонки.
+путём. Тёмная тема (prefers-color-scheme) и переключатель в шапке. Вкладка «Контакты»: мессенджеры,
+статьи, страница статьи. Десктоп в обеих темах: верхняя навигация, сетка 4 колонки, карточка
+товара в две колонки, контакты.
 Любое сообщение об ошибке в консоли (в т.ч. нарушение CSP) — провал. Скриншоты — в папку отчёта.
 """
 
@@ -226,6 +227,29 @@ def dark_phone(browser, base: str, report: Report, errors: list[str]) -> None:
     context.close()
 
 
+def contacts(browser, base: str, report: Report, errors: list[str]) -> None:
+    """Вкладка «Контакты»: каналы из .env, статьи, страница статьи; профиль — «Помощь»."""
+    for scheme in ("light", "dark"):
+        context = phone(browser, scheme)
+        page = context.new_page()
+        watch_console(page, errors)
+        page.goto(base + "/")
+        page.locator(".tabbar a[href='/contacts/']").click()
+        page.wait_for_url(re.compile(r"/contacts/$"))
+        expect(page.locator(".channel[href='https://t.me/didishop']")).to_be_visible()
+        expect(page.locator(".channel[href='https://wa.me/79001234567']")).to_be_visible()
+        expect(page.locator(".article-card")).not_to_have_count(0)
+        report.shot(page, f"phone-{scheme}-contacts", full=True)
+        page.locator(".article-card").first.click()
+        page.wait_for_url(re.compile(r"/articles/"))
+        expect(page.locator(".post__body p").first).to_be_visible()
+        wait_photos(page, 1)
+        report.shot(page, f"phone-{scheme}-article", full=True)
+        page.goto(base + "/profile/")
+        expect(page.locator("nav[aria-label='Помощь']")).to_be_visible()
+        context.close()
+
+
 def wide(browser, base: str, report: Report, errors: list[str]) -> None:
     for scheme in ("light", "dark"):
         context = desktop(browser, scheme)
@@ -245,6 +269,10 @@ def wide(browser, base: str, report: Report, errors: list[str]) -> None:
         report.shot(page, f"desktop-{scheme}-category")
         in_stock_product(page)
         report.shot(page, f"desktop-{scheme}-product")
+        page.locator(".topnav a[href='/contacts/']").click()
+        page.wait_for_url(re.compile(r"/contacts/$"))
+        wait_photos(page, 1)
+        report.shot(page, f"desktop-{scheme}-contacts")
         context.close()
 
 
@@ -258,6 +286,7 @@ def main() -> int:
         try:
             shopper(browser, base, report, errors)
             dark_phone(browser, base, report, errors)
+            contacts(browser, base, report, errors)
             wide(browser, base, report, errors)
         finally:
             browser.close()
