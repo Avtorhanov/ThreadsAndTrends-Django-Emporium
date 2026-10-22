@@ -57,13 +57,20 @@ def wait_until(page: Page, script: str, arg=None, what: str = "условие") 
 
 
 def wait_photos(page: Page, minimum: int) -> None:
+    """Ждём фото на видимой части экрана: нижние грузятся лениво (loading=lazy), и при ожидании
+    «N фото на странице» проверка зависела от того, успел ли браузер дотянуть дальние."""
     wait_until(
         page,
-        """(n) => [...document.images].filter(
-            (img) => img.currentSrc.includes('/media/') && img.complete && img.naturalWidth > 0
-        ).length >= n""",
+        """(n) => {
+            const shown = [...document.images].filter((img) => {
+                const r = img.getBoundingClientRect();
+                return r.width > 0 && r.bottom > 0 && r.top < innerHeight
+                    && (img.currentSrc || img.src).includes('/media/');
+            });
+            return shown.length >= n && shown.every((img) => img.complete && img.naturalWidth > 0);
+        }""",
         minimum,
-        f"{minimum} фото товаров",
+        f"{minimum} фото на экране",
     )
 
 
@@ -257,7 +264,7 @@ def wide(browser, base: str, report: Report, errors: list[str]) -> None:
         page = context.new_page()
         watch_console(page, errors)
         page.goto(base + "/")
-        wait_photos(page, 8)
+        wait_photos(page, 4)
         expect(page.locator(".topnav")).to_be_visible()
         expect(page.locator(".tabbar")).to_be_hidden()
         columns = page.locator(".grid").evaluate(
