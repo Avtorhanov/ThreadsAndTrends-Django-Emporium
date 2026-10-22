@@ -1,0 +1,22 @@
+ok   01 iphone-catalog
+ok   02 iphone-catalog-collapsed
+ok   03 iphone-quick-search
+     фото в выдаче: 22
+ok   04 iphone-search
+ok   05 iphone-product
+ok   06 iphone-product-added
+ok   07 iphone-cart
+ok   08 iphone-checkout
+ok   09 iphone-order
+     заказ DD-100004, покупатель e2e-87935820@example.com
+ok   10 panel-orders
+ok   11 panel-products
+ok   12 iphone-order-cancelled
+ok   13 dark-catalog
+ok   14 dark-catalog-collapsed
+ok   15 dark-product
+ok   16 dark-cart
+ok   17 profile-theme-light
+     фото на широком экране: 20
+ok   18 desktop-products
+BROWSER E2E OK
