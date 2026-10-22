@@ -53,6 +53,7 @@ export default function SearchScreen() {
   const [category, setCategory] = useState(params.category ?? "");
   const [showFilters, setShowFilters] = useState(params.filters === "1");
   const input = useRef<TextInput>(null);
+  const [focused, setFocused] = useState(false);
   const categories = useCategories();
   const columns = useGridColumns();
 
@@ -98,10 +99,12 @@ export default function SearchScreen() {
           <View style={s.head}>
             <ScreenTitle overline="Поиск" title="Найти товар" />
             <View style={s.searchRow}>
-              <View style={s.search}>
+              <View style={[s.search, focused && s.searchFocused]}>
                 <Icon name="search" size={20} color={c.muted} />
                 <TextInput
                   ref={input}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
                   value={draft.q}
                   onChangeText={(q) => setDraft((prev) => ({ ...prev, q }))}
                   placeholder="Футболка, кеды, панама…"
@@ -179,7 +182,10 @@ const useStyles = makeStyles(({ c, shadow }) => ({
   content: { paddingHorizontal: space.feedSide, paddingBottom: TAB_BAR_SPACE, gap: space.gridGap },
   head: { gap: 14, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 6 },
   searchRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  searchFocused: { borderColor: c.brand },
   search: {
+    borderWidth: 1.5,
+    borderColor: "transparent",
     flex: 1,
     height: size.searchHeight,
     flexDirection: "row",
@@ -192,6 +198,7 @@ const useStyles = makeStyles(({ c, shadow }) => ({
     boxShadow: shadow.control,
   },
   searchInput: {
+    outlineWidth: 0, // фокус в браузере — рамкой поля, а не системной обводкой
     flex: 1,
     minWidth: 0,
     height: size.searchHeight,

@@ -388,6 +388,7 @@ const useStyles = makeStyles(({ c, shadow }) => ({
   field: { gap: 6 },
   label: { fontFamily: fonts.text700, fontSize: 13, color: c.muted },
   input: {
+    outlineWidth: 0, // фокус в браузере — рамкой поля, а не системной обводкой
     minHeight: size.searchHeight,
     backgroundColor: c.surface,
     borderRadius: radius.control,

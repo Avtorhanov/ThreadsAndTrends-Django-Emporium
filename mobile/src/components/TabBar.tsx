@@ -156,7 +156,6 @@ function TabButton({
         {focused ? (
           <Animated.Text
             entering={reduced ? undefined : FadeIn.duration(220).delay(120)}
-            numberOfLines={1}
             style={[s.label, { color: ink }]}
           >
             {label}
@@ -196,7 +195,8 @@ const useStyles = makeStyles(({ c, shadow }) => ({
     gap: 7,
     overflow: "hidden",
   },
-  label: { fontFamily: fonts.text800, fontSize: 13 },
+  // Не сжимается: пока вкладка расширяется, лишнее обрезает overflow, а не многоточие.
+  label: { fontFamily: fonts.text800, fontSize: 13, flexShrink: 0 },
   badge: {
     position: "absolute",
     top: -6,

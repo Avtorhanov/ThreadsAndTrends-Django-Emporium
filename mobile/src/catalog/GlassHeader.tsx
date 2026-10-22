@@ -1,7 +1,7 @@
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import Animated, {
   interpolate,
@@ -67,6 +67,7 @@ export function GlassHeader({ progress, search, onSearchChange, onExpand, catego
   const { c, dark, toggle } = useTheme();
   const { count } = useCart();
   const insets = useSafeAreaInsets();
+  const [focused, setFocused] = useState(false);
 
   const submit = () => {
     const q = search.trim();
@@ -146,12 +147,14 @@ export function GlassHeader({ progress, search, onSearchChange, onExpand, catego
       </View>
 
       <Animated.View style={[s.clip, searchStyle]}>
-        <View style={s.search}>
+        <View style={[s.search, focused && s.searchFocused]}>
           <Icon name="search" size={20} color={c.muted} />
           <TextInput
             value={search}
             onChangeText={onSearchChange}
             onSubmitEditing={submit}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             placeholder="Футболка, кеды, панама…"
             placeholderTextColor={c.muted}
             selectionColor={c.brand}
@@ -257,7 +260,10 @@ const useStyles = makeStyles(({ c, shadow }) => ({
     paddingHorizontal: SHADOW_ROOM,
     paddingBottom: SHADOW_ROOM,
   },
+  searchFocused: { borderColor: c.brand },
   search: {
+    borderWidth: 1.5,
+    borderColor: "transparent",
     height: SEARCH,
     flexDirection: "row",
     alignItems: "center",
@@ -269,6 +275,7 @@ const useStyles = makeStyles(({ c, shadow }) => ({
     boxShadow: shadow.control,
   },
   searchInput: {
+    outlineWidth: 0, // фокус в браузере — рамкой поля, а не системной обводкой
     flex: 1,
     minWidth: 0,
     height: SEARCH,

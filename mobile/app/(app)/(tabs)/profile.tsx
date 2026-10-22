@@ -20,7 +20,7 @@ function ThemeCard() {
       <Segmented<ThemePreference>
         label="Тема"
         segments={[
-          { value: "system", label: "Как в системе" },
+          { value: "system", label: "Системная" },
           { value: "light", label: "Светлая" },
           { value: "dark", label: "Тёмная" },
         ]}

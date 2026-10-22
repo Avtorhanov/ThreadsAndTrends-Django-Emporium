@@ -82,6 +82,10 @@ export default function ProductScreen() {
     const duration = reduced ? REDUCED_FADE_MS : motion.detailOpen.ms;
     open.value = withTiming(1, { duration, easing: ease.out });
     depth.value = withTiming(1, { duration, easing: ease.out });
+    // Экран могут убрать и без beforeRemove (переход на вкладку, сброс стека) — каталог возвращается.
+    return () => {
+      depth.value = withTiming(0, { duration: REDUCED_FADE_MS });
+    };
   }, [open, depth, reduced]);
 
   // Любое закрытие (кнопка, жест, системная «Назад») сначала уводит лист вниз.
