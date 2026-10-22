@@ -1,4 +1,4 @@
-"""Браузерный сценарий на развёрнутом магазине (Playwright, Chromium).
+"""Браузерный сценарий веб-приложения /app/ на развёрнутом магазине (Playwright, Chromium).
 
     python3 deploy/e2e_browser.py https://localhost e2e-report
 
@@ -99,9 +99,8 @@ def shopper(browser, base: str, report: Report):
     page.on("pageerror", lambda exc: errors.append(str(exc)))
 
     # 1. Каталог: категории, поиск, подсказка «На экран Домой» для iPhone.
-    # Корень сайта ведёт в веб-приложение /app/.
-    page.goto(base + "/")
-    page.wait_for_url(re.compile(r"/app/?$"))
+    # Веб-приложение — по адресу /app/ (корень сайта — веб-витрина, deploy/e2e_storefront.py).
+    page.goto(base + "/app/")
     expect(page.get_by_text("Все товары", exact=True)).to_be_visible()
     expect(page.get_by_text("Установите магазин на телефон")).to_be_visible()
     wait_images(page, 2)
