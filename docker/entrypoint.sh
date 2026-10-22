@@ -37,7 +37,13 @@ if [ "${LOAD_FIXTURES:-0}" = "1" ]; then
     python manage.py seed_demo || echo "seed_demo пропущен (причина — выше)"
 fi
 
-# Прод: статика Django (админка, Swagger) копируется в общий том, её раздаёт Caddy.
+# Уменьшенные копии фото для витрины — только у фото без копий (загруженных до сессии 9 или
+# пока воркер не успел); новые фото обрабатывает воркер.
+if [ "${RUN_MIGRATIONS:-0}" = "1" ]; then
+    python manage.py make_thumbnails || echo "make_thumbnails пропущен (причина — выше)"
+fi
+
+# Прод: статика Django (админка, витрина, Swagger) копируется в общий том, её раздаёт Caddy.
 if [ -n "${STATIC_EXPORT_DIR:-}" ]; then
     cp -a /app/staticfiles/. "${STATIC_EXPORT_DIR}/"
 fi

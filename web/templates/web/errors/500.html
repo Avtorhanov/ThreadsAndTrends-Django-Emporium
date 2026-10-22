@@ -1,0 +1,23 @@
+{% load static %}<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Ошибка — DiDi-shop</title>
+  <link rel="stylesheet" href="{% static 'web/css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'web/css/site.css' %}">
+</head>
+<body>
+  <main class="main main--bare">
+    <section class="page page--narrow">
+      <div class="empty">
+        <span class="logo" aria-hidden="true">Di</span>
+        <p class="empty__title">Что-то пошло не так</p>
+        <p class="empty__text">Мы уже знаем об ошибке. Попробуйте обновить страницу через минуту.</p>
+        <a class="btn btn--dark" href="/">На главную</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

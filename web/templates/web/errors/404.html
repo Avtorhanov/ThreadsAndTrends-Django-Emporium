@@ -1,0 +1,12 @@
+{% extends "web/base.html" %}
+{% block title %}Страница не найдена — DiDi-shop{% endblock %}
+{% block content %}
+<section class="page page--narrow">
+  <div class="empty">
+    <p class="empty__code">404</p>
+    <p class="empty__title">Такой страницы нет</p>
+    <p class="empty__text">Возможно, товар снят с продажи или ссылка устарела.</p>
+    <a class="btn btn--dark" href="{% url 'web:home' %}">В каталог</a>
+  </div>
+</section>
+{% endblock %}

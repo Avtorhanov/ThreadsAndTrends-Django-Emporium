@@ -1,0 +1,10 @@
+{% if errors %}
+{% for text in errors %}<p class="note note--danger">{{ text }}</p>{% endfor %}
+{% else %}
+<p class="buy__done" data-added>
+  <svg class="ic" width="18" height="18"><use href="#i-check"/></svg>
+  Товар в корзине · <a href="{% url 'web:cart' %}">Перейти в корзину</a>
+</p>
+{% endif %}
+{% include "web/partials/cart_badge.html" with badge_id="cart-badge-top" count=cart_count oob=True %}
+{% include "web/partials/cart_badge.html" with badge_id="cart-badge-tab" count=cart_count oob=True %}

@@ -15,5 +15,9 @@ SPECTACULAR_SETTINGS["SERVE_PERMISSIONS"] = ["rest_framework.permissions.AllowAn
 # Письма (в т.ч. коды сброса пароля) печатаются в лог воркера.
 EMAIL_BACKEND = env_str("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 
-# Expo Go возвращается со страницы оплаты по адресу exp://…/--/orders/<номер>.
-PAYMENTS_RETURN_URL_PREFIXES = env_list("PAYMENTS_RETURN_URL_PREFIXES", "didishop://,exp://")
+# Expo Go возвращается со страницы оплаты по адресу exp://…/--/orders/<номер>,
+# веб-витрина — на страницу заказа локального сайта.
+PAYMENTS_RETURN_URL_PREFIXES = env_list(
+    "PAYMENTS_RETURN_URL_PREFIXES",
+    "didishop://,exp://,http://localhost:8000/,http://127.0.0.1:8000/",
+)

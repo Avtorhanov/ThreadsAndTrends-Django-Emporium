@@ -16,6 +16,8 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "mobile/assets"
 WEB = ROOT / "mobile/public/icons"
+# Веб-витрина (Django-статика): фавикон и иконки «На экран Домой».
+STOREFRONT = ROOT / "web/static/web/icons"
 TOKENS = json.loads((ROOT / "docs/design/lime-tech/tokens.json").read_text(encoding="utf-8"))
 FONT = ROOT / "mobile/node_modules/@expo-google-fonts/unbounded/700Bold/Unbounded_700Bold.ttf"
 SS = 4  # суперсэмплинг для гладких краёв
@@ -83,6 +85,11 @@ def main() -> None:
     solid(512, 0.5).save(WEB / "icon-512.png", optimize=True)
     solid(512, 0.36).save(WEB / "icon-maskable-512.png", optimize=True)
     solid(180, 0.5).save(WEB / "apple-touch-icon.png", optimize=True)
+    STOREFRONT.mkdir(parents=True, exist_ok=True)
+    plate(48, 1.0, 0.62).save(STOREFRONT / "favicon-48.png", optimize=True)
+    solid(192, 0.5).save(STOREFRONT / "icon-192.png", optimize=True)
+    solid(512, 0.5).save(STOREFRONT / "icon-512.png", optimize=True)
+    solid(180, 0.5).save(STOREFRONT / "apple-touch-icon.png", optimize=True)
     print("иконки готовы")
 
 

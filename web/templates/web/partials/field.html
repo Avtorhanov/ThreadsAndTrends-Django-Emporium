@@ -1,0 +1,12 @@
+{% load storefront %}
+{# Поле формы в стиле «Лайм-тек»: подпись, поле с рамкой brand в фокусе, ошибки и подсказка. #}
+<div class="field{% if field.errors %} has-error{% endif %}">
+  <label class="field__label" for="{{ field.id_for_label }}">{{ field.label }}{% if not field.field.required and not always_required %} <span class="muted">— необязательно</span>{% endif %}</label>
+  {% if field.field.widget.input_type == "checkbox" %}
+  {{ field }}
+  {% else %}
+  {% field_input field placeholder %}
+  {% endif %}
+  {% for error in field.errors %}<p class="field__error" id="{{ field.id_for_label }}-error">{{ error }}</p>{% endfor %}
+  {% if field.help_text %}<p class="field__hint">{{ field.help_text }}</p>{% endif %}
+</div>

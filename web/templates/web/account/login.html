@@ -1,0 +1,23 @@
+{% extends "web/base.html" %}
+{% block title %}Вход — DiDi-shop{% endblock %}
+{% block content %}
+<section class="page page--narrow">
+  <header class="section-head">
+    <p class="overline">Аккаунт</p>
+    <h1 class="h1">Вход</h1>
+  </header>
+  <form class="panel form" method="post" action="{% url 'web:login' %}" novalidate>
+    {% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    {% include "web/partials/form_errors.html" %}
+    {% if staff %}<p><a href="/panel/">Открыть панель управления</a></p>{% endif %}
+    {% include "web/partials/field.html" with field=form.email %}
+    {% include "web/partials/field.html" with field=form.password %}
+    <button class="cta" type="submit"><span class="cta__label">Войти</span></button>
+    <p class="form__links">
+      <a href="{% url 'web:password_reset' %}">Забыли пароль?</a>
+      <a href="{% url 'web:register' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Регистрация</a>
+    </p>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+<footer class="foot">
+  <div class="foot__inner">
+    <div class="foot__brand">
+      <span class="logo logo--sm" aria-hidden="true">Di</span>
+      <span class="word word--sm">DiDi<span class="word__accent">-shop</span></span>
+    </div>
+    <nav class="foot__links" aria-label="Покупателям">
+      <a href="{% url 'web:delivery' %}">Доставка, оплата и возврат</a>
+      <a href="{% url 'web:offer' %}">Публичная оферта</a>
+      <a href="{% url 'web:privacy' %}">Политика обработки персональных данных</a>
+      <a href="/app/">Приложение для iPhone</a>
+      {% if android_apk_url %}<a href="{{ android_apk_url }}">Приложение для Android</a>{% endif %}
+    </nav>
+    {% if seller.name %}
+    <p class="foot__seller">
+      {{ seller.name }}{% if seller.inn %} · ИНН {{ seller.inn }}{% endif %}{% if seller.ogrn %} · ОГРН {{ seller.ogrn }}{% endif %}
+      {% if seller.address %}<br>{{ seller.address }}{% endif %}
+      {% if seller.email or seller.phone %}<br>{% if seller.email %}<a href="mailto:{{ seller.email }}">{{ seller.email }}</a>{% endif %}{% if seller.email and seller.phone %} · {% endif %}{% if seller.phone %}<a href="tel:{{ seller.phone }}">{{ seller.phone }}</a>{% endif %}{% endif %}
+    </p>
+    {% endif %}
+    <p class="foot__copy">© {% now "Y" %} DiDi-shop</p>
+  </div>
+</footer>

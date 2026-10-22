@@ -26,9 +26,11 @@
 		max_size 12MB
 	}
 
+	# Статика Django (витрина, админка): в имени файла хэш содержимого (ManifestStaticFilesStorage),
+	# после обновления меняется адрес — кэш на год безопасен.
 	handle_path /static/* {
 		root * /srv/static
-		header Cache-Control "public, max-age=86400"
+		header Cache-Control "public, max-age=31536000, immutable"
 		file_server
 	}
 
@@ -68,9 +70,10 @@
 		file_server
 	}
 
-	# Остальное — Django (gunicorn): API, резервная админка, корень сайта и страницы на
-	# шаблонах (веб-витрина — сессия 8). Caddy сам выставляет X-Forwarded-For (реальный IP
-	# клиента; заголовок от клиента не доверяется) и X-Forwarded-Proto.
+	# Остальное — Django (gunicorn): веб-витрина (корень сайта, каталог, корзина, кабинет,
+	# sitemap.xml, robots.txt; CSP — web.middleware), API и резервная админка. Caddy сам
+	# выставляет X-Forwarded-For (реальный IP клиента; заголовок от клиента не доверяется)
+	# и X-Forwarded-Proto.
 	handle {
 		reverse_proxy app:8000
 	}

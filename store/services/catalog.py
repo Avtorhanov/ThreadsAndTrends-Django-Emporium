@@ -9,6 +9,8 @@ from PIL import Image, UnidentifiedImageError
 
 from core.text import slugify_ru
 from store.models import Category, Product, ProductImage, ProductVariant
+from store.services.images import delete_thumbnails
+from store.tasks import make_image_thumbnails
 
 MAX_PRICE_KOPECKS = 100_000_000_00  # 100 млн ₽ — защита от опечаток при вводе
 MAX_IMAGES_PER_PRODUCT = 10
@@ -323,17 +325,20 @@ def add_product_image(product: Product, uploaded) -> ProductImage:
     # Имя от клиента не доверяем: путь строит product_image_path, расширение — по формату.
     uploaded.name = f"upload{extension}"
     last = ProductImage.objects.filter(product=product).aggregate(m=Max("position"))["m"]
-    return ProductImage.objects.create(
+    image = ProductImage.objects.create(
         product=product, image=uploaded, position=0 if last is None else last + 1
     )
+    # Уменьшенные копии для витрины — в воркере, после фиксации (файл и запись уже есть).
+    transaction.on_commit(lambda: make_image_thumbnails.enqueue(image.pk))
+    return image
 
 
 @transaction.atomic
 def delete_product_image(image: ProductImage) -> None:
     storage, name = image.image.storage, image.image.name
     image.delete()
-    # Файл удаляется только после фиксации транзакции: при откате запись и файл целы.
-    transaction.on_commit(lambda: storage.delete(name))
+    # Файлы удаляются только после фиксации транзакции: при откате запись и файлы целы.
+    transaction.on_commit(lambda: (storage.delete(name), delete_thumbnails(storage, name)))
 
 
 @transaction.atomic

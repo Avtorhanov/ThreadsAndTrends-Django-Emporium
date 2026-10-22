@@ -1,15 +1,16 @@
 # DiDi-shop
 
-Маркетплейс DiDi-shop (монорепозиторий):
+Интернет-магазин DiDi-shop (монорепозиторий):
 
 | Каталог | Что это |
 |---|---|
 | корень | бэкенд: Django 5.2 LTS, PostgreSQL, DRF API `/api/v1/` |
+| `web/` | веб-витрина: Django-шаблоны + htmx, дизайн «Лайм-тек» (`web/static/web/css/tokens.css` генерирует `scripts/gen_tokens.py`), SEO |
 | `mobile/` | мобильное приложение клиента: Expo (React Native), expo-router |
 | `admin-panel/` | панель администратора: React + Vite |
 | `openapi/schema.yml` | OpenAPI-схема API; из неё генерируются типы обоих клиентов |
 
-Роли: **Клиент** (мобильное приложение, JWT) и **Администратор** — единственный продавец
+Роли: **Клиент** (веб-витрина — сессия Django; мобильное приложение — JWT) и **Администратор** — единственный продавец
 (`is_staff`, панель администратора, вход по сессии). Стандартная Django admin оставлена
 только как резервный вход суперпользователя.
 
@@ -22,9 +23,10 @@
 |---|---|
 | `./deploy.sh` | Docker, секреты, сборка, миграции, администратор, демо-каталог; он же — обновление (`git pull && ./deploy.sh`), `status`, `logs`, `backup`, `restore`, `smoke` |
 | `compose.prod.yml` | `caddy` (HTTPS Let's Encrypt, веб-приложение `/app/`, панель `/panel/`, статика и фото; остальное — Django), `app` (gunicorn), `worker`, `scheduler`, `db` (Postgres 16), `backup` (ночной `pg_dump` + фото, 14 дней) |
-| Веб-приложение | веб-версия `mobile/` (Expo web, `experiments.baseUrl=/app`) по адресу `https://<домен>/app/`; на iPhone ставится «На экран „Домой“» (PWA: `mobile/public/`). Корень `/` — Django: пока нет веб-витрины (сессия 8), ведёт в `/app/` (`SITE_ROOT_REDIRECT`), страницы на шаблонах (`/products/`, `/product/<slug>/`, …) остаются |
+| Веб-витрина | корень `/` — Django (`web/`): каталог `/products/`, `/category/<slug>/`, `/product/<slug>/`, поиск, корзина (гость — в сессии), оформление, оплата ЮKassa, кабинет; `sitemap.xml`, `robots.txt`, schema.org, canonical на `SITE_URL`; юридические страницы `/legal/…` (реквизиты — `SELLER_*`) |
+| Веб-приложение | веб-версия `mobile/` (Expo web, `experiments.baseUrl=/app`) по адресу `https://<домен>/app/`; на iPhone ставится «На экран „Домой“» (PWA: `mobile/public/`), витрина показывает на телефонах баннер со ссылкой |
 | Android | `.github/workflows/android.yml` → APK в GitHub Releases (`releases/latest/download/didi-shop.apk`) |
-| Проверка | `bash deploy/e2e.sh` (CI, задание `e2e`): деплой одной командой с `DOMAIN=localhost`, HTTPS и заголовки, PWA, фото каталога, `check --deploy`, нагрузочный smoke оформления, бэкап → восстановление, сценарий покупателя и администратора в Chromium со скриншотами |
+| Проверка | `bash deploy/e2e.sh` (CI, задание `e2e`): деплой одной командой с `DOMAIN=localhost`, HTTPS и заголовки, PWA, фото каталога, `check --deploy`, нагрузочный smoke оформления, бэкап → восстановление, сценарий покупателя и администратора в Chromium со скриншотами, покупка на веб-витрине (телефон и десктоп, обе темы, `deploy/e2e_storefront.py`), Lighthouse страницы товара |
 | Мониторинг | `GET /api/v1/health/` (БД + кэш), Sentry по `SENTRY_DSN`, логи — `./deploy.sh logs` |
 
 ## Быстрый старт (Docker)

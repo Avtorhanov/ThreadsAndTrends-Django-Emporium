@@ -1,0 +1,11 @@
+{% extends "web/base.html" %}
+{% block title %}Корзина — DiDi-shop{% endblock %}
+{% block content %}
+<section class="page">
+  <header class="section-head">
+    <p class="overline">Покупки</p>
+    <h1 class="h1">Корзина</h1>
+  </header>
+  {% include "web/cart/_cart.html" %}
+</section>
+{% endblock %}
