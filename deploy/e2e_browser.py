@@ -221,6 +221,7 @@ def contacts_tab(browser, base: str, report: Report, scheme: str) -> None:
     expect(page.get_by_role("link", name=re.compile("^Telegram"))).to_be_visible()
     expect(page.get_by_text("Статьи", exact=True)).to_be_visible()
     wait_images(page, 1)
+    page.wait_for_timeout(900)  # карточки каналов появляются по очереди
     report.shot(page, f"{scheme}-contacts")
     page.get_by_role("button", name="Как выбрать размер одежды").click()
     expect(page.get_by_text(re.compile("Перед заказом снимите три мерки"))).to_be_visible()

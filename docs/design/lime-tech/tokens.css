@@ -1,5 +1,5 @@
 /* Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать. */
-/* Версия токенов: 1.1.0 (2026-10-22).
+/* Версия токенов: 1.1.1 (2026-10-22).
    Тёмная тема — data-theme="dark"
    или системная (prefers-color-scheme), если data-theme не задан явно. */
 
@@ -29,7 +29,7 @@
   --size-card-image: 214px;
   --size-detail-hero: 420px;
   --size-nav-height: 70px;
-  --size-nav-active-width: 120px;
+  --size-nav-active-width: 132px;
   --size-cta-height: 62px;
   --font-display: 'Unbounded', system-ui, sans-serif;
   --font-text: 'Manrope', system-ui, sans-serif;

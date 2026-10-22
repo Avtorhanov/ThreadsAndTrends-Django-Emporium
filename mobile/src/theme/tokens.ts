@@ -1,5 +1,5 @@
 // Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать.
-// Версия токенов: 1.1.0 (2026-10-22).
+// Версия токенов: 1.1.1 (2026-10-22).
 
 export type ThemeName = "light" | "dark";
 
@@ -219,7 +219,7 @@ export const size = {
   "cardImage": 214,
   "detailHero": 420,
   "navHeight": 70,
-  "navActiveWidth": 120,
+  "navActiveWidth": 132,
   "ctaHeight": 62
 } as const;
 

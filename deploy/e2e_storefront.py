@@ -239,6 +239,7 @@ def contacts(browser, base: str, report: Report, errors: list[str]) -> None:
         expect(page.locator(".channel[href='https://t.me/didishop']")).to_be_visible()
         expect(page.locator(".channel[href='https://wa.me/79001234567']")).to_be_visible()
         expect(page.locator(".article-card")).not_to_have_count(0)
+        page.wait_for_timeout(400)  # каналы появляются по очереди (до 0,7 с)
         report.shot(page, f"phone-{scheme}-contacts", full=True)
         page.locator(".article-card").first.click()
         page.wait_for_url(re.compile(r"/articles/"))
