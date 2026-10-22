@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>DiDi-shop — Лайм-тек</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&amp;family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1F4D3A}a:hover{color:#13261C}
+button{font:inherit;cursor:pointer;border:0;-webkit-tap-highlight-color:transparent}
+.app{
+  --bg:#EBF1E2;--surface:#FFFFFF;--card:#FFFFFF;--ink:#13261C;--muted:#4A5C51;--strike:#5B6B60;
+  --brand:#1F4D3A;--brand-ink:#C6F432;--accent:#C6F432;
+  --seg-on-bg:#13261C;--seg-on-ink:#C6F432;--tag:#DCE8CB;--tag-ink:#1F4D3A;
+  --glass:rgba(235,241,226,.74);--glass-line:rgba(255,255,255,.8);--btn-glass:rgba(255,255,255,.82);
+  --sh-1:0 1px 0 #fff inset,0 2px 4px rgba(19,38,28,.07),0 14px 24px -10px rgba(31,77,58,.34),0 32px 48px -26px rgba(31,77,58,.46);
+  --sh-2:0 1px 0 #fff inset,0 2px 3px rgba(19,38,28,.07),0 12px 20px -10px rgba(31,77,58,.42);
+  --sh-head:0 1px 0 rgba(255,255,255,.9) inset,0 20px 36px -18px rgba(31,77,58,.6);
+  --img-in:inset 0 -28px 46px -26px rgba(19,38,28,.32);
+  --nav:#13261C;--nav-ink:#B9C7BE;--nav-sh:0 22px 40px -14px rgba(19,38,28,.75);
+  --cta-bg:#13261C;--cta-ink:#FFFFFF;--cta-fill:#C6F432;--cta-done:#13261C;
+}
+.app.dark{
+  --bg:#070E0A;--surface:#1F2E25;--card:linear-gradient(165deg,#2F4437 0%,#22342A 45%,#18241D 100%);--ink:#EEF5E9;--muted:#AFC0B4;--strike:#93A598;
+  --brand:#C6F432;--brand-ink:#13261C;
+  --seg-on-bg:#C6F432;--seg-on-ink:#13261C;--tag:#22341A;--tag-ink:#D6F87A;
+  --glass:rgba(7,14,10,.74);--glass-line:rgba(198,244,50,.14);--btn-glass:rgba(31,46,37,.85);
+  --sh-1:0 1px 0 rgba(255,255,255,.22) inset,0 0 0 1px rgba(255,255,255,.06) inset,0 -3px 0 rgba(0,0,0,.38) inset,0 2px 4px rgba(0,0,0,.6),0 14px 24px -10px rgba(0,0,0,.85),0 34px 50px -24px rgba(0,0,0,.95),0 28px 46px -30px rgba(198,244,50,.3);
+  --sh-2:0 1px 0 rgba(255,255,255,.13) inset,0 0 0 1px rgba(255,255,255,.05) inset,0 2px 3px rgba(0,0,0,.55),0 12px 22px -10px rgba(0,0,0,.85);
+  --sh-head:0 1px 0 rgba(255,255,255,.06) inset,0 22px 38px -14px rgba(0,0,0,.9);
+  --img-in:inset 0 1px 0 rgba(255,255,255,.18),inset 0 0 0 1px rgba(255,255,255,.05),inset 0 -34px 52px -26px rgba(0,0,0,.6),0 10px 18px -12px rgba(0,0,0,.75);
+  --nav:#050A07;--nav-ink:#8FA396;--nav-sh:0 22px 40px -14px rgba(0,0,0,.9),0 0 0 1px rgba(198,244,50,.12);
+  --cta-bg:#C6F432;--cta-ink:#13261C;--cta-fill:#ECF3E7;--cta-done:#13261C;
+}
+.app,.app .tone{transition:background-color .45s ease,color .45s ease}
+.scr{position:absolute;left:0;top:0;width:390px;height:844px;box-sizing:border-box;background:var(--bg);transition:transform .42s cubic-bezier(.2,.8,.2,1),opacity .32s ease,filter .32s ease,background-color .45s ease}
+.scr.away{transform:scale(.93) translateY(-6px);opacity:.35;filter:blur(1.5px)}
+.det{transform:translateY(102%);border-radius:36px 36px 0 0;z-index:5}
+.det.in{transform:translateY(0);border-radius:0}
+.det .hero{transform:scale(.9);transition:transform .55s cubic-bezier(.2,.8,.2,1) .05s,background-color .45s ease}
+.det.in .hero{transform:none}
+.rise{opacity:0;transform:translateY(16px);transition:opacity .35s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
+.det.in .rise{opacity:1;transform:none}
+.det.in .r1{transition-delay:.12s}.det.in .r2{transition-delay:.18s}.det.in .r3{transition-delay:.24s}.det.in .r4{transition-delay:.3s}
+/* лента уходит под стеклянную шапку и плавно растворяется */
+.feed{scrollbar-width:none;-webkit-mask-image:linear-gradient(to bottom,transparent 110px,#000 236px);mask-image:linear-gradient(to bottom,transparent 110px,#000 236px)}
+.feed.compact{-webkit-mask-image:linear-gradient(to bottom,transparent 30px,#000 92px);mask-image:linear-gradient(to bottom,transparent 30px,#000 92px)}
+.feed::-webkit-scrollbar{display:none}
+.top{background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border-bottom:1px solid transparent;border-radius:0 0 28px 28px;transition:box-shadow .35s ease,border-color .35s ease,background-color .45s ease,padding .4s cubic-bezier(.2,.85,.25,1)}
+/* компактная шапка: ниже отступы и мельче кнопки — в ленте видно больше карточек */
+.top.scrolled{padding-top:42px !important;padding-bottom:8px !important}
+.top .hb,.top .logo{transition:width .35s cubic-bezier(.2,.85,.25,1),height .35s cubic-bezier(.2,.85,.25,1),border-radius .35s ease,transform .15s,background-color .45s}
+.top.scrolled .hb,.top.scrolled .logo{width:38px !important;height:38px !important;border-radius:13px !important}
+.top.scrolled .sbtn{height:38px !important;border-radius:13px !important}
+.top.scrolled{box-shadow:var(--sh-head);border-bottom-color:var(--glass-line)}
+/* сворачивание шапки: подпись и поле поиска уходят, поиск становится кнопкой */
+.top .cap{max-height:18px;opacity:1;overflow:hidden;transition:max-height .35s cubic-bezier(.2,.85,.25,1),opacity .25s ease}
+.top.scrolled .cap{max-height:0;opacity:0}
+.top .word{font-size:24px;transition:font-size .35s cubic-bezier(.2,.85,.25,1)}
+.top.scrolled .word{font-size:16px}
+.top .search{max-height:52px;opacity:1;overflow:hidden;transform:none;transition:max-height .4s cubic-bezier(.2,.85,.25,1),opacity .25s ease,transform .4s cubic-bezier(.2,.85,.25,1),margin-top .4s cubic-bezier(.2,.85,.25,1)}
+.top.scrolled .search{max-height:0;opacity:0;transform:translateY(-10px) scale(.96);margin-top:-12px}
+.top .sbtn{width:0;margin-left:-10px;opacity:0;transform:scale(.6);overflow:hidden;flex:none;transition:width .35s cubic-bezier(.2,.85,.25,1),margin-left .35s cubic-bezier(.2,.85,.25,1),opacity .25s ease,transform .35s cubic-bezier(.2,.85,.25,1)}
+.top.scrolled .sbtn{width:38px;margin-left:0;opacity:1;transform:none}
+.top .sbtn svg{flex:none}
+.top .cats{max-height:48px;opacity:1;overflow:hidden;transform:none;transition:max-height .4s cubic-bezier(.2,.85,.25,1),opacity .25s ease,transform .4s cubic-bezier(.2,.85,.25,1),margin-top .4s cubic-bezier(.2,.85,.25,1)}
+.top.scrolled .cats{max-height:0;opacity:0;transform:translateY(-10px) scale(.96);margin-top:-12px}
+.card{transition:transform .18s ease,box-shadow .3s ease,background-color .45s ease}
+.card:active{transform:scale(.96)}
+.seg{flex:1;height:40px;border-radius:13px;font-size:13px;font-weight:800;background:transparent;color:var(--muted);transition:background-color .25s,color .25s,box-shadow .25s,transform .15s}
+.seg:active{transform:scale(.95)}
+.seg.on{background:var(--seg-on-bg);color:var(--seg-on-ink);box-shadow:0 10px 18px -8px rgba(19,38,28,.6)}
+.sz{min-width:56px;height:48px;padding:0 14px;border-radius:16px;font-size:15px;font-weight:800;background:var(--surface);color:var(--ink);box-shadow:var(--sh-2);transition:background-color .25s,color .25s,transform .15s}
+.sz:active{transform:scale(.94)}
+.sz.on{background:var(--accent);color:#13261C;box-shadow:0 12px 22px -10px rgba(130,180,0,.85),inset 0 1px 0 rgba(255,255,255,.5)}
+.tab{position:relative;z-index:1;height:58px;background:transparent;color:var(--nav-ink);display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px;font-weight:800;transition:color .3s,flex-basis .4s cubic-bezier(.22,.9,.24,1)}
+.tab span{max-width:0;overflow:hidden;white-space:nowrap;transition:max-width .4s cubic-bezier(.22,.9,.24,1)}
+.tab.on{color:#13261C}
+.tab.on span{max-width:80px}
+.pill{transition:left .4s cubic-bezier(.22,.9,.24,1)}
+.cta{position:relative;overflow:hidden;transition:color .3s,transform .15s,background-color .45s}
+.cta:active{transform:scale(.98)}
+.cta::before{content:"";position:absolute;inset:0;background:var(--cta-fill);transform:scaleX(0);transform-origin:left;transition:transform .55s cubic-bezier(.2,.8,.2,1)}
+.cta.done::before{transform:scaleX(1)}
+.cta.done{color:var(--cta-done)}
+.cta span{position:relative}
+.icon-btn{transition:transform .15s,background-color .45s}
+.icon-btn:active{transform:scale(.92)}
+</style>
+</helmet>
+<div class="{{appCls}}" style="width:390px;height:844px;position:relative;overflow:hidden;background:var(--bg);font-family:'Manrope',system-ui,sans-serif;color:var(--ink)">
+
+<div class="{{listCls}}">
+  <div class="{{feedCls}}" ref="{{feedRef}}" onScroll="{{onScroll}}" style="position:absolute;inset:0;overflow-y:auto;padding:240px 10px 130px;box-sizing:border-box">
+    <div style="padding:4px 2px 18px">
+      <p style="margin:0;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.14em">Летняя коллекция</p>
+      <h1 style="margin:6px 0 0;font-family:'Unbounded',sans-serif;font-size:28px;line-height:1.12;font-weight:700;letter-spacing:-0.02em">Лёгкость<br>на каждый день</h1>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+      <sc-for list="{{list}}" as="p" hint-placeholder-count="6">
+        <button class="card" onClick="{{p.open}}" aria-label="{{p.name}}" style="display:flex;flex-direction:column;gap:12px;padding:6px 6px 16px;border-radius:26px;background:var(--card);text-align:left;color:var(--ink);box-shadow:var(--sh-1)">
+          <span class="tone" style="position:relative;height:214px;border-radius:21px;background:{{p.bg}};display:flex;align-items:center;justify-content:center;box-shadow:var(--img-in)">
+            <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            <sc-if value="{{p.sale}}" hint-placeholder-val="{{ true }}">
+              <span style="position:absolute;left:8px;top:8px;height:24px;padding:0 9px;border-radius:8px;background:var(--seg-on-bg);color:var(--seg-on-ink);font-size:12px;font-weight:800;display:flex;align-items:center;box-shadow:0 6px 12px -6px rgba(0,0,0,.5)">{{p.badge}}</span>
+            </sc-if>
+          </span>
+          <span style="padding:0 8px;display:flex;flex-direction:column;gap:6px">
+            <span style="font-size:15px;font-weight:700;line-height:1.25">{{p.name}}</span>
+            <span style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-family:'Unbounded',sans-serif;font-size:17px;font-weight:700">{{p.price}}</span>
+              <sc-if value="{{p.sale}}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:12px;font-weight:600;color:var(--strike);text-decoration:line-through">{{p.old}}</span>
+              </sc-if>
+            </span>
+          </span>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+
+  <header class="{{topCls}}" style="position:absolute;left:0;right:0;top:0;z-index:3;padding:50px 18px 14px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="logo" style="width:44px;height:44px;border-radius:14px;background:var(--brand);display:flex;align-items:center;justify-content:center;box-shadow:0 12px 22px -8px rgba(31,77,58,.75),inset 0 1px 0 rgba(255,255,255,.3);transition:background-color .45s">
+          <span style="font-family:'Unbounded',sans-serif;font-weight:700;font-size:15px;color:var(--brand-ink)">Di</span>
+        </div>
+        <span style="display:flex;flex-direction:column">
+          <span class="cap" style="font-size:12px;font-weight:700;color:var(--muted)">Доставка сегодня</span>
+          <span class="word" style="font-family:'Unbounded',sans-serif;font-weight:700;letter-spacing:-0.02em;line-height:1.15">DiDi<span style="color:var(--brand)">-shop</span></span>
+        </span>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="icon-btn sbtn" onClick="{{expandSearch}}" aria-label="Открыть поиск" style="height:46px;border-radius:16px;background:#C6F432;color:#13261C;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 18px -8px rgba(130,180,0,.8),inset 0 1px 0 rgba(255,255,255,.5)">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        </button>
+        <button class="icon-btn hb" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}" style="width:46px;height:46px;border-radius:16px;background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-2)">
+          <sc-if value="{{isDark}}" hint-placeholder-val="{{ false }}">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          </sc-if>
+          <sc-if value="{{isLight}}" hint-placeholder-val="{{ true }}">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+          </sc-if>
+        </button>
+        <button class="icon-btn hb" aria-label="Корзина" style="position:relative;width:46px;height:46px;border-radius:16px;background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-2)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+          <span style="position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:10px;background:#C6F432;color:#13261C;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--bg)">{{cartCount}}</span>
+        </button>
+      </div>
+    </div>
+
+    <label class="search" style="display:flex;align-items:center;gap:10px;height:52px;padding:0 6px 0 16px;border-radius:18px;background:var(--surface);color:var(--muted);box-shadow:var(--sh-2)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input aria-label="Поиск по каталогу" placeholder="Футболка, кеды, панама…" style="border:0;outline:0;flex:1;min-width:0;font:inherit;font-size:15px;font-weight:600;background:transparent;color:var(--ink)">
+      <span style="width:40px;height:40px;border-radius:13px;background:#C6F432;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 14px -6px rgba(130,180,0,.8)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#13261C" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+      </span>
+    </label>
+
+    <div class="cats" style="display:flex;gap:4px;padding:4px;border-radius:17px;background:var(--surface);box-shadow:var(--sh-2)">
+      <sc-for list="{{cats}}" as="c" hint-placeholder-count="4">
+        <button class="{{c.cls}}" onClick="{{c.pick}}">{{c.name}}</button>
+      </sc-for>
+    </div>
+  </header>
+</div>
+
+<nav aria-label="Разделы" style="position:absolute;left:16px;right:16px;bottom:22px;z-index:4;height:70px;padding:6px;box-sizing:border-box;border-radius:26px;background:var(--nav);display:flex;box-shadow:var(--nav-sh);transition:background-color .45s">
+  <span class="pill" style="position:absolute;top:6px;left: {{pillLeft}}px;width:120px;height:58px;border-radius:20px;background:#C6F432;box-shadow:0 10px 22px -6px rgba(198,244,50,.55),inset 0 1px 0 rgba(255,255,255,.55)"></span>
+  <button class="{{t0}}" onClick="{{go0}}" aria-label="Каталог" style="flex:0 0 {{w0}}px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+    <span>Каталог</span>
+  </button>
+  <button class="{{t1}}" onClick="{{go1}}" aria-label="Поиск" style="flex:0 0 {{w1}}px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <span>Поиск</span>
+  </button>
+  <button class="{{t2}}" onClick="{{go2}}" aria-label="Корзина" style="flex:0 0 {{w2}}px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+    <span>Корзина</span>
+  </button>
+  <button class="{{t3}}" onClick="{{go3}}" aria-label="Профиль" style="flex:0 0 {{w3}}px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+    <span>Профиль</span>
+  </button>
+</nav>
+
+<div class="{{detCls}}" style="display:flex;flex-direction:column;box-shadow:0 -20px 40px -20px rgba(0,0,0,.45)">
+  <div class="hero tone" style="position:relative;height:420px;margin:12px 12px 0;border-radius:32px;background:{{cur.bg}};display:flex;align-items:center;justify-content:center;box-shadow:var(--img-in),var(--sh-1)">
+    <button class="icon-btn" onClick="{{back}}" aria-label="Назад" style="position:absolute;left:14px;top:42px;width:48px;height:48px;border-radius:16px;background:var(--btn-glass);color:var(--ink);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-2)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <button class="icon-btn" aria-label="В избранное" style="position:absolute;right:14px;top:42px;width:48px;height:48px;border-radius:16px;background:var(--btn-glass);color:var(--ink);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-2)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>
+    </button>
+    <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-opacity=".4" stroke-width="1.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    <span style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:6px">
+      <span style="width:22px;height:6px;border-radius:3px;background:currentColor"></span>
+      <span style="width:6px;height:6px;border-radius:3px;background:currentColor;opacity:.3"></span>
+      <span style="width:6px;height:6px;border-radius:3px;background:currentColor;opacity:.3"></span>
+    </span>
+  </div>
+
+  <div style="flex:1;padding:20px 24px 0;display:flex;flex-direction:column;gap:18px">
+    <div class="rise r1" style="display:flex;flex-direction:column;gap:8px">
+      <span style="align-self:flex-start;height:26px;padding:0 10px;border-radius:9px;background:var(--tag);color:var(--tag-ink);font-size:12px;font-weight:800;display:flex;align-items:center">{{cur.catName}}</span>
+      <h2 style="margin:0;font-family:'Unbounded',sans-serif;font-size:23px;line-height:1.18;font-weight:700;letter-spacing:-0.02em">{{cur.name}}</h2>
+      <span style="display:flex;align-items:baseline;gap:10px">
+        <span style="font-family:'Unbounded',sans-serif;font-size:24px;font-weight:700">{{cur.price}}</span>
+        <sc-if value="{{cur.sale}}" hint-placeholder-val="{{ true }}">
+          <span style="font-size:15px;font-weight:600;color:var(--strike);text-decoration:line-through">{{cur.old}}</span>
+        </sc-if>
+      </span>
+    </div>
+    <div class="rise r2" style="display:flex;flex-direction:column;gap:10px">
+      <span style="font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Размер</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <sc-for list="{{sizes}}" as="z" hint-placeholder-count="4">
+          <button class="{{z.cls}}" onClick="{{z.pick}}">{{z.label}}</button>
+        </sc-for>
+      </div>
+    </div>
+    <p class="rise r3" style="margin:0;font-size:15px;line-height:1.5;font-weight:500;color:var(--muted)">{{cur.text}}</p>
+  </div>
+
+  <div class="rise r4" style="padding:0 20px 30px">
+    <button class="{{ctaCls}}" onClick="{{add}}" style="width:100%;height:62px;padding:0 24px;border-radius:22px;background:var(--cta-bg);color:var(--cta-ink);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:space-between;box-shadow:0 20px 32px -14px rgba(0,0,0,.6)">
+      <span>{{ctaText}}</span>
+      <span style="font-family:'Unbounded',sans-serif;font-size:15px">{{cur.price}}</span>
+    </button>
+  </div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { open: false, pid: 1, cat: 0, tab: 0, size: 0, added: false, cart: 2, scrolled: false, dark: null };
+  }
+  renderVals() {
+    const s = this.state;
+    const dark = s.dark !== null ? s.dark : !!this.props.dark;
+    const catNames = ['Все', 'Одежда', 'Обувь', 'Аксессуары'];
+    const P = [
+      { id: 1, cat: 1, name: 'Футболка оверсайз «Лайм»', price: '1 990 ₽', old: '2 490 ₽', sale: true, badge: '−20%', tone: '#DDF38A', toneD: '#3F5416', sizes: ['S', 'M', 'L', 'XL'], text: 'Плотный хлопок, свободный крой. Не теряет форму после стирки.' },
+      { id: 2, cat: 2, name: 'Кеды «Спринт»', price: '5 490 ₽', old: '', sale: false, badge: '', tone: '#FFE38F', toneD: '#4E4318', sizes: ['39', '40', '41', '42'], text: 'Дышащая сетка и мягкая подошва — для города и долгих прогулок.' },
+      { id: 3, cat: 3, name: 'Панама льняная', price: '1 290 ₽', old: '', sale: false, badge: '', tone: '#C4EBD3', toneD: '#1D4A38', sizes: ['Без размера'], text: 'Лён с хлопком, мягкие поля. Легко складывается в сумку.' },
+      { id: 4, cat: 1, name: 'Шорты карго', price: '2 790 ₽', old: '3 290 ₽', sale: true, badge: '−15%', tone: '#FFD6B0', toneD: '#523820', sizes: ['S', 'M', 'L'], text: 'Шесть карманов, пояс на кулиске. Ткань быстро сохнет.' },
+      { id: 5, cat: 1, name: 'Рубашка изо льна', price: '3 490 ₽', old: '4 190 ₽', sale: true, badge: '−17%', tone: '#E7F5C2', toneD: '#354A20', sizes: ['S', 'M', 'L', 'XL'], text: 'Свободная рубашка из льна: дышит в жару и не прилипает к телу.' },
+      { id: 6, cat: 3, name: 'Рюкзак «Город»', price: '3 990 ₽', old: '', sale: false, badge: '', tone: '#D2EFE0', toneD: '#1F4636', sizes: ['Без размера'], text: 'Отделение для ноутбука, водоотталкивающая ткань, мягкая спинка.' }
+    ];
+    const cats = catNames.map((n, i) => ({ name: n, cls: i === s.cat ? 'seg on' : 'seg', pick: () => this.setState({ cat: i }) }));
+    const list = P.filter((p) => s.cat === 0 || p.cat === s.cat).map((p) => ({
+      ...p,
+      bg: dark ? p.toneD : p.tone,
+      open: () => this.setState({ open: true, pid: p.id, size: 0, added: false })
+    }));
+    const base = P.find((p) => p.id === s.pid) || P[0];
+    const cur = { ...base, bg: dark ? base.toneD : base.tone, catName: catNames[base.cat] };
+    const sizes = cur.sizes.map((z, i) => ({ label: z, cls: i === s.size ? 'sz on' : 'sz', pick: () => this.setState({ size: i }) }));
+    // активная вкладка шире: иконка + подпись; остальные делят остаток
+    const inner = 358 - 12, wide = 120, narrow = (inner - wide) / 3;
+    const tab = (i) => (i === s.tab ? 'tab on' : 'tab');
+    const w = (i) => (i === s.tab ? wide : narrow);
+    const go = (i) => () => this.setState({ tab: i });
+    return {
+      list, cats, cur, sizes,
+      appCls: dark ? 'app dark' : 'app',
+      isDark: dark, isLight: !dark,
+      themeLabel: dark ? 'Светлая тема' : 'Тёмная тема',
+      toggleTheme: () => this.setState({ dark: !dark }),
+      topCls: s.scrolled ? 'top scrolled' : 'top',
+      feedCls: s.scrolled ? 'feed compact' : 'feed',
+      feedRef: (el) => { this.feedEl = el; },
+      expandSearch: () => { if (this.feedEl) this.feedEl.scrollTo({ top: 0, behavior: 'smooth' }); },
+      onScroll: (e) => {
+        const el = e.currentTarget || e.target;
+        // гистерезис, чтобы шапка не дёргалась на границе
+        const y = el.scrollTop;
+        const sc = this.state.scrolled ? y > 8 : y > 24;
+        if (sc !== this.state.scrolled) this.setState({ scrolled: sc });
+      },
+      listCls: s.open ? 'scr away' : 'scr',
+      detCls: s.open ? 'scr det in' : 'scr det',
+      pillLeft: 6 + s.tab * narrow,
+      t0: tab(0), t1: tab(1), t2: tab(2), t3: tab(3),
+      w0: w(0), w1: w(1), w2: w(2), w3: w(3),
+      go0: go(0), go1: go(1), go2: go(2), go3: go(3),
+      back: () => this.setState({ open: false }),
+      add: () => { if (!s.added) this.setState({ added: true, cart: s.cart + 1 }); },
+      ctaCls: s.added ? 'cta done' : 'cta',
+      ctaText: s.added ? 'Добавлено в корзину' : 'В корзину',
+      cartCount: s.cart
+    };
+  }
+}
+</script>
+</body>
+</html>
