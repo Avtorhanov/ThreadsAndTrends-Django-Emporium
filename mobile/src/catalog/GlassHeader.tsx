@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useCart } from "../cart/CartProvider";
 import { Icon } from "../components/Icon";
-import { IconButton, PressScale } from "../components/ui";
+import { FILL, IconButton, PressScale } from "../components/ui";
 import { fonts } from "../theme/fonts";
 import { makeStyles, useTheme } from "../theme/ThemeProvider";
 import { radius, size } from "../theme/tokens";
@@ -215,13 +215,13 @@ const useStyles = makeStyles(({ c, shadow }) => ({
     borderBottomRightRadius: 28,
   },
   glassFill: {
-    ...StyleSheet.absoluteFillObject,
+    ...FILL,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     overflow: "hidden",
   },
   shadow: {
-    ...StyleSheet.absoluteFillObject,
+    ...FILL,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     borderBottomWidth: 1,

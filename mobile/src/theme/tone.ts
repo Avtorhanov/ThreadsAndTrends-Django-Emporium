@@ -9,7 +9,7 @@ export function toneFor(slug: string): ProductTone {
     hash ^= slug.charCodeAt(i);
     hash = Math.imul(hash, 0x01000193);
   }
-  return TONES[(hash >>> 0) % TONES.length];
+  return TONES[(hash >>> 0) % TONES.length] ?? "lime";
 }
 
 export function toneColor(slug: string, dark: boolean): string {

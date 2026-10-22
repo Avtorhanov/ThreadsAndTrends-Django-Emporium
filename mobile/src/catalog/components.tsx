@@ -7,7 +7,7 @@ import { fonts } from "../theme/fonts";
 import { makeStyles, useTheme } from "../theme/ThemeProvider";
 import { radius, space } from "../theme/tokens";
 import { toneColor } from "../theme/tone";
-import type { ProductCard as ProductCardData, ProductDetail } from "./catalogService";
+import type { ProductCard as ProductCardData } from "./catalogService";
 
 /** Скидка в процентах от старой цены; null — если старой цены нет. */
 export function discountPercent(price: number, compareAt: number | null): number | null {
@@ -83,10 +83,9 @@ export function ProductImage({
 }
 
 /** Карточка ленты: радиус 26, фото 214 (на широкой сетке — пропорционально), цена Unbounded. */
-export function ProductCard({ product }: { product: ProductCardData | ProductDetail }) {
+export function ProductCard({ product }: { product: ProductCardData }) {
   const s = useStyles();
   const percent = discountPercent(product.price_kopecks, product.compare_at_kopecks);
-  const cover = "cover_url" in product ? product.cover_url : product.images[0]?.url;
   return (
     <PressScale
       accessibilityRole="button"
@@ -96,7 +95,7 @@ export function ProductCard({ product }: { product: ProductCardData | ProductDet
     >
       <CardGradient />
       <View>
-        <ProductImage slug={product.slug} uri={cover} style={s.cardImage} />
+        <ProductImage slug={product.slug} uri={product.cover_url} style={s.cardImage} />
         <View style={s.badgePos}>
           <DiscountBadge percent={percent} />
         </View>

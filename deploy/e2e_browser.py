@@ -2,9 +2,10 @@
 
     python3 deploy/e2e_browser.py https://localhost e2e-report
 
-Покупатель на iPhone (веб-версия): каталог с фото и подсказкой установки → поиск → товар →
-размер → корзина → регистрация → оформление «при получении» → заказ. Администратор видит
-заказ в панели. Покупатель отменяет заказ. Широкий экран: сетка товаров с фото.
+Покупатель на iPhone (веб-версия, дизайн «Лайм-тек»): каталог с фото и подсказкой установки →
+свёрнутая шапка → поиск → товар → размер → корзина → регистрация → оформление «при получении» →
+заказ. Администратор видит заказ в панели. Покупатель отменяет заказ. Те же ключевые экраны —
+в тёмной теме (prefers-color-scheme: dark). Широкий экран: сетка товаров с фото.
 Скриншоты каждого шага — в папке отчёта. Нужен администратор из .env (ADMIN_EMAIL/PASSWORD).
 
 Установка: pip install playwright && python -m playwright install --with-deps chromium
@@ -69,8 +70,8 @@ def wait_images(page: Page, minimum: int) -> int:
     return loaded_images(page)
 
 
-def shopper(browser, base: str, report: Report):
-    context = browser.new_context(
+def iphone(browser, color_scheme: str = "light"):
+    return browser.new_context(
         viewport={"width": 390, "height": 844},
         device_scale_factor=2,
         is_mobile=True,
@@ -78,7 +79,20 @@ def shopper(browser, base: str, report: Report):
         user_agent=IPHONE_UA,
         ignore_https_errors=True,
         locale="ru-RU",
+        color_scheme=color_scheme,
     )
+
+
+def collapse_header(page: Page) -> None:
+    """Прокрутка ленты: шапка каталога сворачивается (поиск и категории уходят)."""
+    page.mouse.move(195, 600)
+    page.mouse.wheel(0, 700)
+    expect(page.get_by_role("button", name="Открыть поиск")).to_be_visible()
+    page.wait_for_timeout(600)  # анимация сворачивания 400 мс
+
+
+def shopper(browser, base: str, report: Report):
+    context = iphone(browser)
     page = context.new_page()
     page.set_default_timeout(TIMEOUT_MS)
     errors: list[str] = []
@@ -90,28 +104,36 @@ def shopper(browser, base: str, report: Report):
     page.wait_for_url(re.compile(r"/app/?$"))
     expect(page.get_by_text("Все товары", exact=True)).to_be_visible()
     expect(page.get_by_text("Установите магазин на телефон")).to_be_visible()
+    wait_images(page, 2)
     report.shot(page, "iphone-catalog")
+    collapse_header(page)
+    report.shot(page, "iphone-catalog-collapsed")
+    page.get_by_role("button", name="Открыть поиск").click()
+    expect(page.get_by_label("Поиск по каталогу")).to_be_visible()
 
-    # 2. Поиск по русской морфологии и началу слова.
-    search = page.get_by_label("Поиск товаров")
+    # 2. Поиск по русской морфологии и началу слова: из шапки каталога → вкладка «Поиск».
+    search = page.get_by_label("Поиск по каталогу")
     search.fill("кроссовк")
     search.press("Enter")
     expect(page.get_by_text(re.compile(r"Найдено товаров: [1-9]"))).to_be_visible()
     print(f"     фото в выдаче: {wait_images(page, 1)}")
     report.shot(page, "iphone-search")
 
-    # 3. Карточка товара: галерея, размер, «В корзину».
+    # 3. Карточка товара (лист снизу): галерея, размер, «В корзину» с заливкой.
     page.get_by_role("button", name=re.compile("Кроссовки")).first.click()
     expect(page.get_by_text("Размер", exact=True)).to_be_visible()
     wait_images(page, 1)
+    page.wait_for_timeout(700)  # лист открывается 420 мс, блоки появляются по очереди
     for size in SIZES:
-        chip = page.get_by_role("button", name=size, exact=True)
+        chip = page.get_by_role("radio", name=size, exact=True)
         if chip.count() and chip.first.is_enabled():
             chip.first.click()
             break
-    page.get_by_role("button", name="В корзину", exact=True).click()
-    expect(page.get_by_text("Товар в корзине.")).to_be_visible()
     report.shot(page, "iphone-product")
+    page.get_by_role("button", name=re.compile(r"^В корзину")).click()
+    expect(page.get_by_text("Добавлено в корзину")).to_be_visible()
+    page.wait_for_timeout(600)  # заливка 550 мс
+    report.shot(page, "iphone-product-added")
 
     # 4. Корзина гостя → вход → регистрация.
     page.get_by_text("Перейти в корзину").click()
@@ -152,6 +174,33 @@ def shopper(browser, base: str, report: Report):
     return number, page, context
 
 
+def dark_theme(browser, base: str, report: Report) -> None:
+    """Ключевые экраны в тёмной теме: системная тема по умолчанию следует prefers-color-scheme."""
+    context = iphone(browser, "dark")
+    page = context.new_page()
+    page.set_default_timeout(TIMEOUT_MS)
+    page.goto(base + "/app/")
+    expect(page.get_by_text("Все товары", exact=True)).to_be_visible()
+    expect(page.get_by_role("button", name="Светлая тема")).to_be_visible()
+    wait_images(page, 2)
+    report.shot(page, "dark-catalog")
+    collapse_header(page)
+    report.shot(page, "dark-catalog-collapsed")
+    page.get_by_role("button", name=re.compile(r"₽")).first.click()
+    page.wait_for_timeout(900)
+    report.shot(page, "dark-product")
+    page.goto(base + "/app/cart")
+    page.wait_for_timeout(500)
+    report.shot(page, "dark-cart")
+    page.goto(base + "/app/profile")
+    expect(page.get_by_text("Оформление")).to_be_visible()
+    # Явный выбор светлой темы — переключатель в профиле.
+    page.get_by_role("tab", name="Светлая").click()
+    page.wait_for_timeout(600)
+    report.shot(page, "profile-theme-light")
+    context.close()
+
+
 def admin_sees_order(browser, base: str, number: str, report: Report) -> None:
     context = browser.new_context(viewport={"width": 1280, "height": 800}, ignore_https_errors=True)
     page = context.new_page()
@@ -174,8 +223,7 @@ def desktop_grid(browser, base: str, report: Report) -> None:
     context = browser.new_context(viewport={"width": 1280, "height": 900}, ignore_https_errors=True)
     page = context.new_page()
     page.set_default_timeout(TIMEOUT_MS)
-    page.goto(base + "/app/")
-    page.get_by_text("Все товары", exact=True).click()
+    page.goto(base + "/app/search")
     expect(page.get_by_text(re.compile(r"Найдено товаров: \d+"))).to_be_visible()
     count = wait_images(page, 8)
     print(f"     фото на широком экране: {count}")
@@ -198,6 +246,7 @@ def main() -> int:
         report.shot(page, "iphone-order-cancelled")
         context.close()
 
+        dark_theme(browser, base, report)
         desktop_grid(browser, base, report)
         browser.close()
     print("BROWSER E2E OK")

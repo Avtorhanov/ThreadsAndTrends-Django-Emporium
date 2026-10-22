@@ -81,7 +81,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
       >
         {width > 0 ? <Animated.View style={[s.pill, { width: active }, pillStyle]} /> : null}
         {routes.map((route, index) => {
-          const meta = TABS[route.name];
+          const meta = TABS[route.name] ?? { label: route.name, icon: "grid" as IconName };
           const focused = index === activeIndex;
           const badge = route.name === "cart" && count > 0 ? count : 0;
           const onPress = () => {

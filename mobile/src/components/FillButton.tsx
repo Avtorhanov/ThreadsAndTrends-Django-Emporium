@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ActivityIndicator, StyleSheet } from "react-native";
+import { ActivityIndicator } from "react-native";
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -12,7 +12,7 @@ import { fonts } from "../theme/fonts";
 import { ease, motion, REDUCED_FADE_MS } from "../theme/motion";
 import { makeStyles, useTheme } from "../theme/ThemeProvider";
 import { radius, size } from "../theme/tokens";
-import { PressScale } from "./ui";
+import { FILL, PressScale } from "./ui";
 
 type Props = {
   title: string;
@@ -80,7 +80,7 @@ const useStyles = makeStyles(({ c }) => ({
     boxShadow: "0 20px 32px -14px rgba(0,0,0,.6)",
   },
   dimmed: { opacity: 0.55 },
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: c.ctaFill, transformOrigin: "left" },
+  fill: { ...FILL, backgroundColor: c.ctaFill, transformOrigin: "left" },
   text: { fontFamily: fonts.text800, fontSize: 16 },
   trailing: { fontFamily: fonts.display700, fontSize: 15 },
 }));
