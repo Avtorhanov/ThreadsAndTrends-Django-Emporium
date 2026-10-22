@@ -1,12 +1,22 @@
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import { ApiError } from "../../src/api/errors";
 import { useAuth } from "../../src/auth/AuthProvider";
 import { useCart } from "../../src/cart/CartProvider";
-import { colors, radius, spacing } from "../../src/components/theme";
-import { Button, Hint, Message, Screen, TextField } from "../../src/components/ui";
+import {
+  Button,
+  Card,
+  Centered,
+  Divider,
+  Hint,
+  Loading,
+  Message,
+  Screen,
+  SectionTitle,
+  SummaryRow,
+  TextField,
+} from "../../src/components/ui";
 import { useSubmit } from "../../src/hooks/useSubmit";
 import { formatKopecks } from "../../src/lib/money";
 import { ChoiceList } from "../../src/orders/components";
@@ -96,16 +106,16 @@ export default function CheckoutScreen() {
 
   if (!preview) {
     return (
-      <View style={styles.center}>
+      <Centered>
         {loadError ? (
           <>
             <Message text={loadError} />
             <Button title="Повторить" variant="secondary" onPress={() => void load()} />
           </>
         ) : (
-          <ActivityIndicator color={colors.primary} />
+          <Loading />
         )}
-      </View>
+      </Centered>
     );
   }
 
@@ -143,11 +153,11 @@ export default function CheckoutScreen() {
 
   return (
     <Screen>
-      <Text style={styles.section}>Получение</Text>
+      <SectionTitle>Получение</SectionTitle>
       <ChoiceList options={deliveryOptions} value={delivery} onChange={setDelivery} />
       {errors.delivery_method ? <Message text={errors.delivery_method[0] ?? null} /> : null}
 
-      <Text style={styles.section}>Получатель</Text>
+      <SectionTitle>Получатель</SectionTitle>
       <TextField
         label="Имя и фамилия"
         value={name}
@@ -187,19 +197,19 @@ export default function CheckoutScreen() {
         errors={errors.comment}
       />
 
-      <Text style={styles.section}>Оплата</Text>
+      <SectionTitle>Оплата</SectionTitle>
       <ChoiceList options={paymentOptions} value={payment} onChange={setPayment} />
       {errors.payment_method ? <Message text={errors.payment_method[0] ?? null} /> : null}
 
-      <View style={styles.summary}>
-        <Row label={`Товары · ${preview.cart.items_count} шт.`} value={formatKopecks(itemsTotal)} />
-        <Row
+      <Card style={summaryStyle}>
+        <SummaryRow label={`Товары · ${preview.cart.items_count} шт.`} value={formatKopecks(itemsTotal)} />
+        <SummaryRow
           label="Доставка"
           value={option && option.cost_kopecks > 0 ? formatKopecks(option.cost_kopecks) : "Бесплатно"}
         />
-        <View style={styles.divider} />
-        <Row label="Итого" value={formatKopecks(total)} strong />
-      </View>
+        <Divider />
+        <SummaryRow label="Итого" value={formatKopecks(total)} strong />
+      </Card>
       {preview.cart.has_price_changes ? (
         <Hint>Цены на некоторые товары изменились — итог посчитан по новым ценам.</Hint>
       ) : null}
@@ -215,36 +225,4 @@ export default function CheckoutScreen() {
   );
 }
 
-function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <View style={styles.row}>
-      <Text style={[styles.rowLabel, strong && styles.strong]}>{label}</Text>
-      <Text style={[styles.rowValue, strong && styles.strong]}>{value}</Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.md,
-    padding: spacing.lg,
-    backgroundColor: colors.background,
-  },
-  section: { fontSize: 18, fontWeight: "700", color: colors.text, marginTop: spacing.sm },
-  summary: {
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radius,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  row: { flexDirection: "row", justifyContent: "space-between", gap: spacing.md },
-  rowLabel: { fontSize: 15, color: colors.muted },
-  rowValue: { fontSize: 15, color: colors.text },
-  strong: { fontSize: 18, fontWeight: "700", color: colors.text },
-  divider: { height: 1, backgroundColor: colors.border },
-});
+const summaryStyle = { gap: 12, padding: 18, marginTop: 8 };

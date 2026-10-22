@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
     <title>DiDi-shop</title>
     <meta name="description" content="DiDi-shop — одежда, обувь, аксессуары и косметика с доставкой." />
-    <meta name="theme-color" content="#1F4D3A" />
+    <meta name="theme-color" content="#EBF1E2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#070E0A" media="(prefers-color-scheme: dark)" />
     <!-- Установка на экран «Домой»: Android/Chrome — манифест, iPhone/Safari — apple-* теги. -->
     <link rel="manifest" href="/app/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png" />
@@ -22,7 +23,12 @@
       }
       body {
         overflow: hidden;
-        background-color: #dad5ce;
+        background-color: #ebf1e2;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #070e0a;
+        }
       }
       #root {
         display: flex;

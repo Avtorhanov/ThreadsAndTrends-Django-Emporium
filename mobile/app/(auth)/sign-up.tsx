@@ -30,7 +30,7 @@ export default function SignUpScreen() {
   });
 
   return (
-    <Screen title="Регистрация">
+    <Screen title="Регистрация" overline="Новый аккаунт">
       <Message text={error} />
       <TextField
         label="Email"
