@@ -80,6 +80,8 @@ class Site:
 
     def request(self, client: Client, prefix: str, path: str, *, data=None, **extra):
         self._use(prefix)
+        # Тестовый клиент, в отличие от WSGIHandler, не ставит префикс для reverse() сам.
+        set_script_prefix(prefix + "/")
         if data is None:
             return client.get(path, SCRIPT_NAME=prefix, **extra)
         return client.post(path, data, SCRIPT_NAME=prefix, **extra)
