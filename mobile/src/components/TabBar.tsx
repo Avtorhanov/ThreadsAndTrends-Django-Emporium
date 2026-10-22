@@ -196,7 +196,8 @@ const useStyles = makeStyles(({ c, shadow }) => ({
     overflow: "hidden",
   },
   // Не сжимается: пока вкладка расширяется, лишнее обрезает overflow, а не многоточие.
-  label: { fontFamily: fonts.text800, fontSize: 13, flexShrink: 0 },
+  // Отступ справа: контур последней буквы («ы» в «Контакты») выходит за ширину текста.
+  label: { fontFamily: fonts.text800, fontSize: 13, flexShrink: 0, paddingRight: 3 },
   badge: {
     position: "absolute",
     top: -6,
