@@ -1,9 +1,14 @@
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Text, TextInput, View } from "react-native";
 
-import { colors, radius, spacing } from "../components/theme";
+import { Segmented } from "../components/Segmented";
+import { LinkButton, PressScale } from "../components/ui";
+import { Icon } from "../components/Icon";
+import { fonts } from "../theme/fonts";
+import { makeStyles, useTheme } from "../theme/ThemeProvider";
+import { radius } from "../theme/tokens";
 import type { ProductSort } from "./catalogService";
 
-/** Состояние полей фильтра как ввёл пользователь; в запрос переводит products.tsx. */
+/** Состояние полей фильтра как ввёл пользователь; в запрос переводит экран поиска. */
 export type FiltersDraft = {
   q: string;
   priceFrom: string; // рубли, как введено
@@ -14,17 +19,8 @@ export type FiltersDraft = {
 
 export const EMPTY_FILTERS: FiltersDraft = { q: "", priceFrom: "", priceTo: "", inStock: false, sort: "" };
 
-function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      onPress={onPress}
-      style={({ pressed }) => [styles.chip, active && styles.chipActive, pressed && styles.pressed]}
-    >
-      <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
-    </Pressable>
-  );
+export function filtersChanged(value: FiltersDraft): boolean {
+  return value.priceFrom !== "" || value.priceTo !== "" || value.inStock || value.sort !== "";
 }
 
 type Props = {
@@ -33,112 +29,105 @@ type Props = {
   priceError: string | null;
 };
 
+/** Сортировка, цена «от/до» в рублях и «В наличии» (поиск — отдельным полем на экране). */
 export function FiltersBar({ value, onChange, priceError }: Props) {
+  const s = useStyles();
+  const { c } = useTheme();
   const set = (patch: Partial<FiltersDraft>) => onChange({ ...value, ...patch });
   const searching = value.q.trim().length > 0;
-  const sorts: { sort: FiltersDraft["sort"]; label: string }[] = [
-    { sort: "", label: searching ? "Подходящие" : "Новинки" },
-    { sort: "price_asc", label: "Дешевле" },
-    { sort: "price_desc", label: "Дороже" },
-  ];
-  const changed =
-    value.q !== "" || value.priceFrom !== "" || value.priceTo !== "" || value.inStock || value.sort !== "";
+  // С поиском API показывает только товары в наличии — переключатель включён и не снимается.
+  const inStock = value.inStock || searching;
 
   return (
-    <View style={styles.box}>
-      <TextInput
-        value={value.q}
-        onChangeText={(q) => set({ q })}
-        placeholder="Поиск товаров"
-        placeholderTextColor={colors.muted}
-        accessibilityLabel="Поиск товаров"
-        returnKeyType="search"
-        autoCorrect={false}
-        maxLength={100}
-        style={styles.search}
+    <View style={s.box}>
+      <Segmented
+        label="Сортировка"
+        segments={[
+          { value: "", label: searching ? "Подходящие" : "Новинки" },
+          { value: "price_asc", label: "Дешевле" },
+          { value: "price_desc", label: "Дороже" },
+        ]}
+        value={value.sort}
+        onChange={(sort) => set({ sort })}
       />
-      <View style={styles.row}>
-        {sorts.map((item) => (
-          <Chip
-            key={item.sort || "default"}
-            label={item.label}
-            active={value.sort === item.sort}
-            onPress={() => set({ sort: item.sort })}
-          />
-        ))}
-        <Chip label="В наличии" active={value.inStock || searching} onPress={() => set({ inStock: !value.inStock })} />
-        {changed ? (
-          <Pressable accessibilityRole="button" onPress={() => onChange(EMPTY_FILTERS)} hitSlop={8}>
-            <Text style={styles.reset}>Сбросить</Text>
-          </Pressable>
-        ) : null}
-      </View>
-      <View style={styles.priceRow}>
+      <View style={s.priceRow}>
         <TextInput
           value={value.priceFrom}
           onChangeText={(priceFrom) => set({ priceFrom })}
           placeholder="Цена от, ₽"
-          placeholderTextColor={colors.muted}
+          placeholderTextColor={c.muted}
+          selectionColor={c.brand}
           accessibilityLabel="Цена от, рублей"
           keyboardType="numeric"
-          style={[styles.price, priceError ? styles.priceError : null]}
+          style={[s.price, priceError ? s.priceError : null]}
         />
         <TextInput
           value={value.priceTo}
           onChangeText={(priceTo) => set({ priceTo })}
           placeholder="до, ₽"
-          placeholderTextColor={colors.muted}
+          placeholderTextColor={c.muted}
+          selectionColor={c.brand}
           accessibilityLabel="Цена до, рублей"
           keyboardType="numeric"
-          style={[styles.price, priceError ? styles.priceError : null]}
+          style={[s.price, priceError ? s.priceError : null]}
         />
       </View>
-      {priceError ? <Text style={styles.error}>{priceError}</Text> : null}
-      {searching ? <Text style={styles.hint}>Поиск показывает только товары в наличии.</Text> : null}
+      {priceError ? <Text style={s.error}>{priceError}</Text> : null}
+      <View style={s.row}>
+        <PressScale
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: inStock, disabled: searching }}
+          disabled={searching}
+          onPress={() => set({ inStock: !value.inStock })}
+          scale={0.95}
+          style={[s.chip, inStock && s.chipOn]}
+        >
+          {inStock ? <Icon name="check" size={16} color={c.segOnInk} strokeWidth={2.4} /> : null}
+          <Text style={[s.chipText, inStock && s.chipTextOn]}>В наличии</Text>
+        </PressScale>
+        {filtersChanged(value) ? (
+          <LinkButton title="Сбросить" onPress={() => onChange({ ...EMPTY_FILTERS, q: value.q })} />
+        ) : null}
+      </View>
+      {searching ? <Text style={s.hint}>Поиск показывает только товары в наличии.</Text> : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  box: { gap: spacing.sm, marginBottom: spacing.sm },
-  search: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: colors.text,
-  },
-  row: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
-  chip: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-  },
-  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { color: colors.text, fontSize: 14 },
-  chipTextActive: { color: colors.primaryText },
-  pressed: { opacity: 0.7 },
-  priceRow: { flexDirection: "row", gap: spacing.sm },
+const useStyles = makeStyles(({ c, shadow }) => ({
+  box: { gap: 12 },
+  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  priceRow: { flexDirection: "row", gap: 10 },
   price: {
+    outlineWidth: 0,
+    outlineStyle: "solid", // при "auto" Chrome рисует обводку фокуса даже с толщиной 0
     flex: 1,
     minWidth: 0,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
+    height: 48,
+    paddingHorizontal: 16,
+    borderRadius: radius.control,
+    borderWidth: 1.5,
+    borderColor: "transparent",
+    backgroundColor: c.surface,
+    boxShadow: shadow.control,
+    fontFamily: fonts.text600,
     fontSize: 15,
-    color: colors.text,
+    color: c.ink,
   },
-  priceError: { borderColor: colors.danger },
-  reset: { color: colors.primary, fontSize: 15, paddingHorizontal: spacing.xs },
-  error: { color: colors.danger, fontSize: 13 },
-  hint: { color: colors.muted, fontSize: 13 },
-});
+  priceError: { borderColor: c.danger },
+  chip: {
+    height: 44,
+    paddingHorizontal: 16,
+    borderRadius: radius.control,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: c.surface,
+    boxShadow: shadow.control,
+  },
+  chipOn: { backgroundColor: c.segOnBg },
+  chipText: { fontFamily: fonts.text800, fontSize: 14, color: c.ink },
+  chipTextOn: { color: c.segOnInk },
+  error: { fontFamily: fonts.text600, color: c.danger, fontSize: 13 },
+  hint: { fontFamily: fonts.text500, color: c.muted, fontSize: 13 },
+}));

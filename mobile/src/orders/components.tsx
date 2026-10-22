@@ -1,24 +1,34 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
-import { colors, radius, spacing } from "../components/theme";
+import { fonts } from "../theme/fonts";
+import { makeStyles, type Theme, useTheme } from "../theme/ThemeProvider";
+import { radius } from "../theme/tokens";
 import type { OrderStatus } from "./orderService";
 
-const STATUS_COLORS: Record<OrderStatus, { fg: string; bg: string }> = {
-  awaiting_payment: { fg: "#B54708", bg: "#FFFAEB" },
-  confirmed: { fg: colors.primary, bg: "#EAF2EE" },
-  paid: { fg: colors.primary, bg: "#EAF2EE" },
-  assembled: { fg: colors.primary, bg: "#EAF2EE" },
-  shipped: { fg: "#175CD3", bg: "#EFF8FF" },
-  ready_for_pickup: { fg: "#175CD3", bg: "#EFF8FF" },
-  delivered: { fg: colors.success, bg: colors.successBg },
-  cancelled: { fg: colors.muted, bg: "#F0EEEB" },
-};
+function statusColors({ c }: Theme, status: OrderStatus): { fg: string; bg: string } {
+  switch (status) {
+    case "awaiting_payment":
+      return { fg: c.warning, bg: c.warningBg };
+    case "confirmed":
+    case "paid":
+    case "assembled":
+      return { fg: c.tagInk, bg: c.tag };
+    case "shipped":
+    case "ready_for_pickup":
+      return { fg: c.info, bg: c.infoBg };
+    case "delivered":
+      return { fg: c.success, bg: c.successBg };
+    case "cancelled":
+      return { fg: c.neutral, bg: c.neutralBg };
+  }
+}
 
 export function StatusBadge({ status, label }: { status: OrderStatus; label: string }) {
-  const palette = STATUS_COLORS[status];
+  const s = useStyles();
+  const palette = statusColors(useTheme(), status);
   return (
-    <View style={[styles.badge, { backgroundColor: palette.bg }]}>
-      <Text style={[styles.badgeText, { color: palette.fg }]}>{label}</Text>
+    <View style={[s.badge, { backgroundColor: palette.bg }]}>
+      <Text style={[s.badgeText, { color: palette.fg }]}>{label}</Text>
     </View>
   );
 }
@@ -33,22 +43,24 @@ export function ChoiceList<T extends string>({
   value: T | null;
   onChange: (value: T) => void;
 }) {
+  const s = useStyles();
   return (
-    <View style={styles.choices} accessibilityRole="radiogroup">
+    <View style={s.choices} accessibilityRole="radiogroup">
       {options.map((option) => {
         const selected = option.value === value;
         return (
           <Pressable
             key={option.value}
             accessibilityRole="radio"
+            accessibilityLabel={option.caption ? `${option.title}, ${option.caption}` : option.title}
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
-            style={[styles.choice, selected && styles.choiceSelected]}
+            style={({ pressed }) => [s.choice, selected && s.choiceSelected, pressed && s.pressed]}
           >
-            <View style={[styles.radio, selected && styles.radioSelected]} />
-            <View style={styles.choiceBody}>
-              <Text style={styles.choiceTitle}>{option.title}</Text>
-              {option.caption ? <Text style={styles.choiceCaption}>{option.caption}</Text> : null}
+            <View style={[s.radio, selected && s.radioSelected]} />
+            <View style={s.choiceBody}>
+              <Text style={s.choiceTitle}>{option.title}</Text>
+              {option.caption ? <Text style={s.choiceCaption}>{option.caption}</Text> : null}
             </View>
           </Pressable>
         );
@@ -66,35 +78,32 @@ export function formatDateTime(value: string): string {
   });
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(({ c, shadow }) => ({
   badge: {
     alignSelf: "flex-start",
-    borderRadius: 999,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    height: 26,
+    borderRadius: radius.tag,
+    paddingHorizontal: 10,
+    justifyContent: "center",
   },
-  badgeText: { fontSize: 13, fontWeight: "600" },
-  choices: { gap: spacing.sm },
+  badgeText: { fontFamily: fonts.text800, fontSize: 12 },
+  choices: { gap: 10 },
   choice: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radius,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    gap: 14,
+    padding: 16,
+    borderRadius: radius.control + 2,
+    borderWidth: 1.5,
+    borderColor: "transparent",
+    backgroundColor: c.surface,
+    boxShadow: shadow.control,
   },
-  choiceSelected: { borderColor: colors.primary },
-  radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: colors.border,
-  },
-  radioSelected: { borderColor: colors.primary, borderWidth: 6 },
+  choiceSelected: { borderColor: c.brand },
+  pressed: { opacity: 0.8 },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: c.inputLine },
+  radioSelected: { borderColor: c.brand, borderWidth: 7 },
   choiceBody: { flex: 1, gap: 2 },
-  choiceTitle: { fontSize: 16, color: colors.text },
-  choiceCaption: { fontSize: 13, color: colors.muted },
-});
+  choiceTitle: { fontFamily: fonts.text700, fontSize: 16, color: c.ink },
+  choiceCaption: { fontFamily: fonts.text500, fontSize: 13, color: c.muted },
+}));

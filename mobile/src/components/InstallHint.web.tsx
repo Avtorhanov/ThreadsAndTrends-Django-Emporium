@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, Text, View } from "react-native";
 
-import { colors, radius, spacing } from "./theme";
+import { fonts } from "../theme/fonts";
+import { makeStyles, useTheme } from "../theme/ThemeProvider";
+import { Card } from "./ui";
+import { Icon } from "./Icon";
 
 // Ссылка на APK задаётся при сборке веб-версии (deploy/edge.Dockerfile, ANDROID_APK_URL в .env).
 const APK_URL = process.env.EXPO_PUBLIC_ANDROID_APK_URL ?? "";
@@ -29,6 +32,8 @@ function detect(): Kind {
 
 /** Веб-версия: как установить магазин на телефон (iPhone — «На экран Домой», Android — APK). */
 export function InstallHint() {
+  const s = useStyles();
+  const { c } = useTheme();
   const [kind, setKind] = useState<Kind>(null);
   useEffect(() => setKind(detect()), []);
   if (!kind) return null;
@@ -43,41 +48,31 @@ export function InstallHint() {
   };
 
   return (
-    <View style={styles.box} accessibilityRole="summary">
-      <View style={styles.text}>
-        <Text style={styles.title}>Установите магазин на телефон</Text>
+    <Card style={s.box} radius={20}>
+      <View style={s.text}>
+        <Text style={s.title}>Установите магазин на телефон</Text>
         {kind === "ios" ? (
-          <Text style={styles.body}>
+          <Text style={s.body}>
             В Safari нажмите «Поделиться» (квадрат со стрелкой) → «На экран „Домой“». Магазин откроется
             как приложение.
           </Text>
         ) : (
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(APK_URL)}>
-            <Text style={styles.link}>Скачать приложение для Android (APK)</Text>
+            <Text style={s.link}>Скачать приложение для Android (APK)</Text>
           </Pressable>
         )}
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel="Скрыть подсказку" onPress={dismiss} hitSlop={8}>
-        <Text style={styles.close}>✕</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Скрыть подсказку" onPress={dismiss} hitSlop={13}>
+        <Icon name="close" size={18} color={c.muted} />
       </Pressable>
-    </View>
+    </Card>
   );
 }
 
-const styles = StyleSheet.create({
-  box: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius,
-    padding: spacing.md,
-  },
-  text: { flex: 1, gap: spacing.xs },
-  title: { fontSize: 15, fontWeight: "600", color: colors.text },
-  body: { fontSize: 14, lineHeight: 20, color: colors.muted },
-  link: { fontSize: 15, color: colors.primary },
-  close: { fontSize: 16, color: colors.muted },
-});
+const useStyles = makeStyles(({ c }) => ({
+  box: { flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 16, marginBottom: 8 },
+  text: { flex: 1, gap: 4 },
+  title: { fontFamily: fonts.text800, fontSize: 15, color: c.ink },
+  body: { fontFamily: fonts.text500, fontSize: 14, lineHeight: 20, color: c.muted },
+  link: { fontFamily: fonts.text700, fontSize: 15, color: c.brand },
+}));

@@ -14,7 +14,7 @@ export default function SignInScreen() {
   );
 
   return (
-    <Screen title="Вход">
+    <Screen title="Вход" overline="DiDi-shop" edges={["top", "bottom"]}>
       <Hint>Корзина сохранится: после входа товары из неё перенесутся в ваш аккаунт.</Hint>
       <Message text={error} />
       <TextField
