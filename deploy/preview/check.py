@@ -37,6 +37,11 @@ SHOTS = [  # (имя, адрес без BASE)
 ]
 
 
+class QuietHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *args):
+        pass
+
+
 def serve(site: Path) -> tuple[str, http.server.ThreadingHTTPServer]:
     """Раздать папку сайта под путём BASE (как project site на github.io)."""
     holder = Path(tempfile.mkdtemp())
@@ -45,8 +50,7 @@ def serve(site: Path) -> tuple[str, http.server.ThreadingHTTPServer]:
         target.symlink_to(site.resolve(), target_is_directory=True)
     else:
         holder = site.resolve()
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(holder))
-    handler.log_message = lambda *args: None
+    handler = functools.partial(QuietHandler, directory=str(holder))
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return f"http://127.0.0.1:{server.server_address[1]}", server
@@ -90,7 +94,7 @@ def main(site: Path, shots: Path) -> None:
         )
         product = find_product_page(site, data, variant_id)
         page.goto(origin + product, wait_until="load")
-        page.check(f'input[name="variant"][value="{variant_id}"]', force=True)
+        page.click(f'label.sz:has(input[value="{variant_id}"])')
         page.click("[data-cta]")
         page.wait_for_selector("[data-added]")
         assert page.text_content("#cart-badge-tab").strip() == "1"
