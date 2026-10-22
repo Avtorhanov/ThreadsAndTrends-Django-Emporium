@@ -199,7 +199,7 @@ const useStyles = makeStyles(({ c, shadow }) => ({
   },
   searchInput: {
     outlineWidth: 0,
-    outlineStyle: "none", // фокус в браузере — рамкой поля, а не системной обводкой
+    outlineStyle: "solid", // при "auto" Chrome рисует обводку фокуса даже с толщиной 0 // фокус в браузере — рамкой поля, а не системной обводкой
     flex: 1,
     minWidth: 0,
     height: size.searchHeight,
