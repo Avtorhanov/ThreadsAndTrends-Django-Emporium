@@ -111,7 +111,8 @@ def shopper(browser, base: str, report: Report):
     # Кнопка поиска в свёрнутой шапке: поле выезжает в строке шапки, лента остаётся на месте.
     page.get_by_role("button", name="Открыть поиск").click()
     expect(page.get_by_label("Быстрый поиск")).to_be_visible()
-    expect(page.get_by_label("Поиск по каталогу")).not_to_be_visible()
+    # Лента не вернулась наверх: заголовок раздела по-прежнему за пределами экрана.
+    expect(page.get_by_text("Все товары", exact=True)).not_to_be_in_viewport()
     page.wait_for_timeout(400)
     report.shot(page, "iphone-quick-search")
 
@@ -192,7 +193,8 @@ def dark_theme(browser, base: str, report: Report) -> None:
     report.shot(page, "dark-catalog-collapsed")
     # Нажатие на название — наверх: шапка разворачивается, полное поле поиска снова видно.
     page.get_by_role("button", name="DiDi-shop, наверх").click()
-    expect(page.get_by_label("Поиск по каталогу")).to_be_visible()
+    expect(page.get_by_text("Все товары", exact=True)).to_be_in_viewport()
+    expect(page.get_by_label("Поиск по каталогу")).to_be_in_viewport()
     collapse_header(page)
     page.get_by_role("button", name=re.compile(r"₽")).first.click()
     page.wait_for_timeout(900)

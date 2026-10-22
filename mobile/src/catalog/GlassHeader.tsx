@@ -79,6 +79,8 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
   const [focused, setFocused] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [rowWidth, setRowWidth] = useState(0);
+  // Свёрнутая шапка: поле поиска и категории не принимают касания, фокус и не читаются диктором.
+  const [compact, setCompact] = useState(false);
   const quickInput = useRef<TextInput>(null);
   const quick = useSharedValue(0);
 
@@ -104,9 +106,17 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
   useAnimatedReaction(
     () => progress.value < 0.5,
     (expanded, previous) => {
+      if (expanded === previous) return;
+      runOnJS(setCompact)(!expanded);
       if (expanded && previous === false) runOnJS(setQuickOpen)(false);
     },
   );
+  const hidden = {
+    pointerEvents: compact ? ("none" as const) : ("auto" as const),
+    "aria-hidden": compact,
+    accessibilityElementsHidden: compact,
+    importantForAccessibility: compact ? ("no-hide-descendants" as const) : ("auto" as const),
+  };
 
   const container = useAnimatedStyle(() => ({
     paddingTop: insets.top + interpolate(progress.value, [0, 1], [TOP, 0]),
@@ -226,7 +236,7 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
         ) : null}
       </View>
 
-      <Animated.View style={[s.clip, searchStyle]}>
+      <Animated.View {...hidden} style={[s.clip, searchStyle]}>
         <View style={[s.search, focused && s.searchFocused]}>
           <Icon name="search" size={20} color={c.muted} />
           <TextInput
@@ -256,7 +266,9 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
         </View>
       </Animated.View>
 
-      <Animated.View style={[s.clip, catsStyle]}>{categories}</Animated.View>
+      <Animated.View {...hidden} style={[s.clip, catsStyle]}>
+        {categories}
+      </Animated.View>
     </Animated.View>
   );
 }
