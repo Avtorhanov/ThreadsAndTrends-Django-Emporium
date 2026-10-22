@@ -20,6 +20,9 @@ jobs:
       - run: pip install ruff==0.16.8
       - run: ruff check .
       - run: ruff format --check .
+      # Токены «Лайм-тек»: mobile/src/theme/tokens.ts и tokens.css актуальны, контраст ≥ 4.5:1.
+      - name: Design tokens are generated and accessible
+        run: python3 scripts/gen_tokens.py --check
 
   test:
     runs-on: ubuntu-latest

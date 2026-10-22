@@ -21,9 +21,12 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "docs/design/lime-tech/tokens.json"
 TS_OUT = ROOT / "mobile/src/theme/tokens.ts"
 CSS_OUT = ROOT / "docs/design/lime-tech/tokens.css"
-HEADER = "Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать."
+HEADER = (
+    "Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать."
+)
 
 THEMES = ("light", "dark")
+STOPS_TYPE = "readonly [string, string, string] | null"
 
 # Пары «текст → фон», которые обязаны держать контраст ≥ 4.5:1 в обеих темах (WCAG AA).
 # Фон «card» в тёмной теме — градиент: проверяются все его остановки.
@@ -97,7 +100,8 @@ def check_contrast(tokens: dict) -> list[str]:
                     ratio = contrast(palette[fg], bg_value)
                     if ratio < minimum:
                         problems.append(
-                            f"{theme}: {fg} {palette[fg]} на {bg} {bg_value} — {ratio:.2f} < {minimum}"
+                            f"{theme}: {fg} {palette[fg]} на {bg} {bg_value}"
+                            f" — {ratio:.2f} < {minimum}"
                         )
     return problems
 
@@ -131,8 +135,7 @@ def render_ts(tokens: dict) -> str:
         raise SystemExit(f"в темах разный набор цветов: {missing}")
 
     palette_type = "\n".join(
-        f"  {key}: {'readonly [string, string, string] | null' if key == 'cardStops' else 'string'};"
-        for key in keys
+        f"  {key}: {STOPS_TYPE if key == 'cardStops' else 'string'};" for key in keys
     )
     shadow_keys = sorted(tokens["shadow"]["light"])
     shadow_type = "\n".join(f"  {key}: string;" for key in shadow_keys)
@@ -198,7 +201,10 @@ def render_css(tokens: dict) -> str:
         f"  --font-display: '{tokens['font']['display']['family']}', system-ui, sans-serif;",
         f"  --font-text: '{tokens['font']['text']['family']}', system-ui, sans-serif;",
     ]
-    common += [f"  --{camel_to_kebab(k)}: {tokens['motion'][k]};" for k in ("easeOut", "easeSoft", "easeTab")]
+    common += [
+        f"  --{camel_to_kebab(k)}: {tokens['motion'][k]};"
+        for k in ("easeOut", "easeSoft", "easeTab")
+    ]
     light_tones = [f"  --tone-{k}: {v[0]};" for k, v in tones.items()]
     dark_tones = [f"  --tone-{k}: {v[1]};" for k, v in tones.items()]
 
@@ -209,7 +215,8 @@ def render_css(tokens: dict) -> str:
     nested = [line.replace("  ", "    ", 1) for line in dark_lines]
     return (
         f"/* {HEADER} */\n"
-        f"/* Версия токенов: {tokens['version']} ({tokens['updated']}). Тёмная тема — data-theme=\"dark\"\n"
+        f"/* Версия токенов: {tokens['version']} ({tokens['updated']}).\n"
+        '   Тёмная тема — data-theme="dark"\n'
         "   или системная (prefers-color-scheme), если data-theme не задан явно. */\n\n"
         + block(":root", common + css_vars(light, tokens["shadow"]["light"], "  ") + light_tones)
         + "\n"

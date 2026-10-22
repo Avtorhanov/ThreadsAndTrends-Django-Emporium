@@ -215,14 +215,23 @@ EXPO_PUBLIC_API_URL=http://192.168.1.10:8000 npx expo start
 страница ЮKassa во встроенном браузере (`expo-web-browser`), возврат по deep link, затем сверка на сервере.
 Переход на Swift/Kotlin не затрагивает бэкенд: клиент для них генерируется из той же OpenAPI-схемы.
 
-Каталог: поиск на главном экране, в ленте — поиск, сортировка, цена «от/до» в рублях (в API уходят
-копейки, `parseRubles` без float), «В наличии»; сетка 2–4 колонки по ширине экрана.
+Навигация — плавающие вкладки «Каталог», «Поиск», «Корзина», «Профиль» (`app/(app)/(tabs)`, панель —
+`src/components/TabBar.tsx`); карточка товара открывается листом снизу поверх вкладок. Каталог: стеклянная
+шапка со сворачиванием при прокрутке, категории — сегменты, лента 2–4 колонки. «Поиск»: поле, категории,
+сортировка, цена «от/до» в рублях (в API уходят копейки, `parseRubles` без float), «В наличии».
+Профиль гостя — вход и регистрация; тема (как в системе / светлая / тёмная) — в профиле и кнопкой в шапке.
+
+Дизайн «Лайм-тек» (`docs/design/lime-tech/`): значения — только из `tokens.json`. После правки токенов —
+`python3 scripts/gen_tokens.py` (пишет `mobile/src/theme/tokens.ts` и `tokens.css` для веб-витрины; CI
+проверяет актуальность и контраст текста ≥ 4.5:1). Тема — `src/theme/ThemeProvider.tsx` (`useTheme`,
+`makeStyles`), шрифты Unbounded и Manrope — `@expo-google-fonts/*`, анимации — Reanimated
+(«Уменьшить движение» учитывается), общие компоненты — `src/components/ui.tsx`.
 
 Веб-версия: `npx expo export --platform web` — собирается в образ Caddy (`deploy/edge.Dockerfile`),
 работает по адресу `/app/` (`experiments.baseUrl`), API — тот же домен. Платформенные файлы `*.web.ts(x)`: хранение токена,
 подтверждения (`window.confirm`), оплата в той же вкладке, подсказка установки на iPhone/Android.
 APK: `.github/workflows/android.yml` (`expo prebuild` + Gradle, адрес магазина — `API_URL`).
-Иконки — `python3 scripts/make_icons.py`.
+Иконки — `python3 scripts/make_icons.py` (после `npm ci` в `mobile/`: шрифт берётся из пакета).
 
 ## Панель администратора (`admin-panel/`)
 
