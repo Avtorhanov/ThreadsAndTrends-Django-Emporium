@@ -108,11 +108,15 @@ def shopper(browser, base: str, report: Report):
     report.shot(page, "iphone-catalog")
     collapse_header(page)
     report.shot(page, "iphone-catalog-collapsed")
+    # Кнопка поиска в свёрнутой шапке: поле выезжает в строке шапки, лента остаётся на месте.
     page.get_by_role("button", name="Открыть поиск").click()
-    expect(page.get_by_label("Поиск по каталогу")).to_be_visible()
+    expect(page.get_by_label("Быстрый поиск")).to_be_visible()
+    expect(page.get_by_label("Поиск по каталогу")).not_to_be_visible()
+    page.wait_for_timeout(400)
+    report.shot(page, "iphone-quick-search")
 
     # 2. Поиск по русской морфологии и началу слова: из шапки каталога → вкладка «Поиск».
-    search = page.get_by_label("Поиск по каталогу")
+    search = page.get_by_label("Быстрый поиск")
     search.fill("кроссовк")
     search.press("Enter")
     expect(page.get_by_text(re.compile(r"Найдено товаров: [1-9]"))).to_be_visible()
@@ -186,6 +190,10 @@ def dark_theme(browser, base: str, report: Report) -> None:
     report.shot(page, "dark-catalog")
     collapse_header(page)
     report.shot(page, "dark-catalog-collapsed")
+    # Нажатие на название — наверх: шапка разворачивается, полное поле поиска снова видно.
+    page.get_by_role("button", name="DiDi-shop, наверх").click()
+    expect(page.get_by_label("Поиск по каталогу")).to_be_visible()
+    collapse_header(page)
     page.get_by_role("button", name=re.compile(r"₽")).first.click()
     page.wait_for_timeout(900)
     report.shot(page, "dark-product")

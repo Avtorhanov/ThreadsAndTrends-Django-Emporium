@@ -24,6 +24,8 @@ import { space } from "../../../src/theme/tokens";
 
 const ALL = "";
 const { collapseAt, expandBelow } = motion.headerCollapse;
+// Сколько остаётся проехать плавно при возврате наверх из глубины ленты.
+const SHORT_RETURN = 480;
 
 export default function CatalogScreen() {
   const s = useStyles();
@@ -44,15 +46,31 @@ export default function CatalogScreen() {
       ? collapsed.value
       : withTiming(collapsed.value, { duration: motion.headerCollapse.ms, easing: ease.soft }),
   );
+  const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((event) => {
     const y = event.contentOffset.y;
+    scrollY.value = y;
     if (collapsed.value === 0 && y > collapseAt) collapsed.value = 1;
     else if (collapsed.value === 1 && y < expandBelow) collapsed.value = 0;
   });
 
-  const scrollTop = () => list.current?.scrollToOffset({ offset: 0, animated: !reduced });
+  /**
+   * Наверх без «перемотки» через всю ленту: если прокручено далеко, лента мгновенно встаёт на
+   * короткое расстояние от начала, а оставшийся путь проходит плавно — как после лёгкой прокрутки.
+   */
+  const scrollTop = () => {
+    const target = list.current;
+    if (!target) return;
+    const y = scrollY.value;
+    if (reduced || y <= SHORT_RETURN) {
+      target.scrollToOffset({ offset: 0, animated: !reduced });
+      return;
+    }
+    target.scrollToOffset({ offset: SHORT_RETURN, animated: false });
+    requestAnimationFrame(() => target.scrollToOffset({ offset: 0, animated: true }));
+  };
 
-  // Повторное нажатие на вкладку «Каталог» — наверх.
+  // Нажатие на название в шапке и повторное нажатие на вкладку «Каталог» — наверх.
   useTabPress(scrollTop);
 
   const roots = categories.data ?? [];
@@ -115,7 +133,7 @@ export default function CatalogScreen() {
         progress={progress}
         search={search}
         onSearchChange={setSearch}
-        onExpand={scrollTop}
+        onTitlePress={scrollTop}
         categories={
           <Segmented
             label="Категории"

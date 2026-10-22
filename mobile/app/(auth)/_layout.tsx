@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-import { fonts } from "../../src/theme/fonts";
+import { StackHeader } from "../../src/navigation/StackHeader";
 import { useTheme } from "../../src/theme/ThemeProvider";
 
 export default function AuthLayout() {
@@ -9,12 +9,8 @@ export default function AuthLayout() {
     <Stack
       initialRouteName="sign-in"
       screenOptions={{
-        headerBackTitle: "Назад",
         title: "",
-        headerShadowVisible: false,
-        headerStyle: { backgroundColor: c.bg },
-        headerTintColor: c.ink,
-        headerTitleStyle: { fontFamily: fonts.text800, color: c.ink },
+        header: (props) => <StackHeader {...props} />,
         contentStyle: { backgroundColor: c.bg },
       }}
     >

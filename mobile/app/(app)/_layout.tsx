@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 
 import { useAuth } from "../../src/auth/AuthProvider";
 import { SheetDepthProvider } from "../../src/navigation/SheetDepth";
-import { fonts } from "../../src/theme/fonts";
+import { StackHeader } from "../../src/navigation/StackHeader";
 import { useTheme } from "../../src/theme/ThemeProvider";
 
 export default function AppLayout() {
@@ -12,11 +12,7 @@ export default function AppLayout() {
     <SheetDepthProvider>
       <Stack
         screenOptions={{
-          headerBackTitle: "Назад",
-          headerShadowVisible: false,
-          headerStyle: { backgroundColor: c.bg },
-          headerTintColor: c.ink,
-          headerTitleStyle: { fontFamily: fonts.text800, fontSize: 17, color: c.ink },
+          header: (props) => <StackHeader {...props} />,
           contentStyle: { backgroundColor: c.bg },
         }}
       >

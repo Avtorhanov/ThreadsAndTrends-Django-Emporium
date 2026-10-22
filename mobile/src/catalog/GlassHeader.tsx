@@ -1,12 +1,17 @@
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { type ReactNode, useState } from "react";
-import { Platform, StyleSheet, Text, TextInput, View } from "react-native";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import Animated, {
   interpolate,
+  runOnJS,
   type SharedValue,
+  useAnimatedReaction,
   useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -15,6 +20,7 @@ import { Icon } from "../components/Icon";
 import { FILL, IconButton, PressScale } from "../components/ui";
 import { fonts } from "../theme/fonts";
 import { makeStyles, useTheme } from "../theme/ThemeProvider";
+import { ease } from "../theme/motion";
 import { radius, size } from "../theme/tokens";
 
 // Размеры развёрнутой шапки (макет): отступ сверху, строка кнопок, поиск, сегменты, отступ снизу.
@@ -54,25 +60,53 @@ type Props = {
   progress: SharedValue<number>;
   search: string;
   onSearchChange: (text: string) => void;
-  onExpand: () => void;
+  /** Нажатие на логотип и название — наверх ленты. */
+  onTitlePress: () => void;
   categories: ReactNode;
 };
 
 /**
  * Стеклянная шапка каталога: при прокрутке поиск и категории сворачиваются, название
- * уменьшается, кнопки мельчают, справа появляется лаймовая кнопка поиска (раскрывает шапку).
+ * уменьшается, кнопки мельчают, справа появляется лаймовая кнопка поиска. Она не прокручивает
+ * ленту и не меняет высоту шапки: поле ввода выезжает из кнопки поверх строки шапки.
  */
-export function GlassHeader({ progress, search, onSearchChange, onExpand, categories }: Props) {
+export function GlassHeader({ progress, search, onSearchChange, onTitlePress, categories }: Props) {
   const s = useStyles();
   const { c, dark, toggle } = useTheme();
   const { count } = useCart();
   const insets = useSafeAreaInsets();
+  const reduced = useReducedMotion();
   const [focused, setFocused] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [rowWidth, setRowWidth] = useState(0);
+  const quickInput = useRef<TextInput>(null);
+  const quick = useSharedValue(0);
 
   const submit = () => {
     const q = search.trim();
     router.navigate({ pathname: "/search", params: q ? { q } : {} });
   };
+
+  const openQuick = () => setQuickOpen(true);
+  const closeQuick = () => {
+    quickInput.current?.blur();
+    setQuickOpen(false);
+  };
+  useEffect(() => {
+    quick.value = reduced ? Number(quickOpen) : withTiming(Number(quickOpen), { duration: 320, easing: ease.soft });
+    if (quickOpen) {
+      // Фокус — после того как поле выехало, иначе клавиатура дёргает раскладку.
+      const timer = setTimeout(() => quickInput.current?.focus(), reduced ? 0 : 200);
+      return () => clearTimeout(timer);
+    }
+  }, [quickOpen, reduced, quick]);
+  // Шапка развернулась (прокрутили к началу) — выехавшее поле убирается, видно полное поле поиска.
+  useAnimatedReaction(
+    () => progress.value < 0.5,
+    (expanded, previous) => {
+      if (expanded && previous === false) runOnJS(setQuickOpen)(false);
+    },
+  );
 
   const container = useAnimatedStyle(() => ({
     paddingTop: insets.top + interpolate(progress.value, [0, 1], [TOP, 0]),
@@ -90,6 +124,15 @@ export function GlassHeader({ progress, search, onSearchChange, onExpand, catego
     opacity: progress.value,
     transform: [{ scale: interpolate(progress.value, [0, 1], [0.6, 1]) }],
   }));
+  // Поле «быстрого поиска» растёт из лаймовой кнопки справа на всю строку шапки.
+  const quickStyle = useAnimatedStyle(() => {
+    const t = quick.value * progress.value;
+    return {
+      width: interpolate(t, [0, 1], [size.headerButtonCompact, Math.max(rowWidth, size.headerButtonCompact)]),
+      opacity: interpolate(t, [0, 0.15], [0, 1], "clamp"),
+    };
+  });
+  const quickContent = useAnimatedStyle(() => ({ opacity: interpolate(quick.value, [0.5, 1], [0, 1], "clamp") }));
   const searchStyle = useCollapsible(progress, SEARCH);
   const catsStyle = useCollapsible(progress, CATS);
 
@@ -105,21 +148,26 @@ export function GlassHeader({ progress, search, onSearchChange, onExpand, catego
         </BlurView>
       )}
 
-      <View style={s.row}>
-        <View style={s.brand}>
+      <View style={s.row} onLayout={(event) => setRowWidth(event.nativeEvent.layout.width)}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="DiDi-shop, наверх"
+          onPress={onTitlePress}
+          style={({ pressed }) => [s.brand, pressed && s.pressed]}
+        >
           <Animated.View style={[s.logo, button]}>
             <Text style={s.logoText}>Di</Text>
           </Animated.View>
-          <Animated.Text style={[s.word, wordmark]} accessibilityRole="header">
+          <Animated.Text style={[s.word, wordmark]}>
             DiDi<Text style={s.wordAccent}>-shop</Text>
           </Animated.Text>
-        </View>
+        </Pressable>
         <View style={s.actions}>
           <Animated.View style={[s.searchButtonWrap, searchButton]}>
             <PressScale
               accessibilityRole="button"
               accessibilityLabel="Открыть поиск"
-              onPress={onExpand}
+              onPress={openQuick}
               scale={0.92}
               style={s.searchButton}
             >
@@ -144,6 +192,38 @@ export function GlassHeader({ progress, search, onSearchChange, onExpand, catego
             />
           </Animated.View>
         </View>
+
+        {quickOpen ? (
+          <Animated.View style={[s.quick, quickStyle]}>
+            <Animated.View style={[s.quickInner, quickContent]}>
+              <Icon name="search" size={19} color={c.muted} />
+              <TextInput
+                ref={quickInput}
+                value={search}
+                onChangeText={onSearchChange}
+                onSubmitEditing={submit}
+                placeholder="Найти товар"
+                placeholderTextColor={c.muted}
+                selectionColor={c.brand}
+                accessibilityLabel="Быстрый поиск"
+                returnKeyType="search"
+                autoCorrect={false}
+                maxLength={100}
+                style={s.quickInput}
+              />
+              <PressScale
+                accessibilityRole="button"
+                accessibilityLabel="Закрыть поиск"
+                onPress={closeQuick}
+                hitSlop={4}
+                scale={0.9}
+                style={s.quickClose}
+              >
+                <Icon name="close" size={18} color={c.ink} />
+              </PressScale>
+            </Animated.View>
+          </Animated.View>
+        ) : null}
       </View>
 
       <Animated.View style={[s.clip, searchStyle]}>
@@ -232,7 +312,31 @@ const useStyles = makeStyles(({ c, shadow }) => ({
     boxShadow: shadow.header,
   },
   row: { height: ROW, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  brand: { flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 1 },
+  brand: { flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 1, minHeight: size.touchMin },
+  pressed: { opacity: 0.7 },
+  quick: {
+    position: "absolute",
+    right: 0,
+    top: (ROW - size.headerButtonCompact - 6) / 2,
+    height: size.headerButtonCompact + 6,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    borderColor: c.brand,
+    backgroundColor: c.surface,
+    boxShadow: shadow.control,
+    overflow: "hidden",
+  },
+  quickInner: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, paddingLeft: 12, paddingRight: 4 },
+  quickInput: {
+    outlineWidth: 0,
+    flex: 1,
+    minWidth: 0,
+    height: "100%",
+    fontFamily: fonts.text600,
+    fontSize: 15,
+    color: c.ink,
+  },
+  quickClose: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   logo: {
     backgroundColor: c.brand,
     alignItems: "center",
