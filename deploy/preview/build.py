@@ -142,6 +142,9 @@ def in_stock_variants() -> list[ProductVariant]:
     )
 
 
+BACKDATE: dict[int, int] = {}
+
+
 def make_customer(email: str, first_name: str) -> User:
     return User.objects.create_user(email=email, password=PASSWORD, first_name=first_name)
 
@@ -164,9 +167,8 @@ def place_order(user, variants, *, delivery, payment, days_ago=0) -> Order:
         os.urandom(12).hex(),
     )
     if days_ago:
-        Order.objects.filter(pk=order.pk).update(
-            created_at=timezone.now() - timedelta(days=days_ago)
-        )
+        # Дата сдвигается после всех переходов: иначе оплата «опоздала» бы (срок — 30 мин).
+        BACKDATE[order.pk] = days_ago
     return order
 
 
@@ -229,6 +231,9 @@ def demo_orders(user, variants, fake) -> list[Order]:
     orders.append(pay(place_order(user, [(v[14], 1)], delivery=C, payment=ON, days_ago=2), fake))
     orders.append(place_order(user, [(v[1], 1), (v[9], 1)], delivery=C, payment=OFF, days_ago=1))
     orders.append(place_order(user, [(v[4], 2)], delivery=C, payment=ON))
+    now = timezone.now()
+    for pk, days in BACKDATE.items():
+        Order.objects.filter(pk=pk).update(created_at=now - timedelta(days=days))
     return [Order.objects.get(pk=order.pk) for order in orders]
 
 
