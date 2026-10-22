@@ -198,7 +198,8 @@ const useStyles = makeStyles(({ c, shadow }) => ({
     boxShadow: shadow.control,
   },
   searchInput: {
-    outlineWidth: 0, // фокус в браузере — рамкой поля, а не системной обводкой
+    outlineWidth: 0,
+    outlineStyle: "none", // фокус в браузере — рамкой поля, а не системной обводкой
     flex: 1,
     minWidth: 0,
     height: size.searchHeight,
