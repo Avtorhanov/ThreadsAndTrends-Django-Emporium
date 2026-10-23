@@ -1159,7 +1159,9 @@ a.stat:hover {
     padding: 14px;
   }
 
-  .stat-accent {
+  /* «Сегодня» и последняя плитка — во всю ширину: 1 + 2 + 1. */
+  .stat-accent,
+  .stats > .stat:last-child:nth-child(even) {
     grid-column: 1 / -1;
   }
 
@@ -1167,13 +1169,6 @@ a.stat:hover {
     font-size: 24px;
   }
 
-  .preview-note {
-    left: 12px;
-    right: auto;
-    bottom: 8px;
-    padding: 6px 12px;
-    font-size: 12px;
-  }
 }
 
 /* --- Превью на GitHub Pages (src/preview/mock.ts) --- */
@@ -1192,6 +1187,16 @@ a.stat:hover {
   font-weight: 700;
   box-shadow: var(--shadow-accent-glow);
   pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .preview-note {
+    left: 12px;
+    right: auto;
+    bottom: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
