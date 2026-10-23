@@ -117,12 +117,12 @@ def build_summary(now=None) -> dict:
     }
 
 
-@extend_schema(
-    operation_id="admin_summary",
-    description="Сводка для главной страницы панели.",
-    tags=["admin-summary"],
-    responses=AdminSummarySerializer,
-)
 class AdminSummaryView(AdminAPIMixin, APIView):
+    @extend_schema(
+        operation_id="admin_summary",
+        description="Сводка для главной страницы панели.",
+        tags=["admin-summary"],
+        responses=AdminSummarySerializer,
+    )
     def get(self, request):
         return Response(AdminSummarySerializer(build_summary()).data)
