@@ -1,6 +1,7 @@
 """Проверка собранного превью в браузере (Playwright): каждая страница открывается без ошибок
 в консоли и без битых ресурсов, имитация корзины и оформления работает; скриншоты ключевых
-комнат на телефоне и десктопе в обеих темах.
+комнат на телефоне и десктопе в обеих темах. Панель администратора (`/panel/`) — каждый экран
+открывается с данными из снимка API, без сообщений об ошибке; скриншоты — panel-*.
 
     python deploy/preview/check.py _site shots
 Сайт раздаётся локально по тому же пути, что на Pages (PREVIEW_BASE).
@@ -128,6 +129,9 @@ def main(site: Path, shots: Path) -> None:
                     page.goto(origin + url, wait_until="load")
                     page.wait_for_timeout(300)
                     page.screenshot(path=shots / f"{name}-{device_name}-{theme}.png")
+        # 4. Панель администратора (если собрана).
+        if (site / "panel/preview-api.json").exists():
+            check_panel(page_for, site, origin, shots, problems)
         browser.close()
     server.shutdown()
 
@@ -135,6 +139,65 @@ def main(site: Path, shots: Path) -> None:
         print("Ошибки:\n" + "\n".join(sorted(set(problems))))
         sys.exit(1)
     print("Превью: ошибок нет")
+
+
+PANEL_API = "/api/v1/admin"
+
+
+def panel_shots(site: Path) -> list[tuple[str, str]]:
+    """(имя, адрес без BASE): экраны панели; id — из снимка API, как в build.py."""
+    snapshot = json.loads((site / "panel/preview-api.json").read_text(encoding="utf-8"))
+
+    def first(path: str) -> int:
+        return snapshot[f"{PANEL_API}/{path}/"]["results"][0]["id"]
+
+    online = next(
+        (
+            order["id"]
+            for order in snapshot[f"{PANEL_API}/orders/"]["results"]
+            if order["payment_method"] == "online"
+        ),
+        first("orders"),
+    )
+    return [
+        ("summary", "/panel/"),
+        ("orders", "/panel/orders/"),
+        ("order", f"/panel/orders/{online}/"),
+        ("products", "/panel/catalog/products/"),
+        ("product", f"/panel/catalog/products/{first('catalog/products')}/"),
+        ("categories", "/panel/catalog/categories/"),
+        ("articles", "/panel/content/articles/"),
+        ("customers", "/panel/customers/"),
+        ("login", "/panel/login/"),
+    ]
+
+
+def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[str]) -> None:
+    screens = panel_shots(site)
+    for theme in ("light", "dark"):
+        for device_name, device in (("iphone", IPHONE), ("desktop", DESKTOP)):
+            page = page_for(device)
+            page.context.add_init_script(
+                f"try {{ localStorage.setItem('didi-panel-theme', '{theme}') }} catch (e) {{}}"
+            )
+            for name, path in screens:
+                page.goto(origin + BASE + path, wait_until="load")
+                page.wait_for_selector(".login-card" if name == "login" else "main h1")
+                page.wait_for_function(
+                    "!document.body.innerText.includes('Загрузка…')"
+                    " && !document.querySelector('.is-loading')"
+                )
+                page.wait_for_timeout(200)
+                alerts = page.locator(".alert").all_text_contents()
+                if alerts:
+                    problems.append(f"{page.url}: {' | '.join(alerts)}")
+                page.screenshot(path=shots / f"panel-{name}-{device_name}-{theme}.png")
+            if device_name == "iphone":
+                page.goto(origin + BASE + "/panel/orders/", wait_until="load")
+                page.click(".mobilebar .icon-button")
+                page.wait_for_timeout(400)
+                page.screenshot(path=shots / f"panel-menu-iphone-{theme}.png")
+    print(f"Панель: экранов проверено {len(screens)} × 4")
 
 
 def find_product_page(site: Path, data: dict, variant_id: str) -> str:

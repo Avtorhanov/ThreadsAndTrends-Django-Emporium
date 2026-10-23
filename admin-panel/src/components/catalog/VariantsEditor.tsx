@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 
 import { type Variant, variantsService } from "../../api/catalog";
 import { ApiError } from "../../api/errors";
+import { Table } from "../Table";
 
 type Props = {
   productId: number;
@@ -103,32 +104,30 @@ export function VariantsEditor({ productId, variants, onChanged }: Props) {
         Товар без размеров — один вариант «Без размера». Чтобы добавить размеры, сначала укажите размер у него.
       </p>
       {error ? <p className="alert">{error}</p> : null}
-      <div className="table-wrap">
-        <table className={busy ? "table is-loading" : "table"}>
-          <thead>
-            <tr>
-              <th>Размер</th>
-              <th>Артикул</th>
-              <th>Остаток</th>
-              <th aria-label="Действия" />
-            </tr>
-          </thead>
-          <tbody>
-            {variants.map((variant) => (
-              <VariantRow
-                // Ключ с версией данных: после сохранения строка инициализируется заново.
-                key={`${variant.id}:${variant.size}:${variant.sku}:${variant.stock}`}
-                variant={variant}
-                busy={busy}
-                onSave={(patch) => void run(() => variantsService.update(variant.id, patch))}
-                onDelete={() => {
-                  if (window.confirm("Удалить вариант?")) void run(() => variantsService.remove(variant.id));
-                }}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table loading={busy}>
+        <thead>
+          <tr>
+            <th>Размер</th>
+            <th>Артикул</th>
+            <th>Остаток</th>
+            <th aria-label="Действия" />
+          </tr>
+        </thead>
+        <tbody>
+          {variants.map((variant) => (
+            <VariantRow
+              // Ключ с версией данных: после сохранения строка инициализируется заново.
+              key={`${variant.id}:${variant.size}:${variant.sku}:${variant.stock}`}
+              variant={variant}
+              busy={busy}
+              onSave={(patch) => void run(() => variantsService.update(variant.id, patch))}
+              onDelete={() => {
+                if (window.confirm("Удалить вариант?")) void run(() => variantsService.remove(variant.id));
+              }}
+            />
+          ))}
+        </tbody>
+        </Table>
       <form className="filters inline-form" onSubmit={add}>
         <input placeholder="Размер" value={size} maxLength={50} onChange={(e) => setSize(e.target.value)} />
         <input placeholder="Артикул (необязательно)" value={sku} maxLength={64} onChange={(e) => setSku(e.target.value)} />

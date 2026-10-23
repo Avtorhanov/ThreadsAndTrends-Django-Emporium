@@ -6,7 +6,8 @@
 Выход:
 - mobile/src/theme/tokens.ts — типизированные токены для приложения (React Native);
 - docs/design/lime-tech/tokens.css — CSS-переменные (справочная копия рядом с tokens.json);
-- web/static/web/css/tokens.css — те же переменные для веб-витрины (статика Django).
+- web/static/web/css/tokens.css — те же переменные для веб-витрины (статика Django);
+- admin-panel/src/tokens.css — те же переменные для панели администратора (React + Vite).
 
 Единственный источник значений — tokens.json; сгенерированные файлы руками не правятся.
 """
@@ -23,6 +24,7 @@ SOURCE = ROOT / "docs/design/lime-tech/tokens.json"
 TS_OUT = ROOT / "mobile/src/theme/tokens.ts"
 CSS_OUT = ROOT / "docs/design/lime-tech/tokens.css"
 WEB_CSS_OUT = ROOT / "web/static/web/css/tokens.css"
+ADMIN_CSS_OUT = ROOT / "admin-panel/src/tokens.css"
 HEADER = (
     "Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать."
 )
@@ -235,7 +237,12 @@ def main() -> int:
     tokens = json.loads(SOURCE.read_text(encoding="utf-8"))
     problems = check_contrast(tokens)
     css = render_css(tokens)
-    outputs = {TS_OUT: render_ts(tokens), CSS_OUT: css, WEB_CSS_OUT: css}
+    outputs = {
+        TS_OUT: render_ts(tokens),
+        CSS_OUT: css,
+        WEB_CSS_OUT: css,
+        ADMIN_CSS_OUT: css,
+    }
 
     if check:
         for path, content in outputs.items():

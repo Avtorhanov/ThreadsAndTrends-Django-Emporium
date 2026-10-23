@@ -1,5 +1,6 @@
 # Визуальное превью витрины на GitHub Pages: все «комнаты» сайта статичными страницами
-# (deploy/preview/build.py), проверка в браузере и публикация в ветку gh-pages.
+# (deploy/preview/build.py) и панель администратора (/panel/, ответы API из снимка),
+# проверка в браузере и публикация в ветку gh-pages.
 # Pages: Settings → Pages → Build and deployment → Deploy from a branch → gh-pages / (root).
 name: Visual preview
 
@@ -49,6 +50,20 @@ jobs:
           cache-dependency-path: requirements/*.txt
       - run: pip install -r requirements/base.txt playwright
       - run: python -m playwright install --with-deps chromium
+      # Панель администратора — настоящая сборка в режиме превью (ответы API из снимка).
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: admin-panel/package-lock.json
+      - name: Build admin panel (preview mode)
+        working-directory: admin-panel
+        env:
+          VITE_PREVIEW: "1"
+          VITE_BASE: ${{ env.PREVIEW_BASE }}/panel/
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
       - name: Build preview
         run: |
           mkdir -p preview-shots

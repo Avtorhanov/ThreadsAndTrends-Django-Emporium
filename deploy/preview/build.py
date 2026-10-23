@@ -7,6 +7,11 @@
 `<base>/rooms/`. Отправка форм и корзину имитирует static/preview/preview.js (только здесь,
 на боевом сайте его нет).
 
+Панель администратора — `<base>/panel/`: настоящая сборка admin-panel (VITE_PREVIEW=1), а ответы
+admin-API на тех же демо-данных записываются здесь в `<base>/panel/preview-api.json`; панель
+читает их вместо сервера (admin-panel/src/preview/). Сборку панели (`npm run build` с
+PREVIEW_PANEL_DIST) делает workflow до этого скрипта; без неё раздел панели пропускается.
+
 Запуск (нужен Postgres из DB_*):
     PREVIEW_BASE=/ThreadsAndTrends-Django-Emporium python deploy/preview/build.py _site
 """
@@ -334,6 +339,7 @@ def build(out: Path) -> None:
     )
     if media.exists():
         shutil.copytree(media, out / "media")
+    build_panel(out)
     (out / ".nojekyll").write_text("", encoding="utf-8")
     print(f"Превью: {len(site.pages)} страниц → {out}")
 
@@ -563,6 +569,7 @@ def write_rooms(out: Path, orders: list[Order], rooms: dict, query: str) -> None
                 rooms.pop("reset-code-error"),
             ],
         ),
+        panel_section(orders),
         (
             "Контакты и страницы",
             [
@@ -588,6 +595,126 @@ def write_rooms(out: Path, orders: list[Order], rooms: dict, query: str) -> None
     file = out / "rooms/index.html"
     file.parent.mkdir(parents=True, exist_ok=True)
     file.write_text(Site.decorate(html, tree="guest", room="rooms"), encoding="utf-8")
+
+
+# --- Панель администратора ---
+
+PANEL_DIST = Path(os.environ.get("PREVIEW_PANEL_DIST", ROOT / "admin-panel/dist"))
+ADMIN_EMAIL = "admin@didi-shop.ru"
+ADMIN_API = "/api/v1/admin"
+# Маршруты панели (react-router): у каждого — своя копия index.html, иначе Pages отдаст 404.
+PANEL_ROUTES = (
+    "login",
+    "orders",
+    "customers",
+    "catalog/products",
+    "catalog/products/new",
+    "catalog/categories",
+    "content/articles",
+    "content/articles/new",
+)
+
+
+def api_key(path: str, query: dict | None = None) -> str:
+    """Ключ снимка: путь + отсортированные непустые параметры без page=1.
+    Так же ключ строит admin-panel/src/preview/mock.ts."""
+    pairs = sorted((k, str(v)) for k, v in (query or {}).items() if v not in ("", None))
+    pairs = [(k, v) for k, v in pairs if (k, v) != ("page", "1")]
+    return path + ("?" + "&".join(f"{k}={v}" for k, v in pairs) if pairs else "")
+
+
+def panel_ids() -> dict[str, list[int]]:
+    """Объекты, у которых в превью есть страница панели (и снимок ответа API)."""
+    return {
+        "orders": list(Order.objects.order_by("pk").values_list("pk", flat=True)),
+        "catalog/products": list(Product.objects.order_by("pk").values_list("pk", flat=True)),
+        "content/articles": list(Article.objects.order_by("pk").values_list("pk", flat=True)),
+    }
+
+
+def panel_snapshot() -> dict:
+    staff = User.objects.create_user(
+        email=ADMIN_EMAIL, password=PASSWORD, first_name="Администратор", is_staff=True
+    )
+    client = Client()
+    client.force_login(staff)
+    snapshot: dict = {}
+
+    def grab(path: str, query: dict | None = None) -> dict:
+        response = client.get(path, query or {})
+        if response.status_code != 200:
+            raise SystemExit(f"Превью панели: {path} {query or ''} → {response.status_code}")
+        snapshot[api_key(path, query)] = response.json()
+        return snapshot[api_key(path, query)]
+
+    grab(f"{ADMIN_API}/auth/me/")
+    grab(f"{ADMIN_API}/summary/")
+    grab(f"{ADMIN_API}/orders/")
+    grab(f"{ADMIN_API}/orders/", {"unfinished": "true"})
+    for status in S.values:
+        grab(f"{ADMIN_API}/orders/", {"status": status})
+    for order in Order.objects.all():
+        grab(f"{ADMIN_API}/orders/{order.pk}/")
+    grab(f"{ADMIN_API}/catalog/categories/")
+    grab(f"{ADMIN_API}/catalog/products/")
+    for pk in panel_ids()["catalog/products"]:
+        grab(f"{ADMIN_API}/catalog/products/{pk}/")
+    grab(f"{ADMIN_API}/content/articles/")
+    for pk in panel_ids()["content/articles"]:
+        grab(f"{ADMIN_API}/content/articles/{pk}/")
+    grab(f"{ADMIN_API}/customers/")
+    # Ссылки на фото — абсолютные от тестового сервера; в превью медиа лежат рядом.
+    text = json.dumps(snapshot, ensure_ascii=False).replace("http://testserver", "")
+    return json.loads(text)
+
+
+def build_panel(out: Path) -> None:
+    index = PANEL_DIST / "index.html"
+    if not index.exists():
+        print(f"Панель: нет сборки {index} — раздел /panel/ пропущен")
+        return
+    target = out / "panel"
+    shutil.copytree(PANEL_DIST, target)
+    snapshot = panel_snapshot()
+    (target / "preview-api.json").write_text(
+        json.dumps(snapshot, ensure_ascii=False), encoding="utf-8"
+    )
+    html = index.read_text(encoding="utf-8")
+    routes = list(PANEL_ROUTES) + [
+        f"{section}/{pk}" for section, pks in panel_ids().items() for pk in pks
+    ]
+    for route in routes:
+        file = target / route / "index.html"
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(html, encoding="utf-8")
+    print(f"Панель: {len(snapshot)} ответов API, {len(routes) + 1} страниц → {target}")
+
+
+def panel_section(orders: list[Order]) -> tuple[str, list[tuple[str, str]]]:
+    panel = f"{BASE}/panel"
+    if not (PANEL_DIST / "index.html").exists():
+        return ("Панель администратора", [])
+    first_product = Product.objects.order_by("pk").first()
+    first_article = Article.objects.order_by("pk").first()
+    online = next((o for o in orders if o.payment_method == PaymentMethod.ONLINE), orders[0])
+    links = [
+        ("Сводка", f"{panel}/"),
+        ("Заказы в работе", f"{panel}/orders/"),
+        ("Заказы, ждущие оплаты", f"{panel}/orders/?status=awaiting_payment"),
+        (f"Заказ {orders[0].number}", f"{panel}/orders/{orders[0].pk}/"),
+        (f"Заказ {online.number} (онлайн-оплата)", f"{panel}/orders/{online.pk}/"),
+        ("Товары", f"{panel}/catalog/products/"),
+        ("Новый товар", f"{panel}/catalog/products/new/"),
+        ("Категории", f"{panel}/catalog/categories/"),
+        ("Статьи", f"{panel}/content/articles/"),
+        ("Клиенты", f"{panel}/customers/"),
+        ("Вход в панель", f"{panel}/login/"),
+    ]
+    if first_product:
+        links.insert(6, ("Карточка товара", f"{panel}/catalog/products/{first_product.pk}/"))
+    if first_article:
+        links.insert(-2, ("Статья", f"{panel}/content/articles/{first_article.pk}/"))
+    return ("Панель администратора (имитация API)", links)
 
 
 def product_link(*, compare=False, single=False, sold_out=False) -> str:

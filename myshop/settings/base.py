@@ -174,6 +174,10 @@ REST_FRAMEWORK = {
 CART_MAX_QUANTITY = env_int("CART_MAX_QUANTITY", 10)
 CART_MAX_ITEMS = env_int("CART_MAX_ITEMS", 50)
 
+# --- Панель администратора ---
+# «Мало на складе» в сводке: варианты с остатком от 0 до этого числа включительно.
+ADMIN_LOW_STOCK_THRESHOLD = env_int("ADMIN_LOW_STOCK_THRESHOLD", 3)
+
 # --- Заказы ---
 # Курьерская доставка: стоимость и порог бесплатной доставки (по сумме товаров), копейки.
 DELIVERY_COURIER_KOPECKS = env_int("DELIVERY_COURIER_KOPECKS", 500_00)

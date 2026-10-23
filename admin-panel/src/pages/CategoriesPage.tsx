@@ -3,6 +3,7 @@ import { type FormEvent, useState } from "react";
 import { type Category, categoriesService } from "../api/catalog";
 import { ApiError } from "../api/errors";
 import { sortCategoryTree, useCategories } from "../hooks/useCatalog";
+import { Table } from "../components/Table";
 
 function message(error: unknown): string {
   if (!(error instanceof ApiError)) return "Действие не выполнено.";
@@ -88,82 +89,80 @@ export function CategoriesPage() {
       {error ? <p className="alert">{error}</p> : null}
       {actionError ? <p className="alert">{actionError}</p> : null}
 
-      <div className="table-wrap">
-        <table className={loading || busy ? "table is-loading" : "table"}>
-          <thead>
-            <tr>
-              <th>Название</th>
-              <th>Адрес (slug)</th>
-              <th>Товаров</th>
-              <th>Порядок</th>
-              <th>Видимость</th>
-              <th aria-label="Действия" />
-            </tr>
-          </thead>
-          <tbody>
-            {tree.map((category) => (
-              <tr key={category.id}>
-                <td className={category.depth ? "indent" : "strong"}>{category.name}</td>
-                <td className="muted">{category.slug}</td>
-                <td>{category.products_count}</td>
-                <td>
-                  <input
-                    className="input-narrow"
-                    type="number"
-                    min={0}
-                    defaultValue={category.position ?? 0}
-                    disabled={busy}
-                    onBlur={(event) => {
-                      const position = Number(event.target.value);
-                      if (Number.isInteger(position) && position >= 0 && position !== category.position) {
-                        void run(() => categoriesService.update(category.id, { position }));
-                      }
-                    }}
-                  />
-                </td>
-                <td>
-                  <span className={`badge ${category.is_active ? "badge-active" : "badge-deleted"}`}>
-                    {category.is_active ? "Показана" : "Скрыта"}
-                  </span>
-                </td>
-                <td className="actions">
-                  <button type="button" className="button button-ghost" disabled={busy} onClick={() => rename(category)}>
-                    Переименовать
-                  </button>
-                  <button
-                    type="button"
-                    className="button button-ghost"
-                    disabled={busy}
-                    onClick={() =>
-                      void run(() =>
-                        categoriesService.update(category.id, { is_active: !category.is_active }),
-                      )
+      <Table loading={loading || busy}>
+        <thead>
+          <tr>
+            <th>Название</th>
+            <th>Адрес (slug)</th>
+            <th>Товаров</th>
+            <th>Порядок</th>
+            <th>Видимость</th>
+            <th aria-label="Действия" />
+          </tr>
+        </thead>
+        <tbody>
+          {tree.map((category) => (
+            <tr key={category.id}>
+              <td className={category.depth ? "indent" : "strong"}>{category.name}</td>
+              <td className="muted">{category.slug}</td>
+              <td>{category.products_count}</td>
+              <td>
+                <input
+                  className="input-narrow"
+                  type="number"
+                  min={0}
+                  defaultValue={category.position ?? 0}
+                  disabled={busy}
+                  onBlur={(event) => {
+                    const position = Number(event.target.value);
+                    if (Number.isInteger(position) && position >= 0 && position !== category.position) {
+                      void run(() => categoriesService.update(category.id, { position }));
                     }
-                  >
-                    {category.is_active ? "Скрыть" : "Показать"}
-                  </button>
-                  <button
-                    type="button"
-                    className="button button-danger"
-                    disabled={busy || category.children_count > 0}
-                    title={category.children_count > 0 ? "Сначала удалите подкатегории" : undefined}
-                    onClick={() => remove(category)}
-                  >
-                    Удалить
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {data && data.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="empty">
-                  Категорий пока нет
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+                  }}
+                />
+              </td>
+              <td>
+                <span className={`badge ${category.is_active ? "badge-active" : "badge-deleted"}`}>
+                  {category.is_active ? "Показана" : "Скрыта"}
+                </span>
+              </td>
+              <td className="actions">
+                <button type="button" className="button button-ghost" disabled={busy} onClick={() => rename(category)}>
+                  Переименовать
+                </button>
+                <button
+                  type="button"
+                  className="button button-ghost"
+                  disabled={busy}
+                  onClick={() =>
+                    void run(() =>
+                      categoriesService.update(category.id, { is_active: !category.is_active }),
+                    )
+                  }
+                >
+                  {category.is_active ? "Скрыть" : "Показать"}
+                </button>
+                <button
+                  type="button"
+                  className="button button-danger"
+                  disabled={busy || category.children_count > 0}
+                  title={category.children_count > 0 ? "Сначала удалите подкатегории" : undefined}
+                  onClick={() => remove(category)}
+                >
+                  Удалить
+                </button>
+              </td>
+            </tr>
+          ))}
+          {data && data.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="empty">
+                Категорий пока нет
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+        </Table>
     </section>
   );
 }

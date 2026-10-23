@@ -1004,6 +1004,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminOrderDetail'
           description: ''
+  /api/v1/admin/summary/:
+    get:
+      operationId: admin_summary
+      description: Сводка для главной страницы панели.
+      tags:
+      - admin-summary
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSummary'
+          description: ''
   /api/v1/auth/login/:
     post:
       operationId: login
@@ -2022,6 +2037,27 @@ components:
           description: JPEG, PNG или WebP, до 5 МБ
       required:
       - image
+    AdminLowStockVariant:
+      type: object
+      description: Вариант активного товара с остатком не выше порога.
+      properties:
+        product_id:
+          type: integer
+        product_name:
+          type: string
+        size:
+          type: string
+          description: Пусто — товар без размеров
+        sku:
+          type: string
+        stock:
+          type: integer
+      required:
+      - product_id
+      - product_name
+      - sku
+      - size
+      - stock
     AdminOrderCustomer:
       type: object
       properties:
@@ -2530,6 +2566,61 @@ components:
       - reason_display
       - status
       - status_display
+    AdminSummary:
+      type: object
+      description: Сводка панели; периоды — от полуночи по времени магазина.
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        today:
+          $ref: '#/components/schemas/AdminSummaryPeriod'
+        last_7_days:
+          $ref: '#/components/schemas/AdminSummaryPeriod'
+        last_30_days:
+          $ref: '#/components/schemas/AdminSummaryPeriod'
+        awaiting_payment:
+          type: integer
+          description: Ждут онлайн-оплаты
+        to_assemble:
+          type: integer
+          description: Приняты или оплачены — нужно собрать
+        to_deliver:
+          type: integer
+          description: Собраны, отправлены или ждут в пункте выдачи
+        low_stock_threshold:
+          type: integer
+        low_stock_count:
+          type: integer
+          description: Всего вариантов с малым остатком
+        low_stock:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminLowStockVariant'
+      required:
+      - awaiting_payment
+      - generated_at
+      - last_30_days
+      - last_7_days
+      - low_stock
+      - low_stock_count
+      - low_stock_threshold
+      - to_assemble
+      - to_deliver
+      - today
+    AdminSummaryPeriod:
+      type: object
+      description: Заказы за период по дате оформления.
+      properties:
+        orders:
+          type: integer
+          description: Оформлено заказов, кроме отменённых
+        turnover_kopecks:
+          type: integer
+          description: Оборот без отменённых и неоплаченных, коп.
+      required:
+      - orders
+      - turnover_kopecks
     AdminTransitionOption:
       type: object
       properties:

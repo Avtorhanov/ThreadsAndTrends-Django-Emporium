@@ -7,7 +7,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
   const backend = env.VITE_BACKEND_URL ?? "http://localhost:8000";
   return {
-    base: "/panel/",
+    // Превью на GitHub Pages лежит под /<репозиторий>/panel/ — путь задаёт VITE_BASE.
+    base: env.VITE_BASE ?? "/panel/",
     plugins: [react()],
     server: {
       port: 5173,
