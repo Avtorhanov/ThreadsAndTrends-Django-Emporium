@@ -2055,8 +2055,8 @@ components:
       required:
       - product_id
       - product_name
-      - sku
       - size
+      - sku
       - stock
     AdminOrderCustomer:
       type: object
