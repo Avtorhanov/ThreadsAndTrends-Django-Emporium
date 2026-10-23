@@ -47,7 +47,7 @@ function banner() {
   const note = document.createElement("div");
   note.className = "preview-note";
   note.setAttribute("role", "note");
-  note.textContent = "Превью на демо-данных: изменения не сохраняются";
+  note.textContent = "Превью: изменения не сохраняются";
   document.body.append(note);
 }
 

@@ -1071,15 +1071,14 @@ a.stat:hover {
     background: var(--card);
   }
 
+  /* Подпись колонки — слева, содержимое ячейки (строка и подстроки) — справа, столбиком. */
   .table td {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 9px 0;
+    display: block;
+    overflow: hidden;
+    padding: 11px 0;
     white-space: normal;
     text-align: right;
-    min-height: 44px;
+    overflow-wrap: anywhere;
   }
 
   .table td > * {
@@ -1088,7 +1087,9 @@ a.stat:hover {
 
   .table td[data-label]::before {
     content: attr(data-label);
-    flex: none;
+    float: left;
+    margin-right: 12px;
+    line-height: 22px;
     color: var(--muted);
     font-size: 12px;
     font-weight: 700;
@@ -1102,10 +1103,11 @@ a.stat:hover {
   }
 
   .table td[data-label=""] {
-    justify-content: flex-start;
+    text-align: left;
   }
 
   .table td.actions {
+    display: flex;
     justify-content: flex-start;
     flex-wrap: wrap;
   }
@@ -1148,8 +1150,29 @@ a.stat:hover {
     margin-bottom: 8px;
   }
 
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .stat {
+    padding: 14px;
+  }
+
+  .stat-accent {
+    grid-column: 1 / -1;
+  }
+
   .stat-value {
     font-size: 24px;
+  }
+
+  .preview-note {
+    left: 12px;
+    right: auto;
+    bottom: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
   }
 }
 

@@ -5,6 +5,9 @@ on:
     branches: [main, master, "session-*"]
   pull_request:
 
+permissions:
+  contents: write
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -60,7 +63,9 @@ jobs:
           DJANGO_SETTINGS_MODULE: myshop.settings.test
       - name: OpenAPI schema is valid and committed (openapi/schema.yml)
         run: |
-          python manage.py spectacular --validate --fail-on-warn --file openapi/schema.yml
+          mkdir -p ci-report
+          python manage.py spectacular --validate --fail-on-warn --file openapi/schema.yml 2>&1 | tee ci-report/schema.log; test ${PIPESTATUS[0]} -eq 0
+          git diff openapi/schema.yml > ci-report/schema.diff
           git diff --exit-code openapi/schema.yml || {
             echo "::error file=openapi/schema.yml::Схема устарела: python manage.py spectacular --file openapi/schema.yml"
             exit 1
@@ -68,13 +73,22 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: myshop.settings.test
       - name: Tests
-        run: pytest
+        run: |
+          mkdir -p ci-report
+          pytest 2>&1 | tee ci-report/pytest.log; exit ${PIPESTATUS[0]}
       - name: Prod settings load and pass deploy checks
         run: python manage.py check --deploy
         env:
           DJANGO_SETTINGS_MODULE: myshop.settings.prod
           SECRET_KEY: ci-deploy-check-${{ github.run_id }}-not-a-real-secret-key-0123456789
           ALLOWED_HOSTS: example.com
+      # Журналы — в служебную ветку: журналы Actions доступны не всем инструментам,
+      # а ветку можно прочитать обычным git fetch (как ci-report-visual у превью).
+      - name: Publish report branch
+        if: always() && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/publish-report.sh ci-report test
 
   frontend:
     runs-on: ubuntu-latest
@@ -146,6 +160,11 @@ jobs:
       - name: Compose logs on failure
         if: failure()
         run: docker compose -f compose.prod.yml logs --no-color --tail 200
+      - name: Publish report branch
+        if: always() && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/publish-report.sh e2e-report e2e
       - uses: actions/upload-artifact@v4
         if: always()
         with:
