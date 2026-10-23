@@ -173,12 +173,30 @@ def panel_shots(site: Path) -> list[tuple[str, str]]:
 
 
 def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[str]) -> None:
+    # Вход администратора на странице «Вход» витрины → сводка панели.
+    data = json.loads((site / "static/preview/data.json").read_text(encoding="utf-8"))
+    page = page_for(IPHONE)
+    page.goto(origin + BASE + "/login/", wait_until="load")
+    page.fill('main input[name="email"]', data["admin"]["email"])
+    page.fill('main input[name="password"]', data["admin"]["password"])
+    page.click('main form[method="post"] button[type="submit"]')
+    page.wait_for_url(f"**{BASE}/panel/")
+    page.wait_for_selector("main h1:has-text('Сводка')")
+    page.screenshot(path=shots / "panel-from-site-login-iphone.png")
+    print("Вход администратора с витрины → панель: ок")
+
     screens = panel_shots(site)
     for theme in ("light", "dark"):
         for device_name, device in (("iphone", IPHONE), ("desktop", DESKTOP)):
             page = page_for(device)
+            # Тема и «сессия» администратора превью (на странице входа — без неё).
             page.context.add_init_script(
-                f"try {{ localStorage.setItem('didi-panel-theme', '{theme}') }} catch (e) {{}}"
+                "try {"
+                f" localStorage.setItem('didi-panel-theme', '{theme}');"
+                " if (/\\/login\\/?$/.test(location.pathname))"
+                " localStorage.removeItem('didi-preview-admin');"
+                " else localStorage.setItem('didi-preview-admin', '1');"
+                " } catch (e) {}"
             )
             for name, path in screens:
                 page.goto(origin + BASE + path, wait_until="load")

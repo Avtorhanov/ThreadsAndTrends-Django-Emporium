@@ -109,7 +109,7 @@ PERIODIC_TASKS: list[dict] = [
 
 # --- Пользователи ---
 AUTH_USER_MODEL = "accounts.User"
-# Вход покупателя на веб-витрине (сессия Django). Администратор входит в панель /panel/.
+# Вход на веб-витрине (сессия Django): покупатель — в кабинет, администратор — в панель /panel/.
 LOGIN_URL = "web:login"
 
 AUTH_PASSWORD_VALIDATORS = [

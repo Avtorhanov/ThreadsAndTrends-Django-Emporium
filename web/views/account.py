@@ -2,7 +2,8 @@
 
 Вход — сессия Django (cookie httpOnly) + CSRF. Правила (валидаторы паролей, коды сброса,
 мягкое удаление) — accounts.services; лимиты попыток общие с API приложения (web.ratelimit).
-Администратор на витрине не входит: у него панель /panel/.
+Администратор входит здесь же: после входа — сразу в панель /panel/ (тот же домен, та же
+сессия Django, поэтому панель открывается без второго входа). Страницы покупателя ему не нужны.
 """
 
 from django.contrib import messages
@@ -30,7 +31,7 @@ from ..forms import (
 )
 from .common import customer_required, safe_next
 
-STAFF_LOGIN = "Это учётная запись администратора — войдите в панель управления."
+PANEL_URL = "/panel/"
 
 
 def _apply_errors(form, exc: ValidationError) -> None:
@@ -60,9 +61,10 @@ def _login_with_cart(request, user) -> None:
 
 def login_view(request):
     if request.user.is_authenticated:
+        if request.user.is_staff:
+            return redirect(PANEL_URL)
         return redirect(safe_next(request, reverse("web:profile")))
     form = LoginForm(request.POST or None)
-    staff = False
     if request.method == "POST" and form.is_valid():
         email = form.cleaned_data["email"]
         if not (
@@ -75,8 +77,9 @@ def login_view(request):
             if user is None:
                 form.add_error(None, "Неверный email или пароль.")
             elif user.is_staff:
-                form.add_error(None, STAFF_LOGIN)
-                staff = True
+                # Гостевая корзина администратору не переносится: он не покупатель.
+                login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+                return redirect(PANEL_URL)
             else:
                 _login_with_cart(request, user)
                 return redirect(safe_next(request, reverse("web:profile")))
@@ -85,7 +88,6 @@ def login_view(request):
         "web/account/login.html",
         {
             "form": form,
-            "staff": staff,
             "next": safe_next(request, ""),
             "tab": "profile",
             "noindex": True,
@@ -180,6 +182,8 @@ def password_reset_confirm(request):
 
 
 def profile(request):
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect(PANEL_URL)
     if not request.user.is_authenticated:
         # Профиль гостя — «Войти» и «Зарегистрироваться», как в приложении.
         return render(

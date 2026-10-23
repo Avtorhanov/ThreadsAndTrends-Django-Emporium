@@ -3,12 +3,19 @@
  * записаны заранее (deploy/preview/build.py → preview-api.json) на демо-данных.
  * Чтение — из снимка; изменения не сохраняются: сервер «соглашается» и возвращает данные
  * объекта как были. В боевую сборку модуль не попадает (динамический импорт под флагом).
+ *
+ * Вход имитируется: логин и пароль администратора превью лежат в снимке (`_login`) и
+ * сверяются здесь, в браузере, — это не защита, на Pages только демо-данные. «Сессия» —
+ * флаг в localStorage; его же ставит вход на странице «Вход» витрины превью
+ * (deploy/preview/assets/preview.js), поэтому администратор попадает в панель оттуда.
  */
 
 type Snapshot = Record<string, unknown>;
 
 const API = "/api/v1/admin";
-const LOGGED_OUT = "didi-panel-preview-logged-out";
+const SESSION = "didi-preview-admin";
+
+type Login = { email: string; password: string };
 
 /** Ключ снимка — как api_key() в deploy/preview/build.py. */
 function snapshotKey(url: URL): string {
@@ -26,20 +33,20 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-function loggedOut(): boolean {
+function signedIn(): boolean {
   try {
-    return window.sessionStorage.getItem(LOGGED_OUT) === "1";
+    return window.localStorage.getItem(SESSION) === "1";
   } catch {
     return false;
   }
 }
 
-function setLoggedOut(value: boolean) {
+function setSignedIn(value: boolean) {
   try {
-    if (value) window.sessionStorage.setItem(LOGGED_OUT, "1");
-    else window.sessionStorage.removeItem(LOGGED_OUT);
+    if (value) window.localStorage.setItem(SESSION, "1");
+    else window.localStorage.removeItem(SESSION);
   } catch {
-    // без хранилища — вход действует до перезагрузки
+    // без хранилища вход не запомнится — после перезагрузки снова страница входа
   }
 }
 
@@ -57,8 +64,7 @@ export async function installPreview(): Promise<void> {
   const snapshot = (await response.json()) as Snapshot;
   const realFetch = window.fetch.bind(window);
 
-  // Открытая напрямую страница входа показывается как есть: «сессии» нет, пока не нажать «Войти».
-  let showLogin = window.location.pathname.replace(/\/$/, "").endsWith("/login");
+  const login = snapshot._login as Login;
 
   function read(url: URL): Response {
     const exact = snapshot[snapshotKey(url)];
@@ -71,12 +77,15 @@ export async function installPreview(): Promise<void> {
   async function write(url: URL, request: Request): Promise<Response> {
     const path = url.pathname;
     if (path === `${API}/auth/login/`) {
-      showLogin = false;
-      setLoggedOut(false);
+      const body = (await request.clone().json()) as Partial<Login>;
+      const ok =
+        body.email?.trim().toLowerCase() === login.email && body.password === login.password;
+      if (!ok) return json({ detail: "Неверный email или пароль." }, 400);
+      setSignedIn(true);
       return json(snapshot[`${API}/auth/me/`]);
     }
     if (path === `${API}/auth/logout/`) {
-      setLoggedOut(true);
+      setSignedIn(false);
       return json(null, 204);
     }
     if (request.method === "DELETE") return json(null, 204);
@@ -98,7 +107,7 @@ export async function installPreview(): Promise<void> {
     const url = new URL(request.url, window.location.href);
     if (!url.pathname.startsWith("/api/")) return realFetch(input, init);
     if (url.pathname === `${API}/auth/csrf/`) return json(null, 204);
-    if (url.pathname === `${API}/auth/me/` && (showLogin || loggedOut())) {
+    if (url.pathname === `${API}/auth/me/` && !signedIn()) {
       return json({ detail: "Нужен вход." }, 401);
     }
     if (request.method === "GET") return read(url);

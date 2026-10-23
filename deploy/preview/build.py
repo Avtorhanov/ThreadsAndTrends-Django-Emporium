@@ -319,6 +319,7 @@ def build(out: Path) -> None:
         "freeFrom": settings.DELIVERY_FREE_FROM_KOPECKS,
         "courier": settings.DELIVERY_COURIER_KOPECKS,
         "maxQuantity": settings.CART_MAX_QUANTITY,
+        "admin": {"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
         "variants": {
             str(v.pk): {
                 "name": v.product.name,
@@ -600,7 +601,11 @@ def write_rooms(out: Path, orders: list[Order], rooms: dict, query: str) -> None
 # --- Панель администратора ---
 
 PANEL_DIST = Path(os.environ.get("PREVIEW_PANEL_DIST", ROOT / "admin-panel/dist"))
+# Вход администратора в превью: на странице «Вход» сайта или панели → панель. Пароль сверяет
+# JS в браузере (preview.js, admin-panel/src/preview/mock.ts) — это имитация, на Pages только
+# демо-данные; настоящий пароль администратора задаётся в .env сервера и сюда не попадает.
 ADMIN_EMAIL = "admin@didi-shop.ru"
+ADMIN_PASSWORD = "DiDi-Admin-2026"
 ADMIN_API = "/api/v1/admin"
 # Маршруты панели (react-router): у каждого — своя копия index.html, иначе Pages отдаст 404.
 PANEL_ROUTES = (
@@ -634,7 +639,7 @@ def panel_ids() -> dict[str, list[int]]:
 
 def panel_snapshot() -> dict:
     staff = User.objects.create_user(
-        email=ADMIN_EMAIL, password=PASSWORD, first_name="Администратор", is_staff=True
+        email=ADMIN_EMAIL, password=ADMIN_PASSWORD, first_name="Администратор", is_staff=True
     )
     client = Client()
     client.force_login(staff)
@@ -665,7 +670,7 @@ def panel_snapshot() -> dict:
     grab(f"{ADMIN_API}/customers/")
     # Ссылки на фото — абсолютные от тестового сервера; в превью медиа лежат рядом.
     text = json.dumps(snapshot, ensure_ascii=False).replace("http://testserver", "")
-    return json.loads(text)
+    return {**json.loads(text), "_login": {"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}}
 
 
 def build_panel(out: Path) -> None:
@@ -698,6 +703,7 @@ def panel_section(orders: list[Order]) -> tuple[str, list[tuple[str, str]]]:
     first_article = Article.objects.order_by("pk").first()
     online = next((o for o in orders if o.payment_method == PaymentMethod.ONLINE), orders[0])
     links = [
+        (f"Вход администратора: {ADMIN_EMAIL} / {ADMIN_PASSWORD}", f"{BASE}/login/"),
         ("Сводка", f"{panel}/"),
         ("Заказы в работе", f"{panel}/orders/"),
         ("Заказы, ждущие оплаты", f"{panel}/orders/?status=awaiting_payment"),
@@ -711,7 +717,7 @@ def panel_section(orders: list[Order]) -> tuple[str, list[tuple[str, str]]]:
         ("Вход в панель", f"{panel}/login/"),
     ]
     if first_product:
-        links.insert(6, ("Карточка товара", f"{panel}/catalog/products/{first_product.pk}/"))
+        links.insert(7, ("Карточка товара", f"{panel}/catalog/products/{first_product.pk}/"))
     if first_article:
         links.insert(-2, ("Статья", f"{panel}/content/articles/{first_article.pk}/"))
     return ("Панель администратора (имитация API)", links)

@@ -241,6 +241,34 @@
     go(ME + (online && online.value === "online" ? "/orders/placed-online/" : "/orders/placed/"));
   }
 
+  // --- Вход администратора: логин и пароль из data.json → панель (/panel/) ---
+  // Имитация, не защита: на Pages только демо-данные. Флаг «сессии» читает панель
+  // (admin-panel/src/preview/mock.ts).
+
+  var ADMIN_SESSION = "didi-preview-admin";
+
+  function isAdminLogin(form) {
+    var email = form.querySelector('input[name="email"]');
+    var password = form.querySelector('input[name="password"]');
+    if (!email || !password) return false;
+    var value = email.value.trim().toLowerCase();
+    dataReady.then(function (data) {
+      var admin = data.admin;
+      if (!admin || value !== admin.email) return goCustomer(form);
+      if (password.value !== admin.password) return go(BASE + "/rooms/login-error/");
+      try { localStorage.setItem(ADMIN_SESSION, "1"); } catch (e) { /* без хранилища */ }
+      go(BASE + "/panel/");
+    });
+    return true;
+  }
+
+  function goCustomer(form) {
+    // Как на сайте: после входа — туда, откуда пришли (например, к оформлению).
+    var next = form.querySelector('input[name="next"]');
+    var back = next && next.value ? localPath(new URL(next.value, location.href).pathname) : "";
+    go(ME + (back && back !== "/login/" ? back : "/profile/"));
+  }
+
   // --- Отправка форм: на сайте — сервер, здесь — имитация или подсказка ---
 
   document.addEventListener("submit", function (event) {
@@ -257,12 +285,8 @@
       if (action === "/search/") return go(PREFIX + "/search/");
       return toast("Фильтры и сортировка в превью не применяются");
     }
-    if (action === "/login/" || action === "/register/") {
-      // Как на сайте: после входа — туда, откуда пришли (например, к оформлению).
-      var next = form.querySelector('input[name="next"]');
-      var back = next && next.value ? localPath(new URL(next.value, location.href).pathname) : "";
-      return go(ME + (back && back !== "/login/" ? back : "/profile/"));
-    }
+    if (action === "/login/" && isAdminLogin(form)) return;
+    if (action === "/login/" || action === "/register/") return goCustomer(form);
     if (action === "/password-reset/") return go(BASE + "/password-reset/confirm/");
     if (action === "/password-reset/confirm/") return go(ME + "/profile/");
     if (action === "/logout/") return go(BASE + "/");

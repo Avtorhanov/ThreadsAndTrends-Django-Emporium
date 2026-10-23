@@ -34,13 +34,16 @@ def safe_next(request, default: str) -> str:
 
 
 def customer_required(view):
-    """Только вошедший покупатель. Гостя — на вход с возвратом на эту страницу."""
+    """Только вошедший покупатель. Гостя — на вход с возвратом на эту страницу,
+    администратора — в панель (кабинет покупателя ему не нужен)."""
 
     @wraps(view)
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
             login_url = reverse("web:login")
             return redirect(f"{login_url}?{urlencode({'next': request.get_full_path()})}")
+        if request.user.is_staff:
+            return redirect("/panel/")
         return view(request, *args, **kwargs)
 
     return wrapper
