@@ -1,5 +1,5 @@
 // Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать.
-// Версия токенов: 1.2.0 (2026-10-24).
+// Версия токенов: 1.3.0 (2026-10-24).
 
 export type ThemeName = "light" | "dark";
 
@@ -148,11 +148,11 @@ export const shadows: Record<ThemeName, Shadows> = {
     "accentGlow": "0 10px 22px -6px rgba(198,244,50,.55)"
   },
   "dark": {
-    "card": "0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95), 0 28px 46px -30px rgba(198,244,50,.3)",
-    "control": "0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85)",
-    "header": "0 1px 0 rgba(255,255,255,.06) inset, 0 22px 38px -14px rgba(0,0,0,.9)",
+    "card": "0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(198,244,50,.12), 0 0 26px -4px rgba(198,244,50,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95)",
+    "control": "0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(198,244,50,.10), 0 0 18px -4px rgba(198,244,50,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85)",
+    "header": "0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(198,244,50,.10), 0 0 30px -8px rgba(198,244,50,.20), 0 22px 38px -14px rgba(0,0,0,.9)",
     "imageInset": "inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.05), inset 0 -34px 52px -26px rgba(0,0,0,.6), 0 10px 18px -12px rgba(0,0,0,.75)",
-    "nav": "0 22px 40px -14px rgba(0,0,0,.9), 0 0 0 1px rgba(198,244,50,.12)",
+    "nav": "0 0 0 1px rgba(198,244,50,.16), 0 0 30px -6px rgba(198,244,50,.24), 0 22px 40px -14px rgba(0,0,0,.9)",
     "accentGlow": "0 10px 22px -6px rgba(198,244,50,.55)"
   }
 };
@@ -188,17 +188,17 @@ export const productTones = {
 export type ProductTone = keyof typeof productTones;
 
 export const radius = {
-  "badge": 7,
-  "tag": 8,
-  "seg": 12,
-  "control": 14,
-  "search": 16,
-  "image": 17,
-  "cta": 19,
-  "card": 22,
-  "nav": 24,
-  "hero": 28,
-  "sheet": 32
+  "badge": 6,
+  "tag": 6,
+  "seg": 10,
+  "control": 12,
+  "search": 13,
+  "image": 14,
+  "cta": 16,
+  "card": 19,
+  "nav": 21,
+  "hero": 24,
+  "sheet": 28
 } as const;
 
 export const space = {
