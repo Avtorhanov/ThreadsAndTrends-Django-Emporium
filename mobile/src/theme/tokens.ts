@@ -1,5 +1,5 @@
 // Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать.
-// Версия токенов: 1.3.0 (2026-10-24).
+// Версия токенов: 1.4.0 (2026-10-24).
 
 export type ThemeName = "light" | "dark";
 
@@ -241,6 +241,14 @@ export const font = {
       800
     ],
     "use": "текст, кнопки, подписи"
+  },
+  "secondary": {
+    "family": "Onest",
+    "weights": [
+      500,
+      600
+    ],
+    "use": "вторичный текст: подвал, названия и описания в карточках, подсказки, крошки, старая цена"
   },
   "scale": {
     "wordmark": [

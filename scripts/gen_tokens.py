@@ -204,6 +204,7 @@ def render_css(tokens: dict) -> str:
     common += [
         f"  --font-display: '{tokens['font']['display']['family']}', system-ui, sans-serif;",
         f"  --font-text: '{tokens['font']['text']['family']}', system-ui, sans-serif;",
+        f"  --font-secondary: '{tokens['font']['secondary']['family']}', system-ui, sans-serif;",
     ]
     common += [
         f"  --{camel_to_kebab(k)}: {tokens['motion'][k]};"
