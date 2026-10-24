@@ -5,7 +5,7 @@
 #   https://github.com/<владелец>/<репозиторий>/releases/latest/download/didi-shop.apk
 #   Тег v1.2.3 (git push origin v1.2.3) делает то же с версией 1.2.3.
 #
-#   Проверка: при изменениях в mobile/ сборка запускается на ветках и в PR без публикации.
+#   Проверка: при изменениях в mobile/ сборка запускается на ветке dev и в PR без публикации.
 #
 # Подпись: секреты репозитория ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
 # ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD (docs/LAUNCH.md, шаг «Android»). Без них APK
@@ -20,7 +20,7 @@ on:
         required: false
   push:
     tags: ["v*"]
-    branches: ["session-*"]
+    branches: [dev]
     paths: ["mobile/**", "openapi/schema.yml", ".github/workflows/android.yml"]
   pull_request:
     paths: ["mobile/**", "openapi/schema.yml", ".github/workflows/android.yml"]
