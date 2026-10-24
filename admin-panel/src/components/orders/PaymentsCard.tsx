@@ -4,16 +4,16 @@ import { formatKopecks } from "../../lib/money";
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
 const PAYMENT_TONE: Record<PaymentStatus, string> = {
-  pending: "warn",
-  succeeded: "active",
-  canceled: "deleted",
-  refunded: "progress",
+  pending: "warning",
+  succeeded: "success",
+  canceled: "neutral",
+  refunded: "info",
 };
 
 const REFUND_TONE: Record<RefundStatus, string> = {
-  pending: "warn",
-  succeeded: "active",
-  canceled: "blocked",
+  pending: "warning",
+  succeeded: "success",
+  canceled: "danger",
 };
 
 type Props = {

@@ -40,10 +40,20 @@ def test_wrong_password(client, customer):
     assert "Неверный email или пароль." in response.content.decode()
 
 
-def test_staff_cannot_login_to_storefront(client, staff):
-    response = login(client, email="staff@example.com")
-    html = response.content.decode()
-    assert "войдите в панель управления" in html and 'href="/panel/"' in html
+def test_staff_login_opens_panel(client, staff):
+    response = login(client, email="staff@example.com", next="/cart/")
+    assert response.status_code == 302 and response["Location"] == "/panel/"
+    # Та же сессия Django — панель (admin-API) пускает без второго входа.
+    assert client.get("/api/v1/admin/auth/me/").json()["email"] == "staff@example.com"
+    # Уже вошедший администратор со страницы входа и из кабинета — в панель.
+    assert client.get(reverse("web:login"))["Location"] == "/panel/"
+    assert client.get(reverse("web:profile"))["Location"] == "/panel/"
+
+
+def test_staff_wrong_password_stays_on_login(client, staff):
+    response = login(client, email="staff@example.com", password="nope")
+    assert response.status_code == 200
+    assert "Неверный email или пароль." in response.content.decode()
     assert "_auth_user_id" not in client.session
 
 

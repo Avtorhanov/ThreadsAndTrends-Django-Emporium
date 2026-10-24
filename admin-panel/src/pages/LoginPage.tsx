@@ -11,7 +11,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  if (status === "signedIn") return <Navigate to="/customers" replace />;
+  if (status === "signedIn") return <Navigate to="/" replace />;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -29,7 +29,15 @@ export function LoginPage() {
   return (
     <div className="centered">
       <form className="card login-card" onSubmit={(event) => void handleSubmit(event)}>
-        <h1>Вход администратора</h1>
+        <div className="login-head">
+          <span className="brand-mark" aria-hidden="true">
+            Di
+          </span>
+          <div>
+            <p className="eyebrow">DiDi-shop</p>
+            <h1>Вход администратора</h1>
+          </div>
+        </div>
         {error ? <p className="alert">{error}</p> : null}
         <label className="field">
           <span>Email</span>

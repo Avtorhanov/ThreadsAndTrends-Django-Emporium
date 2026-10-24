@@ -11,10 +11,7 @@
 {% block header %}{% include "web/partials/header.html" with compact=False %}{% endblock %}
 {% block content %}
 <section class="feed">
-  <header class="section-head">
-    <p class="overline">Новинки</p>
-    <h1 class="h1">Свежее в каталоге</h1>
-  </header>
+  <h1 class="visually-hidden">Свежее в каталоге</h1>
   {{ grid }}
 </section>
 {% endblock %}

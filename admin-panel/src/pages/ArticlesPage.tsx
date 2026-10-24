@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { ARTICLES_PAGE_SIZE, type ArticleRow, type ArticleStatus } from "../api/content";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useArticles } from "../hooks/useContent";
+import { Table } from "../components/Table";
 
 const STATUS_LABELS: Record<ArticleStatus, string> = {
   published: "Опубликованные",
@@ -71,46 +72,44 @@ export function ArticlesPage() {
 
       {error ? <p className="alert">{error}</p> : null}
 
-      <div className="table-wrap">
-        <table className={loading ? "table is-loading" : "table"}>
-          <thead>
-            <tr>
-              <th aria-label="Обложка" />
-              <th>Заголовок</th>
-              <th>Фото</th>
-              <th>Опубликована</th>
-              <th>Статус</th>
+      <Table loading={loading}>
+        <thead>
+          <tr>
+            <th aria-label="Обложка" />
+            <th>Заголовок</th>
+            <th>Фото</th>
+            <th>Опубликована</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data?.results.map((article) => (
+            <tr key={article.id}>
+              <td>
+                {article.cover_url ? (
+                  <img className="thumb" src={article.cover_url} alt="" />
+                ) : (
+                  <div className="thumb thumb-empty" />
+                )}
+              </td>
+              <td>
+                <Link to={`/content/articles/${article.id}`}>{article.title}</Link>
+                {article.excerpt ? <div className="muted small">{article.excerpt}</div> : null}
+              </td>
+              <td>{article.images_count}</td>
+              <td className="muted">{formatDate(article.published_at)}</td>
+              <td>{statusBadge(article)}</td>
             </tr>
-          </thead>
-          <tbody>
-            {data?.results.map((article) => (
-              <tr key={article.id}>
-                <td>
-                  {article.cover_url ? (
-                    <img className="thumb" src={article.cover_url} alt="" />
-                  ) : (
-                    <div className="thumb thumb-empty" />
-                  )}
-                </td>
-                <td>
-                  <Link to={`/content/articles/${article.id}`}>{article.title}</Link>
-                  {article.excerpt ? <div className="muted small">{article.excerpt}</div> : null}
-                </td>
-                <td>{article.images_count}</td>
-                <td className="muted">{formatDate(article.published_at)}</td>
-                <td>{statusBadge(article)}</td>
-              </tr>
-            ))}
-            {data && data.results.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="empty">
-                  Статей пока нет
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+          ))}
+          {data && data.results.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="empty">
+                Статей пока нет
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+        </Table>
 
       <div className="pagination">
         <button

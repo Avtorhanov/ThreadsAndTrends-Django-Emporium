@@ -109,7 +109,7 @@ PERIODIC_TASKS: list[dict] = [
 
 # --- Пользователи ---
 AUTH_USER_MODEL = "accounts.User"
-# Вход покупателя на веб-витрине (сессия Django). Администратор входит в панель /panel/.
+# Вход на веб-витрине (сессия Django): покупатель — в кабинет, администратор — в панель /panel/.
 LOGIN_URL = "web:login"
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -173,6 +173,10 @@ REST_FRAMEWORK = {
 # Максимум единиц одного варианта (дополнительно ограничено остатком) и позиций в корзине.
 CART_MAX_QUANTITY = env_int("CART_MAX_QUANTITY", 10)
 CART_MAX_ITEMS = env_int("CART_MAX_ITEMS", 50)
+
+# --- Панель администратора ---
+# «Мало на складе» в сводке: варианты с остатком от 0 до этого числа включительно.
+ADMIN_LOW_STOCK_THRESHOLD = env_int("ADMIN_LOW_STOCK_THRESHOLD", 3)
 
 # --- Заказы ---
 # Курьерская доставка: стоимость и порог бесплатной доставки (по сумме товаров), копейки.

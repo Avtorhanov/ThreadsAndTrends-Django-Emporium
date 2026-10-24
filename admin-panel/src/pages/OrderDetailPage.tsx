@@ -7,6 +7,7 @@ import { OrderStatusBadge } from "../components/orders/OrderStatusBadge";
 import { PaymentsCard } from "../components/orders/PaymentsCard";
 import { useOrder } from "../hooks/useOrders";
 import { formatKopecks } from "../lib/money";
+import { Table } from "../components/Table";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
@@ -156,54 +157,52 @@ export function OrderDetailPage() {
             </div>
           </div>
 
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Товар</th>
-                  <th>Размер</th>
-                  <th>Артикул</th>
-                  <th className="num">Цена</th>
-                  <th className="num">Кол-во</th>
-                  <th className="num">Сумма</th>
+          <Table>
+            <thead>
+              <tr>
+                <th>Товар</th>
+                <th>Размер</th>
+                <th>Артикул</th>
+                <th className="num">Цена</th>
+                <th className="num">Кол-во</th>
+                <th className="num">Сумма</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.product_name}</td>
+                  <td>{item.size || "—"}</td>
+                  <td>{item.sku}</td>
+                  <td className="num">{formatKopecks(item.price_kopecks)}</td>
+                  <td className="num">{item.quantity}</td>
+                  <td className="num">{formatKopecks(item.line_total_kopecks)}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {data.items.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.product_name}</td>
-                    <td>{item.size || "—"}</td>
-                    <td>{item.sku}</td>
-                    <td className="num">{formatKopecks(item.price_kopecks)}</td>
-                    <td className="num">{item.quantity}</td>
-                    <td className="num">{formatKopecks(item.line_total_kopecks)}</td>
-                  </tr>
-                ))}
-                <tr>
-                  <td colSpan={5} className="num muted">
-                    Товары
-                  </td>
-                  <td className="num">{formatKopecks(data.items_total_kopecks)}</td>
-                </tr>
-                <tr>
-                  <td colSpan={5} className="num muted">
-                    Доставка
-                  </td>
-                  <td className="num">
-                    {data.delivery_kopecks ? formatKopecks(data.delivery_kopecks) : "бесплатно"}
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={5} className="num">
-                    <strong>Итого</strong>
-                  </td>
-                  <td className="num">
-                    <strong>{formatKopecks(data.total_kopecks)}</strong>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+              ))}
+              <tr>
+                <td colSpan={5} className="num muted">
+                  Товары
+                </td>
+                <td className="num">{formatKopecks(data.items_total_kopecks)}</td>
+              </tr>
+              <tr>
+                <td colSpan={5} className="num muted">
+                  Доставка
+                </td>
+                <td className="num">
+                  {data.delivery_kopecks ? formatKopecks(data.delivery_kopecks) : "бесплатно"}
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={5} className="num">
+                  <strong>Итого</strong>
+                </td>
+                <td className="num">
+                  <strong>{formatKopecks(data.total_kopecks)}</strong>
+                </td>
+              </tr>
+            </tbody>
+            </Table>
           <p className="muted small">
             Оформлен {dateFormat.format(new Date(data.created_at))}, изменён{" "}
             {dateFormat.format(new Date(data.updated_at))}

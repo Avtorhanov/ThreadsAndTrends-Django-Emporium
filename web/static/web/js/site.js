@@ -12,6 +12,27 @@
     document.cookie = name + "=" + value + "; path=/; max-age=" + maxAge + "; samesite=lax" + secure;
   }
 
+  // iOS Safari включает :active (эффект нажатия) только при наличии обработчика касаний.
+  document.addEventListener("touchstart", function () {}, { passive: true });
+
+  // Перелёт фото: имя product-photo — только у фото нажатой карточки (имена в переходе уникальны).
+  document.addEventListener("click", function (event) {
+    var card = event.target.closest && event.target.closest("a.card");
+    if (!card) return;
+    document.querySelectorAll(".card__img").forEach(function (img) { img.style.viewTransitionName = ""; });
+    var img = card.querySelector(".card__img");
+    if (img) img.style.viewTransitionName = "product-photo";
+  });
+
+  // Переход на другую часть сайта (панель, веб-приложение) — без анимации: у них свой каркас,
+  // и браузер иначе прерывает переход с ошибкой в консоли.
+  window.addEventListener("pageswap", function (event) {
+    if (!event.viewTransition) return;
+    var entry = event.activation && event.activation.entry;
+    var path = entry && entry.url ? new URL(entry.url).pathname : "";
+    if (/\/(panel|app|admin)\//.test(path)) event.viewTransition.skipTransition();
+  });
+
   // --- Шапка: сворачивание с гистерезисом 24/8 px (как в приложении) ---
   var header = document.querySelector("[data-header]");
   var quick = document.querySelector("[data-quick]");

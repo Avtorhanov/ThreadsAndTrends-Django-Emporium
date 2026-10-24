@@ -5,6 +5,7 @@ import { PRODUCTS_PAGE_SIZE, type ProductRow, type ProductStatus, type StockFilt
 import { sortCategoryTree, useCategories, useProducts } from "../hooks/useCatalog";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { formatKopecks } from "../lib/money";
+import { Table } from "../components/Table";
 
 const STATUS_LABELS: Record<ProductStatus, string> = {
   active: "Активные",
@@ -100,52 +101,50 @@ export function ProductsPage() {
 
       {error ? <p className="alert">{error}</p> : null}
 
-      <div className="table-wrap">
-        <table className={loading ? "table is-loading" : "table"}>
-          <thead>
-            <tr>
-              <th aria-label="Фото" />
-              <th>Название</th>
-              <th>Категория</th>
-              <th>Цена</th>
-              <th>Остаток</th>
-              <th>Статус</th>
+      <Table loading={loading}>
+        <thead>
+          <tr>
+            <th aria-label="Фото" />
+            <th>Название</th>
+            <th>Категория</th>
+            <th>Цена</th>
+            <th>Остаток</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data?.results.map((product) => (
+            <tr key={product.id}>
+              <td>
+                {product.cover_url ? (
+                  <img className="thumb" src={product.cover_url} alt="" />
+                ) : (
+                  <div className="thumb thumb-empty" />
+                )}
+              </td>
+              <td>
+                <Link to={`/catalog/products/${product.id}`}>{product.name}</Link>
+              </td>
+              <td className="muted">{product.category_name}</td>
+              <td>
+                {formatKopecks(product.price_kopecks)}
+                {product.compare_at_kopecks ? (
+                  <s className="muted old-price">{formatKopecks(product.compare_at_kopecks)}</s>
+                ) : null}
+              </td>
+              <td>{product.total_stock}</td>
+              <td>{statusBadge(product)}</td>
             </tr>
-          </thead>
-          <tbody>
-            {data?.results.map((product) => (
-              <tr key={product.id}>
-                <td>
-                  {product.cover_url ? (
-                    <img className="thumb" src={product.cover_url} alt="" />
-                  ) : (
-                    <div className="thumb thumb-empty" />
-                  )}
-                </td>
-                <td>
-                  <Link to={`/catalog/products/${product.id}`}>{product.name}</Link>
-                </td>
-                <td className="muted">{product.category_name}</td>
-                <td>
-                  {formatKopecks(product.price_kopecks)}
-                  {product.compare_at_kopecks ? (
-                    <s className="muted old-price">{formatKopecks(product.compare_at_kopecks)}</s>
-                  ) : null}
-                </td>
-                <td>{product.total_stock}</td>
-                <td>{statusBadge(product)}</td>
-              </tr>
-            ))}
-            {data && data.results.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="empty">
-                  Ничего не найдено
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+          ))}
+          {data && data.results.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="empty">
+                Ничего не найдено
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+        </Table>
 
       <div className="pagination">
         <button

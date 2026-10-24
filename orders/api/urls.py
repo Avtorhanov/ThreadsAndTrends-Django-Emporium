@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from . import admin_views, views
+from . import admin_summary, admin_views, views
 
 orders_urlpatterns = [
     path("", views.OrderListCreateView.as_view(), name="orders"),
@@ -13,4 +13,7 @@ orders_urlpatterns = [
 admin_router = SimpleRouter()
 admin_router.register("orders", admin_views.AdminOrderViewSet, basename="admin-order")
 
-admin_orders_urlpatterns = admin_router.urls
+admin_orders_urlpatterns = [
+    path("summary/", admin_summary.AdminSummaryView.as_view(), name="admin-summary"),
+    *admin_router.urls,
+]
