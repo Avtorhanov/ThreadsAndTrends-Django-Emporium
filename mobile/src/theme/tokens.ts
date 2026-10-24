@@ -1,5 +1,5 @@
 // Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать.
-// Версия токенов: 1.1.1 (2026-10-22).
+// Версия токенов: 1.2.0 (2026-10-24).
 
 export type ThemeName = "light" | "dark";
 
@@ -140,11 +140,11 @@ export const palettes: Record<ThemeName, Palette> = {
 /** CSS box-shadow (несколько слоёв, inset) — стиль `boxShadow` React Native (новая архитектура). */
 export const shadows: Record<ThemeName, Shadows> = {
   "light": {
-    "card": "0 1px 0 #FFFFFF inset, 0 2px 4px rgba(19,38,28,.07), 0 14px 24px -10px rgba(31,77,58,.34), 0 32px 48px -26px rgba(31,77,58,.46)",
-    "control": "0 1px 0 #FFFFFF inset, 0 2px 3px rgba(19,38,28,.07), 0 12px 20px -10px rgba(31,77,58,.42)",
-    "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 20px 36px -18px rgba(31,77,58,.6)",
+    "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(19,38,28,.10), 0 18px 30px -12px rgba(31,77,58,.48), 0 40px 60px -30px rgba(31,77,58,.55)",
+    "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(19,38,28,.09), 0 14px 22px -10px rgba(31,77,58,.5)",
+    "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(31,77,58,.68)",
     "imageInset": "inset 0 -28px 46px -26px rgba(19,38,28,.32)",
-    "nav": "0 22px 40px -14px rgba(19,38,28,.75)",
+    "nav": "0 22px 40px -14px rgba(19,38,28,.82)",
     "accentGlow": "0 10px 22px -6px rgba(198,244,50,.55)"
   },
   "dark": {
@@ -188,17 +188,17 @@ export const productTones = {
 export type ProductTone = keyof typeof productTones;
 
 export const radius = {
-  "badge": 8,
-  "tag": 9,
-  "seg": 13,
-  "control": 16,
-  "search": 18,
-  "image": 21,
-  "cta": 22,
-  "card": 26,
-  "nav": 26,
-  "hero": 32,
-  "sheet": 36
+  "badge": 7,
+  "tag": 8,
+  "seg": 12,
+  "control": 14,
+  "search": 16,
+  "image": 17,
+  "cta": 19,
+  "card": 22,
+  "nav": 24,
+  "hero": 28,
+  "sheet": 32
 } as const;
 
 export const space = {

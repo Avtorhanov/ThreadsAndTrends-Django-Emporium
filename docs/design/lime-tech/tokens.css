@@ -1,20 +1,20 @@
 /* Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать. */
-/* Версия токенов: 1.1.1 (2026-10-22).
+/* Версия токенов: 1.2.0 (2026-10-24).
    Тёмная тема — data-theme="dark"
    или системная (prefers-color-scheme), если data-theme не задан явно. */
 
 :root {
-  --radius-badge: 8px;
-  --radius-tag: 9px;
-  --radius-seg: 13px;
-  --radius-control: 16px;
-  --radius-search: 18px;
-  --radius-image: 21px;
-  --radius-cta: 22px;
-  --radius-card: 26px;
-  --radius-nav: 26px;
-  --radius-hero: 32px;
-  --radius-sheet: 36px;
+  --radius-badge: 7px;
+  --radius-tag: 8px;
+  --radius-seg: 12px;
+  --radius-control: 14px;
+  --radius-search: 16px;
+  --radius-image: 17px;
+  --radius-cta: 19px;
+  --radius-card: 22px;
+  --radius-nav: 24px;
+  --radius-hero: 28px;
+  --radius-sheet: 32px;
   --space-feed-side: 10px;
   --space-grid-gap: 10px;
   --space-card-pad: 6px;
@@ -72,11 +72,11 @@
   --warning-bg: #FFEFC7;
   --info: #1E5FA6;
   --info-bg: #E2EDF9;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 2px 4px rgba(19,38,28,.07), 0 14px 24px -10px rgba(31,77,58,.34), 0 32px 48px -26px rgba(31,77,58,.46);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 2px 3px rgba(19,38,28,.07), 0 12px 20px -10px rgba(31,77,58,.42);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 20px 36px -18px rgba(31,77,58,.6);
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(19,38,28,.10), 0 18px 30px -12px rgba(31,77,58,.48), 0 40px 60px -30px rgba(31,77,58,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(19,38,28,.09), 0 14px 22px -10px rgba(31,77,58,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(31,77,58,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(19,38,28,.32);
-  --shadow-nav: 0 22px 40px -14px rgba(19,38,28,.75);
+  --shadow-nav: 0 22px 40px -14px rgba(19,38,28,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(198,244,50,.55);
   --tone-lime: #DDF38A;
   --tone-sun: #FFE38F;
