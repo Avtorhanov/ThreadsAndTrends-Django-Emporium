@@ -10,7 +10,6 @@
     {% csrf_token %}
     {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
     {% include "web/partials/form_errors.html" %}
-    {% if staff %}<p><a href="/panel/">Открыть панель управления</a></p>{% endif %}
     {% include "web/partials/field.html" with field=form.email %}
     {% include "web/partials/field.html" with field=form.password %}
     <button class="cta" type="submit"><span class="cta__label">Войти</span></button>

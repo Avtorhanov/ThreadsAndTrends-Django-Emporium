@@ -9,6 +9,7 @@ import {
 import { ApiError } from "../api/errors";
 import { useCustomers } from "../hooks/useCustomers";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { Table } from "../components/Table";
 
 const STATUS_LABELS: Record<CustomerStatus, string> = {
   active: "Активен",
@@ -95,74 +96,72 @@ export function CustomersPage() {
       {error ? <p className="alert">{error}</p> : null}
       {actionError ? <p className="alert">{actionError}</p> : null}
 
-      <div className="table-wrap">
-        <table className={loading ? "table is-loading" : "table"}>
-          <thead>
-            <tr>
-              <th>Email</th>
-              <th>Имя</th>
-              <th>Статус</th>
-              <th>Регистрация</th>
-              <th>Последний вход</th>
-              <th aria-label="Действия" />
+      <Table loading={loading}>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Имя</th>
+            <th>Статус</th>
+            <th>Регистрация</th>
+            <th>Последний вход</th>
+            <th aria-label="Действия" />
+          </tr>
+        </thead>
+        <tbody>
+          {data?.results.map((customer) => (
+            <tr key={customer.id}>
+              <td>{customer.email}</td>
+              <td>{[customer.first_name, customer.last_name].filter(Boolean).join(" ") || "—"}</td>
+              <td>
+                <span className={`badge badge-${customer.status}`}>
+                  {STATUS_LABELS[customer.status]}
+                </span>
+              </td>
+              <td>{formatDate(customer.date_joined)}</td>
+              <td>{formatDate(customer.last_login)}</td>
+              <td className="actions">
+                {customer.status === "active" ? (
+                  <button
+                    type="button"
+                    className="button button-ghost"
+                    disabled={busyId === customer.id}
+                    onClick={() => void run("block", customer)}
+                  >
+                    Заблокировать
+                  </button>
+                ) : null}
+                {customer.status === "blocked" ? (
+                  <button
+                    type="button"
+                    className="button button-ghost"
+                    disabled={busyId === customer.id}
+                    onClick={() => void run("unblock", customer)}
+                  >
+                    Разблокировать
+                  </button>
+                ) : null}
+                {customer.status !== "deleted" ? (
+                  <button
+                    type="button"
+                    className="button button-danger"
+                    disabled={busyId === customer.id}
+                    onClick={() => void run("remove", customer)}
+                  >
+                    Удалить
+                  </button>
+                ) : null}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {data?.results.map((customer) => (
-              <tr key={customer.id}>
-                <td>{customer.email}</td>
-                <td>{[customer.first_name, customer.last_name].filter(Boolean).join(" ") || "—"}</td>
-                <td>
-                  <span className={`badge badge-${customer.status}`}>
-                    {STATUS_LABELS[customer.status]}
-                  </span>
-                </td>
-                <td>{formatDate(customer.date_joined)}</td>
-                <td>{formatDate(customer.last_login)}</td>
-                <td className="actions">
-                  {customer.status === "active" ? (
-                    <button
-                      type="button"
-                      className="button button-ghost"
-                      disabled={busyId === customer.id}
-                      onClick={() => void run("block", customer)}
-                    >
-                      Заблокировать
-                    </button>
-                  ) : null}
-                  {customer.status === "blocked" ? (
-                    <button
-                      type="button"
-                      className="button button-ghost"
-                      disabled={busyId === customer.id}
-                      onClick={() => void run("unblock", customer)}
-                    >
-                      Разблокировать
-                    </button>
-                  ) : null}
-                  {customer.status !== "deleted" ? (
-                    <button
-                      type="button"
-                      className="button button-danger"
-                      disabled={busyId === customer.id}
-                      onClick={() => void run("remove", customer)}
-                    >
-                      Удалить
-                    </button>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-            {data && data.results.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="empty">
-                  Ничего не найдено
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+          ))}
+          {data && data.results.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="empty">
+                Ничего не найдено
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+        </Table>
 
       <div className="pagination">
         <button

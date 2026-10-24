@@ -21,3 +21,8 @@ assistant.py
 # Продакшен: бэкапы и служебный файл deploy.sh
 /backups/
 .deployed-domain
+
+# Визуальное превью (deploy/preview)
+_site/
+.preview-media/
+preview-shots/

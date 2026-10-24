@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 
 import {
   DELIVERY_LABELS,
@@ -14,13 +14,22 @@ import { OrderStatusBadge } from "../components/orders/OrderStatusBadge";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useOrders } from "../hooks/useOrders";
 import { formatKopecks } from "../lib/money";
+import { Table } from "../components/Table";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
 export function OrdersPage() {
+  const [params] = useSearchParams();
   const [search, setSearch] = useState("");
   // По умолчанию — заказы в работе: администратору важны незавершённые.
-  const [status, setStatus] = useState<OrderStatus | "" | "unfinished">("unfinished");
+  // ?status=… задаёт начальный фильтр (ссылки со сводки).
+  const [status, setStatus] = useState<OrderStatus | "" | "unfinished">(() => {
+    const value = params.get("status");
+    if (value && Object.prototype.hasOwnProperty.call(STATUS_LABELS, value)) {
+      return value as OrderStatus;
+    }
+    return "unfinished";
+  });
   const [payment, setPayment] = useState<PaymentMethod | "">("");
   const [delivery, setDelivery] = useState<DeliveryMethod | "">("");
   const [createdFrom, setCreatedFrom] = useState("");
@@ -116,54 +125,52 @@ export function OrdersPage() {
 
       {error ? <p className="alert">{error}</p> : null}
 
-      <div className="table-wrap">
-        <table className={loading ? "table is-loading" : "table"}>
-          <thead>
-            <tr>
-              <th>Номер</th>
-              <th>Дата</th>
-              <th>Статус</th>
-              <th>Получатель</th>
-              <th>Доставка / оплата</th>
-              <th className="num">Сумма</th>
+      <Table loading={loading}>
+        <thead>
+          <tr>
+            <th>Номер</th>
+            <th>Дата</th>
+            <th>Статус</th>
+            <th>Получатель</th>
+            <th>Доставка / оплата</th>
+            <th className="num">Сумма</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data?.results.map((order) => (
+            <tr key={order.id}>
+              <td>
+                <Link to={`/orders/${order.id}`}>{order.number}</Link>
+              </td>
+              <td>{dateFormat.format(new Date(order.created_at))}</td>
+              <td>
+                <OrderStatusBadge status={order.status} label={order.status_display} />
+              </td>
+              <td>
+                {order.recipient_name || "—"}
+                <div className="muted small">
+                  {order.recipient_phone || order.customer.email}
+                </div>
+              </td>
+              <td>
+                {DELIVERY_LABELS[order.delivery_method]}
+                <div className="muted small">{PAYMENT_LABELS[order.payment_method]}</div>
+              </td>
+              <td className="num">
+                {formatKopecks(order.total_kopecks)}
+                <div className="muted small">{order.items_count} шт.</div>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {data?.results.map((order) => (
-              <tr key={order.id}>
-                <td>
-                  <Link to={`/orders/${order.id}`}>{order.number}</Link>
-                </td>
-                <td>{dateFormat.format(new Date(order.created_at))}</td>
-                <td>
-                  <OrderStatusBadge status={order.status} label={order.status_display} />
-                </td>
-                <td>
-                  {order.recipient_name || "—"}
-                  <div className="muted small">
-                    {order.recipient_phone || order.customer.email}
-                  </div>
-                </td>
-                <td>
-                  {DELIVERY_LABELS[order.delivery_method]}
-                  <div className="muted small">{PAYMENT_LABELS[order.payment_method]}</div>
-                </td>
-                <td className="num">
-                  {formatKopecks(order.total_kopecks)}
-                  <div className="muted small">{order.items_count} шт.</div>
-                </td>
-              </tr>
-            ))}
-            {data && data.results.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="empty">
-                  Заказов не найдено
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+          ))}
+          {data && data.results.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="empty">
+                Заказов не найдено
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+        </Table>
 
       <div className="pagination">
         <button

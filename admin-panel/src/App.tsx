@@ -12,6 +12,10 @@ import { OrderDetailPage } from "./pages/OrderDetailPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { ProductEditPage } from "./pages/ProductEditPage";
 import { ProductsPage } from "./pages/ProductsPage";
+import { SummaryPage } from "./pages/SummaryPage";
+
+// "/panel" в боевой сборке; в превью — "/<репозиторий>/panel" (vite.config.ts, VITE_BASE).
+const BASENAME = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function RequireStaff({ children }: { children: ReactNode }) {
   const { status } = useAuth();
@@ -37,7 +41,7 @@ function Gate({ children }: { children: ReactNode }) {
 
 export function App() {
   return (
-    <BrowserRouter basename="/panel">
+    <BrowserRouter basename={BASENAME}>
       <AuthProvider>
         <Gate>
           <Routes>
@@ -49,7 +53,7 @@ export function App() {
                 </RequireStaff>
               }
             >
-              <Route index element={<Navigate to="/orders" replace />} />
+              <Route index element={<SummaryPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/orders/:id" element={<OrderDetailPage />} />
               <Route path="/customers" element={<CustomersPage />} />

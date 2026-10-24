@@ -1,0 +1,20 @@
+{% extends "web/base.html" %}
+{# Оглавление визуального превью (только GitHub Pages): ссылки на каждое состояние страниц. #}
+{% block title %}Все комнаты — превью DiDi-shop{% endblock %}
+{% block content %}
+<section class="page page--narrow">
+  <header class="section-head">
+    <p class="overline">Превью оформления</p>
+    <h1 class="h1">Все комнаты</h1>
+    <p class="muted">Каждая страница сайта и её состояния. Кнопки покупки, входа и оформления здесь только имитируются — заказы не создаются. Корзина работает в браузере: добавляйте товары и меняйте количество.</p>
+  </header>
+  {% for title, items in sections %}
+  <nav class="menu" aria-label="{{ title }}">
+    <p class="overline menu__head">{{ title }}</p>
+    {% for label, href in items %}
+    <a class="menu__item" href="{{ href }}">{{ label }}<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
+    {% endfor %}
+  </nav>
+  {% endfor %}
+</section>
+{% endblock %}
