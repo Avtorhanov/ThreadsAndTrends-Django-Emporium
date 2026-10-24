@@ -2,11 +2,12 @@
 # (deploy/preview/build.py) и панель администратора (/panel/, ответы API из снимка),
 # проверка в браузере и публикация в ветку gh-pages.
 # Pages: Settings → Pages → Build and deployment → Deploy from a branch → gh-pages / (root).
+# Запускается на push в visual; фичу из dev можно посмотреть ручным запуском (Run workflow → dev).
 name: Visual preview
 
 on:
   push:
-    branches: ["session-*-visual", "visual"]
+    branches: [visual]
   workflow_dispatch:
 
 permissions:

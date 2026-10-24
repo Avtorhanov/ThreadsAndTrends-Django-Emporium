@@ -1,8 +1,10 @@
+# Ветки: main — основа (только через PR), dev — функционал, visual — внешний вид.
+# Полный CI — на push в main и dev и на каждый PR (в том числе visual → main).
 name: CI
 
 on:
   push:
-    branches: [main, master, "session-*"]
+    branches: [main, dev]
   pull_request:
 
 permissions:
