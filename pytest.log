@@ -1,0 +1,50 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.15, pytest-9.1.1, pluggy-1.7.0
+django: version: 5.2.18, settings: myshop.settings.test (from ini)
+rootdir: /home/runner/work/ThreadsAndTrends-Django-Emporium/ThreadsAndTrends-Django-Emporium
+configfile: pyproject.toml
+plugins: django-4.14.0
+collected 472 items
+
+accounts/tests/test_admin_api.py .............                           [  2%]
+accounts/tests/test_auth_api.py ..................................       [  9%]
+accounts/tests/test_ensure_admin.py ....                                 [ 10%]
+accounts/tests/test_models.py ......                                     [ 12%]
+accounts/tests/test_permissions_tasks.py .....                           [ 13%]
+content/tests/test_content.py ..........................                 [ 18%]
+core/tests/test_health.py ....                                           [ 19%]
+core/tests/test_session1_fixes.py ..                                     [ 19%]
+orders/tests/test_api.py ..............                                  [ 22%]
+orders/tests/test_checkout.py .................................          [ 29%]
+orders/tests/test_status.py .................                            [ 33%]
+orders/tests/test_summary.py ....                                        [ 34%]
+payments/tests/test_api.py ...............                               [ 37%]
+payments/tests/test_services.py ............................             [ 43%]
+payments/tests/test_tasks.py ...........                                 [ 45%]
+payments/tests/test_webhook.py ...........                               [ 48%]
+store/tests/test_admin_catalog_api.py ..............                     [ 51%]
+store/tests/test_cart_api.py ...............                             [ 54%]
+store/tests/test_cart_service.py ...........................             [ 59%]
+store/tests/test_catalog_services.py ..........................          [ 65%]
+store/tests/test_models.py .                                             [ 65%]
+store/tests/test_models_basic.py ..                                      [ 66%]
+store/tests/test_public_catalog_api.py ........                          [ 67%]
+store/tests/test_seed_demo.py ....                                       [ 68%]
+store/tests/test_storefront.py ..................                        [ 72%]
+web/tests/test_account.py ......................                         [ 77%]
+web/tests/test_cart.py .............                                     [ 79%]
+web/tests/test_catalog.py .....................                          [ 84%]
+web/tests/test_content.py ........                                       [ 86%]
+web/tests/test_images.py ...                                             [ 86%]
+web/tests/test_orders.py ...............                                 [ 89%]
+web/tests/test_seo.py ..........                                         [ 91%]
+orders/tests/test_concurrency.py ..                                      [ 92%]
+orders/tests/test_migration.py .                                         [ 92%]
+payments/tests/test_concurrency.py ...                                   [ 93%]
+store/tests/test_cart_migration.py .                                     [ 93%]
+store/tests/test_catalog_migration.py .                                  [ 93%]
+core/tests/test_env.py ........                                          [ 95%]
+core/tests/test_periodic.py ...                                          [ 95%]
+payments/tests/test_yookassa.py ...................                      [100%]
+
+============================= 472 passed in 15.61s =============================
