@@ -121,7 +121,7 @@ def pick_size(page: Page) -> None:
     # нижней панели. Скрытое радио под кнопкой с force=True попадало бы в перекрывающий слой.
     sizes = page.locator(".sz:not(.is-off)")
     if sizes.count():
-        sizes.first.locator("span").click()
+        sizes.first.click()  # label: невидимое радио внутри — часть той же кнопки
         expect(sizes.first.locator("input")).to_be_checked()
 
 
