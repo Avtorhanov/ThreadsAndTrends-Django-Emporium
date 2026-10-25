@@ -245,6 +245,8 @@ SPECTACULAR_SETTINGS = {
         "RefundStatusEnum": "payments.models.RefundStatus.choices",
         "RefundReasonEnum": "payments.models.RefundReason.choices",
         "ContactKindEnum": "content.contacts.ContactKind.CHOICES",
+        "BlockKindEnum": "content.models.BlockKind.choices",
+        "BlockAreaEnum": "content.models.BlockArea.choices",
     },
 }
 
