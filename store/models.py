@@ -69,7 +69,11 @@ class Product(models.Model):
     category = models.ForeignKey(
         Category, on_delete=models.PROTECT, related_name="products", verbose_name="Категория"
     )
-    price_kopecks = models.PositiveBigIntegerField(verbose_name="Цена, коп.")
+    # NULL — «цена по запросу»: товар не продаётся через корзину, покупатель узнаёт цену
+    # у продавца (кнопка «Узнать» → мессенджеры).
+    price_kopecks = models.PositiveBigIntegerField(
+        null=True, blank=True, verbose_name="Цена, коп. (пусто — по запросу)"
+    )
     compare_at_kopecks = models.PositiveBigIntegerField(
         null=True, blank=True, verbose_name="Старая цена, коп."
     )
@@ -100,10 +104,14 @@ class Product(models.Model):
             models.Index(fields=["price_kopecks"], name="product_price_idx"),
         ]
         constraints = [
-            models.CheckConstraint(condition=Q(price_kopecks__gt=0), name="product_price_positive"),
+            models.CheckConstraint(
+                condition=Q(price_kopecks__isnull=True) | Q(price_kopecks__gt=0),
+                name="product_price_positive",
+            ),
+            # Старая цена — только у товара с ценой (сравнение с NULL в CHECK проходит молча).
             models.CheckConstraint(
                 condition=Q(compare_at_kopecks__isnull=True)
-                | Q(compare_at_kopecks__gt=F("price_kopecks")),
+                | Q(price_kopecks__isnull=False, compare_at_kopecks__gt=F("price_kopecks")),
                 name="product_compare_at_gt_price",
             ),
         ]
@@ -114,6 +122,10 @@ class Product(models.Model):
     @property
     def is_deleted(self) -> bool:
         return self.deleted_at is not None
+
+    @property
+    def price_on_request(self) -> bool:
+        return self.price_kopecks is None
 
     @property
     def cover(self):

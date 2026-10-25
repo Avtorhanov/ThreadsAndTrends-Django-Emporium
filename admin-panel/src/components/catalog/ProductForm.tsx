@@ -23,6 +23,8 @@ export function ProductForm({ product, categories, onSubmit }: Props) {
   const [slug, setSlug] = useState(product?.slug ?? "");
   const [category, setCategory] = useState(product ? String(product.category) : "");
   const [price, setPrice] = useState(kopecksToInput(product?.price_kopecks));
+  // Цена по запросу: на витрине вместо цены и корзины — «Узнать» (мессенджеры магазина).
+  const [onRequest, setOnRequest] = useState(product ? product.price_kopecks === null : false);
   const [compareAt, setCompareAt] = useState(kopecksToInput(product?.compare_at_kopecks));
   const [description, setDescription] = useState(product?.description ?? "");
   const [isActive, setIsActive] = useState(product?.is_active ?? true);
@@ -33,15 +35,18 @@ export function ProductForm({ product, categories, onSubmit }: Props) {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    const priceKopecks = parseRublesToKopecks(price);
-    const compareKopecks = compareAt.trim() ? parseRublesToKopecks(compareAt) : null;
+    const priceKopecks = onRequest ? null : parseRublesToKopecks(price);
+    const compareKopecks = !onRequest && compareAt.trim() ? parseRublesToKopecks(compareAt) : null;
     const local: FieldErrors = {};
-    if (priceKopecks === null || priceKopecks <= 0) local.price_kopecks = ["Введите цену, например 1990 или 1990,50."];
-    if (compareAt.trim() && compareKopecks === null) local.compare_at_kopecks = ["Неверный формат суммы."];
+    if (!onRequest && (priceKopecks === null || priceKopecks <= 0)) {
+      local.price_kopecks = ["Введите цену, например 1990 или 1990,50."];
+    }
+    if (!onRequest && compareAt.trim() && compareKopecks === null)
+      local.compare_at_kopecks = ["Неверный формат суммы."];
     if (!category) local.category = ["Выберите категорию."];
     setErrors(local);
     setFormError(null);
-    if (Object.keys(local).length > 0 || priceKopecks === null) return;
+    if (Object.keys(local).length > 0) return;
 
     setSaving(true);
     try {
@@ -106,23 +111,30 @@ export function ProductForm({ product, categories, onSubmit }: Props) {
         <FieldError errors={errors} name="category" />
       </label>
 
-      <div className="form-row">
-        <label className="field">
-          Цена, ₽
-          <input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
-          <FieldError errors={errors} name="price_kopecks" />
-        </label>
-        <label className="field">
-          Старая цена, ₽
-          <input
-            inputMode="decimal"
-            value={compareAt}
-            placeholder="Без скидки"
-            onChange={(e) => setCompareAt(e.target.value)}
-          />
-          <FieldError errors={errors} name="compare_at_kopecks" />
-        </label>
-      </div>
+      <label className="checkbox">
+        <input type="checkbox" checked={onRequest} onChange={(e) => setOnRequest(e.target.checked)} />
+        Цена по запросу — вместо цены и корзины кнопка «Узнать»
+      </label>
+
+      {onRequest ? null : (
+        <div className="form-row">
+          <label className="field">
+            Цена, ₽
+            <input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+            <FieldError errors={errors} name="price_kopecks" />
+          </label>
+          <label className="field">
+            Старая цена, ₽
+            <input
+              inputMode="decimal"
+              value={compareAt}
+              placeholder="Без скидки"
+              onChange={(e) => setCompareAt(e.target.value)}
+            />
+            <FieldError errors={errors} name="compare_at_kopecks" />
+          </label>
+        </div>
+      )}
 
       <label className="field">
         Описание

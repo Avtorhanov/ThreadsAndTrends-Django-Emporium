@@ -44,7 +44,6 @@ from django.urls import set_script_prefix  # noqa: E402
 from django.utils import timezone  # noqa: E402
 
 from content.models import Article  # noqa: E402
-from deploy.preview import categories as preview_categories  # noqa: E402
 from orders.models import ChangedBy, DeliveryMethod, Order, OrderStatus, PaymentMethod  # noqa: E402
 from orders.services import checkout as checkout_service  # noqa: E402
 from orders.services import status as status_service  # noqa: E402
@@ -152,7 +151,10 @@ class Site:
 def in_stock_variants() -> list[ProductVariant]:
     live = Product.objects.live().values_list("pk", flat=True)
     return list(
-        ProductVariant.objects.filter(product__in=live, deleted_at=None, stock__gt=0)
+        # Товары с ценой по запросу в корзину не кладутся — для демо-заказов не подходят.
+        ProductVariant.objects.filter(
+            product__in=live, product__price_kopecks__isnull=False, deleted_at=None, stock__gt=0
+        )
         .select_related("product")
         .order_by("product__category_id", "product_id", "position", "pk")
     )
@@ -280,7 +282,6 @@ def build(out: Path) -> None:
 
     call_command("migrate", verbosity=0)
     call_command("seed_demo", verbosity=0)
-    preview_categories.apply()
 
     fake = FakeProvider()
     providers.get_provider = lambda: fake  # платежи и возвраты — в памяти, без сети

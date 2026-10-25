@@ -16,6 +16,7 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 
+from content.contacts import ask_links
 from store.models import Category, Product, ProductImage, ProductVariant
 from store.services.cart import max_quantity
 from store.services.storefront import (
@@ -27,7 +28,7 @@ from store.services.storefront import (
 
 from .. import catalog_cache
 from ..forms import CatalogFilterForm
-from ..seo import product_json_ld
+from ..seo import absolute_url, product_json_ld
 
 PAGE_WINDOW = 2  # номеров страниц по обе стороны от текущей
 EAGER_CARDS = 4
@@ -220,11 +221,16 @@ def product(request, slug: str):
     in_stock = any(size["available"] for size in sizes)
     single = variants[0] if len(variants) == 1 and not variants[0].size else None
     images = list(found.images.all())
+    ask = []
+    if found.price_on_request:
+        url = absolute_url(request, reverse("web:product", args=[found.slug]))
+        ask = ask_links(f"Здравствуйте! Подскажите цену: {found.name} — {url}")
     return render(
         request,
         "web/catalog/product.html",
         {
             "product": found,
+            "ask_links": ask,
             "images": images,
             "sizes": sizes,
             "single_variant": single,

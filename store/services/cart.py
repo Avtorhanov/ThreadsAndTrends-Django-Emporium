@@ -15,7 +15,8 @@ from dataclasses import dataclass, field, replace
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models import Exists, OuterRef, Subquery
+from django.db.models import Exists, F, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.http import Http404
 
 from store.models import Cart, CartItem, Product, ProductVariant
@@ -143,6 +144,9 @@ def _load_variants(ids: Iterable[int]) -> dict[int, ProductVariant]:
 def _status(variant: ProductVariant | None, quantity: int) -> tuple[str, int]:
     if variant is None or variant.deleted_at is not None or not variant.product_is_live:
         return LineStatus.UNAVAILABLE, 0
+    # Цена по запросу: товар не продаётся через корзину (в т.ч. если цену убрали позже).
+    if variant.product.price_kopecks is None:
+        return LineStatus.UNAVAILABLE, 0
     limit = max_quantity(variant)
     if limit == 0:
         return LineStatus.OUT_OF_STOCK, 0
@@ -226,6 +230,10 @@ def _locked_cart(user) -> Cart:
 
 def _sellable_variant(variant_id: int) -> tuple[ProductVariant, int]:
     variant = _load_variants([variant_id]).get(variant_id)
+    if variant is not None and variant.product_is_live and variant.product.price_kopecks is None:
+        raise ValidationError(
+            "Цена этого товара — по запросу: узнайте её у продавца.", code="price_on_request"
+        )
     status, limit = _status(variant, 1)
     if status == LineStatus.UNAVAILABLE:
         raise ValidationError("Товар недоступен для заказа.", code="unavailable")
@@ -307,7 +315,10 @@ def ack_prices(user) -> CartSummary:
     current_price = ProductVariant.all_objects.filter(pk=OuterRef("variant_id")).values(
         "product__price_kopecks"
     )[:1]
-    CartItem.objects.filter(cart__owner=user).update(seen_price_kopecks=Subquery(current_price))
+    # Товар без цены (по запросу) оставляет прежнюю «увиденную» цену: поле не может быть пустым.
+    CartItem.objects.filter(cart__owner=user).update(
+        seen_price_kopecks=Coalesce(Subquery(current_price), F("seen_price_kopecks"))
+    )
     return get_summary(user)
 
 
@@ -411,7 +422,7 @@ def guest_ack_prices(lines: Iterable[LineInput]) -> list[LineInput]:
     variants = _load_variants(line.variant_id for line in lines)
     return [
         replace(line, seen_price_kopecks=variants[line.variant_id].product.price_kopecks)
-        if line.variant_id in variants
+        if line.variant_id in variants and variants[line.variant_id].product.price_kopecks
         else line
         for line in lines
     ]

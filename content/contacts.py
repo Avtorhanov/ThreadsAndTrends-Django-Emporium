@@ -7,7 +7,8 @@
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from urllib.parse import quote
 
 from django.conf import settings
 
@@ -134,3 +135,20 @@ def invalid_settings() -> list[str]:
         if (getattr(settings, value_setting, "") or "").strip()
         and parse(getattr(settings, value_setting)) is None
     ]
+
+
+# Каналы, где можно спросить цену: мессенджеры (кнопка «Узнать» у товара с ценой по запросу).
+ASK_KINDS = (ContactKind.TELEGRAM, ContactKind.WHATSAPP)
+
+
+def ask_links(message: str) -> list[Contact]:
+    """Мессенджеры для вопроса о товаре. В WhatsApp сообщение подставляется в чат
+    (параметр text), в Telegram ссылка ведёт в чат магазина без текста."""
+    links = []
+    for contact in get_contacts():
+        if contact.kind not in ASK_KINDS:
+            continue
+        if contact.kind == ContactKind.WHATSAPP:
+            contact = replace(contact, url=f"{contact.url}?text={quote(message)}")
+        links.append(contact)
+    return sorted(links, key=lambda c: ASK_KINDS.index(c.kind))
