@@ -64,6 +64,7 @@ def test_product_list_shows_only_live_products(api_client, tree):
         "slug": visible.slug,
         "name": visible.name,
         "price_kopecks": 199000,
+        "price_on_request": False,
         "compare_at_kopecks": None,
         "in_stock": True,
         "cover_url": None,
