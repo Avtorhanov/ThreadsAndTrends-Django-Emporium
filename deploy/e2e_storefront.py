@@ -4,14 +4,19 @@
 
 Телефон (iPhone, светлая тема): главная с фото → свёрнутая шапка → быстрый поиск из лаймовой
 кнопки → результаты → товар → размер → «В корзину» (htmx, счётчик) → корзина гостя → оформление
-→ вход → регистрация → оформление «при получении» → заказ → отмена. Логотип — наверх коротким
+→ вход → регистрация → оформление «при получении» → заказ → администратор видит его в панели
+(заказы, товары, статьи, форма статьи) → покупатель отменяет заказ. Логотип — наверх коротким
 путём. Тёмная тема (prefers-color-scheme) и переключатель в шапке. Вкладка «Контакты»: мессенджеры,
 статьи, страница статьи. Десктоп в обеих темах: верхняя навигация, сетка 4 колонки, карточка
 товара в две колонки, контакты.
 Любое сообщение об ошибке в консоли (в т.ч. нарушение CSP) — провал. Скриншоты — в папку отчёта.
+Нужен администратор из .env (ADMIN_EMAIL/ADMIN_PASSWORD).
+
+Установка: pip install playwright && python -m playwright install --with-deps chromium
 """
 
 import json
+import os
 import re
 import sys
 import uuid
@@ -26,6 +31,16 @@ IPHONE_UA = (
     "(KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
 )
 PASSWORD = "E2e-Shopper-Passw0rd"
+
+
+def env_value(name: str) -> str:
+    if os.environ.get(name):
+        return os.environ[name]
+    env = Path(__file__).resolve().parent.parent / ".env"
+    for line in env.read_text(encoding="utf-8").splitlines() if env.exists() else []:
+        if line.startswith(f"{name}="):
+            return line.split("=", 1)[1].strip().strip("\"'")
+    return ""
 
 
 class Report:
@@ -195,6 +210,8 @@ def shopper(browser, base: str, report: Report, errors: list[str]) -> None:
     expect(page.locator(".status").first).to_have_text("Принят")
     expect(page.locator("#cart-badge-tab")).to_be_hidden()
     report.shot(page, "phone-order")
+    number = re.search(r"/orders/(DD-\d+)/", page.url).group(1)
+    admin_sees_order(browser, base, number, report, errors)
 
     page.once("dialog", lambda dialog: dialog.accept())
     page.get_by_role("button", name="Отменить заказ").click()
@@ -204,6 +221,32 @@ def shopper(browser, base: str, report: Report, errors: list[str]) -> None:
     page.goto(base + "/orders/")
     expect(page.locator(".order-card")).to_have_count(1)
     report.shot(page, "phone-my-orders")
+    context.close()
+
+
+def admin_sees_order(browser, base: str, number: str, report: Report, errors: list[str]) -> None:
+    context = browser.new_context(viewport={"width": 1280, "height": 800}, ignore_https_errors=True)
+    page = context.new_page()
+    page.set_default_timeout(TIMEOUT_MS)
+    watch_console(page, errors)
+    page.goto(base + "/panel/")
+    page.get_by_label("Email").fill(env_value("ADMIN_EMAIL"))
+    page.get_by_label("Пароль").fill(env_value("ADMIN_PASSWORD"))
+    page.get_by_role("button", name="Войти", exact=True).click()
+    expect(page.get_by_role("button", name="Выйти")).to_be_visible()
+    page.goto(base + "/panel/orders")
+    expect(page.get_by_text(number).first).to_be_visible()
+    report.shot(page, "panel-orders")
+    page.goto(base + "/panel/catalog/products")
+    page.wait_for_load_state("networkidle")
+    report.shot(page, "panel-products")
+    page.goto(base + "/panel/content/articles")
+    expect(page.get_by_role("link", name="Как выбрать размер одежды")).to_be_visible()
+    report.shot(page, "panel-articles")
+    page.get_by_role("link", name="Как выбрать размер одежды").click()
+    expect(page.get_by_label("Заголовок")).to_have_value("Как выбрать размер одежды")
+    page.wait_for_load_state("networkidle")
+    report.shot(page, "panel-article-edit")
     context.close()
 
 

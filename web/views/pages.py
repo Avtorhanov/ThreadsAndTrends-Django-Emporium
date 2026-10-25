@@ -1,8 +1,10 @@
-"""Служебные страницы витрины: тема, баннер приложения, юридические страницы, robots.txt."""
+"""Служебные страницы витрины: тема, баннер приложения, юридические страницы, robots.txt,
+манифест для установки на экран «Домой»."""
 
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.templatetags.static import static
 from django.urls import reverse
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_GET, require_POST
@@ -67,9 +69,48 @@ def robots_txt(request):
         "Disallow: /api/",
         "Disallow: /admin/",
         "Disallow: /panel/",
-        "Disallow: /app/",
         "",
         f"Sitemap: {absolute_url(request, reverse('web:sitemap'))}",
         "",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain; charset=utf-8")
+
+
+# Цвета — из tokens.json «Лайм-тек»: фон светлой темы и ink.
+MANIFEST_BACKGROUND = "#EBF1E2"
+MANIFEST_THEME = "#13261C"
+
+
+@require_GET
+@cache_control(max_age=86400, public=True)
+def manifest(request):
+    """Web App Manifest витрины: «На экран Домой» на iPhone и установка из Chrome на Android
+    открывают сайт без адресной строки. Адреса иконок — через static() (в prod с хэшем)."""
+    icons = [
+        {"src": static(f"web/icons/{name}"), "sizes": size, "type": "image/png", "purpose": purpose}
+        for name, size, purpose in (
+            ("icon-192.png", "192x192", "any"),
+            ("icon-512.png", "512x512", "any"),
+            ("icon-maskable-512.png", "512x512", "maskable"),
+        )
+    ]
+    home = reverse("web:home")
+    data = {
+        "name": "DiDi-shop",
+        "short_name": "DiDi-shop",
+        "description": "Одежда, обувь, аксессуары и уход с доставкой.",
+        "lang": "ru",
+        "id": home,
+        "start_url": home,
+        "scope": home,
+        "display": "standalone",
+        "orientation": "portrait",
+        "background_color": MANIFEST_BACKGROUND,
+        "theme_color": MANIFEST_THEME,
+        "icons": icons,
+    }
+    return JsonResponse(
+        data,
+        content_type="application/manifest+json",
+        json_dumps_params={"ensure_ascii": False},
+    )

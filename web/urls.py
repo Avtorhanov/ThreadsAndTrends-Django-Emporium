@@ -43,5 +43,6 @@ urlpatterns = [
     path("legal/privacy/", pages.legal, {"page": "privacy"}, name="privacy"),
     path("legal/delivery/", pages.legal, {"page": "delivery"}, name="delivery"),
     path("robots.txt", pages.robots_txt, name="robots"),
+    path("manifest.webmanifest", pages.manifest, name="manifest"),
     path("sitemap.xml", sitemap, {"sitemaps": SITEMAPS}, name="sitemap"),
 ]

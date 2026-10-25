@@ -24,13 +24,13 @@
     if (img) img.style.viewTransitionName = "product-photo";
   });
 
-  // Переход на другую часть сайта (панель, веб-приложение) — без анимации: у них свой каркас,
+  // Переход на другую часть сайта (панель, резервная админка) — без анимации: у них свой каркас,
   // и браузер иначе прерывает переход с ошибкой в консоли.
   window.addEventListener("pageswap", function (event) {
     if (!event.viewTransition) return;
     var entry = event.activation && event.activation.entry;
     var path = entry && entry.url ? new URL(entry.url).pathname : "";
-    if (/\/(panel|app|admin)\//.test(path)) event.viewTransition.skipTransition();
+    if (/\/(panel|admin)\//.test(path)) event.viewTransition.skipTransition();
   });
 
   // --- Шапка: сворачивание с гистерезисом 24/8 px (как в приложении) ---

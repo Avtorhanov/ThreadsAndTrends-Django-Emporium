@@ -139,7 +139,7 @@ ensure_env() {
 }
 
 ensure_swap() {
-  # Сборка веб-версии приложения требует ~1.5 ГБ памяти: на маленьких VPS добавляем swap.
+  # Сборка образов (панель, зависимости Python) на маленьких VPS упирается в память: добавляем swap.
   [ "$(uname -s)" = "Linux" ] && [ "$(id -u)" -eq 0 ] || return 0
   local mem_kb swap_kb
   mem_kb=$(awk '/MemTotal/ {print $2}' /proc/meminfo)
@@ -202,7 +202,7 @@ deploy() {
   cat <<EOF
 
 Готово.
-  Магазин:                         https://$domain/   (ведёт в веб-приложение https://$domain/app/)
+  Магазин:                         https://$domain/
   Панель администратора:           https://$domain/panel/   (вход: $(env_get ADMIN_EMAIL))
   Резервная админка Django:        https://$domain/admin/
   Webhook для ЮKassa:              https://$domain/api/v1/payments/webhook/yookassa/

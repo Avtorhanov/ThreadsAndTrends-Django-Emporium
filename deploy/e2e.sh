@@ -4,14 +4,14 @@
 #   bash deploy/e2e.sh [папка-отчёта]
 #
 # 1. ./deploy.sh с DOMAIN=localhost — та же команда, что на сервере;
-# 2. HTTPS, редирект с HTTP, заголовки безопасности, PWA (манифест, иконки), панель;
+# 2. HTTPS, редирект с HTTP, заголовки безопасности, манифест витрины и иконки, панель;
 # 3. демо-каталог: товары с фото, каждое фото отдаётся;
 # 4. manage.py check --deploy внутри контейнера;
 # 5. нагрузочный smoke оформления (deploy/smoke_checkout.py);
 # 6. бэкап и восстановление из него;
-# 7. браузерный сценарий покупателя и администратора (deploy/e2e_browser.py, скриншоты);
-# 8. веб-витрина в браузере: телефон и десктоп, обе темы (deploy/e2e_storefront.py);
-# 9. Lighthouse (мобильный) на странице товара: SEO ≥ 95, Performance ≥ 80.
+# 7. веб-витрина в браузере: покупатель (телефон и десктоп, обе темы) и администратор в панели
+#    (deploy/e2e_storefront.py, скриншоты);
+# 8. Lighthouse (мобильный) на странице товара: SEO ≥ 95, Performance ≥ 80.
 #
 # Внимание: перезаписывает .env и данные стека в этой папке. Не запускайте на сервере магазина.
 set -euo pipefail
@@ -46,7 +46,7 @@ sed -i \
   -e 's/^SEED_DEMO=.*/SEED_DEMO=1/' \
   .env
 echo "GUNICORN_WORKERS=2" >> .env
-# Контакты для вкладки «Контакты» (сайт и приложение).
+# Контакты для вкладки «Контакты».
 sed -i \
   -e 's/^CONTACT_WHATSAPP=.*/CONTACT_WHATSAPP=+79001234567/' \
   -e 's/^CONTACT_TELEGRAM=.*/CONTACT_TELEGRAM=@didishop/' \
@@ -59,9 +59,9 @@ step "HTTPS, редирект, заголовки"
 k "$BASE/api/v1/health/" | tee "$OUT/health.json" || fail "healthcheck по HTTPS"; echo
 code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost/)
 [ "$code" = "308" ] || fail "http:// не перенаправляет на https:// (код $code)"
-headers=$(k -I "$BASE/app/")
+headers=$(k -I "$BASE/panel/")
 grep -qi '^strict-transport-security:' <<<"$headers" || fail "нет HSTS"
-grep -qi '^content-security-policy:' <<<"$headers" || fail "нет CSP у веб-приложения"
+grep -qi '^content-security-policy:' <<<"$headers" || fail "нет CSP у панели"
 
 step "Веб-витрина: корень, SEO, статика"
 root_headers=$(k -I "$BASE/")
@@ -85,21 +85,20 @@ missing=$(curl -sk -o /dev/null -w '%{http_code}' "$BASE/product/net-takogo-tova
 [ "$missing" = "404" ] || fail "несуществующий товар — не 404 ($missing)"
 echo "витрина: CSP, canonical, sitemap, robots.txt, schema.org, статика с хэшем — ок"
 
-step "Веб-приложение /app/ (PWA), корень сайта, панель"
+step "Манифест витрины («На экран Домой»), панель"
 # Ответы — в переменные: `curl | grep -q` под pipefail ловит SIGPIPE.
-html=$(k "$BASE/app/")
-grep -q 'manifest.webmanifest' <<<"$html" || fail "в index.html нет манифеста"
-grep -q 'apple-touch-icon' <<<"$html" || fail "в index.html нет иконки для iPhone"
-manifest_headers=$(k -I "$BASE/app/manifest.webmanifest")
+grep -q '<link rel="manifest" href="/manifest.webmanifest">' <<<"$home" || fail "на витрине нет ссылки на манифест"
+grep -q 'apple-touch-icon' <<<"$home" || fail "на витрине нет иконки для iPhone"
+manifest_headers=$(k -I "$BASE/manifest.webmanifest")
 grep -qi 'content-type: application/manifest+json' <<<"$manifest_headers" || fail "манифест отдаётся не как application/manifest+json"
-k "$BASE/app/manifest.webmanifest" | python3 -c 'import json,sys; m=json.load(sys.stdin); assert m["display"]=="standalone" and len(m["icons"])>=2' \
-  || fail "манифест PWA"
-for icon in apple-touch-icon.png icon-192.png icon-512.png; do
-  k -o /dev/null "$BASE/app/icons/$icon" || fail "нет иконки $icon"
+manifest=$(k "$BASE/manifest.webmanifest")
+icons=$(python3 -c 'import json,sys; m=json.loads(sys.argv[1]); assert m["display"]=="standalone" and m["start_url"]=="/" and len(m["icons"])>=3; print(" ".join(i["src"] for i in m["icons"]))' "$manifest") \
+  || fail "манифест витрины"
+for icon in $icons; do
+  k -o /dev/null "$BASE$icon" || fail "нет иконки $icon"
 done
-spa=$(k "$BASE/app/orders/DD-1")
-grep -q '<div id="root">' <<<"$spa" || fail "SPA-маршрут /app/orders/… не отдаёт index.html"
-grep -q '/app/_expo/' <<<"$html" || fail "сборка веб-приложения не учитывает base /app"
+gone=$(curl -sk -o /dev/null -w '%{http_code}' "$BASE/app/")
+[ "$gone" = "404" ] || fail "/app/ всё ещё отвечает ($gone)"
 panel=$(k "$BASE/panel/")
 grep -qi 'id="root"' <<<"$panel" || fail "панель не открывается"
 k -o /dev/null "$BASE/static/admin/css/base.css" || fail "статика Django не раздаётся"
@@ -149,15 +148,11 @@ changed=$("${COMPOSE[@]}" exec -T db psql -U didi -d didi -tAc "select count(*) 
 k "$BASE/api/v1/health/" >/dev/null || fail "после восстановления сайт не отвечает"
 echo "Бэкап $db_dump восстановлен: заказов $after, данные после бэкапа откатились."
 
-step "Браузер: покупатель и администратор"
+step "Браузер: витрина (телефон и десктоп, обе темы) и панель администратора"
 if ! python3 -c "import playwright" 2>/dev/null; then
   python3 -m pip install -q playwright
   python3 -m playwright install --with-deps chromium
 fi
-python3 deploy/e2e_browser.py "$BASE" "$OUT" 2>&1 | tee "$OUT/browser.log" \
-  || fail "браузерный сценарий: $(tail -n 12 "$OUT/browser.log" | tr '\n' ' ')"
-
-step "Браузер: веб-витрина (телефон и десктоп, обе темы)"
 python3 deploy/e2e_storefront.py "$BASE" "$OUT/storefront" 2>&1 | tee "$OUT/storefront.log" \
   || fail "витрина в браузере: $(tail -n 12 "$OUT/storefront.log" | tr '\n' ' ')"
 

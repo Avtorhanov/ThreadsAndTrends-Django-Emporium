@@ -12,7 +12,6 @@ import type { ProductCard as ProductCardData } from "../../../src/catalog/catalo
 import { ProductCard } from "../../../src/catalog/components";
 import { FeedFade, GlassHeader, useHeaderHeight } from "../../../src/catalog/GlassHeader";
 import { useCategories, useProductFeed } from "../../../src/catalog/hooks";
-import { InstallHint } from "../../../src/components/InstallHint";
 import { useGridColumns } from "../../../src/components/layout";
 import { Segmented } from "../../../src/components/Segmented";
 import { Button, Loading, Message, ScreenTitle, TAB_BAR_SPACE } from "../../../src/components/ui";
@@ -104,7 +103,6 @@ export default function CatalogScreen() {
         }
         ListHeaderComponent={
           <View style={s.head}>
-            <InstallHint />
             <ScreenTitle overline="Каталог" title={current?.name ?? "Все товары"} />
             {feed.count !== null ? <Text style={s.count}>Товаров: {feed.count}</Text> : null}
             <Message text={categories.error} />

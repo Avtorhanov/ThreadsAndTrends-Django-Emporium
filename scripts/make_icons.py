@@ -1,5 +1,5 @@
 """Иконки магазина в стиле «Лайм-тек»: приложение (Android/iOS), адаптивная иконка Android,
-заставка, веб (PWA).
+заставка, веб-витрина (фавикон и «На экран Домой»).
 
     cd mobile && npm ci && cd .. && python3 scripts/make_icons.py
 
@@ -15,7 +15,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "mobile/assets"
-WEB = ROOT / "mobile/public/icons"
 # Веб-витрина (Django-статика): фавикон и иконки «На экран Домой».
 STOREFRONT = ROOT / "web/static/web/icons"
 TOKENS = json.loads((ROOT / "docs/design/lime-tech/tokens.json").read_text(encoding="utf-8"))
@@ -71,7 +70,6 @@ def plate(size: int, plate_scale: float, mark_scale: float) -> Image.Image:
 
 
 def main() -> None:
-    WEB.mkdir(parents=True, exist_ok=True)
     solid(1024, 0.5).save(ASSETS / "icon.png", optimize=True)
     # Адаптивная иконка Android: система обрезает края, знак — в центральных ~60%.
     Image.new("RGB", (512, 512), INK).save(ASSETS / "android-icon-background.png")
@@ -79,16 +77,12 @@ def main() -> None:
     wordmark(512, WHITE, 0.36).save(ASSETS / "android-icon-monochrome.png", optimize=True)
     # Заставка: плашка видна и на светлом (#EBF1E2), и на тёмном (#070E0A) фоне.
     plate(1024, 0.72, 0.42).save(ASSETS / "splash-icon.png", optimize=True)
-    plate(48, 1.0, 0.62).save(ASSETS / "favicon.png", optimize=True)
-    # PWA: обычные иконки, maskable (с полями) и иконка для iPhone (без прозрачности).
-    solid(192, 0.5).save(WEB / "icon-192.png", optimize=True)
-    solid(512, 0.5).save(WEB / "icon-512.png", optimize=True)
-    solid(512, 0.36).save(WEB / "icon-maskable-512.png", optimize=True)
-    solid(180, 0.5).save(WEB / "apple-touch-icon.png", optimize=True)
+    # Витрина (PWA): обычные иконки, maskable (с полями) и иконка для iPhone (без прозрачности).
     STOREFRONT.mkdir(parents=True, exist_ok=True)
     plate(48, 1.0, 0.62).save(STOREFRONT / "favicon-48.png", optimize=True)
     solid(192, 0.5).save(STOREFRONT / "icon-192.png", optimize=True)
     solid(512, 0.5).save(STOREFRONT / "icon-512.png", optimize=True)
+    solid(512, 0.36).save(STOREFRONT / "icon-maskable-512.png", optimize=True)
     solid(180, 0.5).save(STOREFRONT / "apple-touch-icon.png", optimize=True)
     print("иконки готовы")
 
