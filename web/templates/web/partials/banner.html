@@ -1,6 +1,6 @@
 {% load storefront %}{% with platform=app_banner %}{% if platform %}
-{# Баннер только на телефонах: Android — ссылка на APK, iPhone — как добавить сайт на экран «Домой».
-   Закрытый больше не показывается (cookie); в открытом с экрана «Домой» сайте скрыт стилями. #}
+{% comment %}Баннер только на телефонах: Android — ссылка на APK, iPhone — как добавить сайт на экран «Домой».
+   Закрытый больше не показывается (cookie); в открытом с экрана «Домой» сайте скрыт стилями.{% endcomment %}
 <aside class="appbar" aria-label="Приложение DiDi-shop" data-banner>
   <span class="logo logo--sm" aria-hidden="true">DiDi</span>
   {% if platform == "android" %}

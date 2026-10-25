@@ -75,7 +75,8 @@ def test_guest_change_and_remove_line(client, shop):
     pk = variant(shop["shirt"], "S").pk
     assert f'id="line-{pk}-parts" hx-swap-oob="true"' in html
     assert 'id="cart-summary" hx-swap-oob="true"' in html
-    assert 'id="cart"' not in html and "Футболка белая" not in html
+    assert 'id="cart" ' not in html and "Футболка белая" not in html
+    assert "{#" not in html  # шаблонные комментарии не попадают в ответ
     client.post(line_url, {"quantity": 0})
     assert "cart" not in client.session
     # Повторное удаление (вторая вкладка) не ошибка.

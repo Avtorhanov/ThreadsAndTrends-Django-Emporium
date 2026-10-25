@@ -1,5 +1,5 @@
-{% load money %}{# Изменяемая часть позиции корзины: статус, количество, сумма, удаление. При «+/−» сервер
-   отдаёт только её (hx-swap-oob) и итог — фото, название и остальные позиции не перерисовываются. #}
+{% load money %}{% comment %}Изменяемая часть позиции корзины: статус, количество, сумма, удаление. При «+/−» сервер
+   отдаёт только её (hx-swap-oob) и итог — фото, название и остальные позиции не перерисовываются.{% endcomment %}
 <div class="line__parts" id="line-{{ line.variant_id }}-parts"{% if oob %} hx-swap-oob="true"{% endif %}>
   {% for text in line_errors %}<p class="pill pill--danger" role="alert">{{ text }}</p>{% endfor %}
   {% if line.status == "unavailable" %}<p class="pill pill--neutral">Недоступен</p>
