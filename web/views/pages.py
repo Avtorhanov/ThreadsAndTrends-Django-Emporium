@@ -7,7 +7,7 @@ from django.shortcuts import redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
 from django.views.decorators.cache import cache_control
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST, require_safe
 
 from .. import theme
 from ..context_processors import BANNER_COOKIE
@@ -81,7 +81,7 @@ MANIFEST_BACKGROUND = "#EBF1E2"
 MANIFEST_THEME = "#13261C"
 
 
-@require_GET
+@require_safe  # GET и HEAD: браузеры и проверки запрашивают манифест обоими способами
 @cache_control(max_age=86400, public=True)
 def manifest(request):
     """Web App Manifest витрины: «На экран Домой» на iPhone и установка из Chrome на Android

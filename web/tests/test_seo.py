@@ -87,6 +87,7 @@ def test_manifest_for_home_screen(client, db):
     assert {icon["purpose"] for icon in data["icons"]} == {"any", "maskable"}
     assert all(icon["src"].startswith("/static/web/icons/") for icon in data["icons"])
     assert "Set-Cookie" not in response
+    assert client.head(reverse("web:manifest")).status_code == 200
 
 
 def test_pages_link_manifest(client, db):

@@ -59,7 +59,7 @@ step "HTTPS, редирект, заголовки"
 k "$BASE/api/v1/health/" | tee "$OUT/health.json" || fail "healthcheck по HTTPS"; echo
 code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost/)
 [ "$code" = "308" ] || fail "http:// не перенаправляет на https:// (код $code)"
-headers=$(k -I "$BASE/panel/")
+headers=$(k -I "$BASE/panel/") || fail "HEAD /panel/"
 grep -qi '^strict-transport-security:' <<<"$headers" || fail "нет HSTS"
 grep -qi '^content-security-policy:' <<<"$headers" || fail "нет CSP у панели"
 
@@ -89,9 +89,9 @@ step "Манифест витрины («На экран Домой»), пане
 # Ответы — в переменные: `curl | grep -q` под pipefail ловит SIGPIPE.
 grep -q '<link rel="manifest" href="/manifest.webmanifest">' <<<"$home" || fail "на витрине нет ссылки на манифест"
 grep -q 'apple-touch-icon' <<<"$home" || fail "на витрине нет иконки для iPhone"
-manifest_headers=$(k -I "$BASE/manifest.webmanifest")
+manifest_headers=$(k -I "$BASE/manifest.webmanifest") || fail "HEAD /manifest.webmanifest"
 grep -qi 'content-type: application/manifest+json' <<<"$manifest_headers" || fail "манифест отдаётся не как application/manifest+json"
-manifest=$(k "$BASE/manifest.webmanifest")
+manifest=$(k "$BASE/manifest.webmanifest") || fail "GET /manifest.webmanifest"
 icons=$(python3 -c 'import json,sys; m=json.loads(sys.argv[1]); assert m["display"]=="standalone" and m["start_url"]=="/" and len(m["icons"])>=3; print(" ".join(i["src"] for i in m["icons"]))' "$manifest") \
   || fail "манифест витрины"
 for icon in $icons; do
