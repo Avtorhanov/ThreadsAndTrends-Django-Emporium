@@ -1,17 +1,17 @@
-{% with platform=app_banner %}{% if platform %}
+{% load storefront %}{% with platform=app_banner %}{% if platform %}
 {# Баннер только на телефонах: Android — ссылка на APK, iPhone — как добавить сайт на экран «Домой».
    Закрытый больше не показывается (cookie); в открытом с экрана «Домой» сайте скрыт стилями. #}
 <aside class="appbar" aria-label="Приложение DiDi-shop" data-banner>
   <span class="logo logo--sm" aria-hidden="true">DiDi</span>
   {% if platform == "android" %}
   <p class="appbar__text">
-    <b>Приложение DiDi-shop</b>
-    Быстрее и удобнее — для Android
+    <b>{% sitetext "banner.android.title" %}Приложение DiDi-shop{% endsitetext %}</b>
+    {% sitetext "banner.android.text" %}Быстрее и удобнее — для Android{% endsitetext %}
   </p>
   <a class="btn btn--accent btn--sm" href="{{ android_apk_url }}">Скачать</a>
   {% else %}
   <p class="appbar__text">
-    <b>DiDi-shop на экране «Домой»</b>
+    <b>{% sitetext "banner.ios.title" %}DiDi-shop на экране «Домой»{% endsitetext %}</b>
     <span>Нажмите <svg class="ic ic--inline" width="14" height="14" aria-hidden="true"><use href="#i-share"/></svg> «Поделиться» → «На экран „Домой“»</span>
   </p>
   {% endif %}

@@ -19,9 +19,10 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useAuth } from "../../../src/auth/AuthProvider";
 import { useCart } from "../../../src/cart/CartProvider";
 import { AskPanel } from "../../../src/catalog/AskPanel";
-import { Price, ProductImage, SizePicker } from "../../../src/catalog/components";
+import { InCartBadge, Price, ProductImage, SizePicker } from "../../../src/catalog/components";
 import { useProduct } from "../../../src/catalog/hooks";
 import { FillButton } from "../../../src/components/FillButton";
 import { useContentWidth } from "../../../src/components/layout";
@@ -70,6 +71,11 @@ export default function ProductScreen() {
   const [added, setAdded] = useState(false);
   const [page, setPage] = useState(0);
   const cart = useCart();
+  const { status } = useAuth();
+  // Сколько единиц товара уже в корзине — метка «В корзине» под названием.
+  const inCart = product
+    ? (cart.cart?.items ?? []).filter((line) => line.product?.slug === product.slug).reduce((n, line) => n + line.quantity, 0)
+    : 0;
   const addToCart = useSubmit(async (variantId: number, priceKopecks: number) => {
     setAdded(false);
     await cart.add(variantId, priceKopecks);
@@ -207,6 +213,7 @@ export default function ProductScreen() {
                   {product.name}
                 </Text>
                 <Price price={product.price_kopecks} compareAt={product.compare_at_kopecks} size="detail" />
+                {inCart > 0 ? <InCartBadge label={`В корзине · ${inCart} шт.`} /> : null}
                 {product.in_stock ? null : <Text style={s.outOfStock}>Нет в наличии</Text>}
               </Animated.View>
 
@@ -258,7 +265,21 @@ export default function ProductScreen() {
                   }
                 }}
               />
-              {added ? <LinkButton title="Перейти в корзину" onPress={() => router.navigate("/cart")} /> : null}
+              {added ? (
+                <LinkButton title="Перейти в корзину" onPress={() => router.navigate("/cart")} />
+              ) : (
+                // «Купить сейчас»: оформление только этого размера, корзина не меняется.
+                <Button
+                  title="Купить сейчас"
+                  variant="accent"
+                  disabled={!variant?.in_stock}
+                  onPress={() => {
+                    if (!variant) return;
+                    if (status !== "signedIn") router.push("/sign-in");
+                    else router.push({ pathname: "/checkout", params: { variant: String(variant.id), qty: "1" } });
+                  }}
+                />
+              )}
             </>
           )}
         </Animated.View>

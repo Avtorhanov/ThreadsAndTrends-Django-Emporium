@@ -6,14 +6,14 @@
 {% block content %}
 <section class="page">
   <header class="section-head">
-    <p class="overline">Мы на связи</p>
-    <h1 class="h1">Контакты</h1>
+    <p class="overline">{% sitetext "contacts.overline" %}Мы на связи{% endsitetext %}</p>
+    <h1 class="h1">{% sitetext "contacts.title" %}Контакты{% endsitetext %}</h1>
   </header>
 
   {% if channels %}
-  <ul class="channels">
+  <ul class="channels"{% blocks_attrs "contacts" %}>
     {% for item in channels %}
-    <li>
+    <li data-block-index="{{ item.contact.index }}" data-kind="{{ item.contact.kind }}" data-value="{{ item.value }}" data-note="{{ item.note }}">
       <a class="channel" href="{{ item.contact.url }}"{% if item.contact.kind != "phone" and item.contact.kind != "email" %} target="_blank" rel="noopener noreferrer"{% endif %}>
         <span class="channel__icon" aria-hidden="true"><svg class="ic" width="24" height="24"><use href="#i-{{ item.icon }}"/></svg></span>
         <span class="channel__body">
@@ -27,13 +27,13 @@
     {% endfor %}
   </ul>
   {% else %}
-  <p class="note note--info">Контакты скоро появятся.</p>
+  <p class="note note--info"{% blocks_attrs "contacts" %}>{% sitetext "contacts.empty" %}Контакты скоро появятся.{% endsitetext %}</p>
   {% endif %}
 
   {% if articles %}
   <header class="section-head section-head--sub">
-    <p class="overline">Журнал</p>
-    <h2 class="h1 h1--sub">Статьи</h2>
+    <p class="overline">{% sitetext "contacts.articles.overline" %}Журнал{% endsitetext %}</p>
+    <h2 class="h1 h1--sub">{% sitetext "contacts.articles.title" %}Статьи{% endsitetext %}</h2>
   </header>
   <div class="articles">
     {% for article in articles %}

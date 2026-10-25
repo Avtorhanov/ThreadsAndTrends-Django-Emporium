@@ -263,3 +263,59 @@ def test_order_of_other_product_does_not_touch_foreign_stock(filled_cart):
     other = make_product(name="Шарф", stock=4)
     checkout_service.checkout(filled_cart, courier_input(), "key-00000001")
     assert stock(other) == 4
+
+
+# --- «Купить сейчас» ---
+
+
+def test_buy_now_orders_one_item_and_keeps_cart(customer, filled_cart, shirt, cap):
+    line = cart_service.LineInput(shirt.variants.get(size="S").pk, 1)
+    preview = checkout_service.preview(customer, line)
+    assert [(item.variant_id, item.quantity) for item in preview.cart.lines] == [
+        (line.variant_id, 1)
+    ]
+
+    order, created = checkout_service.checkout(
+        customer, courier_input(), "buy-now-0001", buy_now=line
+    )
+
+    assert created
+    assert [(i.size, i.quantity) for i in order.items.all()] == [("S", 1)]
+    assert order.items_total_kopecks == shirt.price_kopecks
+    assert stock(shirt, "S") == 4
+    # Корзина не изменилась.
+    assert CartItem.objects.filter(cart__owner=customer).count() == 2
+    # Повтор с тем же ключом — тот же заказ.
+    again, created = checkout_service.checkout(
+        customer, courier_input(), "buy-now-0001", buy_now=line
+    )
+    assert again == order and not created
+
+
+def test_buy_now_without_cart(customer, cap):
+    line = cart_service.LineInput(cap.variants.get().pk, 2)
+    order, _ = checkout_service.checkout(customer, courier_input(), "buy-now-0002", buy_now=line)
+    assert order.items.get().quantity == 2
+
+
+def test_buy_now_unavailable_item(customer, cap):
+    variant = cap.variants.get()
+    ProductVariant.objects.filter(pk=variant.pk).update(stock=0)
+    with pytest.raises(ValidationError) as exc:
+        checkout_service.checkout(
+            customer, courier_input(), "buy-now-0003", buy_now=cart_service.LineInput(variant.pk, 1)
+        )
+    assert codes(exc.value) == {"cart_changed"}
+    assert "Товар изменился" in exc.value.messages[0]
+    assert not Order.objects.exists()
+
+
+def test_buy_now_more_than_stock(customer, cap):
+    variant = cap.variants.get()
+    with pytest.raises(ValidationError):
+        checkout_service.checkout(
+            customer,
+            courier_input(),
+            "buy-now-0004",
+            buy_now=cart_service.LineInput(variant.pk, 99),
+        )

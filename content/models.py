@@ -106,3 +106,83 @@ class ArticleImage(models.Model):
         from store.services.images import thumb_sources
 
         return thumb_sources(self)
+
+
+# --- Тексты и блоки витрины, которые администратор правит прямо на сайте ---
+
+
+class SiteText(models.Model):
+    """Текст витрины, изменённый администратором (двойное нажатие на сайте).
+
+    Ключ — место в шаблоне (`{% sitetext "footer.copy" %}…{% endsitetext %}`), текст по
+    умолчанию — в самом шаблоне. Пустое значение — текст скрыт; удаление записи возвращает
+    исходный. Только обычный текст: при выводе экранируется.
+    """
+
+    key = models.CharField(max_length=80, unique=True, verbose_name="Ключ")
+    value = models.TextField(blank=True, max_length=2000, verbose_name="Текст")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменён")
+
+    class Meta:
+        verbose_name = "Текст сайта"
+        verbose_name_plural = "Тексты сайта"
+        ordering = ["key"]
+
+    def __str__(self):
+        return self.key
+
+
+class BlockArea(models.TextChoices):
+    CONTACTS = "contacts", "Контакты"
+    HELP = "help", "Помощь"
+    FOOTER = "footer", "Подвал"
+
+
+class BlockKind(models.TextChoices):
+    LINK = "link", "Ссылка"
+    WHATSAPP = "whatsapp", "WhatsApp"
+    TELEGRAM = "telegram", "Telegram"
+    VK = "vk", "ВКонтакте"
+    PHONE = "phone", "Телефон"
+    EMAIL = "email", "Почта"
+
+
+class CustomizedArea(models.Model):
+    """Раздел, который администратор уже менял: блоки берутся из БД, а не из настроек
+    (.env для контактов) и значений по умолчанию. Запись создаётся при первом изменении."""
+
+    area = models.CharField(max_length=20, choices=BlockArea.choices, primary_key=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Изменённый раздел"
+        verbose_name_plural = "Изменённые разделы"
+
+    def __str__(self):
+        return self.get_area_display()
+
+
+class Block(models.Model):
+    """Блок раздела витрины: канал связи в «Контактах», ссылка в «Помощи» или в подвале."""
+
+    area = models.CharField(max_length=20, choices=BlockArea.choices, verbose_name="Раздел")
+    kind = models.CharField(
+        max_length=20, choices=BlockKind.choices, default=BlockKind.LINK, verbose_name="Тип"
+    )
+    title = models.CharField(max_length=80, blank=True, verbose_name="Название")
+    # Ссылка (link) или значение канала: номер, @имя, адрес почты.
+    value = models.CharField(max_length=300, verbose_name="Ссылка или значение")
+    note = models.CharField(max_length=160, blank=True, verbose_name="Подпись")
+    icon = models.CharField(max_length=20, blank=True, verbose_name="Значок")
+    position = models.PositiveIntegerField(default=0, verbose_name="Порядок")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Блок сайта"
+        verbose_name_plural = "Блоки сайта"
+        ordering = ["area", "position", "id"]
+        indexes = [models.Index(fields=["area", "position"], name="block_area_position_idx")]
+
+    def __str__(self):
+        return f"{self.get_area_display()}: {self.title or self.value}"

@@ -9,9 +9,9 @@ from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
-from content import services
+from content import services, site
 from content.contacts import get_contacts
-from content.models import Article, ArticleImage
+from content.models import Article, ArticleImage, Block, BlockArea
 from core.api.mixins import AdminAPIMixin, PublicAPIMixin
 
 from .serializers import (
@@ -21,6 +21,11 @@ from .serializers import (
     AdminArticleImageUploadSerializer,
     AdminArticleSerializer,
     AdminArticleWriteSerializer,
+    AdminBlockAreaSerializer,
+    AdminBlockReorderSerializer,
+    AdminBlockSerializer,
+    AdminBlockUpdateSerializer,
+    AdminSiteTextSerializer,
     ArticleDetailSerializer,
     ArticleSerializer,
     ContactSerializer,
@@ -222,3 +227,94 @@ class AdminArticleImageViewSet(AdminAPIMixin, mixins.DestroyModelMixin, viewsets
     def destroy(self, request, *args, **kwargs):
         services.delete_article_image(get_object_or_404(ArticleImage, pk=kwargs["pk"]))
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# --- Тексты и блоки витрины: правка администратором прямо на сайте ---
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminSiteTextView(AdminAPIMixin, generics.GenericAPIView):
+    """Текст витрины по ключу: PUT — сохранить (пусто — скрыть), DELETE — вернуть исходный."""
+
+    serializer_class = AdminSiteTextSerializer
+
+    @extend_schema(operation_id="admin_content_texts_update")
+    def put(self, request, key: str):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        text = site.set_text(key, serializer.validated_data["value"])
+        return Response({"key": text.key, "value": text.value})
+
+    @extend_schema(operation_id="admin_content_texts_reset", responses={204: None})
+    def delete(self, request, key: str):
+        site.reset_text(key)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminBlockViewSet(
+    AdminAPIMixin, mixins.ListModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet
+):
+    """Блоки разделов «Контакты», «Помощь» и подвала. Первое изменение раздела переносит его
+    значения по умолчанию в БД (customize) — дальше блоки меняются по id."""
+
+    serializer_class = AdminBlockSerializer
+    pagination_class = None
+    queryset = Block.objects.order_by("area", "position", "id")
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+
+    @extend_schema(
+        operation_id="admin_content_blocks_list",
+        parameters=[OpenApiParameter("area", str, enum=BlockArea.values, required=True)],
+    )
+    def list(self, request, *args, **kwargs):
+        area = AdminBlockAreaSerializer(data=request.query_params)
+        area.is_valid(raise_exception=True)
+        blocks = site.blocks(area.validated_data["area"])
+        return Response(AdminBlockSerializer(blocks, many=True).data)
+
+    @extend_schema(operation_id="admin_content_blocks_create", request=AdminBlockSerializer)
+    def create(self, request):
+        serializer = AdminBlockSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        block = site.add_block(**serializer.validated_data)
+        return Response(AdminBlockSerializer(block).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        operation_id="admin_content_blocks_partial_update",
+        request=AdminBlockUpdateSerializer,
+        responses=AdminBlockSerializer,
+    )
+    def partial_update(self, request, pk=None):
+        serializer = AdminBlockUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        block = site.update_block(self.get_object(), **serializer.validated_data)
+        return Response(AdminBlockSerializer(block).data)
+
+    def perform_destroy(self, instance):
+        site.delete_block(instance)
+
+    @extend_schema(
+        operation_id="admin_content_blocks_customize",
+        request=AdminBlockAreaSerializer,
+        responses=AdminBlockSerializer(many=True),
+    )
+    @action(detail=False, methods=["post"])
+    def customize(self, request):
+        """Перенести раздел в БД (идемпотентно) — ответ: блоки с id в порядке показа."""
+        serializer = AdminBlockAreaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        blocks = site.customize(serializer.validated_data["area"])
+        return Response(AdminBlockSerializer(blocks, many=True).data)
+
+    @extend_schema(
+        operation_id="admin_content_blocks_reorder",
+        request=AdminBlockReorderSerializer,
+        responses=AdminBlockSerializer(many=True),
+    )
+    @action(detail=False, methods=["post"])
+    def reorder(self, request):
+        serializer = AdminBlockReorderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        blocks = site.reorder_blocks(**serializer.validated_data)
+        return Response(AdminBlockSerializer(blocks, many=True).data)

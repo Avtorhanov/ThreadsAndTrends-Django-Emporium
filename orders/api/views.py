@@ -15,6 +15,7 @@ from payments.models import Payment
 from store.models import ProductImage
 
 from .serializers import (
+    BuyNowSerializer,
     CheckoutInputSerializer,
     CheckoutPreviewSerializer,
     OrderDetailSerializer,
@@ -64,13 +65,28 @@ class CheckoutPreviewView(APIView):
     @extend_schema(
         operation_id="orders_checkout_preview",
         responses=CheckoutPreviewSerializer,
+        parameters=[
+            OpenApiParameter("variant", int, description="«Купить сейчас»: id варианта"),
+            OpenApiParameter("quantity", int, description="«Купить сейчас»: количество (1)"),
+        ],
         description=(
             "Данные экрана оформления: корзина (тот же расчёт, что и в заказе), способы "
-            "доставки со стоимостью, способы оплаты и получатель из последнего заказа."
+            "доставки со стоимостью, способы оплаты и получатель из последнего заказа. "
+            "С variant — одна позиция «Купить сейчас» вместо корзины."
         ),
     )
     def get(self, request):
-        preview = checkout_service.preview(request.user)
+        buy_now = None
+        if request.query_params.get("variant"):
+            query = BuyNowSerializer(
+                data={
+                    "variant_id": request.query_params.get("variant"),
+                    "quantity": request.query_params.get("quantity", 1),
+                }
+            )
+            query.is_valid(raise_exception=True)
+            buy_now = query.to_line()
+        preview = checkout_service.preview(request.user, buy_now)
         return Response(CheckoutPreviewSerializer(preview, context={"request": request}).data)
 
 
@@ -104,8 +120,9 @@ class OrderListCreateView(generics.ListAPIView):
             200: OpenApiResponse(OrderDetailSerializer, description="Повтор с тем же ключом"),
         },
         description=(
-            "Оформить заказ из всей корзины. Ошибки корзины (empty_cart, cart_changed) и "
-            "изменение суммы (total_changed) — 400 с текстом для покупателя."
+            "Оформить заказ из всей корзины или одну позицию buy_now (корзина не меняется). "
+            "Ошибки корзины (empty_cart, cart_changed) и изменение суммы (total_changed) — "
+            "400 с текстом для покупателя."
         ),
     )
     def post(self, request):
@@ -115,6 +132,7 @@ class OrderListCreateView(generics.ListAPIView):
             request.user,
             serializer.to_input(),
             request.headers.get("Idempotency-Key", ""),
+            buy_now=serializer.buy_now_line(),
         )
         order = order_detail_queryset(Order.objects.all()).get(pk=order.pk)
         data = OrderDetailSerializer(order, context={"request": request}).data

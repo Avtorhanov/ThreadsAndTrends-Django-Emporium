@@ -70,7 +70,12 @@ def test_guest_change_and_remove_line(client, shop):
     response = client.post(line_url, {"quantity": 3}, **HTMX)
     assert response.status_code == 200
     assert client.session["cart"][0][1] == 3
-    assert 'id="cart"' in response.content.decode()
+    # Только эта позиция, итог и счётчики — корзина целиком не перерисовывается.
+    html = response.content.decode()
+    pk = variant(shop["shirt"], "S").pk
+    assert f'id="line-{pk}-parts" hx-swap-oob="true"' in html
+    assert 'id="cart-summary" hx-swap-oob="true"' in html
+    assert 'id="cart"' not in html and "Футболка белая" not in html
     client.post(line_url, {"quantity": 0})
     assert "cart" not in client.session
     # Повторное удаление (вторая вкладка) не ошибка.
@@ -140,3 +145,50 @@ def test_cart_forms_require_csrf(shop):
     client = Client(enforce_csrf_checks=True)
     response = client.post(reverse("web:cart_add"), {"variant": variant(shop["cap"]).pk})
     assert response.status_code == 403
+
+
+def test_htmx_remove_line_deletes_only_that_line(client, shop):
+    add(client, shop["shirt"], "S")
+    add(client, shop["cap"])
+    pk = variant(shop["shirt"], "S").pk
+    response = client.post(reverse("web:cart_line", args=[pk]), {"quantity": 0}, **HTMX)
+    html = response.content.decode()
+    assert f'<li id="line-{pk}" hx-swap-oob="delete"></li>' in html
+    assert 'id="cart-summary" hx-swap-oob="true"' in html
+
+
+def test_htmx_last_line_removed_shows_empty_cart(client, shop):
+    add(client, shop["cap"])
+    pk = variant(shop["cap"]).pk
+    response = client.post(reverse("web:cart_line", args=[pk]), {"quantity": 0}, **HTMX)
+    assert response["HX-Retarget"] == "#cart"
+    assert "Корзина пуста" in response.content.decode()
+
+
+def test_htmx_line_error_is_shown_in_line(client, shop):
+    add(client, shop["shirt"], "S")
+    pk = variant(shop["shirt"], "S").pk
+    response = client.post(reverse("web:cart_line", args=[pk]), {"quantity": 50}, **HTMX)
+    assert "Укажите количество от 1 до 5." in response.content.decode()
+
+
+def test_in_cart_marks(client, shop):
+    product_url = reverse("web:product", args=["kepka"])
+    assert "В корзине" not in client.get(product_url).content.decode()
+    add(client, shop["cap"], quantity=2)
+    assert "В корзине · 2 шт." in client.get(product_url).content.decode()
+    # Сетки товаров общие (кэш) — список товаров корзины для меток приходит отдельно.
+    html = client.get(reverse("web:home")).content.decode()
+    assert '<script id="cart-state" type="application/json">["kepka"]</script>' in html
+
+
+def test_buy_now_goes_to_checkout_without_touching_cart(client, shop):
+    pk = variant(shop["shirt"], "M").pk
+    response = client.post(reverse("web:buy_now"), {"variant": pk, "next": "/back/"})
+    assert response.status_code == 302
+    assert response["Location"] == f"{reverse('web:checkout')}?variant={pk}&qty=1"
+    assert "cart" not in client.session
+    htmx = client.post(reverse("web:buy_now"), {"variant": pk}, **HTMX)
+    assert htmx.status_code == 204 and htmx["HX-Redirect"].endswith(f"?variant={pk}&qty=1")
+    missing = client.post(reverse("web:buy_now"), {}, **HTMX)
+    assert "Выберите размер." in missing.content.decode()

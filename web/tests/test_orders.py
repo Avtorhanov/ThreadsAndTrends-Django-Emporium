@@ -191,3 +191,46 @@ def test_order_pages_query_count(customer_client, customer, django_assert_max_nu
         make_order(customer)
     with django_assert_max_num_queries(12):
         customer_client.get(reverse("web:orders"))
+
+
+def test_buy_now_checkout_orders_only_that_item(customer_client, customer, shop, filled):
+    cap = shop["cap"].variants.get()
+    url = f"{reverse('web:checkout')}?variant={cap.pk}&qty=1"
+    html = customer_client.get(url).content.decode()
+    assert "Купить сейчас" in html and "Кепка" in html and "Футболка белая" not in html
+    hidden = dict(re.findall(r'<input type="hidden" name="(\w+)" value="([^"]*)"', html))
+    form = {
+        "expected_total": hidden["expected_total"],
+        "idempotency_key": hidden["idempotency_key"],
+        "delivery_method": "courier",
+        "payment_method": "on_delivery",
+        "recipient_name": "Иван Петров",
+        "recipient_phone": "8 (900) 123-45-67",
+        "delivery_address": "Москва, ул. Ленина, 1, кв. 1",
+    }
+    response = customer_client.post(url, form)
+    order = Order.objects.get(owner=customer)
+    assert response.status_code == 302
+    assert [(i.product_name, i.quantity) for i in order.items.all()] == [("Кепка", 1)]
+    assert order.items_total_kopecks == 990_00
+    # Корзина не тронута: футболка M × 2 осталась.
+    assert list(CartItem.objects.values_list("variant_id", "quantity")) == [(filled.pk, 2)]
+
+
+def test_buy_now_unavailable_returns_to_product(customer_client, shop):
+    sold_out = shop["sold_out"].variants.get()
+    response = customer_client.get(f"{reverse('web:checkout')}?variant={sold_out.pk}")
+    assert response.status_code == 302
+    assert response["Location"] == reverse("web:product", args=["hudi"])
+
+
+def test_buy_now_guest_goes_to_login_and_back(client, shop):
+    cap = shop["cap"].variants.get()
+    url = f"{reverse('web:checkout')}?variant={cap.pk}&qty=1"
+    response = client.get(url)
+    assert response.status_code == 302 and "next=" in response["Location"]
+    assert "variant" in response["Location"]
+
+
+def test_buy_now_bad_params_404(customer_client, shop):
+    assert customer_client.get(f"{reverse('web:checkout')}?variant=abc").status_code == 404

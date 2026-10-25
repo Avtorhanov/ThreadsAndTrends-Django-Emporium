@@ -14,5 +14,9 @@ admin_router.register("articles", views.AdminArticleViewSet, basename="admin-con
 admin_router.register(
     "article-images", views.AdminArticleImageViewSet, basename="admin-content-article-image"
 )
+admin_router.register("blocks", views.AdminBlockViewSet, basename="admin-content-block")
 
-admin_content_urlpatterns = admin_router.urls
+admin_content_urlpatterns = [
+    path("texts/<str:key>/", views.AdminSiteTextView.as_view(), name="admin-content-text"),
+    *admin_router.urls,
+]

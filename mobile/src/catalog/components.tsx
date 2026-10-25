@@ -1,6 +1,8 @@
 import { router } from "expo-router";
 import { Image, Text, View } from "react-native";
 
+import { useCart } from "../cart/CartProvider";
+import { Icon } from "../components/Icon";
 import { CardGradient, PressScale } from "../components/ui";
 import { formatKopecks } from "../lib/money";
 import { fonts } from "../theme/fonts";
@@ -50,6 +52,18 @@ export function Price({
   );
 }
 
+/** Метка «В корзине»: на фото карточки ленты и под названием в карточке товара. */
+export function InCartBadge({ label = "В корзине" }: { label?: string }) {
+  const s = useStyles();
+  const { c } = useTheme();
+  return (
+    <View style={s.inCart} accessibilityLabel={label}>
+      <Icon name="bag" size={13} color={c.onAccent} />
+      <Text style={s.inCartText}>{label}</Text>
+    </View>
+  );
+}
+
 export function DiscountBadge({ percent }: { percent: number | null }) {
   const s = useStyles();
   if (percent === null) return null;
@@ -95,6 +109,8 @@ export function ProductImage({
 /** Карточка ленты: радиус 26, фото 214 (на широкой сетке — пропорционально), цена Unbounded. */
 export function ProductCard({ product }: { product: ProductCardData }) {
   const s = useStyles();
+  const { cart } = useCart();
+  const inCart = (cart?.items ?? []).some((line) => line.product?.slug === product.slug);
   const percent = discountPercent(product.price_kopecks, product.compare_at_kopecks);
   return (
     <PressScale
@@ -109,6 +125,11 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         <View style={s.badgePos}>
           <DiscountBadge percent={percent} />
         </View>
+        {inCart ? (
+          <View style={s.inCartPos}>
+            <InCartBadge />
+          </View>
+        ) : null}
       </View>
       <View style={s.cardBody}>
         <Text style={s.name} numberOfLines={2}>
@@ -162,6 +183,18 @@ const useStyles = makeStyles(({ c, shadow, dark }) => ({
   price: { fontFamily: fonts.display700, fontSize: 17, color: c.ink },
   priceDetail: { fontFamily: fonts.display700, fontSize: 24, color: c.ink },
   ask: { fontFamily: fonts.display700, fontSize: 14, color: c.ink },
+  inCart: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 4,
+    height: 24,
+    paddingHorizontal: 8,
+    borderRadius: radius.badge,
+    backgroundColor: c.accent,
+  },
+  inCartText: { fontFamily: fonts.text800, fontSize: 11, color: c.onAccent },
+  inCartPos: { position: "absolute", top: 8, right: 8 },
   askDetail: { fontFamily: fonts.display700, fontSize: 20, color: c.ink },
   oldPrice: {
     fontFamily: fonts.text600,
