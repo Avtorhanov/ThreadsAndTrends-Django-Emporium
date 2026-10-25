@@ -3,6 +3,8 @@
     python3 scripts/fetch_demo_images.py [--force]
     python3 scripts/fetch_demo_images.py --candidates OUT --only a-1.jpg,b-1.jpg
 
+Фото поставщика ("source": "supplier" в манифесте) лежат в репозитории и не скачиваются.
+
 Обычный режим: для каждого фото из manifest скачивается закреплённый кандидат ("pick":
 "openverse:<id>" или "unsplash:photo-…"), а без закрепления — первый подходящий результат
 поиска ("query"). Уже скачанные файлы пропускаются (кроме --force и смены "pick").
@@ -259,7 +261,8 @@ def write_credits(credits: dict) -> None:
         "# Фото демо-каталога",
         "",
         "Только для демонстрации витрины — перед запуском замените на фото своих товаров.",
-        "Источники: [Wikimedia Commons](https://commons.wikimedia.org),",
+        "Фото поставщика — из постов поставщика магазина (товары, которые магазин продаёт).",
+        "Остальные — [Wikimedia Commons](https://commons.wikimedia.org),",
         "[Openverse](https://openverse.org) и [Unsplash](https://unsplash.com/license) —",
         "лицензии, разрешающие коммерческое использование.",
         "",
@@ -272,16 +275,24 @@ def write_credits(credits: dict) -> None:
     (IMAGES / "CREDITS.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def article_files() -> set[str]:
+    articles = json.loads((IMAGES.parent / "demo_articles.json").read_text(encoding="utf-8"))
+    return {name for article in articles for name in article["images"]}
+
+
 def fetch(manifest: list[dict], force: bool) -> int:
     credits_path = IMAGES / "credits.json"
     credits = json.loads(credits_path.read_text(encoding="utf-8")) if credits_path.exists() else {}
     files = {image["file"] for product in manifest for image in product["images"]}
+    files |= article_files()  # фото демо-статей лежат в той же папке
     credits = {name: c for name, c in credits.items() if name in files and "license" in c}
     used = {c["id"] for c in credits.values()}
     failed = []
 
     for product in manifest:
         for image in product["images"]:
+            if image.get("source") == "supplier":
+                continue
             target = IMAGES / image["file"]
             pick = image.get("pick")
             current = credits.get(image["file"], {}).get("id")

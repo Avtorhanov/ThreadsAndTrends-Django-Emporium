@@ -22,7 +22,24 @@ def test_demo_fixture_is_consistent():
     # Деньги — целые копейки.
     for row in data:
         if row["model"] == "store.product":
-            assert isinstance(row["fields"]["price_kopecks"], int)
+            # None — цена по запросу (LUXE).
+            price = row["fields"]["price_kopecks"]
+            assert price is None or isinstance(price, int)
+    for entry in manifest:
+        for image in entry["images"]:
+            assert (IMAGES / image["file"]).exists(), image["file"]
+    # Категории — плоский список, как каналы магазина.
+    categories = [row["fields"] for row in data if row["model"] == "store.category"]
+    assert all(c["parent"] is None for c in categories)
+    assert [c["name"] for c in categories] == [
+        "Мужское",
+        "Женское",
+        "Детское",
+        "Здоровье/красота/вкусняшки",
+        "LUXE",
+        "Для дома",
+        "В наличии",
+    ]
 
 
 def test_seed_demo_loads_catalog_with_images_idempotently():
@@ -30,7 +47,9 @@ def test_seed_demo_loads_catalog_with_images_idempotently():
     products = Product.objects.live().count()
     images = ProductImage.objects.count()
     assert products >= 20
-    expected = sum(1 for p in IMAGES.glob("*.jpg"))
+    # В папке ещё фото демо-статей — считаем только фото товаров из манифеста.
+    manifest = json.loads((IMAGES / "manifest.json").read_text(encoding="utf-8"))
+    expected = sum(len(entry["images"]) for entry in manifest)
     assert images == expected
 
     articles = Article.objects.published().count()

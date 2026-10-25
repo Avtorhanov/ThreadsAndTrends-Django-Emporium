@@ -127,7 +127,7 @@ export function ProductsPage() {
               </td>
               <td className="muted">{product.category_name}</td>
               <td>
-                {formatKopecks(product.price_kopecks)}
+                {product.price_kopecks === null ? "По запросу" : formatKopecks(product.price_kopecks)}
                 {product.compare_at_kopecks ? (
                   <s className="muted old-price">{formatKopecks(product.compare_at_kopecks)}</s>
                 ) : null}
@@ -144,7 +144,7 @@ export function ProductsPage() {
             </tr>
           ) : null}
         </tbody>
-        </Table>
+      </Table>
 
       <div className="pagination">
         <button

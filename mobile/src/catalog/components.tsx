@@ -10,8 +10,8 @@ import { toneColor } from "../theme/tone";
 import type { ProductCard as ProductCardData } from "./catalogService";
 
 /** Скидка в процентах от старой цены; null — если старой цены нет. */
-export function discountPercent(price: number, compareAt: number | null): number | null {
-  if (!compareAt || compareAt <= price) return null;
+export function discountPercent(price: number | null, compareAt: number | null): number | null {
+  if (price === null || !compareAt || compareAt <= price) return null;
   return Math.round(((compareAt - price) * 100) / compareAt);
 }
 
@@ -20,11 +20,21 @@ export function Price({
   compareAt,
   size = "card",
 }: {
-  price: number;
+  price: number | null;
   compareAt: number | null;
   size?: "card" | "detail";
 }) {
   const s = useStyles();
+  // null — цена по запросу: цену узнают у продавца (кнопка «Узнать» в карточке товара).
+  if (price === null) {
+    return (
+      <View style={s.priceRow}>
+        <Text style={size === "detail" ? s.askDetail : s.ask}>
+          {size === "detail" ? "Цена по запросу" : "По запросу"}
+        </Text>
+      </View>
+    );
+  }
   return (
     <View style={s.priceRow}>
       <Text style={size === "detail" ? s.priceDetail : s.price}>{formatKopecks(price)}</Text>
@@ -89,7 +99,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   return (
     <PressScale
       accessibilityRole="button"
-      accessibilityLabel={`${product.name}, ${formatKopecks(product.price_kopecks)}${product.in_stock ? "" : ", нет в наличии"}`}
+      accessibilityLabel={`${product.name}, ${product.price_kopecks === null ? "цена по запросу" : formatKopecks(product.price_kopecks)}${product.in_stock ? "" : ", нет в наличии"}`}
       onPress={() => router.push({ pathname: "/product/[slug]", params: { slug: product.slug } })}
       style={s.card}
     >
@@ -139,9 +149,7 @@ export function SizePicker({
             scale={0.94}
             style={[s.size, on && s.sizeOn, !variant.in_stock && s.sizeOff]}
           >
-            <Text style={[s.sizeText, on && s.sizeTextOn, !variant.in_stock && s.sizeTextOff]}>
-              {variant.size}
-            </Text>
+            <Text style={[s.sizeText, on && s.sizeTextOn, !variant.in_stock && s.sizeTextOff]}>{variant.size}</Text>
           </PressScale>
         );
       })}
@@ -153,6 +161,8 @@ const useStyles = makeStyles(({ c, shadow, dark }) => ({
   priceRow: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", columnGap: 6 },
   price: { fontFamily: fonts.display700, fontSize: 17, color: c.ink },
   priceDetail: { fontFamily: fonts.display700, fontSize: 24, color: c.ink },
+  ask: { fontFamily: fonts.display700, fontSize: 14, color: c.ink },
+  askDetail: { fontFamily: fonts.display700, fontSize: 20, color: c.ink },
   oldPrice: {
     fontFamily: fonts.text600,
     fontSize: 12,

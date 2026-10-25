@@ -2355,7 +2355,8 @@ components:
         price_kopecks:
           type: integer
           readOnly: true
-          title: Цена, коп.
+          nullable: true
+          description: Цена, коп.; null — цена по запросу
         compare_at_kopecks:
           type: integer
           readOnly: true
@@ -2427,6 +2428,9 @@ components:
           maximum: 10000000000
           minimum: 1
           format: int64
+          nullable: true
+          description: Цена, коп.; null — цена по запросу (товар не продаётся через
+            корзину)
         compare_at_kopecks:
           type: integer
           maximum: 10000000000
@@ -2468,7 +2472,8 @@ components:
         price_kopecks:
           type: integer
           readOnly: true
-          title: Цена, коп.
+          nullable: true
+          description: Цена, коп.; null — цена по запросу
         compare_at_kopecks:
           type: integer
           readOnly: true
@@ -3067,7 +3072,13 @@ components:
         price_kopecks:
           type: integer
           readOnly: true
-          title: Цена, коп.
+          nullable: true
+          description: Цена, коп.; null — цена по запросу
+        price_on_request:
+          type: boolean
+          readOnly: true
+          description: 'Цена по запросу: товар не добавляется в корзину, цену узнают
+            у продавца'
         compare_at_kopecks:
           type: integer
           readOnly: true
@@ -3092,6 +3103,7 @@ components:
       - in_stock
       - name
       - price_kopecks
+      - price_on_request
       - slug
     CatalogProductDetail:
       type: object
@@ -3110,7 +3122,13 @@ components:
         price_kopecks:
           type: integer
           readOnly: true
-          title: Цена, коп.
+          nullable: true
+          description: Цена, коп.; null — цена по запросу
+        price_on_request:
+          type: boolean
+          readOnly: true
+          description: 'Цена по запросу: товар не добавляется в корзину, цену узнают
+            у продавца'
         compare_at_kopecks:
           type: integer
           readOnly: true
@@ -3151,6 +3169,7 @@ components:
       - in_stock
       - name
       - price_kopecks
+      - price_on_request
       - slug
       - variants
     CatalogVariant:
@@ -3916,6 +3935,9 @@ components:
           maximum: 10000000000
           minimum: 1
           format: int64
+          nullable: true
+          description: Цена, коп.; null — цена по запросу (товар не продаётся через
+            корзину)
         compare_at_kopecks:
           type: integer
           maximum: 10000000000

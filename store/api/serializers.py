@@ -61,6 +61,13 @@ class CatalogProductSerializer(serializers.ModelSerializer):
     category = CatalogCategoryShortSerializer(read_only=True)
     in_stock = serializers.BooleanField(read_only=True)
     cover_url = serializers.SerializerMethodField()
+    price_kopecks = serializers.IntegerField(
+        read_only=True, allow_null=True, help_text="Цена, коп.; null — цена по запросу"
+    )
+    price_on_request = serializers.BooleanField(
+        read_only=True,
+        help_text="Цена по запросу: товар не добавляется в корзину, цену узнают у продавца",
+    )
 
     class Meta:
         model = Product
@@ -69,6 +76,7 @@ class CatalogProductSerializer(serializers.ModelSerializer):
             "slug",
             "name",
             "price_kopecks",
+            "price_on_request",
             "compare_at_kopecks",
             "in_stock",
             "cover_url",
@@ -202,6 +210,9 @@ class AdminImageReorderSerializer(serializers.Serializer):
 
 class AdminProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.__str__", read_only=True)
+    price_kopecks = serializers.IntegerField(
+        read_only=True, allow_null=True, help_text="Цена, коп.; null — цена по запросу"
+    )
     total_stock = serializers.IntegerField(read_only=True, help_text="Сумма остатков вариантов")
     cover_url = serializers.SerializerMethodField()
 
@@ -254,7 +265,12 @@ class AdminProductUpdateSerializer(serializers.Serializer):
     )
     description = serializers.CharField(required=False, allow_blank=True)
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
-    price_kopecks = serializers.IntegerField(min_value=1, max_value=MAX_PRICE_KOPECKS)
+    price_kopecks = serializers.IntegerField(
+        min_value=1,
+        max_value=MAX_PRICE_KOPECKS,
+        allow_null=True,
+        help_text="Цена, коп.; null — цена по запросу (товар не продаётся через корзину)",
+    )
     compare_at_kopecks = serializers.IntegerField(
         min_value=1, max_value=MAX_PRICE_KOPECKS, allow_null=True, required=False
     )

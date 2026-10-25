@@ -8,7 +8,7 @@
   <span class="card__body">
     <span class="card__title">{{ p.name }}</span>
     <span class="price">
-      <span class="price__now">{{ p.price_kopecks|rub }}&nbsp;₽</span>
+      {% if p.price_on_request %}<span class="price__now price__now--ask">По запросу</span>{% else %}<span class="price__now">{{ p.price_kopecks|rub }}&nbsp;₽</span>{% endif %}
       {% if p.compare_at_kopecks %}<s class="price__old"><span class="sr">Старая цена </span>{{ p.compare_at_kopecks|rub }}&nbsp;₽</s>{% endif %}
     </span>
   </span>

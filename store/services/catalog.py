@@ -122,10 +122,14 @@ def _validate_product_fields(*, category, price_kopecks, compare_at_kopecks):
     errors = {}
     if category is not None and category.children.exists():
         errors["category"] = "Выберите конечную категорию (без подкатегорий)."
-    if not 1 <= price_kopecks <= MAX_PRICE_KOPECKS:
+    # price_kopecks=None — «цена по запросу»: товар показывается, но не продаётся через корзину.
+    if price_kopecks is not None and not 1 <= price_kopecks <= MAX_PRICE_KOPECKS:
         errors["price_kopecks"] = "Цена должна быть больше нуля и не больше 100 млн ₽."
-    if compare_at_kopecks is not None and compare_at_kopecks <= price_kopecks:
-        errors["compare_at_kopecks"] = "Старая цена должна быть больше текущей."
+    if compare_at_kopecks is not None:
+        if price_kopecks is None:
+            errors["compare_at_kopecks"] = "Старая цена указывается только вместе с ценой."
+        elif compare_at_kopecks <= price_kopecks:
+            errors["compare_at_kopecks"] = "Старая цена должна быть больше текущей."
     if errors:
         raise ValidationError(errors)
 
@@ -135,7 +139,7 @@ def create_product(
     *,
     name: str,
     category: Category,
-    price_kopecks: int,
+    price_kopecks: int | None,
     description: str = "",
     compare_at_kopecks: int | None = None,
     is_active: bool = True,
