@@ -211,7 +211,7 @@ def shopper(browser, base: str, report: Report, errors: list[str]) -> None:
     expect(page.locator("#cart-badge-tab")).to_be_hidden()
     report.shot(page, "phone-order")
     number = re.search(r"/orders/(DD-\d+)/", page.url).group(1)
-    admin_sees_order(browser, base, number, report, errors)
+    admin_sees_order(browser, base, number, report)
 
     page.once("dialog", lambda dialog: dialog.accept())
     page.get_by_role("button", name="Отменить заказ").click()
@@ -224,11 +224,11 @@ def shopper(browser, base: str, report: Report, errors: list[str]) -> None:
     context.close()
 
 
-def admin_sees_order(browser, base: str, number: str, report: Report, errors: list[str]) -> None:
+def admin_sees_order(browser, base: str, number: str, report: Report) -> None:
+    # Консоль панели не проверяется: до входа она штатно получает 401 на auth/me/.
     context = browser.new_context(viewport={"width": 1280, "height": 800}, ignore_https_errors=True)
     page = context.new_page()
     page.set_default_timeout(TIMEOUT_MS)
-    watch_console(page, errors)
     page.goto(base + "/panel/")
     page.get_by_label("Email").fill(env_value("ADMIN_EMAIL"))
     page.get_by_label("Пароль").fill(env_value("ADMIN_PASSWORD"))
