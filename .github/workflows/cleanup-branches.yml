@@ -1,0 +1,43 @@
+# Одноразовая уборка старых веток (переход на main / dev / visual, 2026-10-25).
+# Запуск: Actions → «Уборка веток» → Run workflow. Удаляет только ветки из списка ниже;
+# main, dev, visual, gh-pages и ci-report-{main,dev,visual} не трогает. После запуска файл удаляется.
+# Ветки с PR восстанавливаются кнопкой «Restore branch» на странице PR; SHA остальных — в claude/branches.md.
+name: Уборка веток
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Delete old branches
+        run: |
+          set -u
+          branches="
+            session-1-infra session-2-users-roles session-3-catalog session-4-cart
+            session-5-orders session-6-payments session-7-storefront-prod session-8-lime-tech
+            session-9-web-storefront session-10-visual session-11-admin-visual
+            session-12-categories-visual design-lime-tech audit-architecture
+            ci-report-session-5 ci-report-session-6 ci-report-session-7 ci-report-session-8
+            ci-report-session-9 ci-report-session-11-admin-visual-e2e
+            ci-report-session-11-admin-visual-test ci-report-session-12-categories-visual-e2e
+            ci-report-session-12-categories-visual-test
+          "
+          failed=0
+          for b in $branches; do
+            case "$b" in main|dev|visual|gh-pages) echo "skip $b"; continue;; esac
+            code=$(gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/$b" -i 2>/dev/null | head -1 | awk '{print $2}')
+            case "$code" in
+              204) echo "deleted  $b" ;;
+              404|422) echo "absent   $b" ;;
+              *) echo "FAILED   $b ($code)"; failed=1 ;;
+            esac
+          done
+          echo; echo "Осталось:"; gh api "repos/${GITHUB_REPOSITORY}/branches?per_page=100" --jq '.[].name'
+          exit $failed
