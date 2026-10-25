@@ -22,7 +22,7 @@ def _platform(request) -> str:
 
 
 def app_banner(request) -> str:
-    """Баннер «Скачать приложение» только на телефонах: Android → APK, iPhone → /app/.
+    """Баннер только на телефонах: Android → APK, iPhone → «На экран Домой» для сайта.
     Закрытый баннер больше не показывается (cookie)."""
     if request.COOKIES.get(BANNER_COOKIE) == "hidden":
         return ""
