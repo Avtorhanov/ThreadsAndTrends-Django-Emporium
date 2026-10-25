@@ -4,9 +4,10 @@
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 
 from store.models import ProductVariant
@@ -69,6 +70,27 @@ def add(request):
     return redirect(back)
 
 
+@require_POST
+def buy_now(request):
+    """«Купить сейчас» из карточки товара: к оформлению только выбранного размера, корзина
+    не меняется. Без JS — обычная отправка формы (formaction), с htmx — HX-Redirect."""
+    form = AddToCartForm(request.POST)
+    if not form.is_valid():
+        if is_htmx(request):
+            context = {"errors": ["Выберите размер."], "cart_count": web_cart.count(request)}
+            return render(request, "web/cart/_added.html", context)
+        messages.error(request, "Выберите размер.")
+        return redirect(safe_next(request, reverse("web:home")))
+    data = form.cleaned_data
+    query = urlencode({"variant": data["variant"], "qty": data["quantity"] or 1})
+    url = f"{reverse('web:checkout')}?{query}"
+    if is_htmx(request):
+        response = HttpResponse(status=204)
+        response["HX-Redirect"] = url
+        return response
+    return redirect(url)
+
+
 def _respond(request, errors: list[str] | None = None):
     if is_htmx(request):
         context = _cart_context(request)
@@ -81,23 +103,48 @@ def _respond(request, errors: list[str] | None = None):
     return redirect("web:cart")
 
 
+def _respond_line(request, variant_id: int, errors: list[str] | None = None):
+    """Ответ htmx на «+/−»: только эта позиция, итог и счётчики — остальная корзина
+    (фото, названия, другие позиции) не перерисовывается. Корзина опустела — вся корзина."""
+    context = _cart_context(request)
+    cart = context["cart"]
+    if not cart.lines:
+        context["cart_count"] = 0
+        context["oob_badges"] = True
+        response = render(request, "web/cart/_cart.html", context)
+        response["HX-Retarget"] = "#cart"
+        response["HX-Reswap"] = "outerHTML"
+        return response
+    context.update(
+        line=next((line for line in cart.lines if line.variant_id == variant_id), None),
+        variant_id=variant_id,
+        line_errors=errors or [],
+        cart_count=web_cart.count(request),
+    )
+    return render(request, "web/cart/_line_update.html", context)
+
+
 @require_POST
 def line(request, variant_id: int):
     """Количество позиции; 0 — удалить."""
     form = CartLineForm(request.POST)
+    errors: list[str] = []
     if not form.is_valid():
-        return _respond(request, ["Укажите количество."])
-    quantity = form.cleaned_data["quantity"]
-    try:
-        if quantity == 0:
-            web_cart.remove(request, variant_id)
-        else:
-            web_cart.set_quantity(request, variant_id, quantity)
-    except ValidationError as exc:
-        return _respond(request, error_messages(exc))
-    except Http404:
-        pass  # позиция уже удалена (повторный клик, вторая вкладка) — просто показать корзину
-    return _respond(request)
+        errors = ["Укажите количество."]
+    else:
+        quantity = form.cleaned_data["quantity"]
+        try:
+            if quantity == 0:
+                web_cart.remove(request, variant_id)
+            else:
+                web_cart.set_quantity(request, variant_id, quantity)
+        except ValidationError as exc:
+            errors = error_messages(exc)
+        except Http404:
+            pass  # позиция уже удалена (повторный клик, вторая вкладка) — просто показать корзину
+    if is_htmx(request):
+        return _respond_line(request, variant_id, errors)
+    return _respond(request, errors)
 
 
 @require_POST

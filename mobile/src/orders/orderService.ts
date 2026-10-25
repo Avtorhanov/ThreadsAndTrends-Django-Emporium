@@ -23,10 +23,14 @@ export function newIdempotencyKey(): string {
   return `m-${Date.now().toString(36)}-${random}`;
 }
 
+export type BuyNow = { variant_id: number; quantity: number };
+
 /** Заказы клиента. Расчёт сумм, доставка и проверки — на сервере. */
 export const orderService = {
-  preview(): Promise<CheckoutPreview> {
-    return unwrap(api.GET("/api/v1/orders/checkout/"));
+  /** buyNow — «Купить сейчас»: одна позиция вместо корзины (корзина не меняется). */
+  preview(buyNow?: BuyNow): Promise<CheckoutPreview> {
+    const query = buyNow ? { variant: buyNow.variant_id, quantity: buyNow.quantity } : undefined;
+    return unwrap(api.GET("/api/v1/orders/checkout/", { params: { query } }));
   },
   create(body: CheckoutInput, idempotencyKey: string): Promise<OrderDetail> {
     return unwrap(

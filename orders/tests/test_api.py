@@ -222,3 +222,24 @@ def test_admin_transition_flow(admin_client, customer, staff):
 
     response = admin_client.post(f"{url}transition/", {"status": "paid"}, format="json")
     assert response.status_code == 400
+
+
+def test_buy_now_preview_and_create(client_api, customer, filled_cart, cap):
+    variant = cap.variants.get()
+    body = client_api.get(CHECKOUT, {"variant": variant.pk, "quantity": 2}).json()
+    assert [(i["variant_id"], i["quantity"]) for i in body["cart"]["items"]] == [(variant.pk, 2)]
+
+    response = create(
+        client_api,
+        key="buy-now-api-01",
+        buy_now={"variant_id": variant.pk, "quantity": 2},
+        expected_total_kopecks=body["cart"]["total_kopecks"] + 500_00,
+    )
+    assert response.status_code == 201
+    assert [(i["product_name"], i["quantity"]) for i in response.json()["items"]] == [("Кепка", 2)]
+    # Корзина (футболка и кепка) не изменилась.
+    assert len(client_api.get("/api/v1/cart/").json()["items"]) == 2
+
+
+def test_buy_now_preview_validates_params(client_api):
+    assert client_api.get(CHECKOUT, {"variant": "abc"}).status_code == 400

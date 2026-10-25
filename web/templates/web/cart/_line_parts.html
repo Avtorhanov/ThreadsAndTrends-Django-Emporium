@@ -1,0 +1,30 @@
+{% load money %}{% comment %}Изменяемая часть позиции корзины: статус, количество, сумма, удаление. При «+/−» сервер
+   отдаёт только её (hx-swap-oob) и итог — фото, название и остальные позиции не перерисовываются.{% endcomment %}
+<div class="line__parts" id="line-{{ line.variant_id }}-parts"{% if oob %} hx-swap-oob="true"{% endif %}>
+  {% for text in line_errors %}<p class="pill pill--danger" role="alert">{{ text }}</p>{% endfor %}
+  {% if line.status == "unavailable" %}<p class="pill pill--neutral">Недоступен</p>
+  {% elif line.status == "out_of_stock" %}<p class="pill pill--danger">Нет в наличии</p>
+  {% elif line.status == "exceeds_stock" %}<p class="pill pill--warning">Доступно только {{ line.max_quantity }} шт.</p>
+  {% elif line.price_changed %}<p class="pill pill--warning">Цена изменилась</p>{% endif %}
+  <div class="line__foot">
+    {% if line.status == "ok" or line.status == "exceeds_stock" %}
+    {# Запросы одной позиции идут по очереди; число меняется сразу (site.js), сервер подтверждает. #}
+    <div class="stepper" role="group" aria-label="Количество" data-stepper data-max="{{ line.max_quantity }}" data-unit="{% if line.status == 'ok' %}{{ line.unit_price_kopecks }}{% endif %}">
+      <form method="post" action="{% url 'web:cart_line' line.variant_id %}" hx-post="{% url 'web:cart_line' line.variant_id %}" hx-swap="none" hx-sync="closest .stepper:queue all" data-step="-1">
+        {% csrf_token %}<input type="hidden" name="quantity" value="{{ line.quantity|add:'-1' }}">
+        <button class="stepper__btn" type="submit" aria-label="Уменьшить"{% if line.quantity <= 1 %} disabled{% endif %}><svg class="ic" width="18" height="18"><use href="#i-minus"/></svg></button>
+      </form>
+      <span class="stepper__value" aria-live="polite">{{ line.quantity }}</span>
+      <form method="post" action="{% url 'web:cart_line' line.variant_id %}" hx-post="{% url 'web:cart_line' line.variant_id %}" hx-swap="none" hx-sync="closest .stepper:queue all"{% if line.status != 'exceeds_stock' %} data-step="1"{% endif %}>
+        {% csrf_token %}<input type="hidden" name="quantity" value="{% if line.status == 'exceeds_stock' %}{{ line.max_quantity }}{% else %}{{ line.quantity|add:'1' }}{% endif %}">
+        <button class="stepper__btn" type="submit" aria-label="{% if line.status == 'exceeds_stock' %}Уменьшить до доступного{% else %}Увеличить{% endif %}"{% if line.status == 'ok' and line.quantity >= line.max_quantity %} disabled{% endif %}><svg class="ic" width="18" height="18"><use href="#i-{% if line.status == 'exceeds_stock' %}check{% else %}plus{% endif %}"/></svg></button>
+      </form>
+    </div>
+    {% endif %}
+    <p class="line__price">{% if line.status == "ok" %}{{ line.line_total_kopecks|rub }}&nbsp;₽{% elif line.unit_price_kopecks %}<span class="muted">{{ line.unit_price_kopecks|rub }}&nbsp;₽/шт.</span>{% endif %}</p>
+    <form method="post" action="{% url 'web:cart_line' line.variant_id %}" hx-post="{% url 'web:cart_line' line.variant_id %}" hx-swap="none">
+      {% csrf_token %}<input type="hidden" name="quantity" value="0">
+      <button class="icon-btn" type="submit" aria-label="Удалить {% if line.product %}{{ line.product.name }}{% else %}позицию{% endif %}"><svg class="ic" width="18" height="18"><use href="#i-trash"/></svg></button>
+    </form>
+  </div>
+</div>

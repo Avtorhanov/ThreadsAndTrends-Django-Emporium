@@ -35,6 +35,8 @@ class Contact:
     url: str
     handle: str  # как показать: «+7 900 123-45-67», «@didishop», «vk.com/didishop»
     note: str
+    # Номер блока в разделе «Контакты» (content.site.blocks) — для правки с сайта.
+    index: int = -1
 
 
 _TG_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_]{3,31}$")
@@ -114,16 +116,35 @@ CHANNELS = [
 TITLES = dict(ContactKind.CHOICES)
 
 
+PARSERS = {kind: parse for kind, _, _, parse, _ in CHANNELS}
+DEFAULT_NOTES = {kind: note for kind, _, _, _, note in CHANNELS}
+
+
+def default_values() -> list[tuple[str, str, str]]:
+    """Каналы из настроек (.env): (канал, значение, своя подпись или пусто)."""
+    rows = []
+    for kind, value_setting, note_setting, _, _ in CHANNELS:
+        value = (getattr(settings, value_setting, "") or "").strip()
+        if value:
+            rows.append((kind, value, getattr(settings, note_setting, "") or ""))
+    return rows
+
+
 def get_contacts() -> list[Contact]:
+    """Каналы связи. Пока администратор не менял раздел на сайте — из настроек (.env),
+    потом — из блоков раздела «Контакты». Неразобранные значения не показываются."""
+    from content import site
+
     contacts = []
-    for kind, value_setting, note_setting, parse, default_note in CHANNELS:
-        value = getattr(settings, value_setting, "") or ""
-        parsed = parse(value) if value.strip() else None
+    for index, block in enumerate(site.blocks("contacts")):
+        parse = PARSERS.get(block.kind)
+        parsed = parse(block.value) if parse else None
         if parsed is None:
             continue
         url, handle = parsed
-        note = getattr(settings, note_setting, "") or default_note
-        contacts.append(Contact(kind, TITLES[kind], url, handle, note))
+        title = block.title or TITLES[block.kind]
+        note = block.note or DEFAULT_NOTES[block.kind]
+        contacts.append(Contact(block.kind, title, url, handle, note, index))
     return contacts
 
 

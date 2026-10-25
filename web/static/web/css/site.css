@@ -64,6 +64,8 @@
 *, *::before, *::after { box-sizing: border-box; }
 /* Фон html — тот же, что у страницы: полоса под статус-баром и «оттяжка» прокрутки в цвет темы. */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--bg); transition: background-color .45s ease; }
+/* Без задержки двойного касания: нажатия срабатывают сразу. */
+a, button, summary, label, input, select { touch-action: manipulation; }
 body {
   margin: 0;
   min-height: 100vh;
@@ -217,6 +219,7 @@ a { color: var(--brand); }
 .search__filter .ic { stroke-width: 2.2; }
 
 .cats {
+  position: relative; /* offsetLeft сегментов — от ленты (site.js держит выбранный в поле зрения) */
   display: flex; gap: 4px; margin-top: 12px; padding: 4px;
   border-radius: var(--radius-control); background: var(--surface); box-shadow: var(--shadow-control);
   overflow-x: auto; scrollbar-width: none;
@@ -389,6 +392,18 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .cta.is-done::before { transform: scaleX(1); }
 .cta:active { transform: scale(.98); }
 .cta:disabled { opacity: .55; cursor: not-allowed; }
+.cta--alt { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-accent-glow); }
+.cta--alt::before { display: none; }
+
+/* «В корзине»: на карточке ленты (ставит site.js) и в карточке товара. */
+.incart {
+  display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px;
+  border-radius: var(--radius-badge); background: var(--accent); color: var(--on-accent);
+  font: 800 12px/1 var(--font-text); text-decoration: none; white-space: nowrap;
+}
+.incart .ic { stroke-width: 2.4; }
+.card__img .incart { position: absolute; top: 8px; right: 8px; z-index: 1; box-shadow: var(--shadow-accent-glow); }
+.incart--detail { margin: 0 0 8px; }
 
 /* --- Карточка товара --- */
 .pd { padding: 0 12px; }
@@ -396,7 +411,7 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .hero {
   position: relative; height: var(--size-detail-hero); overflow: hidden;
   border-radius: var(--radius-hero); background-color: var(--tone);
-  animation: hero-in .55s var(--ease-out) .05s both;
+  animation: hero-in .4s var(--ease-out) both;
 }
 .hero__track { display: flex; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; outline-offset: -4px; }
 .hero__track::-webkit-scrollbar { display: none; }
@@ -412,7 +427,15 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
   -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
 }
 .pd__back { position: absolute; top: 14px; left: 14px; z-index: 2; }
-.pd__info { display: grid; gap: 18px; padding: 20px 6px 0; }
+.pd__frame {
+  padding: var(--space-card-pad); border-radius: var(--radius-hero);
+  background: var(--card); box-shadow: var(--shadow-card);
+}
+.pd__frame .hero { border-radius: calc(var(--radius-hero) - var(--space-card-pad)); }
+.pd__info {
+  display: grid; gap: 18px; margin-top: 16px; padding: 18px 18px 20px;
+  border-radius: var(--radius-hero); background: var(--card); box-shadow: var(--shadow-card);
+}
 .pd__info .crumbs { margin: 0 0 10px; }
 .tag { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: var(--radius-tag); background: var(--tag); color: var(--tag-ink); font: 800 12px var(--font-text); text-decoration: none; }
 .pd__title { margin: 10px 0 8px; font: 700 23px/1.2 var(--font-display); letter-spacing: -.4px; }
@@ -425,9 +448,10 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .sz input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .sz span {
   display: inline-flex; align-items: center; justify-content: center; min-width: 56px; height: 48px; padding: 0 14px;
-  border-radius: var(--radius-control); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-control);
-  font: 800 15px var(--font-text); transition: background-color .25s ease, color .25s ease, box-shadow .25s ease;
+  border-radius: var(--radius-control); background: var(--card); color: var(--ink); box-shadow: var(--shadow-control);
+  font: 800 15px var(--font-text); transition: background .2s ease, color .2s ease, box-shadow .2s ease, transform .12s ease;
 }
+.sz:active span { transform: scale(.95); }
 .sz input:checked + span { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-accent-glow); }
 .sz input:focus-visible + span { outline: 2px solid var(--brand); outline-offset: 2px; }
 .sz.is-off span { opacity: .45; text-decoration: line-through; }
@@ -458,10 +482,10 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 @keyframes ask-in { from { opacity: 0; transform: translateY(-8px); } }
 
 /* Блоки карточки появляются по очереди. */
-.rise { animation: rise .45s var(--ease-out) both; }
-.r1 { animation-delay: .12s; } .r2 { animation-delay: .18s; } .r3 { animation-delay: .24s; } .r4 { animation-delay: .3s; }
-@keyframes rise { from { opacity: 0; transform: translateY(16px); } }
-@keyframes hero-in { from { transform: scale(.9); } }
+.rise { animation: rise .32s var(--ease-out) both; }
+.r1 { animation-delay: .04s; } .r2 { animation-delay: .08s; } .r3 { animation-delay: .12s; } .r4 { animation-delay: .16s; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes hero-in { from { transform: scale(.94); } }
 @keyframes fade-in { from { opacity: 0; } }
 
 /* --- Панели, корзина, оформление --- */
@@ -703,7 +727,7 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
   .pd { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: start; padding: 0 24px; }
   .pd__gallery { position: sticky; top: calc(var(--hdr-compact) + 18px); }
   .hero { height: auto; aspect-ratio: 4 / 5; max-height: calc(100vh - var(--hdr-compact) - 48px); }
-  .pd__info { padding-top: 8px; }
+  .pd__info { margin-top: 0; padding: 24px 24px 26px; }
   .pd__title { font-size: 32px; }
   .price--detail .price__now { font-size: 30px; }
   .cart { grid-template-columns: minmax(0, 1fr) 360px; column-gap: 24px; align-items: start; }
@@ -734,12 +758,12 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .top { view-transition-name: top; }
 .tabbar { view-transition-name: tabbar; }
 .hero { view-transition-name: product-photo; }
-::view-transition-old(root) { animation: vt-out .16s var(--ease-out) both; }
-::view-transition-new(root) { animation: vt-in .28s var(--ease-out) .04s both; }
-::view-transition-group(product-photo) { animation-duration: .38s; animation-timing-function: var(--ease-soft); }
-::view-transition-group(top), ::view-transition-group(tabbar) { animation-duration: .3s; animation-timing-function: var(--ease-soft); }
+::view-transition-old(root) { animation: vt-out .12s var(--ease-out) both; }
+::view-transition-new(root) { animation: vt-in .22s var(--ease-out) both; }
+::view-transition-group(product-photo) { animation-duration: .32s; animation-timing-function: var(--ease-soft); }
+::view-transition-group(top), ::view-transition-group(tabbar) { animation-duration: .24s; animation-timing-function: var(--ease-soft); }
 @keyframes vt-out { to { opacity: 0; transform: scale(.985); } }
-@keyframes vt-in { from { opacity: 0; transform: translateY(12px); } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation-duration: .12s !important; animation-name: none; }
 }
@@ -754,3 +778,43 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .channel__note, .article-card__text, .appbar__text, .mini li, .foot { font-family: var(--font-secondary); }
 .card__title, .line__title { font-weight: 600; }
 .pd__desc, .post__body p, .foot, .price__old, .line__meta, .order-card__meta, .channel__note, .article-card__text { font-weight: 500; }
+
+/* --- Редактор на сайте (только администратору, web/static/web/js/edit.js) --- */
+.sx { border-radius: 6px; outline: 1.5px dashed transparent; outline-offset: 2px; cursor: text; transition: outline-color .15s ease; }
+.sx:hover { outline-color: color-mix(in srgb, var(--brand) 55%, transparent); }
+.sx.is-editing { outline: 2px solid var(--brand); background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.sx--hidden { display: inline-block; padding: 0 6px; color: var(--muted); font-style: italic; opacity: .7; }
+.sx-bar {
+  position: absolute; z-index: 100; display: flex; gap: 6px; padding: 6px;
+  border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-card);
+}
+.sx-bar button, .bx-actions button {
+  height: 34px; padding: 0 12px; border: 0; border-radius: 9px;
+  background: var(--neutral-bg); color: var(--ink); font: 800 13px var(--font-text); cursor: pointer;
+}
+.sx-bar button[data-act="save"], .bx-actions button[type="submit"] { background: var(--accent); color: var(--on-accent); }
+.bx-item { position: relative; }
+.bx-tools { position: absolute; top: 6px; right: 6px; z-index: 3; display: flex; gap: 4px; }
+.bx-tools button {
+  width: 30px; height: 30px; border: 0; border-radius: 9px; background: var(--surface); color: var(--ink);
+  box-shadow: var(--shadow-control); font: 800 15px/1 var(--font-text); cursor: pointer;
+}
+.bx-add, .bx-add-row { list-style: none; }
+.bx-add {
+  display: inline-flex; align-items: center; height: 38px; margin: 8px 0 0; padding: 0 14px;
+  border: 1.5px dashed color-mix(in srgb, var(--brand) 60%, transparent); border-radius: 11px;
+  background: transparent; color: var(--brand); font: 800 13px var(--font-text); cursor: pointer;
+}
+.bx-dialog {
+  width: min(420px, calc(100vw - 32px)); padding: 20px; border: 0; border-radius: var(--radius-card);
+  background: var(--surface); color: var(--ink); box-shadow: var(--shadow-card);
+}
+.bx-dialog::backdrop { background: rgba(7, 14, 10, .45); }
+.bx-dialog form { display: grid; gap: 12px; }
+.bx-title { margin: 0; font: 700 18px var(--font-display); }
+.bx-field { display: grid; gap: 6px; color: var(--muted); font: 700 12px var(--font-text); }
+.bx-field input, .bx-field select {
+  height: 44px; padding: 0 12px; border: 1.5px solid var(--input-line, var(--border)); border-radius: 11px;
+  background: var(--bg); color: var(--ink); font: 600 15px var(--font-text);
+}
+.bx-actions { display: flex; justify-content: flex-end; gap: 8px; }

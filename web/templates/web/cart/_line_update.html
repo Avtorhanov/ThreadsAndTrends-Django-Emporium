@@ -1,0 +1,5 @@
+{# Ответ на «+/−» и удаление (htmx): только изменённая позиция, итог и счётчики (hx-swap-oob). #}
+{% if line %}{% include "web/cart/_line_parts.html" with oob=True %}{% else %}<li id="line-{{ variant_id }}" hx-swap-oob="delete"></li>{% endif %}
+{% include "web/cart/_summary.html" with oob=True %}
+{% include "web/partials/cart_badge.html" with badge_id="cart-badge-top" count=cart_count oob=True %}
+{% include "web/partials/cart_badge.html" with badge_id="cart-badge-tab" count=cart_count oob=True %}

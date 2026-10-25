@@ -20,6 +20,8 @@
     <a class="glass-btn pd__back" href="{% url 'web:category' product.category.slug %}" data-back aria-label="Назад к категории {{ product.category.name }}">
       <svg class="ic" width="22" height="22"><use href="#i-back"/></svg>
     </a>
+    {# Фото — на объёмной карточке, как в ленте: рамка-подложка с тенью, фото внутри. #}
+    <div class="pd__frame">
     <div class="hero tone-{{ product.slug|tone }}">
       {% if images %}
       <div class="hero__track" data-gallery tabindex="0" aria-label="Фото товара, {{ images|length }} шт.">
@@ -38,8 +40,10 @@
       <div class="hero__empty"><svg class="ic" width="56" height="56"><use href="#i-box"/></svg></div>
       {% endif %}
     </div>
+    </div>
   </div>
 
+  {# Название, цена, размеры, описание и кнопка — одна объёмная карточка. #}
   <div class="pd__info">
     <div class="rise r1">
       <nav class="crumbs" aria-label="Навигация">
@@ -48,6 +52,7 @@
       </nav>
       <a class="tag" href="{% url 'web:category' product.category.slug %}">{{ product.category.name }}</a>
       <h1 class="pd__title">{{ product.name }}</h1>
+      {% if in_cart %}<a class="incart incart--detail" href="{% url 'web:cart' %}"><svg class="ic" width="16" height="16" aria-hidden="true"><use href="#i-bag"/></svg>В корзине · {{ in_cart }} шт.</a>{% endif %}
       <p class="price price--detail">
         {% if product.price_on_request %}<span class="price__now price__now--ask">Цена по запросу</span>{% else %}
         <span class="price__now">{{ product.price_kopecks|rub }}&nbsp;₽</span>{% endif %}
@@ -85,7 +90,7 @@
       <input type="hidden" name="variant" value="{{ single_variant.pk }}">
       {% elif sizes %}
       <fieldset class="rise r2 sizes">
-        <legend class="label">Размер</legend>
+        <legend class="label">{% sitetext "product.size" %}Размер{% endsitetext %}</legend>
         <div class="sizes__list">
           {% for size in sizes %}
           <label class="sz{% if not size.available %} is-off{% endif %}">
@@ -106,6 +111,11 @@
         <button class="cta" type="submit" data-cta>
           <span class="cta__label">В корзину</span>
           <span class="cta__price">{{ product.price_kopecks|rub }}&nbsp;₽</span>
+        </button>
+        {# «Купить сейчас»: оформление только этого товара, корзина не меняется. #}
+        <button class="cta cta--alt" type="submit" formaction="{% url 'web:buy_now' %}"
+                hx-post="{% url 'web:buy_now' %}" hx-target="#buy-result" hx-swap="innerHTML" data-buy-now>
+          <span class="cta__label">Купить сейчас</span>
         </button>
         {% else %}
         <button class="cta" type="button" disabled><span class="cta__label">Нет в наличии</span></button>

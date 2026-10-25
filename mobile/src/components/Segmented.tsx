@@ -1,4 +1,5 @@
-import { ScrollView, Text, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { type LayoutRectangle, ScrollView, Text, View } from "react-native";
 
 import { fonts } from "../theme/fonts";
 import { makeStyles } from "../theme/ThemeProvider";
@@ -19,11 +20,32 @@ type Props<T extends string> = {
 /** Сегменты (категории, сортировка, тема): активный — segOnBg/segOnInk. */
 export function Segmented<T extends string>({ segments, value, onChange, label, scrollable }: Props<T>) {
   const s = useStyles();
+  const scrollRef = useRef<ScrollView>(null);
+  const layouts = useRef(new Map<string, LayoutRectangle>());
+  const view = useRef({ x: 0, width: 0 });
+
+  // Выбранный сегмент докручивается в поле зрения: название не обрезается у края ленты.
+  const reveal = (target: string, animated: boolean) => {
+    const box = layouts.current.get(target);
+    const { x, width } = view.current;
+    if (!scrollable || !box || !width) return;
+    const pad = 16;
+    if (box.x - pad < x) scrollRef.current?.scrollTo({ x: Math.max(0, box.x - pad), animated });
+    else if (box.x + box.width + pad > x + width) {
+      scrollRef.current?.scrollTo({ x: box.x + box.width + pad - width, animated });
+    }
+  };
+  useEffect(() => reveal(value, true), [value]);
+
   const items = segments.map((segment) => {
     const on = segment.value === value;
     return (
       <PressScale
         key={segment.value}
+        onLayout={(event) => {
+          layouts.current.set(segment.value, event.nativeEvent.layout);
+          if (on) reveal(segment.value, false);
+        }}
         accessibilityRole="tab"
         accessibilityState={{ selected: on }}
         onPress={() => onChange(segment.value)}
@@ -40,7 +62,19 @@ export function Segmented<T extends string>({ segments, value, onChange, label, 
   return (
     <View style={s.box} accessibilityRole="tablist" accessibilityLabel={label}>
       {scrollable ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.scroll}>
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.scroll}
+          scrollEventThrottle={64}
+          onLayout={(event) => {
+            view.current.width = event.nativeEvent.layout.width;
+          }}
+          onScroll={(event) => {
+            view.current.x = event.nativeEvent.contentOffset.x;
+          }}
+        >
           {items}
         </ScrollView>
       ) : (

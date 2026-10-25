@@ -8,10 +8,12 @@
 import logging
 import uuid
 
+from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Prefetch, Sum
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -21,7 +23,8 @@ from orders.services import checkout as checkout_service
 from orders.services import status as status_service
 from payments import services as payments
 from payments.models import Payment, PaymentStatus
-from store.models import ProductImage
+from store.models import ProductImage, ProductVariant
+from store.services.cart import LineInput
 
 from .. import ratelimit
 from ..forms import CheckoutForm
@@ -54,9 +57,35 @@ def _detail_queryset(user):
 # --- Оформление ---
 
 
+def buy_now_line(request) -> LineInput | None:
+    """«Купить сейчас»: ?variant=<id>&qty=<n> в адресе оформления (и при отправке формы)."""
+    raw_variant, raw_qty = request.GET.get("variant", ""), request.GET.get("qty", "1")
+    if not raw_variant:
+        return None
+    if not (raw_variant.isdigit() and raw_qty.isdigit()):
+        raise Http404("Неверный товар.")
+    quantity = min(max(int(raw_qty), 1), settings.CART_MAX_QUANTITY)
+    return LineInput(int(raw_variant), quantity)
+
+
+def _back_to_product(buy_now: LineInput):
+    variant = ProductVariant.objects.select_related("product").filter(pk=buy_now.variant_id).first()
+    if variant is None:
+        return redirect("web:home")
+    return redirect("web:product", slug=variant.product.slug)
+
+
 @customer_required
 def checkout(request):
-    preview = checkout_service.preview(request.user)
+    buy_now = buy_now_line(request)
+    preview = checkout_service.preview(request.user, buy_now)
+    if buy_now is not None and not preview.cart.can_checkout:
+        line = preview.cart.lines[0]
+        reason = "закончился" if line.status == "out_of_stock" else "недоступен для заказа"
+        if line.status == "exceeds_stock":
+            reason = f"есть только {line.max_quantity} шт."
+        messages.error(request, f"Товар {reason}.")
+        return _back_to_product(buy_now)
     if not preview.cart.lines:
         messages.info(request, "Корзина пуста.")
         return redirect("web:cart")
@@ -106,6 +135,7 @@ def checkout(request):
                         expected_total_kopecks=expected,
                     ),
                     data["idempotency_key"],
+                    buy_now=buy_now,
                 )
             except ValidationError as exc:
                 _apply_errors(form, exc)
@@ -125,6 +155,8 @@ def checkout(request):
             "options": preview.delivery_options,
             "free_from": preview.free_delivery_from_kopecks,
             "pickup": options.get(DeliveryMethod.PICKUP),
+            "buy_now": buy_now,
+            "action": request.get_full_path(),
             "tab": "cart",
             "noindex": True,
         },

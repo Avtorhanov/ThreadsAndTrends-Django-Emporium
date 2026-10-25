@@ -4,11 +4,12 @@
 {% block content %}
 <section class="page">
   <header class="section-head">
-    <p class="overline">Корзина</p>
+    <p class="overline">{% if buy_now %}Купить сейчас{% else %}Корзина{% endif %}</p>
     <h1 class="h1">Оформление</h1>
+    {% if buy_now %}<p class="section-head__note">Только этот товар — корзина не изменится.</p>{% endif %}
   </header>
 
-  <form class="checkout" method="post" action="{% url 'web:checkout' %}" data-checkout novalidate>
+  <form class="checkout" method="post" action="{{ action }}" data-checkout novalidate>
     {% csrf_token %}
     {{ form.expected_total }}{{ form.idempotency_key }}
     {% include "web/partials/form_errors.html" %}

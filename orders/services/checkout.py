@@ -1,4 +1,4 @@
-"""Оформление заказа из корзины клиента.
+"""Оформление заказа: из всей корзины клиента или «Купить сейчас» — одна позиция мимо корзины.
 
 Источник позиций и суммы — store.services.cart.get_summary: тот же расчёт, что видит
 покупатель в корзине. Внутри транзакции:
@@ -8,6 +8,9 @@
    товар — по очереди, без взаимных блокировок);
 3. корзина пересчитывается и должна быть can_checkout; остатки списываются;
 4. корзина очищается, письмо уходит после commit.
+
+«Купить сейчас» (buy_now): позиция считается тем же расчётом (quote), блокировки и списание —
+те же, корзина не меняется.
 
 Повторный сабмит с тем же Idempotency-Key возвращает уже созданный заказ.
 """
@@ -31,7 +34,7 @@ from orders.models import (
     PaymentMethod,
 )
 from store.models import Cart, ProductVariant
-from store.services.cart import CartSummary, get_summary
+from store.services.cart import CartSummary, LineInput, get_summary, quote
 from store.templatetags.money import format_kopecks
 
 from . import notifications
@@ -39,6 +42,7 @@ from .status import initial_status
 
 IDEMPOTENCY_KEY_RE = re.compile(r"^[A-Za-z0-9_-]{8,64}$")
 EMPTY_CART = "Корзина пуста."
+BUY_NOW_CHANGED = "Товар изменился — проверьте его на странице товара"
 
 
 @dataclass(frozen=True)
@@ -116,10 +120,14 @@ def payment_methods() -> list[str]:
     return methods
 
 
-def preview(user) -> CheckoutPreview:
-    """Данные экрана оформления: корзина, способы доставки с ценой, подстановка получателя
-    из последнего заказа."""
-    summary = get_summary(user)
+def _summary(user, buy_now: LineInput | None) -> CartSummary:
+    return quote([buy_now]) if buy_now is not None else get_summary(user)
+
+
+def preview(user, buy_now: LineInput | None = None) -> CheckoutPreview:
+    """Данные экрана оформления: корзина (или одна позиция «Купить сейчас»), способы доставки
+    с ценой, подстановка получателя из последнего заказа."""
+    summary = _summary(user, buy_now)
     last = (
         Order.objects.filter(owner=user)
         .order_by("-created_at", "-id")
@@ -218,17 +226,21 @@ def _next_number() -> str:
     return f"{ORDER_NUMBER_PREFIX}{value}"
 
 
-def _problems_message(summary: CartSummary) -> str:
+def _problems_message(summary: CartSummary, buy_now: bool = False) -> str:
     names = [
         line.product.name if line.product else "товар снят с продажи"
         for line in summary.lines
         if line.status != "ok"
     ]
-    return "Корзина изменилась — проверьте позиции: " + ", ".join(names) + "."
+    head = BUY_NOW_CHANGED if buy_now else "Корзина изменилась — проверьте позиции"
+    return head + ": " + ", ".join(names) + "."
 
 
-def checkout(user, data: CheckoutInput, idempotency_key: str) -> tuple[Order, bool]:
-    """Оформить заказ из всей корзины. Возвращает (заказ, создан_сейчас)."""
+def checkout(
+    user, data: CheckoutInput, idempotency_key: str, buy_now: LineInput | None = None
+) -> tuple[Order, bool]:
+    """Оформить заказ из всей корзины или одну позицию buy_now (корзина не меняется).
+    Возвращает (заказ, создан_сейчас)."""
     _validate_key(idempotency_key)
     existing = _find_existing(user, idempotency_key)
     if existing is not None:
@@ -242,12 +254,14 @@ def checkout(user, data: CheckoutInput, idempotency_key: str) -> tuple[Order, bo
             existing = _find_existing(user, idempotency_key)
             if existing is not None:
                 return existing, False
-            if cart is None:
-                raise ValidationError(EMPTY_CART, code="empty_cart")
-
-            variant_ids = list(cart.items.values_list("variant_id", flat=True))
-            if not variant_ids:
-                raise ValidationError(EMPTY_CART, code="empty_cart")
+            if buy_now is not None:
+                variant_ids = [buy_now.variant_id]
+            else:
+                if cart is None:
+                    raise ValidationError(EMPTY_CART, code="empty_cart")
+                variant_ids = list(cart.items.values_list("variant_id", flat=True))
+                if not variant_ids:
+                    raise ValidationError(EMPTY_CART, code="empty_cart")
             list(
                 ProductVariant.all_objects.select_for_update()
                 .filter(pk__in=variant_ids)
@@ -256,11 +270,13 @@ def checkout(user, data: CheckoutInput, idempotency_key: str) -> tuple[Order, bo
             )
 
             # Пересчёт под блокировкой: остатки не изменятся до commit.
-            summary = get_summary(user)
+            summary = _summary(user, buy_now)
             if not summary.lines:
                 raise ValidationError(EMPTY_CART, code="empty_cart")
             if not summary.can_checkout:
-                raise ValidationError(_problems_message(summary), code="cart_changed")
+                raise ValidationError(
+                    _problems_message(summary, buy_now is not None), code="cart_changed"
+                )
 
             items_total = summary.total_kopecks
             delivery = delivery_cost(data.delivery_method, items_total)
@@ -315,7 +331,8 @@ def checkout(user, data: CheckoutInput, idempotency_key: str) -> tuple[Order, bo
                 changed_by=ChangedBy.CUSTOMER,
                 actor=user,
             )
-            cart.items.all().delete()
+            if buy_now is None:
+                cart.items.all().delete()
             notifications.notify_status(order, created=True)
     except IntegrityError:
         # Гонка по уникальному ключу (owner, idempotency_key) без корзины-блокировки.

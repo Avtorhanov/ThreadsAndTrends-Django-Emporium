@@ -45,11 +45,16 @@ def storefront(request):
     def banner():
         return app_banner(request)
 
+    @cache
+    def cart_slugs():
+        return cart.product_slugs(request)
+
     return {
         "theme": theme.get_theme(request),
         "cart_count": cart_count,
         "nav_categories": nav_categories,
         "app_banner": banner,
+        "cart_slugs": cart_slugs,
         "android_apk_url": settings.ANDROID_APK_URL,
         "seller": {
             "name": settings.SELLER_NAME,

@@ -20,7 +20,7 @@
   </nav>
   {% endif %}
   <header class="section-head">
-    <p class="overline">{% if search %}Поиск{% elif category %}Категория{% else %}Каталог{% endif %}</p>
+    <p class="overline">{% if search %}Поиск{% elif category %}{% sitetext "listing.category" %}Категория{% endsitetext %}{% else %}{% sitetext "listing.all" %}Каталог{% endsitetext %}{% endif %}</p>
     <h1 class="h1">{% if search %}{% if values.q %}«{{ values.q }}»{% else %}Найти товар{% endif %}{% elif category %}{{ category.name }}{% else %}Все товары{% endif %}</h1>
   </header>
 

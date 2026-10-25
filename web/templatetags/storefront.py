@@ -2,9 +2,10 @@ import json
 
 from django import template
 from django.templatetags.static import static
-from django.utils.html import format_html, format_html_join
+from django.utils.html import format_html, format_html_join, linebreaks
 from django.utils.safestring import mark_safe
 
+from content import site
 from orders.models import OrderStatus
 from store.services.storefront import category_tree
 
@@ -142,3 +143,83 @@ def product_img(image, sizes: str, css: str = "", eager: bool = False, alt: str 
     if css:
         attrs["class"] = css
     return format_html("<img {}>", format_html_join(" ", '{}="{}"', attrs.items()))
+
+
+# --- Тексты, которые администратор правит на сайте двойным нажатием ---
+
+
+def is_editor(context) -> bool:
+    request = context.get("request")
+    user = getattr(request, "user", None)
+    return bool(user and user.is_authenticated and user.is_staff)
+
+
+class SiteTextNode(template.Node):
+    def __init__(self, key: str, nodelist, multiline: bool):
+        self.key, self.nodelist, self.multiline = key, nodelist, multiline
+
+    def render(self, context):
+        values = site.texts()
+        if self.key in values:
+            # Изменённый текст — обычный текст: экранируется, абзацы — через пустую строку.
+            value = values[self.key]
+            if self.multiline:
+                html = linebreaks(value, autoescape=True)
+            else:
+                html = format_html("{}", value)
+        else:
+            html = self.nodelist.render(context).strip()
+        if not is_editor(context):
+            return html
+        tag = "div" if self.multiline else "span"
+        if not html:
+            return format_html(
+                '<{} class="sx sx--hidden" data-text="{}" title="Скрыт — двойное нажатие, чтобы '
+                'вернуть">скрыто</{}>',
+                tag,
+                self.key,
+                tag,
+            )
+        return format_html(
+            '<{} class="sx" data-text="{}"{}>{}</{}>',
+            tag,
+            self.key,
+            mark_safe(' data-multiline="1"') if self.multiline else "",
+            mark_safe(html),
+            tag,
+        )
+
+
+@register.tag
+def sitetext(parser, token):
+    """{% sitetext "footer.copy" %}текст по умолчанию{% endsitetext %} — администратор меняет
+    или скрывает текст двойным нажатием на сайте. {% sitetext "key" multiline %} — абзацы."""
+    bits = token.split_contents()
+    quoted = len(bits) > 1 and bits[1][0] in "\"'" and bits[1][-1] == bits[1][0]
+    if len(bits) not in (2, 3) or not quoted or (len(bits) == 3 and bits[2] != "multiline"):
+        raise template.TemplateSyntaxError('{% sitetext "ключ" [multiline] %}…{% endsitetext %}')
+    key = bits[1][1:-1]
+    if not site.TEXT_KEY.match(key):
+        raise template.TemplateSyntaxError(f"Неверный ключ текста: {key}")
+    nodelist = parser.parse(("endsitetext",))
+    parser.delete_first_token()
+    return SiteTextNode(key, nodelist, multiline=len(bits) == 3)
+
+
+@register.simple_tag(takes_context=True)
+def site_blocks(context, area: str):
+    """Блоки раздела (Помощь, подвал) — один раз на страницу."""
+    cache = context.render_context.setdefault("site_blocks", {})
+    if area not in cache:
+        cache[area] = site.blocks(area)
+    return cache[area]
+
+
+@register.simple_tag(takes_context=True)
+def blocks_attrs(context, area: str):
+    """Атрибуты контейнера блоков для редактора на сайте (только администратору)."""
+    if not is_editor(context):
+        return ""
+    return format_html(
+        ' data-blocks="{}" data-customized="{}"', area, "1" if site.is_customized(area) else ""
+    )
