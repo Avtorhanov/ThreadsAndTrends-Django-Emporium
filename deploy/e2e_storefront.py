@@ -117,9 +117,12 @@ def in_stock_product(page: Page) -> None:
 
 
 def pick_size(page: Page) -> None:
-    sizes = page.locator(".sz:not(.is-off) input")
+    # Нажатие по видимой кнопке размера (как пальцем): Playwright сам докрутит её из-под
+    # нижней панели. Скрытое радио под кнопкой с force=True попадало бы в перекрывающий слой.
+    sizes = page.locator(".sz:not(.is-off)")
     if sizes.count():
-        sizes.first.check(force=True)
+        sizes.first.click()  # label: невидимое радио внутри — часть той же кнопки
+        expect(sizes.first.locator("input")).to_be_checked()
 
 
 def seo_checks(page: Page, base: str) -> None:

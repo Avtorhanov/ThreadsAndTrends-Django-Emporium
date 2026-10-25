@@ -438,6 +438,24 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .buy__result:empty { display: none; }
 .buy__done { display: flex; align-items: center; gap: 6px; color: var(--success); font: 700 14px var(--font-text); }
 .buy__done a { color: inherit; }
+.price__now--ask { font-size: .82em; letter-spacing: -.2px; }
+
+/* «Узнать» (цена по запросу): кнопка раскрывает блок вниз — мессенджеры магазина. */
+.ask { border-radius: var(--radius-cta); }
+.ask__toggle { list-style: none; cursor: pointer; justify-content: center; }
+.ask__toggle::-webkit-details-marker { display: none; }
+.ask__chev { transform: rotate(90deg); transition: transform .3s var(--ease-out); }
+.ask[open] .ask__chev { transform: rotate(-90deg); }
+.ask__body { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; padding-top: 10px; }
+.ask[open] .ask__body { animation: ask-in .32s var(--ease-out) both; }
+.ask__link {
+  display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 14px 8px 8px;
+  border-radius: var(--radius-control); background: var(--surface); box-shadow: var(--shadow-control);
+  color: var(--ink); font: 800 15px var(--font-text); text-decoration: none; transition: transform .15s ease;
+}
+.ask__link:active { transform: scale(.97); }
+.ask__link .channel__icon { width: 46px; height: 46px; border-radius: 11px; }
+@keyframes ask-in { from { opacity: 0; transform: translateY(-8px); } }
 
 /* Блоки карточки появляются по очереди. */
 .rise { animation: rise .45s var(--ease-out) both; }

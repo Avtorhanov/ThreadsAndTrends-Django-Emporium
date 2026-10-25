@@ -1,16 +1,16 @@
 {% extends "web/base.html" %}
 {% load money storefront %}
-{% block title %}{{ product.name }} — купить за {{ product.price_kopecks|rub }} ₽ в DiDi-shop{% endblock %}
-{% block description %}{% if product.description %}{{ product.description|truncatechars:155 }}{% else %}{{ product.name }} — {{ product.price_kopecks|rub }} ₽. {{ product.category.name }} в DiDi-shop с доставкой курьером.{% endif %}{% endblock %}
+{% block title %}{% if product.price_on_request %}{{ product.name }} — цена по запросу в DiDi-shop{% else %}{{ product.name }} — купить за {{ product.price_kopecks|rub }} ₽ в DiDi-shop{% endif %}{% endblock %}
+{% block description %}{% if product.description %}{{ product.description|truncatechars:155 }}{% elif product.price_on_request %}{{ product.name }} — цена по запросу. {{ product.category.name }} в DiDi-shop.{% else %}{{ product.name }} — {{ product.price_kopecks|rub }} ₽. {{ product.category.name }} в DiDi-shop с доставкой курьером.{% endif %}{% endblock %}
 {% block canonical %}<link rel="canonical" href="{% absolute request.path %}">{% endblock %}
 {% block og %}
 <meta property="og:type" content="product">
 <meta property="og:title" content="{{ product.name }}">
-<meta property="og:description" content="{{ product.price_kopecks|rub }} ₽ · {{ product.category.name }}">
+<meta property="og:description" content="{% if product.price_on_request %}Цена по запросу{% else %}{{ product.price_kopecks|rub }} ₽{% endif %} · {{ product.category.name }}">
 <meta property="og:url" content="{% absolute request.path %}">
 {% if images %}<meta property="og:image" content="{% absolute images.0.image.url %}">{% else %}<meta property="og:image" content="{% absolute_static 'web/icons/icon-512.png' %}">{% endif %}
-<meta property="product:price:amount" content="{{ product.price_kopecks|schema_price }}">
-<meta property="product:price:currency" content="RUB">
+{% if not product.price_on_request %}<meta property="product:price:amount" content="{{ product.price_kopecks|schema_price }}">
+<meta property="product:price:currency" content="RUB">{% endif %}
 {% endblock %}
 {% block head %}{{ json_ld|ld_json }}{% endblock %}
 {% block body_class %}page-product{% endblock %}
@@ -49,12 +49,34 @@
       <a class="tag" href="{% url 'web:category' product.category.slug %}">{{ product.category.name }}</a>
       <h1 class="pd__title">{{ product.name }}</h1>
       <p class="price price--detail">
-        <span class="price__now">{{ product.price_kopecks|rub }}&nbsp;₽</span>
+        {% if product.price_on_request %}<span class="price__now price__now--ask">Цена по запросу</span>{% else %}
+        <span class="price__now">{{ product.price_kopecks|rub }}&nbsp;₽</span>{% endif %}
         {% if product.compare_at_kopecks %}<s class="price__old"><span class="sr">Старая цена </span>{{ product.compare_at_kopecks|rub }}&nbsp;₽</s>
         {% with off=product|discount %}{% if off %}<span class="sale sale--inline">−{{ off }}%</span>{% endif %}{% endwith %}{% endif %}
       </p>
     </div>
 
+    {% if product.price_on_request %}
+    <div class="buy">
+      {% if product.description %}
+      <div class="rise r3 pd__desc">{{ product.description|linebreaks }}</div>
+      {% endif %}
+      {# Без JavaScript: <details> раскрывается сам; «Узнать» — мессенджеры магазина. #}
+      <details class="rise r4 ask" data-ask>
+        <summary class="cta ask__toggle"><span class="cta__label">Узнать</span><svg class="ic ask__chev" width="20" height="20" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+        <div class="ask__body">
+          {% for link in ask_links %}
+          <a class="ask__link ask__link--{{ link.kind }}" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">
+            <span class="channel__icon" aria-hidden="true"><svg class="ic" width="20" height="20"><use href="#i-{% if link.kind == 'telegram' %}send{% else %}chat{% endif %}"/></svg></span>
+            <span>{{ link.title }}</span>
+          </a>
+          {% empty %}
+          <a class="ask__link" href="{% url 'web:contacts' %}"><span>Контакты магазина</span></a>
+          {% endfor %}
+        </div>
+      </details>
+    </div>
+    {% else %}
     <form class="buy" method="post" action="{% url 'web:cart_add' %}"
           hx-post="{% url 'web:cart_add' %}" hx-target="#buy-result" hx-swap="innerHTML" data-buy>
       {% csrf_token %}
@@ -91,6 +113,7 @@
         <div id="buy-result" class="buy__result" aria-live="polite"></div>
       </div>
     </form>
+    {% endif %}
   </div>
 </article>
 {% endblock %}

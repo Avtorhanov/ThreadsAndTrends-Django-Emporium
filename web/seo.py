@@ -36,7 +36,10 @@ def product_json_ld(request, product: Product, images, in_stock: bool) -> dict:
         "sku": str(product.pk),
         "brand": {"@type": "Brand", "name": SITE_NAME},
         "category": product.category.name,
-        "offers": {
+    }
+    # Цена по запросу — без Offer: предложение без цены schema.org считает ошибкой.
+    if product.price_kopecks is not None:
+        data["offers"] = {
             "@type": "Offer",
             "url": url,
             "priceCurrency": "RUB",
@@ -45,8 +48,7 @@ def product_json_ld(request, product: Product, images, in_stock: bool) -> dict:
             if in_stock
             else "https://schema.org/OutOfStock",
             "itemCondition": "https://schema.org/NewCondition",
-        },
-    }
+        }
     if product.description:
         data["description"] = product.description[:5000]
     if images:

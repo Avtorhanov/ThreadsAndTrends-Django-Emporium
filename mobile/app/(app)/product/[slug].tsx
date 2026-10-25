@@ -20,6 +20,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useCart } from "../../../src/cart/CartProvider";
+import { AskPanel } from "../../../src/catalog/AskPanel";
 import { Price, ProductImage, SizePicker } from "../../../src/catalog/components";
 import { useProduct } from "../../../src/catalog/hooks";
 import { FillButton } from "../../../src/components/FillButton";
@@ -145,11 +146,7 @@ export default function ProductScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View
-          style={[
-            s.hero,
-            { width: heroWidth, height: heroHeight, backgroundColor: toneColor(slug, dark) },
-            hero,
-          ]}
+          style={[s.hero, { width: heroWidth, height: heroHeight, backgroundColor: toneColor(slug, dark) }, hero]}
         >
           {images.length ? (
             <ScrollView
@@ -242,20 +239,28 @@ export default function ProductScreen() {
           entering={rise(3, reduced)}
           style={[s.cta, wide && s.ctaWide, { paddingBottom: Math.max(insets.bottom, 12) + 18 }]}
         >
-          <Message text={addToCart.error} />
-          <FillButton
-            title={ctaTitle}
-            doneTitle="Добавлено в корзину"
-            done={added}
-            trailing={formatKopecks(product.price_kopecks)}
-            loading={addToCart.loading}
-            disabled={!variant?.in_stock}
-            onPress={() => {
-              if (added) router.navigate("/cart");
-              else if (variant) void addToCart.submit(variant.id, product.price_kopecks);
-            }}
-          />
-          {added ? <LinkButton title="Перейти в корзину" onPress={() => router.navigate("/cart")} /> : null}
+          {product.price_kopecks === null ? (
+            <AskPanel name={product.name} slug={product.slug} />
+          ) : (
+            <>
+              <Message text={addToCart.error} />
+              <FillButton
+                title={ctaTitle}
+                doneTitle="Добавлено в корзину"
+                done={added}
+                trailing={formatKopecks(product.price_kopecks)}
+                loading={addToCart.loading}
+                disabled={!variant?.in_stock}
+                onPress={() => {
+                  if (added) router.navigate("/cart");
+                  else if (variant && product.price_kopecks !== null) {
+                    void addToCart.submit(variant.id, product.price_kopecks);
+                  }
+                }}
+              />
+              {added ? <LinkButton title="Перейти в корзину" onPress={() => router.navigate("/cart")} /> : null}
+            </>
+          )}
         </Animated.View>
       ) : null}
     </Animated.View>

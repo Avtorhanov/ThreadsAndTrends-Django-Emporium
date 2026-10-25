@@ -91,10 +91,11 @@ def filter_products(filters: ProductFilters) -> QuerySet[Product]:
 
     sort = filters.sort or (Sort.RELEVANCE if query is not None else Sort.NEW)
     # Последние ключи — стабильный порядок для пагинации при равных ценах и релевантности.
+    # Товары с ценой по запросу — в конце при любой сортировке по цене.
     if sort == Sort.PRICE_ASC:
-        return queryset.order_by("price_kopecks", "-created_at", "-id")
+        return queryset.order_by(F("price_kopecks").asc(nulls_last=True), "-created_at", "-id")
     if sort == Sort.PRICE_DESC:
-        return queryset.order_by("-price_kopecks", "-created_at", "-id")
+        return queryset.order_by(F("price_kopecks").desc(nulls_last=True), "-created_at", "-id")
     if sort == Sort.RELEVANCE and query is not None:
         return queryset.annotate(rank=SearchRank(F("search"), query)).order_by(
             "-rank", "-created_at", "-id"

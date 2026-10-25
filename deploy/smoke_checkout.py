@@ -141,7 +141,8 @@ def main() -> int:
     # Отдельный товар для теста: остаток --stock, дальше — гонка покупателей.
     status, categories = admin.call("GET", "/api/v1/admin/catalog/categories/?page_size=100")
     rows = categories["results"] if isinstance(categories, dict) else categories
-    leaf = next(c for c in rows if c["parent"] is not None)
+    # Товары — только в конечных категориях (без подкатегорий); дерево может быть и плоским.
+    leaf = next(c for c in rows if not c["children_count"])
     run = uuid.uuid4().hex[:6]
     status, product = admin.call(
         "POST",
