@@ -638,6 +638,9 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .appbar__text { display: grid; flex: 1; min-width: 0; color: var(--muted); font: 600 12px/1.3 var(--font-text); }
 .appbar__text b { color: var(--ink); font-size: 14px; }
 .appbar form { display: flex; }
+.ic--inline { display: inline-block; vertical-align: -2px; color: var(--ink); }
+/* Сайт уже открыт с экрана «Домой» — баннер не нужен. */
+@media (display-mode: standalone) { .appbar { display: none; } }
 .appbar__close { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 11px; background: transparent; color: var(--muted); }
 
 /* --- Планшет и десктоп --- */

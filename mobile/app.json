@@ -21,14 +21,6 @@
       },
       "predictiveBackGestureEnabled": false
     },
-    "web": {
-      "name": "DiDi-shop",
-      "shortName": "DiDi-shop",
-      "lang": "ru",
-      "themeColor": "#13261C",
-      "backgroundColor": "#EBF1E2",
-      "favicon": "./assets/favicon.png"
-    },
     "plugins": [
       "expo-router",
       "expo-secure-store",
@@ -48,9 +40,6 @@
         }
       ]
     ],
-    "scheme": "didishop",
-    "experiments": {
-      "baseUrl": "/app"
-    }
+    "scheme": "didishop"
   }
 }

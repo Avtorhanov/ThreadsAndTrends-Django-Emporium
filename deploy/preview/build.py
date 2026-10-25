@@ -119,6 +119,14 @@ class Site:
         file.write_text(html, encoding="utf-8")
         return response
 
+    def save_raw(self, client, prefix, path) -> None:
+        """Не-HTML ответ (манифест) — как есть, по тому же адресу на Pages."""
+        response = self.request(client, prefix, path)
+        assert response.status_code == 200, (path, response.status_code)
+        file = self.out / (prefix[len(BASE) :] + path).lstrip("/")
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_bytes(response.content)
+
     @staticmethod
     def decorate(html: str, *, tree: str, room: str = "") -> str:
         """Подключить превью: без htmx (формы перехватывает preview.js), тема до отрисовки,
@@ -297,6 +305,7 @@ def build(out: Path) -> None:
     # Оформление и заказы гостю недоступны — там страница входа, как на сайте.
     site.save(guest, BASE, "/checkout/", tree="guest")
     site.save(guest, BASE, "/orders/", tree="guest")
+    site.save_raw(guest, BASE, "/manifest.webmanifest")
 
     # Покупатель
     for path in catalog_paths():
@@ -310,6 +319,7 @@ def build(out: Path) -> None:
     for variant, quantity in ((variants[0], 1), (variants[7], 2)):
         cart_service.add(customer, variant.pk, quantity)
     site.save(me, ME, "/checkout/", tree="me")
+    site.save_raw(me, ME, "/manifest.webmanifest")
     rooms = render_rooms_states(site, guest, me, customer, variants, query, fake)
     site.save(guest, BASE, "/no-such-page/", "/404.html", tree="guest", status=404)
 

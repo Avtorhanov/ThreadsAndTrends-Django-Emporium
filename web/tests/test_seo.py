@@ -62,7 +62,9 @@ def test_app_banner_only_on_phones(client, db, settings):
     assert "https://example.com/didi-shop.apk" in android.content.decode()
     assert "data-banner" in android.content.decode()
     iphone = client.get("/", HTTP_USER_AGENT="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0)")
-    assert 'href="/app/">Открыть' in iphone.content.decode()
+    iphone_html = iphone.content.decode()
+    assert "На экран „Домой“" in iphone_html
+    assert "/app/" not in iphone_html
     desktop = client.get("/", HTTP_USER_AGENT="Mozilla/5.0 (Windows NT 10.0)")
     assert "data-banner" not in desktop.content.decode()
     client.cookies["app_banner"] = "hidden"
@@ -74,3 +76,21 @@ def test_android_banner_needs_apk_url(client, db, settings):
     settings.ANDROID_APK_URL = ""
     response = client.get("/", HTTP_USER_AGENT="Mozilla/5.0 (Linux; Android 14) Mobile")
     assert "data-banner" not in response.content.decode()
+
+
+def test_manifest_for_home_screen(client, db):
+    response = client.get(reverse("web:manifest"))
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/manifest+json"
+    data = response.json()
+    assert data["start_url"] == "/" and data["scope"] == "/" and data["display"] == "standalone"
+    assert {icon["purpose"] for icon in data["icons"]} == {"any", "maskable"}
+    assert all(icon["src"].startswith("/static/web/icons/") for icon in data["icons"])
+    assert "Set-Cookie" not in response
+    assert client.head(reverse("web:manifest")).status_code == 200
+
+
+def test_pages_link_manifest(client, db):
+    html = client.get("/").content.decode()
+    assert '<link rel="manifest" href="/manifest.webmanifest">' in html
+    assert 'name="apple-mobile-web-app-title"' in html

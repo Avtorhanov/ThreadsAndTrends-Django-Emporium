@@ -7,7 +7,6 @@ export type PaymentPageOutcome = "returned" | "closed";
 /**
  * Страница оплаты во встроенном браузере. `start` получает адрес возврата и отдаёт ссылку
  * провайдера. В сборке возврат — didishop://orders/<номер>, в Expo Go — exp://…/--/orders/<номер>.
- * В браузере — paymentPage.web.ts.
  */
 export async function openPaymentPage(
   number: string,

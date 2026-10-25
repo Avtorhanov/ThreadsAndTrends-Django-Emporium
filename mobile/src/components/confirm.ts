@@ -7,7 +7,7 @@ export type ConfirmOptions = {
   cancelText?: string;
 };
 
-/** Подтверждение необратимого действия. В браузере — confirm.web.ts. */
+/** Подтверждение необратимого действия. */
 export function confirmAction({
   title,
   message,

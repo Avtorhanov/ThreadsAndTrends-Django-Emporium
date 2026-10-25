@@ -5,7 +5,7 @@
 	email {$ACME_EMAIL}
 }
 
-# Витрина и панель хранят токены/сессию в браузере: скрипты только с этого домена (защита от XSS).
+# Панель работает с сессией администратора: скрипты только с этого домена (защита от XSS).
 (spa_headers) {
 	header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 	header X-Frame-Options "DENY"
@@ -52,26 +52,8 @@
 		file_server
 	}
 
-	# Веб-версия приложения (Expo web, base /app; на iPhone ставится как PWA).
-	# handle_path убирает /app: внутри пути — относительно /srv/shop.
-	redir /app /app/ 308
-	handle_path /app/* {
-		import spa_headers
-		root * /srv/shop
-		@manifest path /manifest.webmanifest
-		header @manifest Content-Type "application/manifest+json"
-		@assets path /_expo/* /assets/*
-		header @assets Cache-Control "public, max-age=31536000, immutable"
-		@icons path /icons/*
-		header @icons Cache-Control "public, max-age=86400"
-		@html not path /_expo/* /assets/* /icons/*
-		header @html Cache-Control "no-cache"
-		try_files {path} /index.html
-		file_server
-	}
-
 	# Остальное — Django (gunicorn): веб-витрина (корень сайта, каталог, корзина, кабинет,
-	# sitemap.xml, robots.txt; CSP — web.middleware), API и резервная админка. Caddy сам
+	# sitemap.xml, robots.txt, manifest.webmanifest; CSP — web.middleware), API и резервная админка. Caddy сам
 	# выставляет X-Forwarded-For (реальный IP клиента; заголовок от клиента не доверяется)
 	# и X-Forwarded-Proto.
 	handle {

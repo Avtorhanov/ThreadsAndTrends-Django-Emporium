@@ -8,7 +8,6 @@
       <a href="{% url 'web:delivery' %}">Доставка, оплата и возврат</a>
       <a href="{% url 'web:offer' %}">Публичная оферта</a>
       <a href="{% url 'web:privacy' %}">Политика обработки персональных данных</a>
-      <a href="/app/">Приложение для iPhone</a>
       {% if android_apk_url %}<a href="{{ android_apk_url }}">Приложение для Android</a>{% endif %}
     </nav>
     {% if seller.name %}

@@ -1,8 +1,8 @@
 # Продакшен: `./deploy.sh` (он же — обновление после `git pull`). Настройки — в .env
 # (шаблон .env.prod.example). Наружу открыты только 80 и 443 (Caddy, автоматический HTTPS).
 #
-#   caddy      — HTTPS (Let's Encrypt), веб-версия приложения /app/, панель /panel/,
-#                статика и фото товаров; остальное (веб-витрина, API) — в app
+#   caddy      — HTTPS (Let's Encrypt), панель /panel/, статика и фото товаров;
+#                остальное (веб-витрина, API) — в app
 #   app        — Django + gunicorn; при старте: миграции, администратор, демо-каталог
 #   worker     — фоновые задачи (письма, возвраты)
 #   scheduler  — периодические задачи (автоотмена неоплаченных, сверка платежей)
@@ -41,7 +41,7 @@ x-app: &app
     NUM_PROXIES: "1"
     # Возврат со страницы оплаты: в приложение (didishop://) и на веб-витрину.
     PAYMENTS_RETURN_URL_PREFIXES: didishop://,${RETURN_URL_PREFIXES:?Запускайте через ./deploy.sh}
-    PAYMENTS_DEFAULT_RETURN_URL: https://${DOMAIN}/app/orders/{number}
+    PAYMENTS_DEFAULT_RETURN_URL: https://${DOMAIN}/orders/{number}/
     # Основной адрес веб-витрины: canonical, sitemap.xml, Open Graph (прежние адреса работают,
     # но поисковики видят один).
     SITE_URL: https://${DOMAIN}
@@ -116,9 +116,6 @@ services:
     build:
       context: .
       dockerfile: deploy/edge.Dockerfile
-      args:
-        # Ссылка «Скачать приложение для Android» в веб-версии (пусто — не показывать).
-        ANDROID_APK_URL: ${ANDROID_APK_URL:-}
     image: didi-shop-edge:latest
     restart: unless-stopped
     logging: *logging
