@@ -278,6 +278,9 @@
     var action = localPath(new URL(form.getAttribute("action") || location.href, location.href).pathname);
     var line = action.match(/^\/cart\/line\/(\d+)\/$/);
 
+    if (event.submitter && event.submitter.hasAttribute("data-buy-now")) {
+      return toast("«Купить сейчас» в превью не оформляет заказ — добавьте в корзину");
+    }
     if (form.hasAttribute("data-buy")) return addToCart(form);
     if (line) return changeLine(form, line[1]);
     if (form.hasAttribute("data-checkout") && !ROOM) return placeOrder(form);

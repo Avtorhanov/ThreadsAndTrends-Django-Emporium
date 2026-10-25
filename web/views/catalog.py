@@ -26,6 +26,7 @@ from store.services.storefront import (
     filter_products,
 )
 
+from .. import cart as web_cart
 from .. import catalog_cache
 from ..forms import CatalogFilterForm
 from ..seo import absolute_url, product_json_ld
@@ -221,6 +222,7 @@ def product(request, slug: str):
     in_stock = any(size["available"] for size in sizes)
     single = variants[0] if len(variants) == 1 and not variants[0].size else None
     images = list(found.images.all())
+    in_cart = web_cart.quantities(request).get(found.pk, 0)
     ask = []
     if found.price_on_request:
         url = absolute_url(request, reverse("web:product", args=[found.slug]))
@@ -231,6 +233,7 @@ def product(request, slug: str):
         {
             "product": found,
             "ask_links": ask,
+            "in_cart": in_cart,
             "images": images,
             "sizes": sizes,
             "single_variant": single,

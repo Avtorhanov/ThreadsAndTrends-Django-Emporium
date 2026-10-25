@@ -7,7 +7,7 @@
 
 from django.db.models import Sum
 
-from store.models import CartItem
+from store.models import CartItem, ProductVariant
 from store.services import cart as cart_service
 from store.services.cart import CartSummary, LineInput, MergeNotice
 
@@ -60,6 +60,45 @@ def count(request) -> int:
     if SESSION_KEY not in getattr(request, "session", {}):
         return 0
     return sum(line.quantity for line in _read_session(request))
+
+
+def quantities(request) -> dict[int, int]:
+    """Сколько единиц каждого товара в корзине: {product_id: штук} — для значка «В корзине»."""
+    if _is_customer(request):
+        rows = (
+            CartItem.objects.filter(cart__owner=request.user)
+            .values("variant__product_id")
+            .annotate(n=Sum("quantity"))
+            .values_list("variant__product_id", "n")
+        )
+        return dict(rows)
+    if SESSION_KEY not in getattr(request, "session", {}):
+        return {}
+    lines = _read_session(request)
+    products = dict(
+        ProductVariant.all_objects.filter(pk__in=[line.variant_id for line in lines]).values_list(
+            "pk", "product_id"
+        )
+    )
+    result: dict[int, int] = {}
+    for line in lines:
+        if line.variant_id in products:
+            product_id = products[line.variant_id]
+            result[product_id] = result.get(product_id, 0) + line.quantity
+    return result
+
+
+def product_slugs(request) -> list[str]:
+    """Slug товаров в корзине (один запрос): сетки товаров общие для всех (кэш), метку
+    «В корзине» на карточки ставит site.js."""
+    if _is_customer(request):
+        items = CartItem.objects.filter(cart__owner=request.user)
+        return list(items.values_list("variant__product__slug", flat=True).distinct())
+    if SESSION_KEY not in getattr(request, "session", {}):
+        return []
+    ids = [line.variant_id for line in _read_session(request)]
+    variants = ProductVariant.all_objects.filter(pk__in=ids)
+    return list(variants.values_list("product__slug", flat=True).distinct())
 
 
 def add(request, variant_id: int, quantity: int = 1) -> None:

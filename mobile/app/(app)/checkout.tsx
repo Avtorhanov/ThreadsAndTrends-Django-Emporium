@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ApiError } from "../../src/api/errors";
@@ -30,6 +30,13 @@ import {
 } from "../../src/orders/orderService";
 
 export default function CheckoutScreen() {
+  // «Купить сейчас» из карточки товара: ?variant=<id>&qty=<n> — только эта позиция.
+  const params = useLocalSearchParams<{ variant?: string; qty?: string }>();
+  const buyNow = useMemo(() => {
+    const variant = Number(params.variant);
+    if (!Number.isInteger(variant) || variant <= 0) return undefined;
+    return { variant_id: variant, quantity: Math.max(1, Number(params.qty) || 1) };
+  }, [params.variant, params.qty]);
   const { user } = useAuth();
   const { refresh: refreshCart } = useCart();
   const [preview, setPreview] = useState<CheckoutPreview | null>(null);
@@ -48,7 +55,7 @@ export default function CheckoutScreen() {
   const load = useCallback(async () => {
     setLoadError(null);
     try {
-      const data = await orderService.preview();
+      const data = await orderService.preview(buyNow);
       setPreview(data);
       setDelivery((current) => current ?? data.delivery_options[0]?.method ?? null);
       setPayment((current) => current ?? data.payment_methods[0] ?? null);
@@ -62,7 +69,7 @@ export default function CheckoutScreen() {
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : "Не удалось загрузить данные заказа.");
     }
-  }, [user]);
+  }, [user, buyNow]);
 
   useEffect(() => {
     void load();
@@ -87,6 +94,7 @@ export default function CheckoutScreen() {
           delivery_address: delivery === "courier" ? address : "",
           comment,
           expected_total_kopecks: total,
+          buy_now: buyNow ?? null,
         },
         idempotencyKey.current,
       );
@@ -124,9 +132,11 @@ export default function CheckoutScreen() {
       <Screen>
         <Message
           text={
-            preview.cart.items.length === 0
-              ? "Корзина пуста."
-              : "В корзине есть недоступные товары. Исправьте корзину, чтобы оформить заказ."
+            buyNow
+              ? "Товар сейчас недоступен для заказа."
+              : preview.cart.items.length === 0
+                ? "Корзина пуста."
+                : "В корзине есть недоступные товары. Исправьте корзину, чтобы оформить заказ."
           }
         />
         <Button title="Вернуться в корзину" variant="secondary" onPress={() => router.back()} />

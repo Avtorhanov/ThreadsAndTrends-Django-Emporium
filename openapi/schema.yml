@@ -706,6 +706,199 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminArticleDetail'
           description: ''
+  /api/v1/admin/content/blocks/:
+    get:
+      operationId: admin_content_blocks_list
+      description: |-
+        Блоки разделов «Контакты», «Помощь» и подвала. Первое изменение раздела переносит его
+        значения по умолчанию в БД (customize) — дальше блоки меняются по id.
+      parameters:
+      - in: query
+        name: area
+        schema:
+          type: string
+          enum:
+          - contacts
+          - footer
+          - help
+        required: true
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminBlock'
+          description: ''
+    post:
+      operationId: admin_content_blocks_create
+      description: |-
+        Блоки разделов «Контакты», «Помощь» и подвала. Первое изменение раздела переносит его
+        значения по умолчанию в БД (customize) — дальше блоки меняются по id.
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminBlockRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBlock'
+          description: ''
+  /api/v1/admin/content/blocks/{id}/:
+    patch:
+      operationId: admin_content_blocks_partial_update
+      description: |-
+        Блоки разделов «Контакты», «Помощь» и подвала. Первое изменение раздела переносит его
+        значения по умолчанию в БД (customize) — дальше блоки меняются по id.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Блок сайта.
+        required: true
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminBlockUpdateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBlock'
+          description: ''
+    delete:
+      operationId: admin_content_blocks_destroy
+      description: |-
+        Блоки разделов «Контакты», «Помощь» и подвала. Первое изменение раздела переносит его
+        значения по умолчанию в БД (customize) — дальше блоки меняются по id.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Блок сайта.
+        required: true
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/content/blocks/customize/:
+    post:
+      operationId: admin_content_blocks_customize
+      description: 'Перенести раздел в БД (идемпотентно) — ответ: блоки с id в порядке
+        показа.'
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminBlockAreaRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminBlock'
+          description: ''
+  /api/v1/admin/content/blocks/reorder/:
+    post:
+      operationId: admin_content_blocks_reorder
+      description: |-
+        Блоки разделов «Контакты», «Помощь» и подвала. Первое изменение раздела переносит его
+        значения по умолчанию в БД (customize) — дальше блоки меняются по id.
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminBlockReorderRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminBlock'
+          description: ''
+  /api/v1/admin/content/texts/{key}/:
+    put:
+      operationId: admin_content_texts_update
+      description: 'Текст витрины по ключу: PUT — сохранить (пусто — скрыть), DELETE
+        — вернуть исходный.'
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminSiteTextRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSiteText'
+          description: ''
+    delete:
+      operationId: admin_content_texts_reset
+      description: 'Текст витрины по ключу: PUT — сохранить (пусто — скрыть), DELETE
+        — вернуть исходный.'
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/admin/customers/:
     get:
       operationId: admin_customers_list
@@ -1574,8 +1767,9 @@ paths:
           description: ''
     post:
       operationId: orders_create
-      description: Оформить заказ из всей корзины. Ошибки корзины (empty_cart, cart_changed)
-        и изменение суммы (total_changed) — 400 с текстом для покупателя.
+      description: Оформить заказ из всей корзины или одну позицию buy_now (корзина
+        не меняется). Ошибки корзины (empty_cart, cart_changed) и изменение суммы
+        (total_changed) — 400 с текстом для покупателя.
       parameters:
       - in: header
         name: Idempotency-Key
@@ -1713,7 +1907,18 @@ paths:
       operationId: orders_checkout_preview
       description: 'Данные экрана оформления: корзина (тот же расчёт, что и в заказе),
         способы доставки со стоимостью, способы оплаты и получатель из последнего
-        заказа.'
+        заказа. С variant — одна позиция «Купить сейчас» вместо корзины.'
+      parameters:
+      - in: query
+        name: quantity
+        schema:
+          type: integer
+        description: '«Купить сейчас»: количество (1)'
+      - in: query
+        name: variant
+        schema:
+          type: integer
+        description: '«Купить сейчас»: id варианта'
       tags:
       - orders
       security:
@@ -1919,6 +2124,96 @@ components:
           type: boolean
       required:
       - title
+    AdminBlock:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        area:
+          allOf:
+          - $ref: '#/components/schemas/BlockAreaEnum'
+          title: Раздел
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/BlockKindEnum'
+          title: Тип
+        title:
+          type: string
+          title: Название
+          maxLength: 80
+        value:
+          type: string
+          title: Ссылка или значение
+          maxLength: 300
+        note:
+          type: string
+          title: Подпись
+          maxLength: 160
+        icon:
+          type: string
+          title: Значок
+          maxLength: 20
+        position:
+          type: integer
+          readOnly: true
+          title: Порядок
+      required:
+      - area
+      - id
+      - position
+      - value
+    AdminBlockAreaRequest:
+      type: object
+      properties:
+        area:
+          $ref: '#/components/schemas/BlockAreaEnum'
+      required:
+      - area
+    AdminBlockReorderRequest:
+      type: object
+      properties:
+        area:
+          $ref: '#/components/schemas/BlockAreaEnum'
+        ids:
+          type: array
+          items:
+            type: integer
+          description: Все id блоков раздела в новом порядке
+      required:
+      - area
+      - ids
+    AdminBlockRequest:
+      type: object
+      properties:
+        area:
+          allOf:
+          - $ref: '#/components/schemas/BlockAreaEnum'
+          title: Раздел
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/BlockKindEnum'
+          title: Тип
+        title:
+          type: string
+          title: Название
+          maxLength: 80
+        value:
+          type: string
+          minLength: 1
+          title: Ссылка или значение
+          maxLength: 300
+        note:
+          type: string
+          title: Подпись
+          maxLength: 160
+        icon:
+          type: string
+          title: Значок
+          maxLength: 20
+      required:
+      - area
+      - value
     AdminCategory:
       type: object
       properties:
@@ -2571,6 +2866,28 @@ components:
       - reason_display
       - status
       - status_display
+    AdminSiteText:
+      type: object
+      properties:
+        key:
+          type: string
+          readOnly: true
+        value:
+          type: string
+          description: Обычный текст; пусто — текст скрыт на сайте
+          maxLength: 2000
+      required:
+      - key
+      - value
+    AdminSiteTextRequest:
+      type: object
+      properties:
+        value:
+          type: string
+          description: Обычный текст; пусто — текст скрыт на сайте
+          maxLength: 2000
+      required:
+      - value
     AdminSummary:
       type: object
       description: Сводка панели; периоды — от полуночи по времени магазина.
@@ -2811,6 +3128,46 @@ components:
     BlankEnum:
       enum:
       - ''
+    BlockAreaEnum:
+      enum:
+      - contacts
+      - help
+      - footer
+      type: string
+      description: |-
+        * `contacts` - Контакты
+        * `help` - Помощь
+        * `footer` - Подвал
+    BlockKindEnum:
+      enum:
+      - link
+      - whatsapp
+      - telegram
+      - vk
+      - phone
+      - email
+      type: string
+      description: |-
+        * `link` - Ссылка
+        * `whatsapp` - WhatsApp
+        * `telegram` - Telegram
+        * `vk` - ВКонтакте
+        * `phone` - Телефон
+        * `email` - Почта
+    BuyNowRequest:
+      type: object
+      description: '«Купить сейчас»: одна позиция мимо корзины (корзина не меняется).'
+      properties:
+        variant_id:
+          type: integer
+          minimum: 1
+        quantity:
+          type: integer
+          maximum: 99
+          minimum: 1
+          default: 1
+      required:
+      - variant_id
     Cart:
       type: object
       properties:
@@ -3244,6 +3601,11 @@ components:
           nullable: true
           description: Итог, который видел покупатель; если сумма изменилась — 400
             (total_changed)
+        buy_now:
+          allOf:
+          - $ref: '#/components/schemas/BuyNowRequest'
+          nullable: true
+          description: '«Купить сейчас»: оформить только эту позицию, корзина не меняется'
       required:
       - delivery_method
       - payment_method
@@ -3884,6 +4246,24 @@ components:
           maxLength: 20000
         is_published:
           type: boolean
+    PatchedAdminBlockUpdateRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/BlockKindEnum'
+        title:
+          type: string
+          maxLength: 80
+        value:
+          type: string
+          minLength: 1
+          maxLength: 300
+        note:
+          type: string
+          maxLength: 160
+        icon:
+          type: string
+          maxLength: 20
     PatchedAdminCategoryRequest:
       type: object
       properties:

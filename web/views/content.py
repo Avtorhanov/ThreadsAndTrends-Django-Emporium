@@ -3,6 +3,7 @@
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404, render
 
+from content import site
 from content.contacts import ContactKind, get_contacts
 from content.models import Article, ArticleImage
 
@@ -26,8 +27,16 @@ def _articles():
 
 
 def contacts(request):
+    # Сырые значения блоков (номер, @имя, своя подпись) — для правки администратором на сайте.
+    raw = site.blocks("contacts")
     channels = [
-        {"contact": contact, "icon": CONTACT_ICONS[contact.kind]} for contact in get_contacts()
+        {
+            "contact": contact,
+            "icon": CONTACT_ICONS[contact.kind],
+            "value": raw[contact.index].value,
+            "note": raw[contact.index].note,
+        }
+        for contact in get_contacts()
     ]
     return render(
         request,

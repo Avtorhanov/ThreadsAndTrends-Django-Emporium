@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from content.contacts import ContactKind
-from content.models import Article, ArticleImage
+from content.models import Article, ArticleImage, Block, BlockArea, BlockKind
 from content.services import MAX_BODY_LENGTH
 from store.api.serializers import absolute_url
 
@@ -121,4 +121,43 @@ class AdminArticleImageUploadSerializer(serializers.Serializer):
 class AdminArticleImageReorderSerializer(serializers.Serializer):
     ids = serializers.ListField(
         child=serializers.IntegerField(), help_text="Все id фото статьи в новом порядке"
+    )
+
+
+# --- Тексты и блоки витрины (правка на сайте) ---
+
+
+class AdminSiteTextSerializer(serializers.Serializer):
+    key = serializers.CharField(read_only=True)
+    value = serializers.CharField(
+        allow_blank=True,
+        max_length=2000,
+        trim_whitespace=False,
+        help_text="Обычный текст; пусто — текст скрыт на сайте",
+    )
+
+
+class AdminBlockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Block
+        fields = ["id", "area", "kind", "title", "value", "note", "icon", "position"]
+        read_only_fields = ["id", "position"]
+
+
+class AdminBlockUpdateSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=BlockKind.choices, required=False)
+    title = serializers.CharField(max_length=80, required=False, allow_blank=True)
+    value = serializers.CharField(max_length=300, required=False)
+    note = serializers.CharField(max_length=160, required=False, allow_blank=True)
+    icon = serializers.CharField(max_length=20, required=False, allow_blank=True)
+
+
+class AdminBlockAreaSerializer(serializers.Serializer):
+    area = serializers.ChoiceField(choices=BlockArea.choices)
+
+
+class AdminBlockReorderSerializer(serializers.Serializer):
+    area = serializers.ChoiceField(choices=BlockArea.choices)
+    ids = serializers.ListField(
+        child=serializers.IntegerField(), help_text="Все id блоков раздела в новом порядке"
     )

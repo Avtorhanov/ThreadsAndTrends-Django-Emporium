@@ -33,6 +33,150 @@
     if (/\/(panel|admin)\//.test(path)) event.viewTransition.skipTransition();
   });
 
+  // --- Быстрые переходы: страница начинает грузиться при наведении или касании ссылки ---
+  // (браузер кладёт ответ в кэш предзагрузки; к моменту отпускания пальца она уже в пути).
+  var prefetched = {};
+  var saveData = navigator.connection && navigator.connection.saveData;
+  function prefetch(event) {
+    var link = event.target.closest && event.target.closest("a[href]");
+    if (!link || saveData || link.target || link.hasAttribute("download")) return;
+    var url = new URL(link.href, location.href);
+    if (url.origin !== location.origin || url.hash || url.href === location.href) return;
+    // Панель и резервная админка — другие приложения; API и выход не предзагружаются.
+    if (/^\/(panel|admin|api|media)\//.test(url.pathname) || /\/logout\//.test(url.pathname)) return;
+    if (prefetched[url.href]) return;
+    prefetched[url.href] = true;
+    var hint = document.createElement("link");
+    hint.rel = "prefetch";
+    hint.href = url.href;
+    document.head.appendChild(hint);
+  }
+  document.addEventListener("pointerover", prefetch, { passive: true });
+  document.addEventListener("touchstart", prefetch, { passive: true });
+
+  // --- Корзина: «+/−» без ожидания сервера ---
+  // Число и сумма позиции меняются сразу; на сервер уходит один запрос с итоговым количеством
+  // через 300 мс после последнего нажатия. Ответ обновляет только эту позицию, итог и счётчики
+  // (hx-swap-oob) — остальная корзина не перерисовывается. Без JS — обычные формы.
+  function formatRub(kopecks) {
+    var rubles = String(Math.floor(kopecks / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0");
+    var rest = kopecks % 100;
+    return rubles + (rest ? "," + (rest < 10 ? "0" : "") + rest : "") + "\u00a0₽";
+  }
+  document.addEventListener(
+    "submit",
+    function (event) {
+      var form = event.target;
+      var step = parseInt(form.getAttribute("data-step"), 10);
+      var stepper = form.closest("[data-stepper]");
+      if (!step || !stepper || !window.htmx) return;
+      event.preventDefault();
+      event.stopImmediatePropagation(); // htmx не отправляет каждое нажатие отдельно
+      var value = stepper.querySelector(".stepper__value");
+      var max = parseInt(stepper.getAttribute("data-max"), 10) || 1;
+      var next = Math.min(max, Math.max(1, parseInt(value.textContent, 10) + step));
+      value.textContent = String(next);
+      var minus = stepper.querySelector('[data-step="-1"] button');
+      var plus = stepper.querySelector('[data-step="1"] button');
+      if (minus) minus.disabled = next <= 1;
+      if (plus) plus.disabled = next >= max;
+      var unit = parseInt(stepper.getAttribute("data-unit"), 10);
+      var price = stepper.parentNode.querySelector(".line__price");
+      if (unit && price) price.textContent = formatRub(unit * next);
+      var token = form.querySelector('input[name="csrfmiddlewaretoken"]');
+      var values = { quantity: String(next), csrfmiddlewaretoken: token ? token.value : "" };
+      var action = form.getAttribute("action");
+      clearTimeout(stepper._send);
+      pendingSteps[action] = values;
+      stepper._send = setTimeout(function () {
+        delete pendingSteps[action];
+        window.htmx.ajax("POST", action, { source: form, swap: "none", values: values });
+      }, 300);
+    },
+    true,
+  );
+  // Переход сразу после «+/−» (например, «Оформить заказ»): сначала отправить отложенное.
+  var pendingSteps = {};
+  document.addEventListener(
+    "click",
+    function (event) {
+      var link = event.target.closest && event.target.closest("a[href]");
+      var actions = Object.keys(pendingSteps);
+      if (!link || !actions.length || link.target) return;
+      event.preventDefault();
+      Promise.all(
+        actions.map(function (action) {
+          var body = new URLSearchParams(pendingSteps[action]);
+          delete pendingSteps[action];
+          return fetch(action, { method: "POST", body: body, credentials: "same-origin", headers: { "HX-Request": "true" } });
+        }),
+      ).finally(function () {
+        location.href = link.href;
+      });
+    },
+    true,
+  );
+
+  // --- «В корзине»: метка на карточках товаров, которые уже в корзине ---
+  // Сетки товаров кэшируются общими для всех, поэтому список товаров корзины приходит
+  // отдельно (#cart-state) и метка ставится здесь.
+  var cartState = document.getElementById("cart-state");
+  if (cartState) {
+    var inCart = {};
+    try {
+      JSON.parse(cartState.textContent).forEach(function (slug) { inCart[slug] = true; });
+    } catch (e) {
+      inCart = {};
+    }
+    var markCards = function () {
+      document.querySelectorAll("a.card[href]").forEach(markCard);
+    };
+    var markCard = function (card) {
+      var match = card.getAttribute("href").match(/\/product\/([^/]+)\/$/);
+      var img = card.querySelector(".card__img");
+      if (!match || !img || !inCart[match[1]] || img.querySelector(".incart")) return;
+      var mark = document.createElement("span");
+      mark.className = "incart";
+      mark.innerHTML = '<svg class="ic" width="14" height="14" aria-hidden="true"><use href="#i-bag"/></svg>В корзине';
+      img.appendChild(mark);
+    };
+    markCards();
+    document.addEventListener("htmx:afterSettle", markCards); // подгруженные страницы ленты
+  }
+
+  // --- Лента категорий: выбранная категория видна целиком ---
+  // Положение ленты сохраняется между страницами, а выбранный сегмент (и нажатый — сразу при
+  // нажатии) докручивается в поле зрения: название не остаётся обрезанным у края.
+  var CATS_KEY = "didi:cats-x";
+  function revealSeg(strip, seg, smooth) {
+    var pad = 16;
+    var left = seg.offsetLeft - pad;
+    var right = seg.offsetLeft + seg.offsetWidth + pad - strip.clientWidth;
+    var target = strip.scrollLeft;
+    if (left < strip.scrollLeft) target = left;
+    else if (right > strip.scrollLeft) target = right;
+    if (target === strip.scrollLeft) return target;
+    if (smooth && !reduced.matches && strip.scrollTo) strip.scrollTo({ left: target, behavior: "smooth" });
+    else strip.scrollLeft = target;
+    return target;
+  }
+  document.querySelectorAll(".cats").forEach(function (strip) {
+    try {
+      var saved = sessionStorage.getItem(CATS_KEY);
+      if (saved !== null) strip.scrollLeft = parseInt(saved, 10) || 0;
+    } catch (e) {
+      // хранилище недоступно — просто без запоминания
+    }
+    var on = strip.querySelector(".seg.is-on");
+    if (on) revealSeg(strip, on, false);
+    strip.addEventListener("click", function (event) {
+      var seg = event.target.closest(".seg");
+      if (!seg) return;
+      var target = revealSeg(strip, seg, true);
+      try { sessionStorage.setItem(CATS_KEY, String(Math.max(0, target))); } catch (e) { /* без запоминания */ }
+    });
+  });
+
   // --- Шапка: сворачивание с гистерезисом 24/8 px (как в приложении) ---
   var header = document.querySelector("[data-header]");
   var quick = document.querySelector("[data-quick]");

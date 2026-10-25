@@ -9,6 +9,7 @@ from payments.api.serializers import AdminPaymentSerializer
 from payments.models import PaymentStatus, RefundStatus
 from store.api.cart_serializers import CartSerializer
 from store.api.serializers import absolute_url
+from store.services.cart import LineInput
 
 # --- Экран оформления ---
 
@@ -38,6 +39,16 @@ class CheckoutPreviewSerializer(serializers.Serializer):
     defaults = RecipientDefaultsSerializer(help_text="Данные получателя из последнего заказа")
 
 
+class BuyNowSerializer(serializers.Serializer):
+    """«Купить сейчас»: одна позиция мимо корзины (корзина не меняется)."""
+
+    variant_id = serializers.IntegerField(min_value=1)
+    quantity = serializers.IntegerField(min_value=1, max_value=99, default=1)
+
+    def to_line(self) -> LineInput:
+        return LineInput(self.validated_data["variant_id"], self.validated_data["quantity"])
+
+
 class CheckoutInputSerializer(serializers.Serializer):
     delivery_method = serializers.ChoiceField(choices=DeliveryMethod.choices)
     payment_method = serializers.ChoiceField(choices=PaymentMethod.choices)
@@ -57,9 +68,19 @@ class CheckoutInputSerializer(serializers.Serializer):
         allow_null=True,
         help_text="Итог, который видел покупатель; если сумма изменилась — 400 (total_changed)",
     )
+    buy_now = BuyNowSerializer(
+        required=False,
+        allow_null=True,
+        help_text="«Купить сейчас»: оформить только эту позицию, корзина не меняется",
+    )
 
     def to_input(self) -> CheckoutInput:
-        return CheckoutInput(**self.validated_data)
+        data = {k: v for k, v in self.validated_data.items() if k != "buy_now"}
+        return CheckoutInput(**data)
+
+    def buy_now_line(self) -> LineInput | None:
+        raw = self.validated_data.get("buy_now")
+        return LineInput(raw["variant_id"], raw["quantity"]) if raw else None
 
 
 # --- Заказ ---

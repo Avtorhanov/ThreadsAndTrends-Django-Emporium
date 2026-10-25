@@ -1,0 +1,11 @@
+{% load money %}  <aside class="summary" id="cart-summary"{% if oob %} hx-swap-oob="true"{% endif %}>
+    <p class="summary__row"><span>Товары, {{ cart.items_count }} шт.</span><span>{{ cart.total_kopecks|rub }}&nbsp;₽</span></p>
+    <p class="summary__hint">Доставка курьером — при оформлении, бесплатно от {{ free_delivery_from|rub }}&nbsp;₽.</p>
+    <p class="summary__row summary__total"><span>Итого</span><span>{{ cart.total_kopecks|rub }}&nbsp;₽</span></p>
+    {% if cart.can_checkout %}
+    <a class="cta cta--link" href="{% url 'web:checkout' %}"><span class="cta__label">Оформить заказ</span><span class="cta__price">{{ cart.total_kopecks|rub }}&nbsp;₽</span></a>
+    {% if not user.is_authenticated %}<p class="summary__hint">Для оформления нужно войти — корзина сохранится.</p>{% endif %}
+    {% else %}
+    <button class="cta" type="button" disabled><span class="cta__label">Уберите недоступные товары</span></button>
+    {% endif %}
+  </aside>

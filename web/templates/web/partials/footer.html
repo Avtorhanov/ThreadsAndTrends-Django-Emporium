@@ -1,14 +1,14 @@
-<footer class="foot">
+{% load storefront %}<footer class="foot">
   <div class="foot__inner">
     <div class="foot__brand">
       <span class="logo logo--sm" aria-hidden="true">DiDi</span>
       <span class="word word--sm" aria-label="DiDi shop"><span class="word__accent">shop</span></span>
     </div>
-    <nav class="foot__links" aria-label="Покупателям">
-      <a href="{% url 'web:delivery' %}">Доставка, оплата и возврат</a>
-      <a href="{% url 'web:offer' %}">Публичная оферта</a>
-      <a href="{% url 'web:privacy' %}">Политика обработки персональных данных</a>
-      {% if android_apk_url %}<a href="{{ android_apk_url }}">Приложение для Android</a>{% endif %}
+    {% site_blocks "footer" as footer_blocks %}
+    <nav class="foot__links" aria-label="Покупателям"{% blocks_attrs "footer" %}>
+      {% for block in footer_blocks %}<a href="{{ block.value }}" data-block-index="{{ forloop.counter0 }}"{% if block.pk %} data-block-id="{{ block.pk }}"{% endif %} data-title="{{ block.title }}" data-value="{{ block.value }}">{{ block.title }}</a>
+      {% endfor %}
+      {% if android_apk_url %}<a href="{{ android_apk_url }}">{% sitetext "footer.android" %}Приложение для Android{% endsitetext %}</a>{% endif %}
     </nav>
     {% if seller.name %}
     <p class="foot__seller">
@@ -17,6 +17,6 @@
       {% if seller.email or seller.phone %}<br>{% if seller.email %}<a href="mailto:{{ seller.email }}">{{ seller.email }}</a>{% endif %}{% if seller.email and seller.phone %} · {% endif %}{% if seller.phone %}<a href="tel:{{ seller.phone }}">{{ seller.phone }}</a>{% endif %}{% endif %}
     </p>
     {% endif %}
-    <p class="foot__copy">© {% now "Y" %} DiDi-shop</p>
+    <p class="foot__copy">© {% now "Y" %} {% sitetext "footer.copy" %}DiDi-shop{% endsitetext %}</p>
   </div>
 </footer>

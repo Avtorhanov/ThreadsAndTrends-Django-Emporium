@@ -19,6 +19,7 @@ urlpatterns = [
     # Корзина
     path("cart/", cart.cart_page, name="cart"),
     path("cart/add/", cart.add, name="cart_add"),
+    path("buy-now/", cart.buy_now, name="buy_now"),
     path("cart/line/<int:variant_id>/", cart.line, name="cart_line"),
     path("cart/ack-prices/", cart.ack_prices, name="cart_ack_prices"),
     # Оформление и заказы
