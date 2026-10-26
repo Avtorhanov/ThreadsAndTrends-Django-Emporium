@@ -23,14 +23,24 @@ import { makeStyles, useTheme } from "../theme/ThemeProvider";
 import { ease } from "../theme/motion";
 import { radius, size } from "../theme/tokens";
 
-// Размеры развёрнутой шапки (макет): отступ сверху, строка кнопок, поиск, сегменты, отступ снизу.
+// Размеры развёрнутой шапки (макет): отступ сверху, строка кнопок, сегменты, отступ снизу.
+// Поиск — кнопкой в строке: вверху ленты поле с фильтрами выпадает под строкой (DROP),
+// в свёрнутой шапке — выезжает влево из кнопки.
 const TOP = 8;
 const ROW = size.headerButton;
 const GAP = 12;
 const SEARCH = size.searchHeight;
+const CHIPS = 36;
+const DROP = 8 + SEARCH + 10 + CHIPS + 8;
 const CATS = size.segHeight + 8;
 const BOTTOM = 14;
 const BOTTOM_COMPACT = 8;
+
+const QUICK_FILTERS: { label: string; params: Record<string, string> }[] = [
+  { label: "Сначала дешевле", params: { sort: "price_asc" } },
+  { label: "Сначала дороже", params: { sort: "price_desc" } },
+  { label: "В наличии", params: { inStock: "1" } },
+];
 
 // Запас под тени поля и сегментов внутри обрезающей обёртки.
 const SHADOW_ROOM = 12;
@@ -52,7 +62,7 @@ function useCollapsible(progress: SharedValue<number>, full: number) {
 /** Полная высота развёрнутой шапки — отступ ленты сверху. */
 export function useHeaderHeight(): number {
   const insets = useSafeAreaInsets();
-  return insets.top + TOP + ROW + GAP + SEARCH + GAP + CATS + BOTTOM;
+  return insets.top + TOP + ROW + GAP + CATS + BOTTOM;
 }
 
 type Props = {
@@ -66,9 +76,9 @@ type Props = {
 };
 
 /**
- * Стеклянная шапка каталога: при прокрутке поиск и категории сворачиваются, название
- * уменьшается, кнопки мельчают, справа появляется лаймовая кнопка поиска. Она не прокручивает
- * ленту и не меняет высоту шапки: поле ввода выезжает из кнопки поверх строки шапки.
+ * Стеклянная шапка каталога: логотип, лаймовая кнопка поиска, тема, корзина и категории.
+ * Вверху ленты поиск с фильтрами выпадает под строкой кнопок; при прокрутке категории
+ * сворачиваются, название уменьшается, а поле поиска выезжает из кнопки поверх строки шапки.
  */
 export function GlassHeader({ progress, search, onSearchChange, onTitlePress, categories }: Props) {
   const s = useStyles();
@@ -78,11 +88,14 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
   const reduced = useReducedMotion();
   const [focused, setFocused] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
+  const [dropOpen, setDropOpen] = useState(false);
   const [rowWidth, setRowWidth] = useState(0);
   // Свёрнутая шапка: поле поиска и категории не принимают касания, фокус и не читаются диктором.
   const [compact, setCompact] = useState(false);
   const quickInput = useRef<TextInput>(null);
   const quick = useSharedValue(0);
+  const drop = useSharedValue(0);
+  const dropInput = useRef<TextInput>(null);
 
   const submit = () => {
     const q = search.trim();
@@ -90,6 +103,15 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
   };
 
   const openQuick = () => setQuickOpen(true);
+  const onSearchPress = () => {
+    if (compact) openQuick();
+    else setDropOpen((open) => !open);
+  };
+  const quickFilter = (extra: Record<string, string>) => {
+    const q = search.trim();
+    setDropOpen(false);
+    router.navigate({ pathname: "/search", params: { ...(q ? { q } : {}), ...extra } });
+  };
   const closeQuick = () => {
     quickInput.current?.blur();
     setQuickOpen(false);
@@ -102,6 +124,14 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
       return () => clearTimeout(timer);
     }
   }, [quickOpen, reduced, quick]);
+  useEffect(() => {
+    drop.value = reduced ? Number(dropOpen) : withTiming(Number(dropOpen), { duration: 280, easing: ease.soft });
+    if (dropOpen) {
+      const timer = setTimeout(() => dropInput.current?.focus(), reduced ? 0 : 160);
+      return () => clearTimeout(timer);
+    }
+    dropInput.current?.blur();
+  }, [dropOpen, reduced, drop]);
   // Шапка развернулась (прокрутили к началу) — выехавшее поле убирается, видно полное поле поиска.
   useAnimatedReaction(
     () => progress.value < 0.5,
@@ -109,6 +139,7 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
       if (expanded === previous) return;
       runOnJS(setCompact)(!expanded);
       if (expanded && previous === false) runOnJS(setQuickOpen)(false);
+      if (!expanded) runOnJS(setDropOpen)(false);
     },
   );
   const hidden = {
@@ -128,12 +159,7 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
     return { width: side, height: side, borderRadius: interpolate(progress.value, [0, 1], [16, 13]) };
   });
   const wordmark = useAnimatedStyle(() => ({ fontSize: interpolate(progress.value, [0, 1], [24, 16]) }));
-  const searchButton = useAnimatedStyle(() => ({
-    width: interpolate(progress.value, [0, 1], [0, size.headerButtonCompact]),
-    marginRight: interpolate(progress.value, [0, 1], [-10, 0]),
-    opacity: progress.value,
-    transform: [{ scale: interpolate(progress.value, [0, 1], [0.6, 1]) }],
-  }));
+
   // Поле «быстрого поиска» растёт из лаймовой кнопки справа на всю строку шапки.
   const quickStyle = useAnimatedStyle(() => {
     const t = quick.value * progress.value;
@@ -143,8 +169,25 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
     };
   });
   const quickContent = useAnimatedStyle(() => ({ opacity: interpolate(quick.value, [0.5, 1], [0, 1], "clamp") }));
-  const searchStyle = useCollapsible(progress, SEARCH);
   const catsStyle = useCollapsible(progress, CATS);
+  // Выпадающий поиск: раскрывается только в развёрнутой шапке.
+  const dropStyle = useAnimatedStyle(() => {
+    const t = drop.value * (1 - progress.value);
+    return {
+      height: interpolate(t, [0, 1], [0, DROP + SHADOW_ROOM]),
+      marginTop: interpolate(t, [0, 1], [0, GAP]),
+      marginBottom: interpolate(t, [0, 1], [0, -SHADOW_ROOM]),
+      opacity: interpolate(t, [0, 0.6], [0, 1], "clamp"),
+      transform: [{ translateY: interpolate(t, [0, 1], [-8, 0]) }],
+    };
+  });
+  const dropShown = dropOpen && !compact;
+  const dropHidden = {
+    pointerEvents: dropShown ? ("auto" as const) : ("none" as const),
+    "aria-hidden": !dropShown,
+    accessibilityElementsHidden: !dropShown,
+    importantForAccessibility: dropShown ? ("auto" as const) : ("no-hide-descendants" as const),
+  };
 
   return (
     <Animated.View style={[s.header, container]}>
@@ -173,15 +216,16 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
           </Animated.Text>
         </Pressable>
         <View style={s.actions}>
-          <Animated.View style={[s.searchButtonWrap, searchButton]}>
+          <Animated.View style={[s.searchButtonWrap, button]}>
             <PressScale
               accessibilityRole="button"
-              accessibilityLabel="Открыть поиск"
-              onPress={openQuick}
+              accessibilityLabel="Поиск"
+              accessibilityState={{ expanded: dropShown || quickOpen }}
+              onPress={onSearchPress}
               scale={0.92}
-              style={s.searchButton}
+              style={[s.searchButton, dropShown && s.searchButtonOn]}
             >
-              <Icon name="search" size={21} color={c.onAccent} strokeWidth={2.2} />
+              <Icon name="search" size={21} color={dropShown ? c.segOnInk : c.onAccent} strokeWidth={2.2} />
             </PressScale>
           </Animated.View>
           <Animated.View style={[s.buttonWrap, button]}>
@@ -236,33 +280,49 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
         ) : null}
       </View>
 
-      <Animated.View {...hidden} style={[s.clip, searchStyle]}>
-        <View style={[s.search, focused && s.searchFocused]}>
-          <Icon name="search" size={20} color={c.muted} />
-          <TextInput
-            value={search}
-            onChangeText={onSearchChange}
-            onSubmitEditing={submit}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            placeholder="Футболка, кеды, панама…"
-            placeholderTextColor={c.muted}
-            selectionColor={c.brand}
-            accessibilityLabel="Поиск по каталогу"
-            returnKeyType="search"
-            autoCorrect={false}
-            maxLength={100}
-            style={s.searchInput}
-          />
-          <PressScale
-            accessibilityRole="button"
-            accessibilityLabel="Фильтры и сортировка"
-            onPress={() => router.navigate({ pathname: "/search", params: { filters: "1" } })}
-            hitSlop={2}
-            style={s.filter}
-          >
-            <Icon name="filter" size={18} color={c.onAccent} strokeWidth={2.2} />
-          </PressScale>
+      <Animated.View {...dropHidden} style={[s.clip, dropStyle]}>
+        <View style={s.drop}>
+          <View style={[s.search, focused && s.searchFocused]}>
+            <Icon name="search" size={20} color={c.muted} />
+            <TextInput
+              ref={dropInput}
+              value={search}
+              onChangeText={onSearchChange}
+              onSubmitEditing={submit}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              placeholder="Футболка, термос, плед…"
+              placeholderTextColor={c.muted}
+              selectionColor={c.brand}
+              accessibilityLabel="Поиск по каталогу"
+              returnKeyType="search"
+              autoCorrect={false}
+              maxLength={100}
+              style={s.searchInput}
+            />
+            <PressScale
+              accessibilityRole="button"
+              accessibilityLabel="Фильтры и сортировка"
+              onPress={() => router.navigate({ pathname: "/search", params: { filters: "1" } })}
+              hitSlop={2}
+              style={s.filter}
+            >
+              <Icon name="filter" size={18} color={c.onAccent} strokeWidth={2.2} />
+            </PressScale>
+          </View>
+          <View style={s.chips}>
+            {QUICK_FILTERS.map((chip) => (
+              <PressScale
+                key={chip.label}
+                accessibilityRole="button"
+                onPress={() => quickFilter(chip.params)}
+                scale={0.96}
+                style={s.chip}
+              >
+                <Text style={s.chipText}>{chip.label}</Text>
+              </PressScale>
+            ))}
+          </View>
         </View>
       </Animated.View>
 
@@ -360,15 +420,32 @@ const useStyles = makeStyles(({ c, shadow }) => ({
   word: { fontFamily: fonts.display700, letterSpacing: -0.5, color: c.ink },
   wordAccent: { color: c.brand },
   actions: { flexDirection: "row", alignItems: "center", gap: 10 },
-  searchButtonWrap: { height: size.headerButtonCompact, overflow: "hidden" },
+  searchButtonWrap: { overflow: "hidden", boxShadow: shadow.accentGlow },
   searchButton: {
-    width: size.headerButtonCompact,
-    height: size.headerButtonCompact,
-    borderRadius: 13,
+    width: "100%",
+    height: "100%",
     backgroundColor: c.accent,
     alignItems: "center",
     justifyContent: "center",
   },
+  searchButtonOn: { backgroundColor: c.segOnBg },
+  drop: {
+    gap: 10,
+    padding: 8,
+    borderRadius: radius.card,
+    backgroundColor: c.surface,
+    boxShadow: shadow.card,
+  },
+  chips: { flexDirection: "row", gap: 6, height: CHIPS },
+  chip: {
+    height: CHIPS,
+    paddingHorizontal: 12,
+    borderRadius: radius.seg,
+    backgroundColor: c.bg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chipText: { fontFamily: fonts.text800, fontSize: 13, color: c.ink },
   buttonWrap: { overflow: "visible" },
   buttonFill: { width: "100%", height: "100%" },
   clip: {
@@ -388,8 +465,7 @@ const useStyles = makeStyles(({ c, shadow }) => ({
     paddingLeft: 16,
     paddingRight: 6,
     borderRadius: radius.search,
-    backgroundColor: c.surface,
-    boxShadow: shadow.control,
+    backgroundColor: c.bg,
   },
   searchInput: {
     outlineWidth: 0,

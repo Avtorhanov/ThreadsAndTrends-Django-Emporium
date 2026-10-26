@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import type { ProductQuery } from "../../src/catalog/catalogService";
+import type { ProductQuery, ProductSort } from "../../src/catalog/catalogService";
 import { ProductCard } from "../../src/catalog/components";
 import {
   EMPTY_FILTERS,
@@ -21,6 +21,8 @@ import { parseRubles } from "../../src/lib/money";
 import { fonts } from "../../src/theme/fonts";
 import { makeStyles, useTheme } from "../../src/theme/ThemeProvider";
 import { radius, size, space } from "../../src/theme/tokens";
+
+const QUICK_SORTS: ProductSort[] = ["new", "price_asc", "price_desc"];
 
 /** Поля фильтра → параметры API (цены — копейки). Неверная цена не уходит в запрос. */
 function toQuery(category: string, draft: FiltersDraft): { query: ProductQuery; priceError: string | null } {
@@ -48,8 +50,19 @@ function toQuery(category: string, draft: FiltersDraft): { query: ProductQuery; 
 export default function SearchScreen() {
   const s = useStyles();
   const { c } = useTheme();
-  const params = useLocalSearchParams<{ q?: string; category?: string; filters?: string }>();
-  const [draft, setDraft] = useState<FiltersDraft>({ ...EMPTY_FILTERS, q: params.q ?? "" });
+  const params = useLocalSearchParams<{
+    q?: string;
+    category?: string;
+    filters?: string;
+    sort?: string;
+    inStock?: string;
+  }>();
+  const [draft, setDraft] = useState<FiltersDraft>({
+    ...EMPTY_FILTERS,
+    q: params.q ?? "",
+    sort: QUICK_SORTS.includes(params.sort as ProductSort) ? (params.sort as ProductSort) : "",
+    inStock: params.inStock === "1",
+  });
   const [category, setCategory] = useState(params.category ?? "");
   const [showFilters, setShowFilters] = useState(params.filters === "1");
   const input = useRef<TextInput>(null);
@@ -67,6 +80,14 @@ export default function SearchScreen() {
   useEffect(() => {
     if (params.filters === "1") setShowFilters(true);
   }, [params.filters]);
+  // Быстрые сортировки из выпадающего поиска шапки.
+  useEffect(() => {
+    const sort = QUICK_SORTS.includes(params.sort as ProductSort) ? (params.sort as ProductSort) : null;
+    if (sort) setDraft((prev) => ({ ...prev, sort }));
+  }, [params.sort]);
+  useEffect(() => {
+    if (params.inStock === "1") setDraft((prev) => ({ ...prev, inStock: true }));
+  }, [params.inStock]);
 
   // Запрос уходит после паузы во вводе, а не на каждую букву.
   const debounced = useDebouncedValue(draft, 400);

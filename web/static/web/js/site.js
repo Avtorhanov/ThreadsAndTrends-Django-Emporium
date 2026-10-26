@@ -180,6 +180,7 @@
   // --- Шапка: сворачивание с гистерезисом 24/8 px (как в приложении) ---
   var header = document.querySelector("[data-header]");
   var quick = document.querySelector("[data-quick]");
+  var drop = document.querySelector("[data-drop]");
   var quickOpenBtn = document.querySelector("[data-quick-open]");
   var fixedCompact = header && header.classList.contains("top--fixed");
   var COLLAPSE_AT = 24;
@@ -198,6 +199,8 @@
       more.inert = compact;
     }
     if (!compact) closeQuick(false);
+    else closeDrop(false);
+    if (quickOpenBtn && drop) quickOpenBtn.setAttribute("aria-controls", compact ? "quick-search" : "drop-search");
   }
 
   if (header && !fixedCompact) {
@@ -238,7 +241,37 @@
     quickTimer = setTimeout(function () { quick.hidden = true; }, reduced.matches ? 0 : 320);
     if (returnFocus && quickOpenBtn) quickOpenBtn.focus();
   }
-  if (quickOpenBtn) quickOpenBtn.addEventListener("click", openQuick);
+  // --- Выпадающий поиск: вверху каталога поле с фильтрами раскрывается под строкой шапки ---
+  function openDrop() {
+    drop.hidden = false;
+    quickOpenBtn.setAttribute("aria-expanded", "true");
+    var input = drop.querySelector("input[name='q']");
+    setTimeout(function () { input.focus(); }, reduced.matches ? 0 : 120);
+  }
+  function closeDrop(returnFocus) {
+    if (!drop || drop.hidden) return;
+    drop.hidden = true;
+    if (quickOpenBtn) quickOpenBtn.setAttribute("aria-expanded", "false");
+    if (returnFocus && quickOpenBtn) quickOpenBtn.focus();
+  }
+  if (quickOpenBtn) {
+    quickOpenBtn.addEventListener("click", function (event) {
+      event.preventDefault(); // без JS кнопка — ссылка на страницу поиска
+      var compact = !header || header.classList.contains("is-compact");
+      if (!compact && drop) {
+        if (drop.hidden) openDrop();
+        else closeDrop(false);
+        return;
+      }
+      if (quick && !quick.hidden && quick.classList.contains("is-open")) closeQuick(true);
+      else openQuick();
+    });
+  }
+  if (drop) {
+    drop.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") closeDrop(true);
+    });
+  }
   if (quick) {
     quick.querySelector("[data-quick-close]").addEventListener("click", function () { closeQuick(true); });
     quick.addEventListener("keydown", function (event) {

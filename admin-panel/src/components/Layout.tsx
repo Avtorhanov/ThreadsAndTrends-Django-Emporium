@@ -16,6 +16,25 @@ const SECTIONS: { to: string; label: string; icon: IconName; end?: boolean }[] =
 
 const THEME_ICONS: Record<ThemeChoice, IconName> = { system: "system", light: "sun", dark: "moon" };
 
+/** Витрина — корень сайта: панель живёт в /panel/ (на превью — /<репозиторий>/panel/). */
+const STORE_URL = import.meta.env.BASE_URL.replace(/panel\/?$/, "");
+
+/** Открыть магазин из любого раздела — посмотреть изменения глазами покупателя. */
+function StoreLink() {
+  return (
+    <a
+      className="icon-button store-link"
+      href={STORE_URL}
+      target="_blank"
+      rel="noopener"
+      aria-label="Открыть магазин"
+      title="Открыть магазин"
+    >
+      <Icon name="store" />
+    </a>
+  );
+}
+
 function Brand() {
   return (
     <span className="brand">
@@ -82,6 +101,7 @@ export function Layout() {
           <Icon name="menu" />
         </button>
         <Brand />
+        <StoreLink />
       </header>
 
       <div className="scrim" aria-hidden="true" onClick={() => setMenuOpen(false)} />
@@ -89,6 +109,7 @@ export function Layout() {
       <aside id="sidebar" className="sidebar" aria-label="Разделы панели">
         <div className="sidebar-head">
           <Brand />
+          <StoreLink />
           <button
             type="button"
             className="icon-button sidebar-close"

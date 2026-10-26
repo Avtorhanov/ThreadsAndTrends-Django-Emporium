@@ -341,12 +341,23 @@ textarea {
 .sidebar-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 6px;
   padding: 0 6px;
 }
 
 .sidebar-close {
   display: none;
+}
+
+/* Иконка «Открыть магазин»: рядом с логотипом в меню и в верхней строке на телефоне. */
+.store-link {
+  margin-left: auto;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent);
+}
+
+.store-link:hover {
+  color: var(--accent);
 }
 
 .sidebar-caption {

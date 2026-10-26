@@ -50,7 +50,7 @@
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --hdr-full: 192px;      /* 8 + 46 + 12 + 52 + 12 + 48 + 14 */
+  --hdr-full: 128px;      /* 8 + 46 + 12 + 48 + 14: строка логотипа и категории */
   --hdr-compact: 60px;    /* 6 + 46 + 8 */
   --page-max: 1200px;
   color-scheme: light;
@@ -106,12 +106,18 @@ a { color: var(--brand); }
   top: 0; left: 0; right: 0;
   z-index: 30;
   padding: calc(8px + var(--safe-top)) var(--space-header-side) 14px;
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  backdrop-filter: blur(22px) saturate(180%);
+  /* Цвет стекла — на самой шапке, размытие — на ::before. Safari 26 красит полосу под
+     статус-баром в цвет фиксированного элемента у верхнего края, но элемент с backdrop-filter
+     не учитывает — без этого над тёмной страницей оставалась светлая полоса. */
+  background-color: var(--glass);
   border-bottom: 1px solid transparent;
   border-radius: 0 0 24px 24px;
   transition: padding .4s var(--ease-soft), box-shadow .35s ease, border-color .35s ease, background-color .45s ease;
+}
+.top::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
 }
 .top.is-compact {
   padding-top: calc(6px + var(--safe-top));
@@ -157,15 +163,35 @@ a { color: var(--brand); }
   :root:not([data-theme]) .ic--moon { display: none; }
 }
 
-/* Лаймовая кнопка поиска — появляется только в свёрнутой шапке. */
+/* Лаймовая кнопка поиска — рядом с темой и корзиной, в развёрнутой и свёрнутой шапке. */
 .sbtn {
-  display: inline-flex; align-items: center; justify-content: center; flex: none; overflow: hidden;
-  width: 0; height: var(--size-header-button-compact); margin-right: -10px; border: 0; border-radius: 11px;
-  background: var(--accent); color: var(--on-accent); opacity: 0; transform: scale(.6); visibility: hidden;
-  transition: width .35s var(--ease-soft), margin .35s var(--ease-soft), opacity .25s ease, transform .35s var(--ease-soft), visibility 0s linear .35s;
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: var(--size-header-button); height: var(--size-header-button); border: 0; border-radius: 12px;
+  background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-accent-glow);
+  transition: width .35s var(--ease-soft), height .35s var(--ease-soft), border-radius .35s ease, transform .15s ease, background-color .25s ease, color .25s ease;
 }
-.is-compact .sbtn { width: var(--size-header-button-compact); margin-right: 0; opacity: 1; transform: none; visibility: visible; transition-delay: 0s; }
+.is-compact .sbtn { width: var(--size-header-button-compact); height: var(--size-header-button-compact); border-radius: 11px; }
+.sbtn[aria-expanded="true"] { background: var(--seg-on-bg); color: var(--seg-on-ink); box-shadow: var(--shadow-control); }
 .sbtn .ic { stroke-width: 2.2; }
+
+/* Выпадающий поиск под строкой шапки (вверху каталога). */
+.drop {
+  display: grid; gap: 10px; max-width: var(--page-max); margin: 12px auto 0; padding: 8px;
+  border-radius: var(--radius-card); background: var(--card); box-shadow: var(--shadow-card);
+  transform-origin: top center; animation: drop-in .28s var(--ease-soft);
+}
+.drop[hidden] { display: none; }
+.drop .search { box-shadow: none; background: var(--bg); }
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; height: 36px; padding: 0 12px; border: 0; border-radius: var(--radius-seg);
+  background: var(--bg); color: var(--ink); font: 800 13px/1 var(--font-text); white-space: nowrap;
+}
+.chip:active { transform: scale(.96); }
+@keyframes drop-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { .drop { animation: none; } }
+.is-compact .drop { display: none; }
 
 .cbadge {
   position: absolute; top: -5px; right: -5px;
@@ -220,7 +246,7 @@ a { color: var(--brand); }
 
 .cats {
   position: relative; /* offsetLeft сегментов — от ленты (site.js держит выбранный в поле зрения) */
-  display: flex; gap: 4px; margin-top: 12px; padding: 4px;
+  display: flex; gap: 4px; padding: 4px;
   border-radius: var(--radius-control); background: var(--surface); box-shadow: var(--shadow-control);
   overflow-x: auto; scrollbar-width: none;
 }
@@ -647,21 +673,26 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .order-card--current .overline { margin: 0; }
 
 /* --- Подвал, нижняя панель, баннер приложения --- */
-.foot { padding: 28px 16px calc(116px + var(--safe-bottom)); color: var(--muted); font: 600 13px/1.5 var(--font-text); }
+.foot { padding: 28px 16px calc(var(--size-nav-height) + 28px + var(--safe-bottom)); color: var(--muted); font: 600 13px/1.5 var(--font-text); }
 .foot__inner { display: grid; gap: 14px; max-width: var(--page-max); margin-inline: auto; padding-top: 22px; border-top: 1px solid var(--border); }
 .foot__brand { display: flex; align-items: center; gap: 10px; color: var(--ink); }
 .foot__links { display: grid; gap: 4px; }
 .foot__links a, .foot__seller a { color: var(--muted); }
 .foot__links a { display: inline-flex; align-items: center; min-height: 32px; }
 
+/* Нижняя панель — футер экрана: от края до края, без скруглений, прижата к низу.
+   Вкладки — в полосе до 480px по центру; под ними — отступ домашнего индикатора. */
 .tabbar {
-  position: fixed; left: 14px; right: 14px; bottom: calc(8px + var(--safe-bottom)); z-index: 30;
-  display: flex; gap: 2px; max-width: 480px; height: var(--size-nav-height); margin-inline: auto; padding: 6px;
-  border-radius: var(--radius-nav); background: var(--nav); box-shadow: var(--shadow-nav);
+  --tab-bottom: max(8px, calc(var(--safe-bottom) * .6));
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; gap: 2px;
+  height: calc(var(--size-nav-height) + var(--tab-bottom));
+  padding: 6px max(12px, calc((100% - 480px) / 2)) var(--tab-bottom);
+  background: var(--nav); border-top: 1px solid rgba(198,244,50,.14); /* панель тёмная в обеих темах */
 }
 .tab {
   display: flex; flex: 1 1 0; align-items: center; justify-content: center; gap: 7px; min-width: 0;
-  border-radius: 15px; color: var(--nav-ink); font: 800 13px var(--font-text); text-decoration: none;
+  border-radius: 12px; color: var(--nav-ink); font: 800 13px var(--font-text); text-decoration: none;
   transition: flex-basis .4s var(--ease-tab), flex-grow .4s var(--ease-tab), background-color .3s ease, color .3s ease;
 }
 .tab > span:last-child { max-width: 0; overflow: hidden; white-space: nowrap; transition: max-width .4s var(--ease-tab); }
@@ -672,7 +703,7 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .tab.is-on .cbadge { background: var(--nav); color: var(--accent); box-shadow: none; }
 
 .appbar {
-  position: fixed; left: 16px; right: 16px; bottom: calc(88px + var(--safe-bottom)); z-index: 29;
+  position: fixed; left: 16px; right: 16px; bottom: calc(var(--size-nav-height) + 14px + var(--safe-bottom)); z-index: 29;
   display: flex; align-items: center; gap: 10px; max-width: 480px; margin-inline: auto; padding: 8px 4px 8px 10px;
   border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-card);
   animation: rise .45s var(--ease-out) .6s both;
@@ -696,11 +727,8 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 }
 
 @media (min-width: 900px) {
-  :root { --hdr-full: 132px; /* 8 + 46 + 12 + 52 + 14: поиск и категории в одну строку */ }
   .top { padding-left: 24px; padding-right: 24px; }
-  .top__clip { display: flex; align-items: center; gap: 12px; }
-  .top__clip .search { flex: 0 0 380px; }
-  .top__clip .cats { flex: 1; min-width: 0; margin-top: 0; }
+  .drop { max-width: 560px; margin-right: max(0px, calc((100% - var(--page-max)) / 2)); }
   .topnav { display: flex; gap: 4px; margin-left: 24px; }
   .topnav a {
     display: inline-flex; align-items: center; height: 40px; padding: 0 14px; border-radius: var(--radius-seg);

@@ -32,8 +32,8 @@ import { Icon, type IconName } from "./Icon";
 /** Растянуть на весь родитель (слой поверх/под содержимым). */
 export const FILL = { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 } as const;
 
-/** Нижний отступ экранов во вкладках: плавающая панель (70) + отступ снизу (22) + зазор. */
-export const TAB_BAR_SPACE = size.navHeight + 22 + 24;
+/** Нижний отступ экранов во вкладках: нижняя панель + зона домашнего индикатора (≈20) + зазор. */
+export const TAB_BAR_SPACE = size.navHeight + 20 + 24;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
