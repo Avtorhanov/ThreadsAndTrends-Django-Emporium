@@ -42,7 +42,8 @@ def test_set_theme_without_javascript(client, db):
     assert response.status_code == 302 and response["Location"] == "/cart/"
     assert response.cookies["theme"].value == "dark"
     response = client.post(reverse("web:theme"), {"theme": "system"})
-    assert response.cookies["theme"].value == ""  # удалена — снова системная
+    # «Как в системе» хранится явно: иначе подставилась бы тема по умолчанию магазина.
+    assert response.cookies["theme"].value == "system"
 
 
 def test_category_page_includes_subcategories_and_canonical(client, shop):

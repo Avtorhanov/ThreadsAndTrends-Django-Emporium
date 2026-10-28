@@ -107,6 +107,42 @@ export function ProductImage({
 }
 
 /** Карточка ленты: радиус 26, фото 214 (на широкой сетке — пропорционально), цена Unbounded. */
+export type ProductStatusData = NonNullable<ProductCardData["status"]>;
+
+/** Цвета метки статуса — семантические цвета темы (читаются в обеих темах). */
+function useToneColors(tone: ProductStatusData["tone"]) {
+  const { c } = useTheme();
+  if (tone === "success") return { ink: c.success, bg: c.successBg };
+  if (tone === "warning") return { ink: c.warning, bg: c.warningBg };
+  if (tone === "info") return { ink: c.info, bg: c.infoBg };
+  return { ink: c.neutral, bg: c.neutralBg };
+}
+
+/** Статус на карточке ленты — тихо: цветная точка и подпись. */
+export function StatusMark({ status }: { status: ProductStatusData }) {
+  const s = useStyles();
+  const { ink } = useToneColors(status.tone);
+  return (
+    <View style={s.mark}>
+      <View style={[s.markDot, { backgroundColor: ink }]} />
+      <Text style={s.markText} numberOfLines={1}>
+        {status.name}
+      </Text>
+    </View>
+  );
+}
+
+/** Статус заметной плашкой: страница товара и корзина. */
+export function StatusPill({ status }: { status: ProductStatusData }) {
+  const s = useStyles();
+  const { ink, bg } = useToneColors(status.tone);
+  return (
+    <View style={[s.pill, { backgroundColor: bg }]}>
+      <Text style={[s.pillText, { color: ink }]}>{status.name}</Text>
+    </View>
+  );
+}
+
 export function ProductCard({ product }: { product: ProductCardData }) {
   const s = useStyles();
   const { cart } = useCart();
@@ -135,6 +171,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         <Text style={s.name} numberOfLines={2}>
           {product.name}
         </Text>
+        {product.status ? <StatusMark status={product.status} /> : null}
         <Price price={product.price_kopecks} compareAt={product.compare_at_kopecks} />
         {product.in_stock ? null : <Text style={s.outOfStock}>Нет в наличии</Text>}
       </View>
@@ -243,6 +280,11 @@ const useStyles = makeStyles(({ c, shadow, dark }) => ({
   cardBody: { paddingHorizontal: space.cardTextPad, gap: 6 },
   name: { fontFamily: fonts.text700, fontSize: 15, lineHeight: 19, color: c.ink },
   outOfStock: { fontFamily: fonts.text700, fontSize: 12, color: c.muted },
+  mark: { flexDirection: "row", alignItems: "center", gap: 6 },
+  markDot: { width: 6, height: 6, borderRadius: 3 },
+  markText: { flexShrink: 1, fontFamily: fonts.text600, fontSize: 12, color: c.muted },
+  pill: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.tag },
+  pillText: { fontFamily: fonts.text800, fontSize: 12 },
   sizes: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   size: {
     minWidth: 56,

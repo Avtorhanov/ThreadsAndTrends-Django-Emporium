@@ -20,9 +20,11 @@
     </nav>
 
     <div class="actions">
-      <button class="sbtn" type="button" data-quick-open aria-label="Открыть поиск" aria-expanded="false" aria-controls="quick-search">
+      {% comment %}Поиск: вверху каталога — выпадает под строкой шапки, в свёрнутой шапке — поле выезжает влево.
+         Без JS — обычная ссылка на страницу поиска.{% endcomment %}
+      <a class="sbtn" href="{% url 'web:search' %}" role="button" data-quick-open aria-label="Поиск" aria-expanded="false" aria-controls="{% if compact %}quick-search{% else %}drop-search{% endif %}">
         <svg class="ic" width="21" height="21"><use href="#i-search"/></svg>
-      </button>
+      </a>
       <form class="hb-form" method="post" action="{% url 'web:theme' %}" data-theme-form>
         {% csrf_token %}
         <input type="hidden" name="theme" value="{% if theme == 'dark' %}light{% else %}dark{% endif %}">
@@ -49,15 +51,23 @@
   </div>
 
   {% if not compact %}
-  <div class="top__more" data-collapsible>
-    <div class="top__clip">
-    <form class="search" action="{% url 'web:search' %}" method="get" role="search">
+  {# Выпадающий поиск (вверху каталога): поле, фильтры и быстрые сортировки одной формой. #}
+  <form class="drop" id="drop-search" action="{% url 'web:search' %}" method="get" role="search" data-drop hidden>
+    <div class="search">
       <svg class="ic" width="20" height="20"><use href="#i-search"/></svg>
-      <input type="search" name="q" value="{{ values.q|default:'' }}" placeholder="Футболка, кеды, панама…" aria-label="Поиск по каталогу" maxlength="100" enterkeyhint="search">
+      <input type="search" name="q" value="{{ values.q|default:'' }}" placeholder="Футболка, термос, плед…" aria-label="Поиск по каталогу" maxlength="100" autocomplete="off" enterkeyhint="search">
       <a class="search__filter" href="{% url 'web:search' %}?filters=1" aria-label="Фильтры и сортировка">
         <svg class="ic" width="18" height="18"><use href="#i-filter"/></svg>
       </a>
-    </form>
+    </div>
+    <div class="chips">
+      <button class="chip" type="submit" name="sort" value="price_asc">Сначала дешевле</button>
+      <button class="chip" type="submit" name="sort" value="price_desc">Сначала дороже</button>
+      <button class="chip" type="submit" name="in_stock" value="1">В наличии</button>
+    </div>
+  </form>
+  <div class="top__more" data-collapsible>
+    <div class="top__clip">
     <nav class="cats" aria-label="Категории">
       <a class="seg{% if not root %} is-on{% endif %}" href="{% url 'web:home' %}"{% if not root %} aria-current="page"{% endif %}>Все</a>
       {% for node in nav_categories %}

@@ -1,13 +1,14 @@
 """Служебные страницы витрины: тема, баннер приложения, юридические страницы, robots.txt,
 манифест для установки на экран «Домой»."""
 
-from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_GET, require_POST, require_safe
+
+from content import shop as shop_settings
 
 from .. import theme
 from ..context_processors import BANNER_COOKIE
@@ -25,9 +26,10 @@ LEGAL_PAGES = {
 def set_theme(request):
     """Без JavaScript: переключатель темы — обычная форма. С JS тема меняется без перезагрузки,
     скрипт сам пишет ту же cookie."""
-    value = request.POST.get("theme", "")
     response = redirect(safe_next(request, reverse("web:home")))
-    return theme.apply_theme(response, value)
+    if "theme" in request.POST:
+        theme.apply_theme(response, request.POST["theme"])
+    return theme.apply_look(response, request.POST)
 
 
 @require_POST
@@ -39,15 +41,17 @@ def hide_banner(request):
 
 def legal(request, page: str):
     template, title = LEGAL_PAGES[page]
+    shop = shop_settings.current()
     return render(
         request,
         template,
         {
             "title": title,
             "page": page,
-            "delivery_courier": settings.DELIVERY_COURIER_KOPECKS,
-            "delivery_free_from": settings.DELIVERY_FREE_FROM_KOPECKS,
-            "pickup_address": settings.PICKUP_ADDRESS,
+            "delivery_courier": shop.delivery_courier_kopecks,
+            "delivery_free_from": shop.delivery_free_from_kopecks,
+            "pickup_address": shop.pickup_address,
+            "unpaid_timeout": shop.unpaid_timeout_minutes,
         },
     )
 

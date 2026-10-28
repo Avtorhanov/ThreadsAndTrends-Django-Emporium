@@ -92,6 +92,9 @@ class OrderItemSerializer(serializers.Serializer):
     product_name = serializers.CharField()
     size = serializers.CharField(help_text="Пусто — товар без размера")
     sku = serializers.CharField()
+    status_name = serializers.CharField(
+        help_text="Статус товара на момент заказа («Под заказ»); пусто — без статуса"
+    )
     price_kopecks = serializers.IntegerField(help_text="Цена на момент заказа, коп.")
     quantity = serializers.IntegerField()
     line_total_kopecks = serializers.IntegerField()
@@ -110,6 +113,7 @@ class OrderStatusChangeSerializer(serializers.Serializer):
     to_status = serializers.ChoiceField(choices=OrderStatus.choices)
     to_status_display = serializers.CharField(source="get_to_status_display")
     changed_by = serializers.ChoiceField(choices=ChangedBy.choices)
+    comment = serializers.CharField(help_text="Комментарий магазина для клиента; пусто — нет")
     created_at = serializers.DateTimeField()
 
 
@@ -250,6 +254,7 @@ class AdminOrderListSerializer(serializers.ModelSerializer):
 
 class AdminOrderStatusChangeSerializer(OrderStatusChangeSerializer):
     actor_email = serializers.SerializerMethodField()
+    notified = serializers.BooleanField(help_text="Клиенту отправлено письмо")
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_actor_email(self, change):
@@ -297,3 +302,13 @@ class AdminOrderDetailSerializer(OrderDetailSerializer):
 
 class AdminTransitionSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=OrderStatus.choices)
+    comment = serializers.CharField(
+        max_length=500,
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="Пояснение для клиента: история заказа и письмо",
+    )
+    notify = serializers.BooleanField(
+        required=False, default=True, help_text="Отправить клиенту письмо о смене статуса"
+    )

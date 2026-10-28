@@ -71,7 +71,7 @@ class ProductDetailView(PublicAPIMixin, generics.RetrieveAPIView):
     def get_queryset(self):
         return (
             Product.objects.live()
-            .select_related("category")
+            .select_related("category", "status")
             .prefetch_related(
                 Prefetch("images", queryset=ProductImage.objects.order_by("position", "id")),
                 Prefetch("variants", queryset=ProductVariant.objects.order_by("position", "id")),

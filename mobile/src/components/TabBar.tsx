@@ -14,7 +14,7 @@ import { useCart } from "../cart/CartProvider";
 import { fonts } from "../theme/fonts";
 import { ease, motion } from "../theme/motion";
 import { makeStyles, useTheme } from "../theme/ThemeProvider";
-import { radius, size } from "../theme/tokens";
+import { size } from "../theme/tokens";
 import { Icon, type IconName } from "./Icon";
 
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>["tabBar"]>>[0];
@@ -28,6 +28,8 @@ const TABS: Record<string, { label: string; icon: IconName }> = {
 
 const PAD = 6;
 const MAX_WIDTH = 480;
+/** Отступ под вкладками: часть зоны домашнего индикатора, но не меньше 8. */
+const bottomGap = (inset: number) => Math.max(8, Math.round(inset * 0.6));
 
 function useKeyboardShown(): boolean {
   const [shown, setShown] = useState(false);
@@ -44,7 +46,8 @@ function useKeyboardShown(): boolean {
   return shown;
 }
 
-/** Плавающая тёмная нижняя панель: активная вкладка шире и с подписью, лаймовая капсула переезжает. */
+/** Нижняя панель — футер экрана: от края до края, без скруглений; активная вкладка шире и с
+ * подписью, лаймовая капсула переезжает. */
 export function TabBar({ state, navigation }: TabBarProps) {
   const s = useStyles();
   const { c } = useTheme();
@@ -73,7 +76,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
   if (keyboard) return null;
 
   return (
-    <View pointerEvents="box-none" style={[s.wrap, { bottom: 22 + insets.bottom * 0.5 }]}>
+    <View style={[s.wrap, { paddingBottom: bottomGap(insets.bottom) }]}>
       <View
         accessibilityRole="tablist"
         style={s.bar}
@@ -167,23 +170,31 @@ function TabButton({
 }
 
 const useStyles = makeStyles(({ c, shadow }) => ({
-  wrap: { position: "absolute", left: 16, right: 16, alignItems: "center" },
+  wrap: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    paddingHorizontal: 12,
+    backgroundColor: c.nav,
+    // Панель тёмная в обеих темах: тонкая лаймовая линия вместо тени отделяет её от ленты.
+    borderTopWidth: 1,
+    borderTopColor: "rgba(198,244,50,0.14)",
+  },
   bar: {
     width: "100%",
     maxWidth: MAX_WIDTH,
     height: size.navHeight,
     padding: PAD,
-    borderRadius: radius.nav,
-    backgroundColor: c.nav,
     flexDirection: "row",
-    boxShadow: shadow.nav,
   },
   pill: {
     position: "absolute",
     top: PAD,
     left: 0,
     height: size.navHeight - PAD * 2,
-    borderRadius: 20,
+    borderRadius: 12,
     backgroundColor: c.accent,
     boxShadow: `${shadow.accentGlow}, inset 0 1px 0 rgba(255,255,255,.55)`,
   },

@@ -39,6 +39,8 @@ def _date_param(params, name):
 class AdminOrderViewSet(
     AdminAPIMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
+    section = "orders"
+
     def get_serializer_class(self):
         return AdminOrderListSerializer if self.action == "list" else AdminOrderDetailSerializer
 
@@ -105,7 +107,8 @@ class AdminOrderViewSet(
         responses=AdminOrderDetailSerializer,
         description=(
             "Перевести заказ в статус из allowed_transitions. Отмена возвращает остатки; "
-            "«Оплачен» ставит только платёжная система."
+            "«Оплачен» ставит только платёжная система. comment виден клиенту в истории "
+            "и в письме; notify=false — без письма."
         ),
     )
     @action(detail=True, methods=["post"])
@@ -113,8 +116,14 @@ class AdminOrderViewSet(
         order = self.get_object()
         serializer = AdminTransitionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
         status_service.transition(
-            order, serializer.validated_data["status"], by=ChangedBy.ADMIN, actor=request.user
+            order,
+            data["status"],
+            by=ChangedBy.ADMIN,
+            actor=request.user,
+            comment=data["comment"],
+            notify=data["notify"],
         )
         fresh = self.get_queryset().get(pk=order.pk)
         return Response(self.get_serializer(fresh).data)

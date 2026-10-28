@@ -118,6 +118,8 @@ def build_summary(now=None) -> dict:
 
 
 class AdminSummaryView(AdminAPIMixin, APIView):
+    section = "summary"
+
     @extend_schema(
         operation_id="admin_summary",
         description="Сводка для главной страницы панели.",

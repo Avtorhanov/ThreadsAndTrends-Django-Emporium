@@ -180,6 +180,7 @@
   // --- Шапка: сворачивание с гистерезисом 24/8 px (как в приложении) ---
   var header = document.querySelector("[data-header]");
   var quick = document.querySelector("[data-quick]");
+  var drop = document.querySelector("[data-drop]");
   var quickOpenBtn = document.querySelector("[data-quick-open]");
   var fixedCompact = header && header.classList.contains("top--fixed");
   var COLLAPSE_AT = 24;
@@ -198,6 +199,8 @@
       more.inert = compact;
     }
     if (!compact) closeQuick(false);
+    else closeDrop(false);
+    if (quickOpenBtn && drop) quickOpenBtn.setAttribute("aria-controls", compact ? "quick-search" : "drop-search");
   }
 
   if (header && !fixedCompact) {
@@ -238,7 +241,37 @@
     quickTimer = setTimeout(function () { quick.hidden = true; }, reduced.matches ? 0 : 320);
     if (returnFocus && quickOpenBtn) quickOpenBtn.focus();
   }
-  if (quickOpenBtn) quickOpenBtn.addEventListener("click", openQuick);
+  // --- Выпадающий поиск: вверху каталога поле с фильтрами раскрывается под строкой шапки ---
+  function openDrop() {
+    drop.hidden = false;
+    quickOpenBtn.setAttribute("aria-expanded", "true");
+    var input = drop.querySelector("input[name='q']");
+    setTimeout(function () { input.focus(); }, reduced.matches ? 0 : 120);
+  }
+  function closeDrop(returnFocus) {
+    if (!drop || drop.hidden) return;
+    drop.hidden = true;
+    if (quickOpenBtn) quickOpenBtn.setAttribute("aria-expanded", "false");
+    if (returnFocus && quickOpenBtn) quickOpenBtn.focus();
+  }
+  if (quickOpenBtn) {
+    quickOpenBtn.addEventListener("click", function (event) {
+      event.preventDefault(); // без JS кнопка — ссылка на страницу поиска
+      var compact = !header || header.classList.contains("is-compact");
+      if (!compact && drop) {
+        if (drop.hidden) openDrop();
+        else closeDrop(false);
+        return;
+      }
+      if (quick && !quick.hidden && quick.classList.contains("is-open")) closeQuick(true);
+      else openQuick();
+    });
+  }
+  if (drop) {
+    drop.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") closeDrop(true);
+    });
+  }
   if (quick) {
     quick.querySelector("[data-quick-close]").addEventListener("click", function () { closeQuick(true); });
     quick.addEventListener("keydown", function (event) {
@@ -272,20 +305,24 @@
     return darkQuery.matches ? "dark" : "light";
   }
 
+  // Цвет строки состояния — фон текущей палитры и темы (после смены атрибутов <html>).
+  function syncThemeColor() {
+    var color = getComputedStyle(root).getPropertyValue("--bg").trim();
+    if (!color) return;
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
+      meta.content = color;
+      meta.removeAttribute("media");
+    });
+  }
+
   function applyTheme(value) {
-    // value: "light" | "dark" | "system"
-    if (value === "light" || value === "dark") {
-      root.setAttribute("data-theme", value);
-      setCookie("theme", value, YEAR);
-    } else {
-      root.removeAttribute("data-theme");
-      setCookie("theme", "", 0);
-    }
+    // value: "light" | "dark" | "system"; «как в системе» тоже хранится — иначе тема магазина.
+    if (value === "light" || value === "dark") root.setAttribute("data-theme", value);
+    else root.removeAttribute("data-theme");
+    setCookie("theme", value === "light" || value === "dark" ? value : "system", YEAR);
     var scheme = document.querySelector('meta[name="color-scheme"]');
     if (scheme) scheme.content = value === "system" ? "light dark" : value;
-    var colors = document.querySelectorAll('meta[name="theme-color"]');
-    var color = effectiveTheme() === "dark" ? "#070E0A" : "#EBF1E2";
-    colors.forEach(function (meta) { meta.content = color; meta.removeAttribute("media"); });
+    syncThemeColor();
     var hidden = document.querySelectorAll('[data-theme-form] input[name="theme"]');
     hidden.forEach(function (input) { input.value = effectiveTheme() === "dark" ? "light" : "dark"; });
     document.querySelectorAll('[data-theme-select] input[name="theme"]').forEach(function (input) {
@@ -299,9 +336,39 @@
       applyTheme(effectiveTheme() === "dark" ? "light" : "dark");
     });
   });
+  // Палитра, акцент «Своей», углы, размер текста: атрибут <html> + cookie (сервер проверяет
+  // значения по белому списку; значение по умолчанию — без атрибута).
+  var LOOK = {
+    palette: { attr: "data-palette", cookie: "palette", plain: "lime" },
+    accent: { attr: "data-accent", cookie: "accent", plain: null },
+    radius: { attr: "data-radius", cookie: "radius", plain: "normal" },
+    text: { attr: "data-text", cookie: "text_size", plain: "s" }
+  };
+
+  function applyLook(name, value, form) {
+    var spec = LOOK[name];
+    setCookie(spec.cookie, value, YEAR);
+    if (name === "palette") {
+      var accents = form.querySelector("[data-accents]");
+      if (accents) accents.hidden = value !== "custom";
+      if (value === "custom") {
+        var checked = form.querySelector('input[name="accent"]:checked');
+        if (checked) root.setAttribute("data-accent", checked.value);
+      } else {
+        root.removeAttribute("data-accent");
+      }
+    }
+    if (name === "accent" && root.getAttribute("data-palette") !== "custom") return;
+    if (value === spec.plain) root.removeAttribute(spec.attr);
+    else root.setAttribute(spec.attr, value);
+    syncThemeColor();
+  }
+
   document.querySelectorAll("[data-theme-select]").forEach(function (form) {
     form.addEventListener("change", function (event) {
-      if (event.target.name === "theme") applyTheme(event.target.value);
+      var name = event.target.name;
+      if (name === "theme") applyTheme(event.target.value);
+      else if (LOOK[name]) applyLook(name, event.target.value, form);
     });
     form.addEventListener("submit", function (event) { event.preventDefault(); });
   });

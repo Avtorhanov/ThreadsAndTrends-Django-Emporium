@@ -17,11 +17,19 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts import services
+from accounts import services, staff
 from accounts.models import User
 from core.api.mixins import AdminAPIMixin
 
-from .serializers import CustomerSerializer, CustomerStatus, LoginSerializer, StaffUserSerializer
+from .serializers import (
+    CustomerSerializer,
+    CustomerStatus,
+    LoginSerializer,
+    StaffInviteSerializer,
+    StaffMemberSerializer,
+    StaffUpdateSerializer,
+    StaffUserSerializer,
+)
 from .throttles import LoginEmailThrottle, LoginIPThrottle
 
 TAG = "admin"
@@ -83,6 +91,8 @@ class CustomerViewSet(
 ):
     """Клиенты магазина. Администраторы в выборку не попадают и через неё не изменяются."""
 
+    section = "customers"
+
     serializer_class = CustomerSerializer
 
     def get_queryset(self):
@@ -142,3 +152,55 @@ class CustomerViewSet(
     def soft_delete(self, request, pk=None):
         user = services.delete_customer(self.get_object())
         return Response(CustomerSerializer(user).data)
+
+
+@extend_schema(tags=[TAG])
+class StaffViewSet(AdminAPIMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+    """Сотрудники панели: приглашение по email, права по разделам, отключение. Только владелец."""
+
+    section = "staff"
+    serializer_class = StaffMemberSerializer
+    pagination_class = None
+    http_method_names = ["get", "post", "patch", "head", "options"]
+
+    def get_queryset(self):
+        return staff.staff_queryset().order_by("-is_superuser", "date_joined", "id")
+
+    @extend_schema(operation_id="admin_staff_list")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        operation_id="admin_staff_create",
+        request=StaffInviteSerializer,
+        responses={201: StaffMemberSerializer},
+        description="Пригласить: письмо с кодом, по которому сотрудник сам задаёт пароль.",
+    )
+    def create(self, request):
+        serializer = StaffInviteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = staff.invite(request.user, **serializer.validated_data)
+        fresh = self.get_queryset().get(pk=user.pk)
+        return Response(StaffMemberSerializer(fresh).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        operation_id="admin_staff_partial_update",
+        request=StaffUpdateSerializer,
+        responses=StaffMemberSerializer,
+    )
+    def partial_update(self, request, pk=None):
+        serializer = StaffUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = staff.update(request.user, self.get_object(), **serializer.validated_data)
+        return Response(StaffMemberSerializer(user).data)
+
+    @extend_schema(
+        operation_id="admin_staff_resend",
+        request=None,
+        responses={204: None},
+        description="Отправить приглашение ещё раз (новый код; прежний перестаёт действовать).",
+    )
+    @action(detail=True, methods=["post"])
+    def resend(self, request, pk=None):
+        staff.resend_invite(request.user, self.get_object())
+        return Response(status=status.HTTP_204_NO_CONTENT)

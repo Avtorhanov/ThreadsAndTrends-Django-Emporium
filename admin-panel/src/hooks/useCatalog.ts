@@ -5,7 +5,9 @@ import {
   categoriesService,
   type Product,
   type ProductPage,
+  type ProductLabel,
   type ProductQuery,
+  labelsService,
   productsService,
 } from "../api/catalog";
 import { ApiError } from "../api/errors";
@@ -83,4 +85,8 @@ export function sortCategoryTree(categories: Category[]): Array<Category & { dep
 /** Товары можно класть только в категории без подкатегорий. */
 export function isLeaf(category: Category): boolean {
   return category.children_count === 0;
+}
+
+export function useLabels() {
+  return useLoader<ProductLabel[]>(() => labelsService.list(), "labels", "Не удалось загрузить статусы.");
 }

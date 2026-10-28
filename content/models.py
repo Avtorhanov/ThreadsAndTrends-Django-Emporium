@@ -186,3 +186,190 @@ class Block(models.Model):
 
     def __str__(self):
         return f"{self.get_area_display()}: {self.title or self.value}"
+
+
+# --- Настройки магазина (панель → «Настройки») ---
+
+
+class ShopSettings(models.Model):
+    """Настройки магазина, которые администратор меняет в панели без деплоя.
+
+    Одна строка (id = 1). Пустое поле — значение из настроек сервера (.env): так магазин
+    работает и до первого сохранения. Ключи оплаты, SECRET_KEY и пароли здесь не хранятся.
+    Сервис — content.shop.
+    """
+
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    delivery_courier_kopecks = models.PositiveBigIntegerField(
+        null=True, blank=True, verbose_name="Доставка курьером, коп."
+    )
+    delivery_free_from_kopecks = models.PositiveBigIntegerField(
+        null=True, blank=True, verbose_name="Бесплатная доставка от, коп."
+    )
+    pickup_enabled = models.BooleanField(default=True, verbose_name="Самовывоз")
+    pickup_address = models.CharField(
+        max_length=300, blank=True, verbose_name="Адрес пункта выдачи"
+    )
+    cash_on_delivery_enabled = models.BooleanField(
+        default=True, verbose_name="Оплата при получении"
+    )
+    unpaid_timeout_minutes = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Автоотмена неоплаченного заказа, мин"
+    )
+    seller_name = models.CharField(max_length=200, blank=True, verbose_name="Продавец")
+    seller_inn = models.CharField(max_length=12, blank=True, verbose_name="ИНН")
+    seller_ogrn = models.CharField(max_length=15, blank=True, verbose_name="ОГРН / ОГРНИП")
+    seller_address = models.CharField(max_length=300, blank=True, verbose_name="Адрес продавца")
+    seller_phone = models.CharField(max_length=30, blank=True, verbose_name="Телефон")
+    seller_email = models.EmailField(blank=True, verbose_name="Email")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменены")
+
+    class Meta:
+        verbose_name = "Настройки магазина"
+        verbose_name_plural = "Настройки магазина"
+        constraints = [models.CheckConstraint(condition=Q(id=1), name="shop_settings_singleton")]
+
+    def __str__(self):
+        return "Настройки магазина"
+
+
+# --- Главная из блоков (панель → «Главная») ---
+
+
+def home_image_path(instance, filename: str) -> str:
+    ext = PurePosixPath(filename).suffix.lower() or ".jpg"
+    return f"home/{timezone.now():%Y/%m}/{uuid.uuid4().hex}{ext}"
+
+
+class HomeImage(models.Model):
+    """Картинка баннера. Не меняется после загрузки: замена — новая запись, старая удаляется
+    при публикации, когда на неё не ссылаются ни черновик, ни опубликованная главная."""
+
+    image = models.ImageField(upload_to=home_image_path, verbose_name="Изображение")
+    width = models.PositiveIntegerField(null=True, blank=True, verbose_name="Ширина, px")
+    height = models.PositiveIntegerField(null=True, blank=True, verbose_name="Высота, px")
+    thumbs_ready = models.BooleanField(default=False, verbose_name="Превью готовы")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Загружено")
+
+    class Meta:
+        verbose_name = "Картинка главной"
+        verbose_name_plural = "Картинки главной"
+
+    def __str__(self):
+        return self.image.name
+
+    @property
+    def sources(self) -> list[tuple[str, int]]:
+        from store.services.images import thumb_sources
+
+        return thumb_sources(self)
+
+
+class HomeBlockKind(models.TextChoices):
+    BANNER = "banner", "Баннер"
+    COLLECTION = "collection", "Подборка товаров"
+    CATEGORIES = "categories", "Лента категорий"
+    TEXT = "text", "Текст"
+
+
+class CollectionSource(models.TextChoices):
+    NEW = "new", "Новинки"
+    CATEGORY = "category", "Категория"
+    MANUAL = "manual", "Вручную"
+
+
+class HomeBlock(models.Model):
+    """Черновик главной: блоки в порядке position. Покупатель видит снимок из HomePage."""
+
+    kind = models.CharField(max_length=20, choices=HomeBlockKind.choices, verbose_name="Тип")
+    position = models.PositiveIntegerField(default=0, verbose_name="Порядок")
+    is_visible = models.BooleanField(default=True, verbose_name="Показывать")
+    title = models.CharField(max_length=60, blank=True, verbose_name="Заголовок")
+    text = models.CharField(max_length=1000, blank=True, verbose_name="Текст")
+    # Фон баннера: #RRGGBB (проверяется сервисом — значение попадает в style).
+    color = models.CharField(max_length=7, blank=True, verbose_name="Цвет")
+    image = models.ForeignKey(
+        HomeImage,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="Изображение",
+    )
+    category = models.ForeignKey(
+        "store.Category",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="Категория",
+    )
+    source = models.CharField(
+        max_length=10,
+        choices=CollectionSource.choices,
+        default=CollectionSource.NEW,
+        verbose_name="Какие товары",
+    )
+    # Ручная подборка: id товаров по порядку; скрытые и удалённые на витрину не попадают.
+    product_ids = models.JSONField(default=list, blank=True, verbose_name="Товары")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Блок главной"
+        verbose_name_plural = "Блоки главной"
+        ordering = ["position", "id"]
+
+    def __str__(self):
+        return f"{self.get_kind_display()}: {self.title or '—'}"
+
+
+class HomePage(models.Model):
+    """Опубликованная главная (снимок блоков) и отметка о неопубликованных правках."""
+
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    published = models.JSONField(default=list, blank=True, verbose_name="Опубликованные блоки")
+    published_at = models.DateTimeField(null=True, blank=True, verbose_name="Опубликована")
+    changed_at = models.DateTimeField(null=True, blank=True, verbose_name="Черновик изменён")
+
+    class Meta:
+        verbose_name = "Главная"
+        verbose_name_plural = "Главная"
+        constraints = [models.CheckConstraint(condition=Q(id=1), name="home_page_singleton")]
+
+    def __str__(self):
+        return "Главная"
+
+
+# --- Тема для покупателей (панель → «Тема») ---
+
+
+def all_palettes() -> list[str]:
+    from content.look import PALETTES
+
+    return list(PALETTES)
+
+
+class ThemeSettings(models.Model):
+    """Какие палитры доступны покупателям и что видит новый посетитель."""
+
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    palettes = models.JSONField(default=all_palettes, verbose_name="Доступные палитры")
+    default_palette = models.CharField(
+        max_length=20, default="lime", verbose_name="Палитра по умолчанию"
+    )
+    default_mode = models.CharField(
+        max_length=10, default="system", verbose_name="Тема по умолчанию"
+    )
+    default_radius = models.CharField(
+        max_length=10, default="normal", verbose_name="Углы по умолчанию"
+    )
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменены")
+
+    class Meta:
+        verbose_name = "Тема магазина"
+        verbose_name_plural = "Тема магазина"
+        constraints = [models.CheckConstraint(condition=Q(id=1), name="theme_settings_singleton")]
+
+    def __str__(self):
+        return "Тема магазина"

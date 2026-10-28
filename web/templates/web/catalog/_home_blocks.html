@@ -1,0 +1,38 @@
+{% load storefront %}
+{% for b in blocks %}
+{% if b.kind == "banner" %}
+<section class="hb hb-banner{% if b.image %} hb-banner--img{% endif %}" style="--hb-bg:{{ b.color }};--hb-ink:{{ b.ink }}">
+  {% if b.category %}<a class="hb-banner__link" href="{% url 'web:category' b.category.slug %}">{% endif %}
+  <span class="hb-banner__body">
+    {% if b.title %}<span class="hb-banner__title">{{ b.title }}</span>{% endif %}
+    {% if b.text %}<span class="hb-banner__text">{{ b.text }}</span>{% endif %}
+    {% if b.category %}<span class="hb-banner__more">{{ b.category.name }}<svg class="ic" width="16" height="16"><use href="#i-chevron"/></svg></span>{% endif %}
+  </span>
+  {% if b.image %}<span class="hb-banner__media">{% if forloop.first %}{% product_img b.image "(min-width: 900px) 360px, 45vw" css="hb-banner__img" eager=True %}{% else %}{% product_img b.image "(min-width: 900px) 360px, 45vw" css="hb-banner__img" %}{% endif %}</span>{% endif %}
+  {% if b.category %}</a>{% endif %}
+</section>
+{% elif b.kind == "collection" %}
+<section class="hb hb-rail" aria-label="{{ b.title|default:'Подборка' }}">
+  <div class="hb-head">
+    {% if b.title %}<h2 class="hb-head__title">{{ b.title }}</h2>{% endif %}
+    {% if b.source == "category" and b.category %}<a class="hb-head__all" href="{% url 'web:category' b.category.slug %}">Все<svg class="ic" width="16" height="16"><use href="#i-chevron"/></svg></a>
+    {% elif b.source == "new" %}<a class="hb-head__all" href="{% url 'web:products' %}">Все<svg class="ic" width="16" height="16"><use href="#i-chevron"/></svg></a>{% endif %}
+  </div>
+  <div class="hb-rail__track">
+    {% for p in b.products %}<div class="hb-rail__cell">{% include "web/catalog/_card.html" with eager=False %}</div>{% endfor %}
+  </div>
+</section>
+{% elif b.kind == "categories" %}
+<nav class="hb hb-cats" aria-label="{{ b.title|default:'Категории' }}">
+  {% if b.title %}<h2 class="hb-head__title">{{ b.title }}</h2>{% endif %}
+  <div class="hb-cats__list">
+    {% for c in b.categories %}<a class="hb-cats__item" href="{% url 'web:category' c.slug %}">{{ c.name }}</a>{% endfor %}
+  </div>
+</nav>
+{% elif b.kind == "text" %}
+<section class="hb hb-text">
+  {% if b.title %}<h2 class="hb-head__title">{{ b.title }}</h2>{% endif %}
+  {% for paragraph in b.paragraphs %}<p>{{ paragraph|linebreaksbr }}</p>{% endfor %}
+</section>
+{% endif %}
+{% endfor %}

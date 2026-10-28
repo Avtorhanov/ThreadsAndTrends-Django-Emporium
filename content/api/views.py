@@ -9,9 +9,9 @@ from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
-from content import services, site
+from content import home, look, services, shop, site
 from content.contacts import get_contacts
-from content.models import Article, ArticleImage, Block, BlockArea
+from content.models import Article, ArticleImage, Block, BlockArea, HomeBlock
 from core.api.mixins import AdminAPIMixin, PublicAPIMixin
 
 from .serializers import (
@@ -25,10 +25,22 @@ from .serializers import (
     AdminBlockReorderSerializer,
     AdminBlockSerializer,
     AdminBlockUpdateSerializer,
+    AdminHomeBlockCreateSerializer,
+    AdminHomeBlockSerializer,
+    AdminHomeBlockUpdateSerializer,
+    AdminHomeImageUploadSerializer,
+    AdminHomeReorderSerializer,
+    AdminHomeSerializer,
+    AdminShopSettingsSerializer,
+    AdminShopSettingsWriteSerializer,
     AdminSiteTextSerializer,
+    AdminThemeSerializer,
+    AdminThemeWriteSerializer,
     ArticleDetailSerializer,
     ArticleSerializer,
     ContactSerializer,
+    HomeSerializer,
+    ShopThemeSerializer,
 )
 
 TAG = "content"
@@ -98,6 +110,8 @@ class AdminArticleViewSet(
     AdminAPIMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
     """Статьи, включая черновики и удалённые (фильтр status)."""
+
+    section = "articles"
 
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
@@ -216,6 +230,8 @@ class AdminArticleViewSet(
 
 @extend_schema(tags=[ADMIN_TAG])
 class AdminArticleImageViewSet(AdminAPIMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    section = "articles"
+
     serializer_class = AdminArticleImageSerializer
     queryset = ArticleImage.objects.all()
     http_method_names = ["delete", "options"]
@@ -235,6 +251,8 @@ class AdminArticleImageViewSet(AdminAPIMixin, mixins.DestroyModelMixin, viewsets
 @extend_schema(tags=[ADMIN_TAG])
 class AdminSiteTextView(AdminAPIMixin, generics.GenericAPIView):
     """Текст витрины по ключу: PUT — сохранить (пусто — скрыть), DELETE — вернуть исходный."""
+
+    section = "storefront"
 
     serializer_class = AdminSiteTextSerializer
 
@@ -257,6 +275,8 @@ class AdminBlockViewSet(
 ):
     """Блоки разделов «Контакты», «Помощь» и подвала. Первое изменение раздела переносит его
     значения по умолчанию в БД (customize) — дальше блоки меняются по id."""
+
+    section = "storefront"
 
     serializer_class = AdminBlockSerializer
     pagination_class = None
@@ -318,3 +338,226 @@ class AdminBlockViewSet(
         serializer.is_valid(raise_exception=True)
         blocks = site.reorder_blocks(**serializer.validated_data)
         return Response(AdminBlockSerializer(blocks, many=True).data)
+
+
+# --- Настройки магазина ---
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminShopSettingsView(AdminAPIMixin, generics.GenericAPIView):
+    """Доставка, оплата и реквизиты продавца. Пустое поле — значение из .env (`defaults`)."""
+
+    section = "settings"
+
+    serializer_class = AdminShopSettingsSerializer
+
+    @extend_schema(operation_id="admin_content_settings_retrieve")
+    def get(self, request):
+        return Response(AdminShopSettingsSerializer(shop.get_row()).data)
+
+    @extend_schema(
+        operation_id="admin_content_settings_update",
+        request=AdminShopSettingsWriteSerializer,
+        responses=AdminShopSettingsSerializer,
+    )
+    def put(self, request):
+        serializer = AdminShopSettingsWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        row = shop.update(**serializer.validated_data)
+        return Response(AdminShopSettingsSerializer(row).data)
+
+
+# --- Главная из блоков ---
+
+
+@extend_schema(tags=[TAG])
+class HomeView(PublicAPIMixin, generics.GenericAPIView):
+    """Опубликованная главная: блоки по порядку с товарами и категориями."""
+
+    serializer_class = HomeSerializer
+
+    @extend_schema(operation_id="content_home_retrieve")
+    def get(self, request):
+        blocks = home.published_blocks()
+        return Response(HomeSerializer({"blocks": blocks}, context={"request": request}).data)
+
+
+def _admin_home(request) -> Response:
+    page = home.get_page()
+    data = {
+        "blocks": home.draft_blocks(),
+        "has_changes": home.has_changes(page),
+        "published_at": page.published_at,
+    }
+    return Response(AdminHomeSerializer(data, context={"request": request}).data)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminHomeView(AdminAPIMixin, generics.GenericAPIView):
+    """Черновик главной: все блоки (и скрытые), есть ли неопубликованные правки."""
+
+    section = "storefront"
+
+    serializer_class = AdminHomeSerializer
+
+    @extend_schema(operation_id="admin_content_home_retrieve")
+    def get(self, request):
+        return _admin_home(request)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminHomePublishView(AdminAPIMixin, generics.GenericAPIView):
+    section = "storefront"
+
+    serializer_class = AdminHomeSerializer
+
+    @extend_schema(
+        operation_id="admin_content_home_publish",
+        request=None,
+        description="Опубликовать черновик: покупатели увидят видимые блоки в этом порядке.",
+    )
+    def post(self, request):
+        home.publish()
+        return _admin_home(request)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminHomeReorderView(AdminAPIMixin, generics.GenericAPIView):
+    """Новый порядок блоков главной (все id, каждый один раз)."""
+
+    section = "storefront"
+
+    serializer_class = AdminHomeReorderSerializer
+
+    @extend_schema(operation_id="admin_content_home_reorder", responses=AdminHomeSerializer)
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        home.reorder_blocks(serializer.validated_data["ids"])
+        return _admin_home(request)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminHomeBlockCreateView(AdminAPIMixin, generics.GenericAPIView):
+    section = "storefront"
+
+    serializer_class = AdminHomeBlockCreateSerializer
+
+    @extend_schema(
+        operation_id="admin_content_home_blocks_create",
+        responses={201: AdminHomeBlockSerializer},
+        description="Новый блок в конец страницы с текстом по умолчанию.",
+    )
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        block = home.add_block(serializer.validated_data["kind"])
+        data = AdminHomeBlockSerializer(block, context={"request": request}).data
+        return Response(data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminHomeBlockView(AdminAPIMixin, generics.GenericAPIView):
+    """Блок главной: правка в черновик или удаление."""
+
+    section = "storefront"
+
+    serializer_class = AdminHomeBlockUpdateSerializer
+    queryset = HomeBlock.objects.all()
+
+    @extend_schema(
+        operation_id="admin_content_home_blocks_partial_update",
+        responses=AdminHomeBlockSerializer,
+    )
+    def patch(self, request, pk: int):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        block = home.update_block(self.get_object(), **serializer.validated_data)
+        return Response(AdminHomeBlockSerializer(block, context={"request": request}).data)
+
+    @extend_schema(operation_id="admin_content_home_blocks_destroy", responses={204: None})
+    def delete(self, request, pk: int):
+        home.delete_block(self.get_object())
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminHomeBlockImageView(AdminAPIMixin, generics.GenericAPIView):
+    """Картинка баннера: загрузить (заменяет прежнюю) или убрать."""
+
+    section = "storefront"
+
+    serializer_class = AdminHomeImageUploadSerializer
+    queryset = HomeBlock.objects.all()
+    parser_classes = [MultiPartParser]
+
+    @extend_schema(
+        operation_id="admin_content_home_blocks_image_create",
+        responses=AdminHomeBlockSerializer,
+        description="Картинка баннера (JPEG/PNG/WebP, до 5 МБ); заменяет прежнюю.",
+    )
+    def post(self, request, pk: int):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        block = home.set_banner_image(self.get_object(), serializer.validated_data["image"])
+        return Response(AdminHomeBlockSerializer(block, context={"request": request}).data)
+
+    @extend_schema(
+        operation_id="admin_content_home_blocks_image_destroy",
+        request=None,
+        responses={200: AdminHomeBlockSerializer},
+    )
+    def delete(self, request, pk: int):
+        block = home.remove_banner_image(self.get_object())
+        return Response(AdminHomeBlockSerializer(block, context={"request": request}).data)
+
+
+# --- Тема для покупателей ---
+
+
+def _theme_data(*, all_palettes: bool = False) -> dict:
+    theme = look.shop_theme()
+    keys = list(look.PALETTES) if all_palettes else list(theme.palettes)
+    return {
+        "palettes": [look.PALETTES[key] for key in keys],
+        "accents": list(look.ACCENTS.values()),
+        "default_palette": theme.default_palette,
+        "default_mode": theme.default_mode,
+        "default_radius": theme.default_radius,
+        "enabled": list(theme.palettes),
+    }
+
+
+@extend_schema(tags=[TAG])
+class ShopThemeView(PublicAPIMixin, generics.GenericAPIView):
+    """Палитры, доступные покупателю, и оформление для нового посетителя (приложение)."""
+
+    serializer_class = ShopThemeSerializer
+
+    @extend_schema(operation_id="content_theme_retrieve")
+    def get(self, request):
+        return Response(ShopThemeSerializer(_theme_data()).data)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminThemeView(AdminAPIMixin, generics.GenericAPIView):
+    """Панель → «Тема»: все палитры, какие доступны покупателям, оформление по умолчанию."""
+
+    section = "storefront"
+
+    serializer_class = AdminThemeSerializer
+
+    @extend_schema(operation_id="admin_content_theme_retrieve")
+    def get(self, request):
+        return Response(AdminThemeSerializer(_theme_data(all_palettes=True)).data)
+
+    @extend_schema(
+        operation_id="admin_content_theme_update",
+        request=AdminThemeWriteSerializer,
+        responses=AdminThemeSerializer,
+    )
+    def put(self, request):
+        serializer = AdminThemeWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        look.update(**serializer.validated_data)
+        return Response(AdminThemeSerializer(_theme_data(all_palettes=True)).data)

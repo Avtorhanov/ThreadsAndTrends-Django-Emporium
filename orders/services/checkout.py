@@ -18,11 +18,11 @@
 import re
 from dataclasses import dataclass, field
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.db.models import F
 
+from content import shop as shop_settings
 from orders.models import (
     ORDER_NUMBER_PREFIX,
     ORDER_NUMBER_SEQUENCE,
@@ -82,15 +82,16 @@ class CheckoutPreview:
     defaults: RecipientDefaults = field(default_factory=RecipientDefaults)
 
 
-# --- Условия доставки и оплаты ---
+# --- Условия доставки и оплаты (панель → «Настройки», пустое поле — .env) ---
 
 
 def delivery_cost(method: str, items_total_kopecks: int) -> int:
     if method == DeliveryMethod.PICKUP:
         return 0
-    if items_total_kopecks >= settings.DELIVERY_FREE_FROM_KOPECKS:
+    shop = shop_settings.current()
+    if items_total_kopecks >= shop.delivery_free_from_kopecks:
         return 0
-    return settings.DELIVERY_COURIER_KOPECKS
+    return shop.delivery_courier_kopecks
 
 
 def delivery_options(items_total_kopecks: int) -> list[DeliveryOption]:
@@ -101,22 +102,26 @@ def delivery_options(items_total_kopecks: int) -> list[DeliveryOption]:
             cost_kopecks=delivery_cost(DeliveryMethod.COURIER, items_total_kopecks),
         )
     ]
-    if settings.PICKUP_ADDRESS:
+    pickup_address = shop_settings.current().pickup_address
+    if pickup_address:
         options.append(
             DeliveryOption(
                 method=DeliveryMethod.PICKUP,
                 title=DeliveryMethod.PICKUP.label,
                 cost_kopecks=0,
-                address=settings.PICKUP_ADDRESS,
+                address=pickup_address,
             )
         )
     return options
 
 
 def payment_methods() -> list[str]:
-    methods = [PaymentMethod.ON_DELIVERY.value]
-    if settings.ORDERS_ONLINE_PAYMENT_ENABLED:
-        methods.insert(0, PaymentMethod.ONLINE.value)
+    shop = shop_settings.current()
+    methods = []
+    if shop.online_payment:
+        methods.append(PaymentMethod.ONLINE.value)
+    if shop.cash_on_delivery:
+        methods.append(PaymentMethod.ON_DELIVERY.value)
     return methods
 
 
@@ -150,7 +155,7 @@ def preview(user, buy_now: LineInput | None = None) -> CheckoutPreview:
         cart=summary,
         delivery_options=delivery_options(summary.total_kopecks),
         payment_methods=payment_methods(),
-        free_delivery_from_kopecks=settings.DELIVERY_FREE_FROM_KOPECKS,
+        free_delivery_from_kopecks=shop_settings.current().delivery_free_from_kopecks,
         defaults=defaults,
     )
 
@@ -193,7 +198,7 @@ def _clean_input(data: CheckoutInput) -> dict:
 
     address = " ".join((data.delivery_address or "").split())
     if data.delivery_method == DeliveryMethod.PICKUP:
-        address = settings.PICKUP_ADDRESS  # снимок адреса пункта выдачи
+        address = shop_settings.current().pickup_address  # снимок адреса пункта выдачи
     elif len(address) < 5:
         errors["delivery_address"] = ["Укажите адрес доставки: город, улицу, дом и квартиру."]
     cleaned["delivery_address"] = address
@@ -311,6 +316,7 @@ def checkout(
                         product_name=line.variant.product.name,
                         size=line.variant.size,
                         sku=line.variant.sku,
+                        status_name=_status_name(line.variant.product),
                         price_kopecks=line.unit_price_kopecks,
                         quantity=line.quantity,
                     )
@@ -324,16 +330,17 @@ def checkout(
                 if updated != 1:  # невозможно под блокировкой; страховка от отрицательных остатков
                     raise ValidationError(_problems_message(summary), code="cart_changed")
 
+            sent = notifications.notify_status(order, created=True)
             OrderStatusChange.objects.create(
                 order=order,
                 from_status="",
                 to_status=order.status,
                 changed_by=ChangedBy.CUSTOMER,
                 actor=user,
+                notified=sent,
             )
             if buy_now is None:
                 cart.items.all().delete()
-            notifications.notify_status(order, created=True)
     except IntegrityError:
         # Гонка по уникальному ключу (owner, idempotency_key) без корзины-блокировки.
         existing = _find_existing(user, idempotency_key)
@@ -341,3 +348,8 @@ def checkout(
             raise
         return existing, False
     return order, True
+
+
+def _status_name(product) -> str:
+    status = product.status if product.status_id else None
+    return status.name if status else ""

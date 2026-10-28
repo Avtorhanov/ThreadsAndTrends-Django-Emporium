@@ -125,6 +125,8 @@ class OrderItem(models.Model):
     product_name = models.CharField(max_length=200, verbose_name="Название")
     size = models.CharField(max_length=50, blank=True, verbose_name="Размер")
     sku = models.CharField(max_length=64, verbose_name="Артикул")
+    # Снимок статуса товара («Под заказ») на момент заказа: справочник могут поменять.
+    status_name = models.CharField(max_length=40, blank=True, verbose_name="Статус товара")
     price_kopecks = models.PositiveBigIntegerField(verbose_name="Цена, коп.")
     quantity = models.PositiveIntegerField(verbose_name="Количество")
 
@@ -167,6 +169,13 @@ class OrderStatusChange(models.Model):
         related_name="+",
         verbose_name="Пользователь",
     )
+    comment = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name="Комментарий для клиента",
+        help_text="Видит клиент в истории заказа и в письме",
+    )
+    notified = models.BooleanField(default=False, verbose_name="Клиенту отправлено письмо")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Когда")
 
     class Meta:

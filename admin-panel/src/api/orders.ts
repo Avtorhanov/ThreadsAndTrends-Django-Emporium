@@ -71,11 +71,12 @@ export const ordersService = {
     return unwrap(api.GET("/api/v1/admin/orders/{id}/", { params: { path: { id } } }));
   },
 
-  transition(id: number, status: OrderStatus): Promise<AdminOrderDetail> {
+  /** comment виден клиенту (история и письмо); notify=false — без письма. */
+  transition(id: number, status: OrderStatus, comment = "", notify = true): Promise<AdminOrderDetail> {
     return unwrap(
       api.POST("/api/v1/admin/orders/{id}/transition/", {
         params: { path: { id } },
-        body: { status },
+        body: { status, comment, notify },
       }),
     );
   },

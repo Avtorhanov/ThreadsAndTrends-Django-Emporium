@@ -142,3 +142,37 @@ def test_status_change_sends_email(customer, staff, django_capture_on_commit_cal
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [customer.email]
     assert "собран" in mail.outbox[0].subject
+
+
+def test_comment_goes_to_history_and_email(customer, staff, django_capture_on_commit_callbacks):
+    order = make_order(customer)
+    with django_capture_on_commit_callbacks(execute=True):
+        status_service.transition(
+            order,
+            S.ASSEMBLED,
+            by=ChangedBy.ADMIN,
+            actor=staff,
+            comment="  Собрали,   курьер приедет завтра  ",
+        )
+
+    change = order.status_changes.get(to_status=S.ASSEMBLED)
+    assert change.comment == "Собрали, курьер приедет завтра"
+    assert change.notified is True
+    assert "Комментарий магазина: Собрали, курьер приедет завтра" in mail.outbox[0].body
+
+
+def test_transition_without_notification(customer, staff, django_capture_on_commit_callbacks):
+    order = make_order(customer)
+    with django_capture_on_commit_callbacks(execute=True):
+        status_service.transition(order, S.ASSEMBLED, by=ChangedBy.ADMIN, actor=staff, notify=False)
+
+    assert mail.outbox == []
+    assert order.status_changes.get(to_status=S.ASSEMBLED).notified is False
+
+
+def test_comment_too_long_is_rejected(customer, staff):
+    order = make_order(customer)
+    with pytest.raises(ValidationError):
+        status_service.transition(order, S.ASSEMBLED, by=ChangedBy.ADMIN, comment="я" * 501)
+    order.refresh_from_db()
+    assert order.status == S.CONFIRMED

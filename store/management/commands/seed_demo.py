@@ -6,14 +6,22 @@ from django.core.files import File
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
+from content import home
 from content import services as content
-from content.models import Article
-from store.models import Product
+from content.models import Article, HomeBlock
+from store.models import Category, Product, ProductStatus
 from store.services import catalog
 
 FIXTURE = Path(settings.BASE_DIR) / "fixtures/catalog.json"
 IMAGES = Path(settings.BASE_DIR) / "fixtures/demo_images"
 ARTICLES = Path(settings.BASE_DIR) / "fixtures/demo_articles.json"
+
+# Демо-статусы: какие товары витрина помечает. Префикс slug → название статуса из миграции.
+DEMO_STATUSES = {
+    "gucci-": "Под заказ",
+    "kinder-advent-": "Ожидается поставка",
+    "stanley-": "В наличии",
+}
 
 
 def demo_slugs() -> set[str]:
@@ -59,12 +67,44 @@ class Command(BaseCommand):
                     catalog.add_product_image(product, File(fh, name=path.name))
                 added += 1
         articles = self._seed_articles()
+        self._seed_statuses()
+        self._seed_home()
         total = Product.objects.count()
         self.stdout.write(
             self.style.SUCCESS(
                 f"Демо-каталог: товаров {total}, новых фото {added}, новых статей {articles}"
             )
         )
+
+    def _seed_statuses(self) -> None:
+        # Фикстура не знает о статусах; ставим только товарам без статуса — ручной выбор не трогаем.
+        for prefix, name in DEMO_STATUSES.items():
+            status = ProductStatus.objects.filter(name=name).first()
+            if status is None:
+                continue
+            Product.all_objects.filter(slug__startswith=prefix, status__isnull=True).update(
+                status=status
+            )
+
+    def _seed_home(self) -> None:
+        # Демо-главная — только если владелец ещё не собирал свою.
+        if HomeBlock.objects.exists() or home.get_page().published_at is not None:
+            return
+        by_slug = {c.slug: c for c in Category.objects.filter(slug__in=["dlya-doma", "luxe"])}
+        banner = home.add_block("banner")
+        home.update_block(
+            banner,
+            title="Новая коллекция",
+            text="Термосы Stanley и вещи на осень — уже в каталоге",
+            color="#DDF38A",
+            category=by_slug.get("dlya-doma"),
+        )
+        home.update_block(home.add_block("categories"), title="Категории")
+        home.update_block(home.add_block("collection"), title="Новинки")
+        if "luxe" in by_slug:
+            luxe = home.add_block("collection")
+            home.update_block(luxe, title="LUXE", source="category", category=by_slug["luxe"])
+        home.publish()
 
     def _seed_articles(self) -> int:
         # Статьи пишет владелец: демо-статьи — только в пустой раздел (свои не трогаем).

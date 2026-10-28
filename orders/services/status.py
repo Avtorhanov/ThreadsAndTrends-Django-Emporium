@@ -79,10 +79,23 @@ def can_cancel(order: Order, by: str) -> bool:
     return S.CANCELLED in allowed_transitions(order, by)
 
 
+COMMENT_MAX = 500
+
+
 @transaction.atomic
-def transition(order: Order, to_status: str, *, by: str, actor=None) -> Order:
+def transition(
+    order: Order, to_status: str, *, by: str, actor=None, comment: str = "", notify: bool = True
+) -> Order:
     """Перевести заказ в статус. Повтор того же статуса — без изменений (повторный клик,
-    повторный webhook). Недопустимый переход — ValidationError."""
+    повторный webhook). Недопустимый переход — ValidationError.
+
+    comment — пояснение для клиента (история заказа и письмо); notify=False — без письма
+    (администратор меняет статус «для себя», например исправляет ошибку)."""
+    comment = " ".join(comment.split())
+    if len(comment) > COMMENT_MAX:
+        raise ValidationError(
+            {"comment": f"Комментарий — не больше {COMMENT_MAX} символов."}, code="max_length"
+        )
     locked = Order.objects.select_for_update().get(pk=order.pk)
     if locked.status == to_status:
         return locked
@@ -96,22 +109,24 @@ def transition(order: Order, to_status: str, *, by: str, actor=None) -> Order:
     from_status = locked.status
     locked.status = to_status
     locked.save(update_fields=["status", "updated_at"])
+    sent = notify and notifications.notify_status(locked, comment=comment)
     OrderStatusChange.objects.create(
         order=locked,
         from_status=from_status,
         to_status=to_status,
         changed_by=by,
         actor=actor,
+        comment=comment,
+        notified=sent,
     )
     if to_status == S.CANCELLED:
         _return_stock(locked)
         order_cancelled.send(sender=Order, order=locked, was_paid=_was_paid(locked))
-    notifications.notify_status(locked)
     return locked
 
 
-def cancel(order: Order, *, by: str, actor=None) -> Order:
-    return transition(order, S.CANCELLED, by=by, actor=actor)
+def cancel(order: Order, *, by: str, actor=None, comment: str = "") -> Order:
+    return transition(order, S.CANCELLED, by=by, actor=actor, comment=comment)
 
 
 def mark_paid(order: Order) -> Order:

@@ -7,7 +7,7 @@ import { ApiError } from "../../../src/api/errors";
 import { useAuth } from "../../../src/auth/AuthProvider";
 import { useCart } from "../../../src/cart/CartProvider";
 import type { CartLine } from "../../../src/cart/cartService";
-import { ProductImage } from "../../../src/catalog/components";
+import { ProductImage, StatusPill } from "../../../src/catalog/components";
 import { Icon } from "../../../src/components/Icon";
 import {
   Button,
@@ -136,6 +136,7 @@ function CartRow({
           {product?.name ?? "Товар удалён из каталога"}
         </Text>
         {line.size ? <Text style={s.muted}>Размер {line.size}</Text> : null}
+        {product?.status && line.status !== "unavailable" ? <StatusPill status={product.status} /> : null}
         {line.unit_price_kopecks !== null ? (
           <Text style={s.price}>{formatKopecks(line.unit_price_kopecks)}</Text>
         ) : null}

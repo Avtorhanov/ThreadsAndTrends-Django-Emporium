@@ -73,13 +73,16 @@ def wait_until(page: Page, script: str, arg=None, what: str = "условие") 
 
 def wait_photos(page: Page, minimum: int) -> None:
     """Ждём фото на видимой части экрана: нижние грузятся лениво (loading=lazy), и при ожидании
-    «N фото на странице» проверка зависела от того, успел ли браузер дотянуть дальние."""
+    «N фото на странице» проверка зависела от того, успел ли браузер дотянуть дальние.
+    Видимость — по обеим осям: ряды подборок на главной листаются вбок, дальние карточки
+    за правым краем не загружаются, пока ряд не прокрутят."""
     wait_until(
         page,
         """(n) => {
             const shown = [...document.images].filter((img) => {
                 const r = img.getBoundingClientRect();
                 return r.width > 0 && r.bottom > 0 && r.top < innerHeight
+                    && r.right > 0 && r.left < innerWidth
                     && (img.currentSrc || img.src).includes('/media/');
             });
             return shown.length >= n && shown.every((img) => img.complete && img.naturalWidth > 0);
@@ -140,7 +143,8 @@ def shopper(browser, base: str, report: Report, errors: list[str]) -> None:
     watch_console(page, errors)
 
     page.goto(base + "/")
-    wait_photos(page, 4)
+    # Первый экран главной — блоки (баннер, категории, ряд «Новинки»): видно 2–3 карточки.
+    wait_photos(page, 2)
     expect(page.locator("[data-header]")).not_to_have_class(re.compile("is-compact"))
     report.shot(page, "phone-home")
     # Баннер приложения на телефоне: закрывается и больше не показывается.
@@ -258,7 +262,7 @@ def dark_phone(browser, base: str, report: Report, errors: list[str]) -> None:
     page = context.new_page()
     watch_console(page, errors)
     page.goto(base + "/")
-    wait_photos(page, 4)
+    wait_photos(page, 2)
     report.shot(page, "phone-dark-home")
     page.mouse.wheel(0, 1600)
     expect(page.locator("[data-header]")).to_have_class(re.compile("is-compact"))

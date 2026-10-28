@@ -12,6 +12,8 @@
 Оплата: {{ order.get_payment_method_display }}
 Статус: {{ status_label }}
 {% else %}Статус заказа {{ order.number }} изменился: {{ status_label }}.
-{% endif %}
+{% if comment %}
+Комментарий магазина: {{ comment }}
+{% endif %}{% endif %}
 Следить за заказом можно в приложении DiDi-shop, раздел «Мои заказы».
 {% endautoescape %}

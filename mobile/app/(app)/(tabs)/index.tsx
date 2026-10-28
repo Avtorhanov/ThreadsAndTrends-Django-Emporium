@@ -12,6 +12,8 @@ import type { ProductCard as ProductCardData } from "../../../src/catalog/catalo
 import { ProductCard } from "../../../src/catalog/components";
 import { FeedFade, GlassHeader, useHeaderHeight } from "../../../src/catalog/GlassHeader";
 import { useCategories, useProductFeed } from "../../../src/catalog/hooks";
+import { HomeBlocks } from "../../../src/content/HomeBlocks";
+import { useHomeBlocks } from "../../../src/content/hooks";
 import { useGridColumns } from "../../../src/components/layout";
 import { Segmented } from "../../../src/components/Segmented";
 import { Button, Loading, Message, ScreenTitle, TAB_BAR_SPACE } from "../../../src/components/ui";
@@ -36,6 +38,7 @@ export default function CatalogScreen() {
   const [category, setCategory] = useState<string>(ALL);
   const [search, setSearch] = useState("");
   const feed = useProductFeed({ category: category || undefined });
+  const home = useHomeBlocks();
   const list = useRef<FlatList<ProductCardData>>(null);
 
   // Шапка: свёрнута после 24 px прокрутки, разворачивается выше 8 px (гистерезис — не дёргается).
@@ -74,7 +77,10 @@ export default function CatalogScreen() {
 
   const roots = categories.data ?? [];
   const segments = [{ value: ALL, label: "Все" }, ...roots.map((root) => ({ value: root.slug, label: root.name }))];
-  const current = roots.find((root) => root.slug === category);
+  // Баннер главной может вести в подкатегорию — её название тоже показываем в заголовке.
+  const current =
+    roots.find((root) => root.slug === category) ??
+    roots.flatMap((root) => root.children).find((child) => child.slug === category);
 
   return (
     <View style={s.screen}>
@@ -96,6 +102,7 @@ export default function CatalogScreen() {
             onRefresh={() => {
               feed.refresh();
               categories.reload();
+              home.reload();
             }}
             progressViewOffset={headerHeight}
             tintColor={c.ink}
@@ -106,6 +113,18 @@ export default function CatalogScreen() {
             <ScreenTitle overline="Каталог" title={current?.name ?? "Все товары"} />
             {feed.count !== null ? <Text style={s.count}>Товаров: {feed.count}</Text> : null}
             <Message text={categories.error} />
+            {/* Блоки главной — только на «Все»; в категории — сразу её товары. */}
+            {category === ALL && home.data ? (
+              <View style={s.blocks}>
+                <HomeBlocks
+                  blocks={home.data}
+                  onCategory={(slug) => {
+                    setCategory(slug);
+                    scrollTop();
+                  }}
+                />
+              </View>
+            ) : null}
           </View>
         }
         renderItem={({ item }) => (
@@ -153,6 +172,7 @@ const useStyles = makeStyles(({ c }) => ({
   screen: { flex: 1, backgroundColor: c.bg },
   content: { paddingHorizontal: space.feedSide, paddingBottom: TAB_BAR_SPACE, gap: space.gridGap },
   head: { gap: 6, paddingHorizontal: 2, paddingBottom: 12 },
+  blocks: { marginTop: 12, marginHorizontal: -2 },
   row: { gap: space.gridGap },
   // Ячейка — доля ширины даже для последнего неполного ряда.
   cell: { flex: 1 },

@@ -247,6 +247,13 @@ SPECTACULAR_SETTINGS = {
         "ContactKindEnum": "content.contacts.ContactKind.CHOICES",
         "BlockKindEnum": "content.models.BlockKind.choices",
         "BlockAreaEnum": "content.models.BlockArea.choices",
+        "HomeBlockKindEnum": "content.models.HomeBlockKind.choices",
+        "CollectionSourceEnum": "content.models.CollectionSource.choices",
+        "PaletteKeyEnum": "content.look.PALETTE_CHOICES",
+        "PaletteGroupEnum": "content.look.PALETTE_GROUP_CHOICES",
+        "ThemeModeEnum": "content.look.MODE_CHOICES",
+        "ThemeRadiusEnum": "content.look.RADIUS_CHOICES",
+        "StaffLevelEnum": "accounts.staff.LEVEL_CHOICES",
     },
 }
 

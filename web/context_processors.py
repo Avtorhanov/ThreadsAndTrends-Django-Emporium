@@ -5,6 +5,7 @@ from functools import cache
 
 from django.conf import settings
 
+from content import shop as shop_settings
 from store.services.storefront import category_tree
 
 from . import cart, theme
@@ -49,19 +50,24 @@ def storefront(request):
     def cart_slugs():
         return cart.product_slugs(request)
 
+    @cache
+    def seller():
+        # Реквизиты из панели («Настройки»), пустое поле — из .env.
+        return shop_settings.current().seller
+
+    @cache
+    def seller_line():
+        # Заполненные реквизиты одной строкой подвала; пустые не показываются.
+        return seller().parts()
+
     return {
         "theme": theme.get_theme(request),
+        "look": theme.get_look(request),
         "cart_count": cart_count,
         "nav_categories": nav_categories,
         "app_banner": banner,
         "cart_slugs": cart_slugs,
         "android_apk_url": settings.ANDROID_APK_URL,
-        "seller": {
-            "name": settings.SELLER_NAME,
-            "inn": settings.SELLER_INN,
-            "ogrn": settings.SELLER_OGRN,
-            "address": settings.SELLER_ADDRESS,
-            "email": settings.SELLER_EMAIL,
-            "phone": settings.SELLER_PHONE,
-        },
+        "seller": seller,
+        "seller_line": seller_line,
     }

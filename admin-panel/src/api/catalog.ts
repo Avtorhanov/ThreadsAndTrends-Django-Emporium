@@ -15,13 +15,22 @@ export type Variant = Schemas["AdminVariant"];
 export type VariantInput = Schemas["AdminVariantRequest"];
 export type VariantPatch = Schemas["PatchedAdminVariantRequest"];
 export type ProductImage = Schemas["AdminImage"];
+/** Статус товара для покупателя («Под заказ»…) — справочник. */
+export type ProductLabel = Schemas["AdminProductStatus"];
+export type ProductLabelInput = Schemas["AdminProductStatusRequest"];
+export type ProductLabelPatch = Schemas["PatchedAdminProductStatusRequest"];
+export type ProductBulk = Schemas["AdminProductBulkRequest"];
+export type LabelTone = "success" | "warning" | "info" | "neutral";
 
+/** Видимость в списке панели (фильтр status API). */
 export type ProductStatus = "active" | "inactive" | "deleted";
 export type StockFilter = "in_stock" | "out_of_stock";
 
 export type ProductQuery = {
   search: string;
   status: ProductStatus | "";
+  /** id статуса товара или "none" — без статуса. */
+  label: string;
   category: number | null;
   stock: StockFilter | "";
   page: number;
@@ -51,13 +60,14 @@ export const categoriesService = {
 };
 
 export const productsService = {
-  list({ search, status, category, stock, page }: ProductQuery): Promise<ProductPage> {
+  list({ search, status, label, category, stock, page }: ProductQuery): Promise<ProductPage> {
     return unwrap(
       api.GET("/api/v1/admin/catalog/products/", {
         params: {
           query: {
             search: search || undefined,
             status: status || undefined,
+            label: label || undefined,
             category: category ?? undefined,
             stock: stock || undefined,
             page,
@@ -83,6 +93,35 @@ export const productsService = {
       api.POST("/api/v1/admin/catalog/products/{id}/restore/", { params: { path: { id } } }),
     );
   },
+  bulk(body: ProductBulk): Promise<{ updated: number }> {
+    return unwrap(api.POST("/api/v1/admin/catalog/products/bulk/", { body }));
+  },
+};
+
+export const labelsService = {
+  list(): Promise<ProductLabel[]> {
+    return unwrap(api.GET("/api/v1/admin/catalog/statuses/"));
+  },
+  create(body: ProductLabelInput): Promise<ProductLabel> {
+    return unwrap(api.POST("/api/v1/admin/catalog/statuses/", { body }));
+  },
+  update(id: number, body: ProductLabelPatch): Promise<ProductLabel> {
+    return unwrap(
+      api.PATCH("/api/v1/admin/catalog/statuses/{id}/", { params: { path: { id } }, body }),
+    );
+  },
+  remove(id: number): Promise<void> {
+    return unwrap(
+      api.DELETE("/api/v1/admin/catalog/statuses/{id}/", { params: { path: { id } } }),
+    ).then(() => undefined);
+  },
+};
+
+export const LABEL_TONES: Record<LabelTone, string> = {
+  success: "Зелёный",
+  warning: "Жёлтый",
+  info: "Синий",
+  neutral: "Серый",
 };
 
 export const variantsService = {

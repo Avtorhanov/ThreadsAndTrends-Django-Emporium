@@ -208,6 +208,11 @@ paths:
         schema:
           type: integer
         description: id категории (с подкатегориями)
+      - in: query
+        name: label
+        schema:
+          type: string
+        description: id статуса товара; none — без статуса
       - name: page
         required: false
         in: query
@@ -438,6 +443,109 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminVariant'
           description: ''
+  /api/v1/admin/catalog/products/bulk/:
+    post:
+      operationId: admin_catalog_products_bulk_create
+      description: 'Массово: статус, категория или видимость у отмеченных товаров
+        (до 200).'
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductBulkRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductBulkResult'
+          description: ''
+  /api/v1/admin/catalog/statuses/:
+    get:
+      operationId: admin_catalog_statuses_list
+      description: Справочник статусов товаров. Удаление снимает метку с товаров.
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminProductStatus'
+          description: ''
+    post:
+      operationId: admin_catalog_statuses_create
+      description: Справочник статусов товаров. Удаление снимает метку с товаров.
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductStatusRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductStatus'
+          description: ''
+  /api/v1/admin/catalog/statuses/{id}/:
+    patch:
+      operationId: admin_catalog_statuses_partial_update
+      description: Справочник статусов товаров. Удаление снимает метку с товаров.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статус товара.
+        required: true
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminProductStatusRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductStatus'
+          description: ''
+    delete:
+      operationId: admin_catalog_statuses_destroy
+      description: Справочник статусов товаров. Удаление снимает метку с товаров.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статус товара.
+        required: true
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/admin/catalog/variants/{id}/:
     patch:
       operationId: admin_catalog_variants_partial_update
@@ -854,6 +962,206 @@ paths:
                 items:
                   $ref: '#/components/schemas/AdminBlock'
           description: ''
+  /api/v1/admin/content/home/:
+    get:
+      operationId: admin_content_home_retrieve
+      description: 'Черновик главной: все блоки (и скрытые), есть ли неопубликованные
+        правки.'
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHome'
+          description: ''
+  /api/v1/admin/content/home/blocks/:
+    post:
+      operationId: admin_content_home_blocks_create
+      description: Новый блок в конец страницы с текстом по умолчанию.
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminHomeBlockCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHomeBlock'
+          description: ''
+  /api/v1/admin/content/home/blocks/{id}/:
+    patch:
+      operationId: admin_content_home_blocks_partial_update
+      description: 'Блок главной: правка в черновик или удаление.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminHomeBlockUpdateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHomeBlock'
+          description: ''
+    delete:
+      operationId: admin_content_home_blocks_destroy
+      description: 'Блок главной: правка в черновик или удаление.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/content/home/blocks/{id}/image/:
+    post:
+      operationId: admin_content_home_blocks_image_create
+      description: Картинка баннера (JPEG/PNG/WebP, до 5 МБ); заменяет прежнюю.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminHomeImageUploadRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHomeBlock'
+          description: ''
+    delete:
+      operationId: admin_content_home_blocks_image_destroy
+      description: 'Картинка баннера: загрузить (заменяет прежнюю) или убрать.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHomeBlock'
+          description: ''
+  /api/v1/admin/content/home/publish/:
+    post:
+      operationId: admin_content_home_publish
+      description: 'Опубликовать черновик: покупатели увидят видимые блоки в этом
+        порядке.'
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHome'
+          description: ''
+  /api/v1/admin/content/home/reorder/:
+    post:
+      operationId: admin_content_home_reorder
+      description: Новый порядок блоков главной (все id, каждый один раз).
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminHomeReorderRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHome'
+          description: ''
+  /api/v1/admin/content/settings/:
+    get:
+      operationId: admin_content_settings_retrieve
+      description: Доставка, оплата и реквизиты продавца. Пустое поле — значение из
+        .env (`defaults`).
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminShopSettings'
+          description: ''
+    put:
+      operationId: admin_content_settings_update
+      description: Доставка, оплата и реквизиты продавца. Пустое поле — значение из
+        .env (`defaults`).
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminShopSettingsWriteRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminShopSettings'
+          description: ''
   /api/v1/admin/content/texts/{key}/:
     put:
       operationId: admin_content_texts_update
@@ -899,6 +1207,43 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/admin/content/theme/:
+    get:
+      operationId: admin_content_theme_retrieve
+      description: 'Панель → «Тема»: все палитры, какие доступны покупателям, оформление
+        по умолчанию.'
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTheme'
+          description: ''
+    put:
+      operationId: admin_content_theme_update
+      description: 'Панель → «Тема»: все палитры, какие доступны покупателям, оформление
+        по умолчанию.'
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminThemeWriteRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTheme'
+          description: ''
   /api/v1/admin/customers/:
     get:
       operationId: admin_customers_list
@@ -1172,7 +1517,8 @@ paths:
     post:
       operationId: admin_orders_transition
       description: Перевести заказ в статус из allowed_transitions. Отмена возвращает
-        остатки; «Оплачен» ставит только платёжная система.
+        остатки; «Оплачен» ставит только платёжная система. comment виден клиенту
+        в истории и в письме; notify=false — без письма.
       parameters:
       - in: path
         name: id
@@ -1197,6 +1543,90 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminOrderDetail'
           description: ''
+  /api/v1/admin/staff/:
+    get:
+      operationId: admin_staff_list
+      description: 'Сотрудники панели: приглашение по email, права по разделам, отключение.
+        Только владелец.'
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StaffMember'
+          description: ''
+    post:
+      operationId: admin_staff_create
+      description: 'Пригласить: письмо с кодом, по которому сотрудник сам задаёт пароль.'
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffInviteRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffMember'
+          description: ''
+  /api/v1/admin/staff/{id}/:
+    patch:
+      operationId: admin_staff_partial_update
+      description: 'Сотрудники панели: приглашение по email, права по разделам, отключение.
+        Только владелец.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Пользователь.
+        required: true
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffUpdateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffMember'
+          description: ''
+  /api/v1/admin/staff/{id}/resend/:
+    post:
+      operationId: admin_staff_resend
+      description: Отправить приглашение ещё раз (новый код; прежний перестаёт действовать).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Пользователь.
+        required: true
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/admin/summary/:
     get:
       operationId: admin_summary
@@ -1727,6 +2157,37 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Contact'
+          description: ''
+  /api/v1/content/home/:
+    get:
+      operationId: content_home_retrieve
+      description: 'Опубликованная главная: блоки по порядку с товарами и категориями.'
+      tags:
+      - content
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Home'
+          description: ''
+  /api/v1/content/theme/:
+    get:
+      operationId: content_theme_retrieve
+      description: Палитры, доступные покупателю, и оформление для нового посетителя
+        (приложение).
+      tags:
+      - content
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopTheme'
           description: ''
   /api/v1/health/:
     get:
@@ -2296,6 +2757,124 @@ components:
           title: Показывать
       required:
       - name
+    AdminHome:
+      type: object
+      properties:
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminHomeBlock'
+        has_changes:
+          type: boolean
+          description: Есть неопубликованные правки
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - blocks
+      - has_changes
+      - published_at
+    AdminHomeBlock:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/HomeBlockKindEnum'
+          readOnly: true
+          title: Тип
+        position:
+          type: integer
+          readOnly: true
+          title: Порядок
+        is_visible:
+          type: boolean
+          readOnly: true
+          title: Показывать
+        title:
+          type: string
+          readOnly: true
+          title: Заголовок
+        text:
+          type: string
+          readOnly: true
+          title: Текст
+        color:
+          type: string
+          readOnly: true
+          title: Цвет
+        ink:
+          type: string
+          readOnly: true
+        image_url:
+          type: string
+          nullable: true
+          readOnly: true
+        category:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Категория
+        source:
+          allOf:
+          - $ref: '#/components/schemas/CollectionSourceEnum'
+          readOnly: true
+          title: Какие товары
+        product_ids:
+          type: array
+          items:
+            type: integer
+          readOnly: true
+          description: Ручная подборка по порядку
+        preview_products:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogProduct'
+          readOnly: true
+          description: Товары подборки, как их увидит покупатель
+      required:
+      - category
+      - color
+      - id
+      - image_url
+      - ink
+      - is_visible
+      - kind
+      - position
+      - preview_products
+      - product_ids
+      - source
+      - text
+      - title
+    AdminHomeBlockCreateRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/HomeBlockKindEnum'
+      required:
+      - kind
+    AdminHomeImageUploadRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          format: binary
+          description: JPEG, PNG или WebP, до 5 МБ
+      required:
+      - image
+    AdminHomeReorderRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          description: Все id блоков в новом порядке
+      required:
+      - ids
     AdminImage:
       type: object
       properties:
@@ -2575,6 +3154,9 @@ components:
           type: string
         changed_by:
           $ref: '#/components/schemas/ChangedByEnum'
+        comment:
+          type: string
+          description: Комментарий магазина для клиента; пусто — нет
         created_at:
           type: string
           format: date-time
@@ -2582,11 +3164,16 @@ components:
           type: string
           nullable: true
           readOnly: true
+        notified:
+          type: boolean
+          description: Клиенту отправлено письмо
       required:
       - actor_email
       - changed_by
+      - comment
       - created_at
       - from_status
+      - notified
       - to_status
       - to_status_display
     AdminPayment:
@@ -2657,6 +3244,11 @@ components:
           readOnly: true
           nullable: true
           title: Старая цена, коп.
+        status:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Статус
         is_active:
           type: boolean
           readOnly: true
@@ -2697,8 +3289,39 @@ components:
       - name
       - price_kopecks
       - slug
+      - status
       - total_stock
       - updated_at
+    AdminProductBulkRequest:
+      type: object
+      description: 'Массовое изменение: передаются только меняемые поля.'
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          description: id товаров
+          maxItems: 200
+        status:
+          type: integer
+          nullable: true
+          description: Новый статус; null — снять метку
+        category:
+          type: integer
+          description: Перенести в категорию
+        is_active:
+          type: boolean
+          description: Показывать на витрине
+      required:
+      - ids
+    AdminProductBulkResult:
+      type: object
+      properties:
+        updated:
+          type: integer
+          description: Сколько товаров изменено
+      required:
+      - updated
     AdminProductCreateRequest:
       type: object
       properties:
@@ -2732,6 +3355,10 @@ components:
           minimum: 1
           format: int64
           nullable: true
+        status:
+          type: integer
+          nullable: true
+          description: id статуса; null — без метки
         is_active:
           type: boolean
         variants:
@@ -2774,6 +3401,11 @@ components:
           readOnly: true
           nullable: true
           title: Старая цена, коп.
+        status:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Статус
         is_active:
           type: boolean
           readOnly: true
@@ -2830,9 +3462,64 @@ components:
       - name
       - price_kopecks
       - slug
+      - status
       - total_stock
       - updated_at
       - variants
+    AdminProductStatus:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Название
+          maxLength: 40
+        hint:
+          type: string
+          title: Подсказка покупателю
+          maxLength: 120
+        tone:
+          allOf:
+          - $ref: '#/components/schemas/ToneEnum'
+          title: Цвет
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+        products_count:
+          type: integer
+          readOnly: true
+          description: Товаров с этим статусом
+      required:
+      - id
+      - name
+      - products_count
+    AdminProductStatusRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Название
+          maxLength: 40
+        hint:
+          type: string
+          title: Подсказка покупателю
+          maxLength: 120
+        tone:
+          allOf:
+          - $ref: '#/components/schemas/ToneEnum'
+          title: Цвет
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+      required:
+      - name
     AdminRefund:
       type: object
       properties:
@@ -2866,6 +3553,179 @@ components:
       - reason_display
       - status
       - status_display
+    AdminShopDefaults:
+      type: object
+      description: Значения из .env — действуют, пока поле в панели пустое.
+      properties:
+        delivery_courier_kopecks:
+          type: integer
+        delivery_free_from_kopecks:
+          type: integer
+        pickup_address:
+          type: string
+        unpaid_timeout_minutes:
+          type: integer
+        seller_name:
+          type: string
+        seller_inn:
+          type: string
+        seller_ogrn:
+          type: string
+        seller_address:
+          type: string
+        seller_phone:
+          type: string
+        seller_email:
+          type: string
+      required:
+      - delivery_courier_kopecks
+      - delivery_free_from_kopecks
+      - pickup_address
+      - seller_address
+      - seller_email
+      - seller_inn
+      - seller_name
+      - seller_ogrn
+      - seller_phone
+      - unpaid_timeout_minutes
+    AdminShopSettings:
+      type: object
+      properties:
+        delivery_courier_kopecks:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Доставка курьером, коп.
+        delivery_free_from_kopecks:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Бесплатная доставка от, коп.
+        pickup_enabled:
+          type: boolean
+          readOnly: true
+          title: Самовывоз
+        pickup_address:
+          type: string
+          readOnly: true
+          title: Адрес пункта выдачи
+        cash_on_delivery_enabled:
+          type: boolean
+          readOnly: true
+          title: Оплата при получении
+        unpaid_timeout_minutes:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Автоотмена неоплаченного заказа, мин
+        seller_name:
+          type: string
+          readOnly: true
+          title: Продавец
+        seller_inn:
+          type: string
+          readOnly: true
+          title: ИНН
+        seller_ogrn:
+          type: string
+          readOnly: true
+          title: ОГРН / ОГРНИП
+        seller_address:
+          type: string
+          readOnly: true
+          title: Адрес продавца
+        seller_phone:
+          type: string
+          readOnly: true
+          title: Телефон
+        seller_email:
+          type: string
+          format: email
+          readOnly: true
+          title: Email
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        online_payment_available:
+          type: boolean
+          readOnly: true
+          description: Онлайн-оплата подключена на сервере (ключи ЮKassa в .env)
+        defaults:
+          allOf:
+          - $ref: '#/components/schemas/AdminShopDefaults'
+          readOnly: true
+      required:
+      - cash_on_delivery_enabled
+      - defaults
+      - delivery_courier_kopecks
+      - delivery_free_from_kopecks
+      - online_payment_available
+      - pickup_address
+      - pickup_enabled
+      - seller_address
+      - seller_email
+      - seller_inn
+      - seller_name
+      - seller_ogrn
+      - seller_phone
+      - unpaid_timeout_minutes
+      - updated_at
+    AdminShopSettingsWriteRequest:
+      type: object
+      description: Все поля разом; пустая строка или null — значение из .env.
+      properties:
+        delivery_courier_kopecks:
+          type: integer
+          minimum: 0
+          nullable: true
+        delivery_free_from_kopecks:
+          type: integer
+          minimum: 0
+          nullable: true
+        pickup_enabled:
+          type: boolean
+        pickup_address:
+          type: string
+          maxLength: 300
+        cash_on_delivery_enabled:
+          type: boolean
+        unpaid_timeout_minutes:
+          type: integer
+          minimum: 1
+          nullable: true
+        seller_name:
+          type: string
+          maxLength: 200
+        seller_inn:
+          type: string
+          maxLength: 20
+        seller_ogrn:
+          type: string
+          maxLength: 20
+        seller_address:
+          type: string
+          maxLength: 300
+        seller_phone:
+          type: string
+          maxLength: 30
+        seller_email:
+          type: string
+          maxLength: 254
+      required:
+      - cash_on_delivery_enabled
+      - delivery_courier_kopecks
+      - delivery_free_from_kopecks
+      - pickup_address
+      - pickup_enabled
+      - seller_address
+      - seller_email
+      - seller_inn
+      - seller_name
+      - seller_ogrn
+      - seller_phone
+      - unpaid_timeout_minutes
     AdminSiteText:
       type: object
       properties:
@@ -2943,6 +3803,57 @@ components:
       required:
       - orders
       - turnover_kopecks
+    AdminTheme:
+      type: object
+      description: Что может выбрать покупатель и что видит новый посетитель.
+      properties:
+        palettes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThemePalette'
+          description: Доступные палитры по порядку
+        accents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThemeAccent'
+          description: Акценты палитры «Своя»
+        default_palette:
+          $ref: '#/components/schemas/PaletteKeyEnum'
+        default_mode:
+          $ref: '#/components/schemas/ThemeModeEnum'
+        default_radius:
+          $ref: '#/components/schemas/ThemeRadiusEnum'
+        enabled:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaletteKeyEnum'
+          description: Ключи палитр, доступных покупателям
+      required:
+      - accents
+      - default_mode
+      - default_palette
+      - default_radius
+      - enabled
+      - palettes
+    AdminThemeWriteRequest:
+      type: object
+      properties:
+        palettes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaletteKeyEnum'
+          description: Ключи палитр, доступных покупателям
+        default_palette:
+          $ref: '#/components/schemas/PaletteKeyEnum'
+        default_mode:
+          $ref: '#/components/schemas/ThemeModeEnum'
+        default_radius:
+          $ref: '#/components/schemas/ThemeRadiusEnum'
+      required:
+      - default_mode
+      - default_palette
+      - default_radius
+      - palettes
     AdminTransitionOption:
       type: object
       properties:
@@ -2958,6 +3869,15 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/OrderStatusEnum'
+        comment:
+          type: string
+          default: ''
+          description: 'Пояснение для клиента: история заказа и письмо'
+          maxLength: 500
+        notify:
+          type: boolean
+          default: true
+          description: Отправить клиенту письмо о смене статуса
       required:
       - status
     AdminVariant:
@@ -3353,11 +4273,17 @@ components:
           type: string
           nullable: true
           readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ProductStatus'
+          nullable: true
+          description: 'Метка товара: «Под заказ»…'
       required:
       - cover_url
       - id
       - name
       - slug
+      - status
     CatalogCategoryShort:
       type: object
       properties:
@@ -3452,6 +4378,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/CatalogCategoryShort'
           readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ProductStatus'
+          readOnly: true
+          nullable: true
       required:
       - category
       - compare_at_kopecks
@@ -3462,6 +4393,7 @@ components:
       - price_kopecks
       - price_on_request
       - slug
+      - status
     CatalogProductDetail:
       type: object
       properties:
@@ -3502,6 +4434,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/CatalogCategoryShort'
           readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ProductStatus'
+          readOnly: true
+          nullable: true
         description:
           type: string
           readOnly: true
@@ -3528,6 +4465,7 @@ components:
       - price_kopecks
       - price_on_request
       - slug
+      - status
       - variants
     CatalogVariant:
       type: object
@@ -3637,6 +4575,16 @@ components:
       - delivery_options
       - free_delivery_from_kopecks
       - payment_methods
+    CollectionSourceEnum:
+      enum:
+      - new
+      - category
+      - manual
+      type: string
+      description: |-
+        * `new` - Новинки
+        * `category` - Категория
+        * `manual` - Вручную
     Contact:
       type: object
       properties:
@@ -3785,6 +4733,88 @@ components:
       description: |-
         * `ok` - ok
         * `error` - error
+    Home:
+      type: object
+      properties:
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/HomeBlock'
+      required:
+      - blocks
+    HomeBlock:
+      type: object
+      description: Блок опубликованной главной с данными для показа.
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/HomeBlockKindEnum'
+        title:
+          type: string
+        text:
+          type: string
+          description: Баннер — описание; текст — абзацы через пустую строку
+        color:
+          type: string
+          description: 'Фон баннера #RRGGBB; у других блоков пусто'
+        ink:
+          type: string
+          description: Цвет текста на фоне баннера
+        image_url:
+          type: string
+          nullable: true
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/HomeCategory'
+          nullable: true
+          description: Баннер — переход в категорию; подборка — «Все»
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogProduct'
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/HomeCategory'
+          description: 'Лента категорий: корневые'
+      required:
+      - categories
+      - category
+      - color
+      - id
+      - image_url
+      - ink
+      - kind
+      - products
+      - text
+      - title
+    HomeBlockKindEnum:
+      enum:
+      - banner
+      - collection
+      - categories
+      - text
+      type: string
+      description: |-
+        * `banner` - Баннер
+        * `collection` - Подборка товаров
+        * `categories` - Лента категорий
+        * `text` - Текст
+    HomeCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+      required:
+      - id
+      - name
+      - slug
     LoginRequest:
       type: object
       properties:
@@ -3945,6 +4975,9 @@ components:
           description: Пусто — товар без размера
         sku:
           type: string
+        status_name:
+          type: string
+          description: Статус товара на момент заказа («Под заказ»); пусто — без статуса
         price_kopecks:
           type: integer
           description: Цена на момент заказа, коп.
@@ -3966,6 +4999,7 @@ components:
       - quantity
       - size
       - sku
+      - status_name
     OrderList:
       type: object
       properties:
@@ -4035,11 +5069,15 @@ components:
           type: string
         changed_by:
           $ref: '#/components/schemas/ChangedByEnum'
+        comment:
+          type: string
+          description: Комментарий магазина для клиента; пусто — нет
         created_at:
           type: string
           format: date-time
       required:
       - changed_by
+      - comment
       - created_at
       - from_status
       - to_status
@@ -4202,6 +5240,34 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OrderList'
+    PaletteGroupEnum:
+      enum:
+      - bright
+      - calm
+      - custom
+      type: string
+      description: |-
+        * `bright` - Яркие
+        * `calm` - Сдержанные
+        * `custom` - Свой цвет
+    PaletteKeyEnum:
+      enum:
+      - lime
+      - mint
+      - sun
+      - steel
+      - graphite
+      - olive
+      - custom
+      type: string
+      description: |-
+        * `lime` - Лайм-тек
+        * `mint` - Мята
+        * `sun` - Солнце
+        * `steel` - Сталь
+        * `graphite` - Графит
+        * `olive` - Олива
+        * `custom` - Своя
     PasswordResetConfirmRequest:
       type: object
       properties:
@@ -4291,6 +5357,52 @@ components:
         is_active:
           type: boolean
           title: Показывать
+    PatchedAdminHomeBlockUpdateRequest:
+      type: object
+      properties:
+        is_visible:
+          type: boolean
+        title:
+          type: string
+          maxLength: 60
+        text:
+          type: string
+          maxLength: 1000
+        color:
+          type: string
+          maxLength: 7
+        category:
+          type: integer
+          nullable: true
+        source:
+          $ref: '#/components/schemas/CollectionSourceEnum'
+        product_ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          maxItems: 12
+    PatchedAdminProductStatusRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Название
+          maxLength: 40
+        hint:
+          type: string
+          title: Подсказка покупателю
+          maxLength: 120
+        tone:
+          allOf:
+          - $ref: '#/components/schemas/ToneEnum'
+          title: Цвет
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
     PatchedAdminProductUpdateRequest:
       type: object
       properties:
@@ -4324,6 +5436,10 @@ components:
           minimum: 1
           format: int64
           nullable: true
+        status:
+          type: integer
+          nullable: true
+          description: id статуса; null — без метки
         is_active:
           type: boolean
     PatchedAdminVariantRequest:
@@ -4363,6 +5479,17 @@ components:
           type: string
           title: Фамилия
           maxLength: 150
+    PatchedStaffUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        is_active:
+          type: boolean
+          description: 'false — отключить: вход закрыт, сессии завершены'
+        permissions:
+          $ref: '#/components/schemas/StaffPermissionsInputRequest'
     PaymentMethodEnum:
       enum:
       - online
@@ -4404,6 +5531,32 @@ components:
         * `succeeded` - Оплачен
         * `canceled` - Не оплачен
         * `refunded` - Возвращён
+    ProductStatus:
+      type: object
+      description: 'Метка товара для покупателя («Под заказ»…). tone — цвет: success,
+        warning, info, neutral.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          title: Название
+        hint:
+          type: string
+          readOnly: true
+          title: Подсказка покупателю
+        tone:
+          allOf:
+          - $ref: '#/components/schemas/ToneEnum'
+          readOnly: true
+          title: Цвет
+      required:
+      - hint
+      - id
+      - name
+      - tone
     Profile:
       type: object
       properties:
@@ -4427,10 +5580,17 @@ components:
           format: date-time
           readOnly: true
           title: Дата регистрации
+        is_staff:
+          type: boolean
+          readOnly: true
+          title: Статус персонала
+          description: Отметьте, если пользователь может входить в административную
+            часть сайта.
       required:
       - date_joined
       - email
       - id
+      - is_staff
     RecipientDefaults:
       type: object
       properties:
@@ -4495,6 +5655,186 @@ components:
       required:
       - email
       - password
+    ShopTheme:
+      type: object
+      description: Что может выбрать покупатель и что видит новый посетитель.
+      properties:
+        palettes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThemePalette'
+          description: Доступные палитры по порядку
+        accents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThemeAccent'
+          description: Акценты палитры «Своя»
+        default_palette:
+          $ref: '#/components/schemas/PaletteKeyEnum'
+        default_mode:
+          $ref: '#/components/schemas/ThemeModeEnum'
+        default_radius:
+          $ref: '#/components/schemas/ThemeRadiusEnum'
+      required:
+      - accents
+      - default_mode
+      - default_palette
+      - default_radius
+      - palettes
+    StaffInviteRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        first_name:
+          type: string
+          default: ''
+          maxLength: 150
+        permissions:
+          $ref: '#/components/schemas/StaffPermissionsInputRequest'
+      required:
+      - email
+      - permissions
+    StaffLevelEnum:
+      enum:
+      - none
+      - view
+      - edit
+      type: string
+      description: |-
+        * `none` - Нет доступа
+        * `view` - Смотреть
+        * `edit` - Менять
+    StaffMember:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+          title: Имя
+        last_name:
+          type: string
+          readOnly: true
+          title: Фамилия
+        is_superuser:
+          type: boolean
+          readOnly: true
+          title: Статус суперпользователя
+          description: Указывает, что пользователь имеет все права без явного их назначения.
+        is_owner:
+          type: boolean
+          readOnly: true
+        permissions:
+          allOf:
+          - $ref: '#/components/schemas/StaffPermissions'
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+          title: Активный
+          description: Отметьте, если пользователь должен считаться активным. Уберите
+            эту отметку вместо удаления учётной записи.
+        invited:
+          type: boolean
+          readOnly: true
+          description: Приглашён, но ещё не задал пароль
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Последний вход
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата регистрации
+      required:
+      - date_joined
+      - email
+      - first_name
+      - id
+      - invited
+      - is_active
+      - is_owner
+      - is_superuser
+      - last_login
+      - last_name
+      - permissions
+    StaffPermissions:
+      type: object
+      description: Уровень доступа по каждому разделу панели.
+      properties:
+        summary:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        orders:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        products:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        categories:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        articles:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        storefront:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        customers:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        settings:
+          allOf:
+          - $ref: '#/components/schemas/StaffLevelEnum'
+          description: |-
+            Только владелец
+
+            * `none` - Нет доступа
+            * `view` - Смотреть
+            * `edit` - Менять
+        staff:
+          allOf:
+          - $ref: '#/components/schemas/StaffLevelEnum'
+          description: |-
+            Только владелец
+
+            * `none` - Нет доступа
+            * `view` - Смотреть
+            * `edit` - Менять
+      required:
+      - articles
+      - categories
+      - customers
+      - orders
+      - products
+      - settings
+      - staff
+      - storefront
+      - summary
+    StaffPermissionsInputRequest:
+      type: object
+      description: 'Права сотрудника: не переданный раздел — нет доступа. Владельческие
+        разделы не выдаются.'
+      properties:
+        summary:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        orders:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        products:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        categories:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        articles:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        storefront:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        customers:
+          $ref: '#/components/schemas/StaffLevelEnum'
     StaffUser:
       type: object
       properties:
@@ -4518,12 +5858,90 @@ components:
           readOnly: true
           title: Статус суперпользователя
           description: Указывает, что пользователь имеет все права без явного их назначения.
+        is_owner:
+          type: boolean
+          readOnly: true
+        permissions:
+          allOf:
+          - $ref: '#/components/schemas/StaffPermissions'
+          readOnly: true
       required:
       - email
       - first_name
       - id
+      - is_owner
       - is_superuser
       - last_name
+      - permissions
+    ThemeAccent:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        color:
+          type: string
+        'on':
+          type: string
+          description: Цвет текста на акценте
+      required:
+      - color
+      - key
+      - name
+      - 'on'
+    ThemeModeEnum:
+      enum:
+      - system
+      - light
+      - dark
+      type: string
+      description: |-
+        * `system` - Как в системе
+        * `light` - Светлая
+        * `dark` - Тёмная
+    ThemePalette:
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/PaletteKeyEnum'
+        name:
+          type: string
+        group:
+          $ref: '#/components/schemas/PaletteGroupEnum'
+        note:
+          type: string
+        accent:
+          type: string
+          description: Цвет акцента — для образца
+        brand:
+          type: string
+          description: Фирменный цвет — для образца
+        bg_light:
+          type: string
+          description: Фон светлой темы
+        bg_dark:
+          type: string
+          description: Фон тёмной темы
+      required:
+      - accent
+      - bg_dark
+      - bg_light
+      - brand
+      - group
+      - key
+      - name
+      - note
+    ThemeRadiusEnum:
+      enum:
+      - sharp
+      - normal
+      - soft
+      type: string
+      description: |-
+        * `sharp` - Острые
+        * `normal` - Средние
+        * `soft` - Мягкие
     TokenPair:
       type: object
       properties:
@@ -4536,6 +5954,18 @@ components:
       required:
       - access
       - refresh
+    ToneEnum:
+      enum:
+      - success
+      - warning
+      - info
+      - neutral
+      type: string
+      description: |-
+        * `success` - Зелёный
+        * `warning` - Жёлтый
+        * `info` - Синий
+        * `neutral` - Серый
   securitySchemes:
     cookieAuth:
       type: apiKey

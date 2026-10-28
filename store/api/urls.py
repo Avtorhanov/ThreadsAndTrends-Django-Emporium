@@ -25,5 +25,8 @@ admin_router.register(
 admin_router.register("products", admin_views.AdminProductViewSet, basename="admin-catalog-product")
 admin_router.register("variants", admin_views.AdminVariantViewSet, basename="admin-catalog-variant")
 admin_router.register("images", admin_views.AdminImageViewSet, basename="admin-catalog-image")
+admin_router.register(
+    "statuses", admin_views.AdminProductStatusViewSet, basename="admin-catalog-status"
+)
 
 admin_catalog_urlpatterns = admin_router.urls

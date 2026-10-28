@@ -23,6 +23,7 @@ from django.db import transaction
 from django.template.loader import render_to_string
 from django.utils import timezone
 
+from content import shop as shop_settings
 from core.tasks import send_email
 from orders.models import ChangedBy, Order, OrderStatus, PaymentMethod
 from orders.services import status as status_service
@@ -56,7 +57,7 @@ def pay_until(order: Order) -> datetime | None:
     """Срок оплаты онлайн-заказа; после него заказ отменяется автоматически."""
     if order.payment_method != PaymentMethod.ONLINE or order.status != OrderStatus.AWAITING_PAYMENT:
         return None
-    return order.created_at + timedelta(minutes=settings.ORDERS_UNPAID_TIMEOUT_MINUTES)
+    return order.created_at + timedelta(minutes=shop_settings.current().unpaid_timeout_minutes)
 
 
 def can_pay(order: Order) -> bool:
@@ -472,7 +473,7 @@ def cancel_awaiting_payment(order: Order) -> bool:
 
 
 def cancel_unpaid_orders() -> int:
-    deadline = timezone.now() - timedelta(minutes=settings.ORDERS_UNPAID_TIMEOUT_MINUTES)
+    deadline = timezone.now() - timedelta(minutes=shop_settings.current().unpaid_timeout_minutes)
     orders = Order.objects.filter(
         status=OrderStatus.AWAITING_PAYMENT, created_at__lt=deadline
     ).order_by("created_at")[:SYNC_BATCH]

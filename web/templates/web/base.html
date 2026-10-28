@@ -1,5 +1,5 @@
 {% load static storefront %}<!doctype html>
-<html lang="ru"{% if theme %} data-theme="{{ theme }}"{% endif %}>
+<html lang="ru"{% if theme %} data-theme="{{ theme }}"{% endif %}{% for name, value in look.attrs.items %} {{ name }}="{{ value }}"{% endfor %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,9 +7,9 @@
   <meta name="description" content="{% block description %}Одежда, обувь, аксессуары и уход с доставкой курьером. Оплата онлайн или при получении.{% endblock %}">
   {% if noindex %}<meta name="robots" content="noindex, follow">{% endif %}
   {% block canonical %}{% endblock %}
-  {% if theme == "dark" %}<meta name="theme-color" content="#070E0A">{% elif theme == "light" %}<meta name="theme-color" content="#EBF1E2">{% else %}
-  <meta name="theme-color" content="#EBF1E2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#070E0A" media="(prefers-color-scheme: dark)">{% endif %}
+  {% if theme == "dark" %}<meta name="theme-color" content="{{ look.bg.dark }}">{% elif theme == "light" %}<meta name="theme-color" content="{{ look.bg.light }}">{% else %}
+  <meta name="theme-color" content="{{ look.bg.light }}" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="{{ look.bg.dark }}" media="(prefers-color-scheme: dark)">{% endif %}
   <meta name="color-scheme" content="{% if theme %}{{ theme }}{% else %}light dark{% endif %}">
   <meta property="og:site_name" content="DiDi-shop">
   <meta property="og:locale" content="ru_RU">

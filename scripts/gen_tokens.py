@@ -2,11 +2,18 @@
 
     python3 scripts/gen_tokens.py           # перегенерировать файлы
     python3 scripts/gen_tokens.py --check   # CI: файлы актуальны и контраст текста ≥ 4.5:1
+                                            #     во всех палитрах и акцентах «Своей»
 
 Выход:
 - mobile/src/theme/tokens.ts — типизированные токены для приложения (React Native);
 - web/static/web/css/tokens.css — CSS-переменные обеих тем для веб-витрины (статика Django);
-- admin-panel/src/tokens.css — те же переменные для панели администратора (React + Vite).
+- admin-panel/src/tokens.css — те же переменные для панели администратора (React + Vite);
+- content/palettes.json — список палитр и акцентов для сервера (белый список, цвета образцов).
+
+Палитры покупателя (tokens.json → palettes): переопределения цветов базовой «Лайм-тек»;
+«Своя» (custom) — нейтральная основа + один из проверенных акцентов (accents). Тени палитр
+тонируются автоматически: зелёные оттенки базы заменяются на accent/brand/ink палитры.
+На сайте палитру выбирают атрибуты <html>: data-palette, data-accent, data-radius, data-text.
 
 Единственный источник значений — tokens.json; сгенерированные файлы руками не правятся.
 """
@@ -23,6 +30,7 @@ SOURCE = ROOT / "docs/design/lime-tech/tokens.json"
 TS_OUT = ROOT / "mobile/src/theme/tokens.ts"
 WEB_CSS_OUT = ROOT / "web/static/web/css/tokens.css"
 ADMIN_CSS_OUT = ROOT / "admin-panel/src/tokens.css"
+PY_JSON_OUT = ROOT / "content/palettes.json"
 HEADER = (
     "Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать."
 )
@@ -92,20 +100,64 @@ def backgrounds(palette: dict, key: str) -> list[str]:
     return [palette[key]]
 
 
+def entries(section: dict) -> dict:
+    """Раздел tokens.json без служебного ключа comment."""
+    return {key: value for key, value in section.items() if key != "comment"}
+
+
+def resolve(tokens: dict, theme: str, palette: str = "lime", accent: str | None = None) -> dict:
+    """Полная палитра темы: база → переопределения палитры → акцент «Своей»."""
+    result = dict(tokens["color"][theme])
+    result.update(tokens["palettes"][palette][theme])
+    if accent is not None:
+        result.update(tokens["accents"][accent][theme])
+    return result
+
+
+def variants(tokens: dict):
+    """(название, тема, палитра, акцент) — всё, что может увидеть покупатель."""
+    for name in entries(tokens["palettes"]):
+        accents = list(entries(tokens["accents"])) if name == "custom" else [None]
+        for accent in accents:
+            for theme in THEMES:
+                label = f"{name}/{accent}" if accent else name
+                yield label, theme, name, accent
+
+
 def check_contrast(tokens: dict) -> list[str]:
     problems = []
-    for theme in THEMES:
-        palette = tokens["color"][theme]
+    for label, theme, name, accent in variants(tokens):
+        palette = resolve(tokens, theme, name, accent)
         for pairs, minimum in ((TEXT_PAIRS, 4.5), (LARGE_PAIRS, 3.0)):
             for fg, bg in pairs:
                 for bg_value in backgrounds(palette, bg):
                     ratio = contrast(palette[fg], bg_value)
                     if ratio < minimum:
                         problems.append(
-                            f"{theme}: {fg} {palette[fg]} на {bg} {bg_value}"
+                            f"{label} {theme}: {fg} {palette[fg]} на {bg} {bg_value}"
                             f" — {ratio:.2f} < {minimum}"
                         )
     return problems
+
+
+def rgb_triplet(value: str) -> str:
+    return ",".join(str(round(c * 255)) for c in hex_rgb(value))
+
+
+# Оттенки базовых теней «Лайм-тек» → цвета палитры.
+SHADOW_TINTS = (("198,244,50", "accent"), ("31,77,58", "brand"), ("19,38,28", "ink"))
+
+
+def tinted_shadows(tokens: dict, theme: str, palette: dict) -> dict:
+    result = {}
+    for key, value in tokens["shadow"][theme].items():
+        for source, color_key in SHADOW_TINTS:
+            # В тёмной теме brand = accent, а тени — чёрные: тонируется только ореол акцента.
+            if theme == "dark" and color_key != "accent":
+                continue
+            value = value.replace(source, rgb_triplet(palette[color_key]))
+        result[key] = value
+    return result
 
 
 def bezier(value: str) -> list[float]:
@@ -145,6 +197,41 @@ def render_ts(tokens: dict) -> str:
     motion = dict(tokens["motion"])
     easing = {name: bezier(motion.pop(name)) for name in ("easeOut", "easeSoft", "easeTab")}
 
+    palette_names = list(entries(tokens["palettes"]))
+    accent_names = list(entries(tokens["accents"]))
+    palette_union = " | ".join(json.dumps(name) for name in palette_names)
+    accent_union = " | ".join(json.dumps(name) for name in accent_names)
+    palette_list = [
+        {"key": key, "name": value["name"], "group": value["group"], "note": value["note"]}
+        for key, value in entries(tokens["palettes"]).items()
+    ]
+    palette_themes = {
+        name: {theme: palette_for_native(resolve(tokens, theme, name)) for theme in THEMES}
+        for name in palette_names
+    }
+    palette_shadows = {
+        name: {
+            theme: tinted_shadows(tokens, theme, resolve(tokens, theme, name)) for theme in THEMES
+        }
+        for name in palette_names
+    }
+    accent_map = {
+        key: {
+            "name": value["name"],
+            "color": value["color"],
+            "light": value["light"],
+            "dark": value["dark"],
+        }
+        for key, value in entries(tokens["accents"]).items()
+    }
+    accent_shadows = {
+        key: {
+            theme: tinted_shadows(tokens, theme, resolve(tokens, theme, "custom", key))
+            for theme in THEMES
+        }
+        for key in accent_names
+    }
+
     return f"""// {HEADER}
 // Версия токенов: {tokens["version"]} ({tokens["updated"]}).
 
@@ -169,6 +256,48 @@ export const productTones = {ts(tones)} as const;
 export type ProductTone = keyof typeof productTones;
 
 export const radius = {ts(tokens["radius"])} as const;
+
+export type PaletteName = {palette_union};
+export type AccentName = {accent_union};
+export type PaletteGroup = "bright" | "calm" | "custom";
+
+export type PaletteInfo = {{
+  key: PaletteName;
+  name: string;
+  group: PaletteGroup;
+  note: string;
+}};
+
+export type AccentInfo = {{
+  name: string;
+  color: string;
+  light: Partial<Palette>;
+  dark: Partial<Palette>;
+}};
+
+type ByTheme<T> = Record<ThemeName, T>;
+
+/** Палитры покупателя по порядку показа (профиль, панель → «Тема»). */
+export const paletteList: readonly PaletteInfo[] = {ts(palette_list)};
+
+/** Полные палитры обеих тем для каждой палитры покупателя. */
+export const paletteThemes: Record<PaletteName, ByTheme<Palette>> = {ts(palette_themes)};
+
+export const paletteShadows: Record<PaletteName, ByTheme<Shadows>> = {ts(palette_shadows)};
+
+/** Акценты «Своей»: цвет, подпись и переопределения поверх paletteThemes.custom. */
+export const accents: Record<AccentName, AccentInfo> = {ts(accent_map)};
+
+export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {ts(accent_shadows)};
+
+/** Углы: множитель радиусов. Размер текста: множитель кегля (поверх системного). */
+export const radiusScale = {ts(entries(tokens["radiusScale"]))} as const;
+
+export type RadiusMode = keyof typeof radiusScale;
+
+export const textScale = {ts(entries(tokens["textScale"]))} as const;
+
+export type TextMode = keyof typeof textScale;
 
 export const space = {ts(tokens["space"])} as const;
 
@@ -214,6 +343,7 @@ def render_css(tokens: dict) -> str:
     def block(selector: str, lines: list[str]) -> str:
         return selector + " {\n" + "\n".join(lines) + "\n}\n"
 
+    common += ["  --radius-scale: 1;", "  --text-scale: 1;"]
     dark_lines = css_vars(dark, tokens["shadow"]["dark"], "  ") + dark_tones
     nested = [line.replace("  ", "    ", 1) for line in dark_lines]
     return (
@@ -228,7 +358,105 @@ def render_css(tokens: dict) -> str:
         + '  :root:not([data-theme="light"]) {\n'
         + "\n".join(nested)
         + "\n  }\n}\n"
+        + render_palettes_css(tokens)
+        + render_scales_css(tokens)
     )
+
+
+def override_block(tokens: dict, selector: str, palette: str, accent: str | None) -> str:
+    """Переопределения палитры (и акцента) для обеих тем. Набор ключей в светлой и тёмной
+    одинаковый: иначе светлое значение палитры «протекло» бы в тёмную тему."""
+    layers = [tokens["palettes"][palette]]
+    if accent is not None:
+        layers = [tokens["accents"][accent]]
+    keys = sorted({key for layer in layers for theme in THEMES for key in layer[theme]})
+    out = []
+    lines_by_theme = {}
+    for theme in THEMES:
+        full = resolve(tokens, theme, palette, accent)
+        colors = {key: full[key] for key in keys if key != "cardStops"}
+        shadow = tinted_shadows(tokens, theme, full)
+        lines_by_theme[theme] = css_vars(colors, shadow, "  ")
+    out.append(selector + " {\n" + "\n".join(lines_by_theme["light"]) + "\n}\n")
+    out.append(
+        f'{selector}[data-theme="dark"]' + " {\n" + "\n".join(lines_by_theme["dark"]) + "\n}\n"
+    )
+    nested = [line.replace("  ", "    ", 1) for line in lines_by_theme["dark"]]
+    out.append(
+        "@media (prefers-color-scheme: dark) {\n"
+        + f'  {selector}:not([data-theme="light"])'
+        + " {\n"
+        + "\n".join(nested)
+        + "\n  }\n}\n"
+    )
+    return "\n".join(out)
+
+
+def render_palettes_css(tokens: dict) -> str:
+    parts = ["\n/* Палитры покупателя: <html data-palette=…> (lime — без атрибута). */\n"]
+    for name in entries(tokens["palettes"]):
+        if name == "lime":
+            continue
+        parts.append(override_block(tokens, f':root[data-palette="{name}"]', name, None))
+    parts.append("\n/* «Своя»: проверенный акцент — <html data-palette=custom data-accent=…>. */\n")
+    for accent in entries(tokens["accents"]):
+        selector = f':root[data-palette="custom"][data-accent="{accent}"]'
+        parts.append(override_block(tokens, selector, "custom", accent))
+    return "\n".join(parts)
+
+
+def render_scales_css(tokens: dict) -> str:
+    parts = ["\n/* Углы: data-radius=sharp|soft (normal — без атрибута). */\n"]
+    for mode, scale in entries(tokens["radiusScale"]).items():
+        if scale == 1:
+            continue
+        lines = [
+            f"  --radius-{camel_to_kebab(key)}: {round(value * scale)}px;"
+            for key, value in tokens["radius"].items()
+        ]
+        lines.append(f"  --radius-scale: {scale};")
+        parts.append(f':root[data-radius="{mode}"]' + " {\n" + "\n".join(lines) + "\n}\n")
+    parts.append("\n/* Размер текста: data-text=m|l (s — без атрибута). */\n")
+    for mode, scale in entries(tokens["textScale"]).items():
+        if scale == 1:
+            continue
+        parts.append(f':root[data-text="{mode}"] {{\n  --text-scale: {scale};\n}}\n')
+    return "\n".join(parts)
+
+
+def render_palettes_json(tokens: dict) -> str:
+    """Что нужно серверу: белый список палитр/акцентов/углов/размеров и цвета образцов."""
+    palettes = []
+    for key, value in entries(tokens["palettes"]).items():
+        light, dark = resolve(tokens, "light", key), resolve(tokens, "dark", key)
+        palettes.append(
+            {
+                "key": key,
+                "name": value["name"],
+                "group": value["group"],
+                "note": value["note"],
+                "accent": light["accent"],
+                "brand": light["brand"],
+                "bg": {"light": light["bg"], "dark": dark["bg"]},
+            }
+        )
+    accents = [
+        {
+            "key": key,
+            "name": value["name"],
+            "color": value["color"],
+            "on": value["light"]["onAccent"],
+        }
+        for key, value in entries(tokens["accents"]).items()
+    ]
+    data = {
+        "comment": HEADER,
+        "palettes": palettes,
+        "accents": accents,
+        "radius": entries(tokens["radiusScale"]),
+        "text": entries(tokens["textScale"]),
+    }
+    return json.dumps(data, ensure_ascii=False, indent=2) + "\n"
 
 
 def main() -> int:
@@ -240,6 +468,7 @@ def main() -> int:
         TS_OUT: render_ts(tokens),
         WEB_CSS_OUT: css,
         ADMIN_CSS_OUT: css,
+        PY_JSON_OUT: render_palettes_json(tokens),
     }
 
     if check:

@@ -8,7 +8,7 @@ from django.utils import timezone
 from PIL import Image, UnidentifiedImageError
 
 from core.text import slugify_ru
-from store.models import Category, Product, ProductImage, ProductVariant
+from store.models import Category, Product, ProductImage, ProductStatus, ProductVariant
 from store.services.images import delete_thumbnails
 from store.tasks import make_image_thumbnails
 
@@ -26,8 +26,12 @@ PRODUCT_FIELDS = {
     "category",
     "price_kopecks",
     "compare_at_kopecks",
+    "status",
     "is_active",
 }
+MAX_STATUSES = 20
+MAX_BULK = 200
+BULK_FIELDS = {"status", "category", "is_active"}
 VARIANT_FIELDS = {"size", "sku", "stock", "position"}
 
 
@@ -144,6 +148,7 @@ def create_product(
     compare_at_kopecks: int | None = None,
     is_active: bool = True,
     slug: str = "",
+    status: ProductStatus | None = None,
     variants: list[dict] | None = None,
 ) -> Product:
     _validate_product_fields(
@@ -161,6 +166,7 @@ def create_product(
         category=category,
         price_kopecks=price_kopecks,
         compare_at_kopecks=compare_at_kopecks,
+        status=status,
         is_active=is_active,
     )
     # Товар без вариантов не продаётся: по умолчанию создаётся «Без размера».
@@ -187,6 +193,38 @@ def update_product(product: Product, **changes) -> Product:
         setattr(product, field, value)
     product.save()
     return product
+
+
+@transaction.atomic
+def bulk_update_products(ids: list[int], **changes) -> int:
+    """Массовое изменение в списке товаров панели: статус, категория, видимость.
+    Возвращает число изменённых товаров (удалённые не трогаются)."""
+    unknown = set(changes) - BULK_FIELDS
+    if unknown:
+        raise ValueError(f"Неизвестные поля: {sorted(unknown)}")
+    if not changes:
+        raise ValidationError("Выберите, что изменить.")
+    ids = sorted(set(ids))
+    if not ids:
+        raise ValidationError({"ids": "Отметьте хотя бы один товар."})
+    if len(ids) > MAX_BULK:
+        raise ValidationError({"ids": f"Не больше {MAX_BULK} товаров за раз."})
+    if "category" in changes:
+        _validate_product_fields(
+            category=changes["category"], price_kopecks=None, compare_at_kopecks=None
+        )
+    # Блокировка в порядке id — параллельная правка тех же товаров идёт по очереди.
+    products = list(Product.objects.select_for_update().filter(pk__in=ids).order_by("pk"))
+    now = timezone.now()  # bulk_update не заполняет auto_now
+    for product in products:
+        for field, value in changes.items():
+            setattr(product, field, value)
+        product.updated_at = now
+    Product.objects.bulk_update(products, [*changes, "updated_at"])
+    from store.signals import products_bulk_updated
+
+    products_bulk_updated.send(sender=Product, ids=[p.pk for p in products])
+    return len(products)
 
 
 def soft_delete_product(product: Product) -> Product:
@@ -357,3 +395,53 @@ def reorder_product_images(product: Product, image_ids: list[int]) -> list[Produ
         image.position = position
     ProductImage.objects.bulk_update(ordered, ["position"])
     return ordered
+
+
+# --- Статусы товаров ---
+
+STATUS_FIELDS = {"name", "hint", "tone", "position"}
+
+
+def _check_status_name(name: str, *, exclude_pk=None) -> str:
+    name = " ".join((name or "").split())
+    if not name:
+        raise ValidationError({"name": "Введите название."})
+    taken = ProductStatus.objects.filter(name__iexact=name)
+    if exclude_pk is not None:
+        taken = taken.exclude(pk=exclude_pk)
+    if taken.exists():
+        raise ValidationError({"name": "Такой статус уже есть."})
+    return name
+
+
+@transaction.atomic
+def create_status(*, name: str, hint: str = "", tone: str = "neutral", position=None):
+    if ProductStatus.objects.count() >= MAX_STATUSES:
+        raise ValidationError(f"Статусов может быть не больше {MAX_STATUSES}.")
+    name = _check_status_name(name)
+    if position is None:
+        last = ProductStatus.objects.aggregate(Max("position"))["position__max"]
+        position = 0 if last is None else last + 1
+    return ProductStatus.objects.create(
+        name=name, hint=" ".join(hint.split()), tone=tone, position=position
+    )
+
+
+@transaction.atomic
+def update_status(status: ProductStatus, **changes) -> ProductStatus:
+    unknown = set(changes) - STATUS_FIELDS
+    if unknown:
+        raise ValueError(f"Неизвестные поля статуса: {sorted(unknown)}")
+    if "name" in changes:
+        changes["name"] = _check_status_name(changes["name"], exclude_pk=status.pk)
+    if "hint" in changes:
+        changes["hint"] = " ".join(changes["hint"].split())
+    for field, value in changes.items():
+        setattr(status, field, value)
+    status.save()
+    return status
+
+
+def delete_status(status: ProductStatus) -> None:
+    """Товары с этим статусом остаются без метки (FK SET_NULL)."""
+    status.delete()

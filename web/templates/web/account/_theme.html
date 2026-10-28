@@ -1,13 +1,69 @@
-{# Тема: как в системе / светлая / тёмная (cookie — сервер сразу рисует нужную тему). #}
-<form class="panel" method="post" action="{% url 'web:theme' %}" data-theme-select>
+{% comment %}
+Оформление: тема, палитра (что разрешил администратор), акцент «Своей», углы, размер текста.
+Выбор — в cookie: сервер сразу рисует нужный вид; с JS меняется без перезагрузки.
+{% endcomment %}
+<form class="panel look" method="post" action="{% url 'web:theme' %}" data-theme-select>
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ request.path }}">
   <fieldset>
     <legend class="panel__title">Оформление</legend>
-    <div class="segments" role="radiogroup">
+    <div class="segments" role="radiogroup" aria-label="Тема">
       {% for value, label in theme_choices %}
       <label class="segment">
         <input type="radio" name="theme" value="{{ value }}"{% if theme_value == value %} checked{% endif %}>
+        <span>{{ label }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  {% if palette_groups %}
+  <fieldset class="look__group">
+    <legend class="look__legend">Палитра</legend>
+    {% for group in palette_groups %}
+    <p class="look__sub">{{ group.title }}</p>
+    <div class="swatches" role="radiogroup" aria-label="{{ group.title }}">
+      {% for p in group.palettes %}
+      <label class="swatch" title="{{ p.note }}">
+        <input type="radio" name="palette" value="{{ p.key }}"{% if look.palette == p.key %} checked{% endif %}>
+        <span class="swatch__dots" aria-hidden="true">{% if p.key == "custom" %}{% for a in accents|slice:":4" %}<i style="background:{{ a.color }}"></i>{% endfor %}{% else %}<i style="background:{{ p.accent }}"></i><i style="background:{{ p.brand }}"></i><i style="background:{{ p.bg.light }}"></i>{% endif %}</span>
+        <span class="swatch__name">{{ p.name }}</span>
+      </label>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </fieldset>
+  {% endif %}
+  {% if custom_enabled %}
+  <fieldset class="look__group look__accents" data-accents{% if look.palette != "custom" %} hidden{% endif %}>
+    <legend class="look__legend">Цвет акцента «Своей»</legend>
+    <div class="accents" role="radiogroup">
+      {% for a in accents %}
+      <label class="accent" title="{{ a.name }}">
+        <input type="radio" name="accent" value="{{ a.key }}"{% if look.accent == a.key %} checked{% endif %}>
+        <span style="background:{{ a.color }};color:{{ a.on }}" aria-hidden="true">Aa</span>
+        <span class="sr">{{ a.name }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  {% endif %}
+  <fieldset class="look__group">
+    <legend class="look__legend">Углы</legend>
+    <div class="segments" role="radiogroup" aria-label="Углы">
+      {% for value, label in radius_choices %}
+      <label class="segment segment--corner">
+        <input type="radio" name="radius" value="{{ value }}"{% if look.radius == value %} checked{% endif %}>
+        <span><i class="corner corner--{{ value }}" aria-hidden="true"></i>{{ label }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  <fieldset class="look__group">
+    <legend class="look__legend">Размер текста</legend>
+    <div class="segments" role="radiogroup" aria-label="Размер текста">
+      {% for value, label in text_choices %}
+      <label class="segment">
+        <input type="radio" name="text" value="{{ value }}"{% if look.text == value %} checked{% endif %}>
         <span>{{ label }}</span>
       </label>
       {% endfor %}

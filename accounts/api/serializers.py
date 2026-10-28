@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from accounts import staff
 from accounts.models import User
 
 # --- Мобильный клиент ---
@@ -14,8 +15,9 @@ class TokenPairSerializer(serializers.Serializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name", "date_joined"]
-        read_only_fields = ["id", "email", "date_joined"]
+        # is_staff — в приложении у сотрудника есть вход в панель управления.
+        fields = ["id", "email", "first_name", "last_name", "date_joined", "is_staff"]
+        read_only_fields = ["id", "email", "date_joined", "is_staff"]
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -60,11 +62,89 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 # --- Панель администратора ---
 
 
+LEVEL_CHOICES = staff.LEVEL_CHOICES
+
+
+class StaffPermissionsSerializer(serializers.Serializer):
+    """Уровень доступа по каждому разделу панели."""
+
+    summary = serializers.ChoiceField(choices=LEVEL_CHOICES)
+    orders = serializers.ChoiceField(choices=LEVEL_CHOICES)
+    products = serializers.ChoiceField(choices=LEVEL_CHOICES)
+    categories = serializers.ChoiceField(choices=LEVEL_CHOICES)
+    articles = serializers.ChoiceField(choices=LEVEL_CHOICES)
+    storefront = serializers.ChoiceField(choices=LEVEL_CHOICES)
+    customers = serializers.ChoiceField(choices=LEVEL_CHOICES)
+    settings = serializers.ChoiceField(choices=LEVEL_CHOICES, help_text="Только владелец")
+    staff = serializers.ChoiceField(choices=LEVEL_CHOICES, help_text="Только владелец")
+
+
+class StaffPermissionsInputSerializer(serializers.Serializer):
+    """Права сотрудника: не переданный раздел — нет доступа. Владельческие разделы не выдаются."""
+
+    summary = serializers.ChoiceField(choices=LEVEL_CHOICES, required=False)
+    orders = serializers.ChoiceField(choices=LEVEL_CHOICES, required=False)
+    products = serializers.ChoiceField(choices=LEVEL_CHOICES, required=False)
+    categories = serializers.ChoiceField(choices=LEVEL_CHOICES, required=False)
+    articles = serializers.ChoiceField(choices=LEVEL_CHOICES, required=False)
+    storefront = serializers.ChoiceField(choices=LEVEL_CHOICES, required=False)
+    customers = serializers.ChoiceField(choices=LEVEL_CHOICES, required=False)
+
+
 class StaffUserSerializer(serializers.ModelSerializer):
+    is_owner = serializers.SerializerMethodField()
+    permissions = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name", "is_superuser"]
+        fields = [
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "is_superuser",
+            "is_owner",
+            "permissions",
+        ]
         read_only_fields = fields
+
+    def get_is_owner(self, user) -> bool:
+        return staff.is_owner(user)
+
+    @extend_schema_field(StaffPermissionsSerializer)
+    def get_permissions(self, user):
+        return staff.access_for(user).as_dict()
+
+
+class StaffMemberSerializer(StaffUserSerializer):
+    invited = serializers.SerializerMethodField(help_text="Приглашён, но ещё не задал пароль")
+
+    class Meta(StaffUserSerializer.Meta):
+        fields = [
+            *StaffUserSerializer.Meta.fields,
+            "is_active",
+            "invited",
+            "last_login",
+            "date_joined",
+        ]
+        read_only_fields = fields
+
+    def get_invited(self, user) -> bool:
+        return not user.has_usable_password()
+
+
+class StaffInviteSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    first_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default="")
+    permissions = StaffPermissionsInputSerializer()
+
+
+class StaffUpdateSerializer(serializers.Serializer):
+    first_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    is_active = serializers.BooleanField(
+        required=False, help_text="false — отключить: вход закрыт, сессии завершены"
+    )
+    permissions = StaffPermissionsInputSerializer(required=False)
 
 
 class CustomerStatus:

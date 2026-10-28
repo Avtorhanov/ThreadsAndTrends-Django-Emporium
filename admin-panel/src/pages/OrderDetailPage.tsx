@@ -5,6 +5,7 @@ import { ApiError } from "../api/errors";
 import { type AdminOrderDetail, type OrderStatus, ordersService } from "../api/orders";
 import { OrderStatusBadge } from "../components/orders/OrderStatusBadge";
 import { PaymentsCard } from "../components/orders/PaymentsCard";
+import { StatusChanger } from "../components/orders/StatusChanger";
 import { useOrder } from "../hooks/useOrders";
 import { formatKopecks } from "../lib/money";
 import { Table } from "../components/Table";
@@ -17,12 +18,6 @@ const CHANGED_BY: Record<string, string> = {
   system: "система",
 };
 
-// Переходы, которые нельзя откатить, подтверждаются.
-const CONFIRM: Partial<Record<OrderStatus, string>> = {
-  cancelled: "Отменить заказ? Остатки вернутся на склад; оплаченный заказ уйдёт на возврат денег.",
-  delivered: "Отметить заказ как полученный клиентом? Статус станет окончательным.",
-};
-
 export function OrderDetailPage() {
   const params = useParams();
   const orderId = params.id && /^\d+$/.test(params.id) ? Number(params.id) : null;
@@ -30,24 +25,24 @@ export function OrderDetailPage() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  async function run(action: (id: number) => Promise<AdminOrderDetail>, fallback: string) {
-    if (orderId === null) return;
+  async function run(action: (id: number) => Promise<AdminOrderDetail>, fallback: string): Promise<boolean> {
+    if (orderId === null) return false;
     setBusy(true);
     setActionError(null);
     try {
       order.set(await action(orderId));
+      return true;
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : fallback);
+      setActionError(err instanceof ApiError ? (Object.values(err.fieldErrors)[0]?.[0] ?? err.message) : fallback);
       order.reload(); // заказ мог измениться с другого устройства
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
-  function move(status: OrderStatus) {
-    const question = CONFIRM[status];
-    if (question && !window.confirm(question)) return;
-    void run((id) => ordersService.transition(id, status), "Статус не изменён.");
+  function move(status: OrderStatus, comment: string, notify: boolean) {
+    return run((id) => ordersService.transition(id, status, comment, notify), "Статус не изменён.");
   }
 
   function retryRefund() {
@@ -73,28 +68,7 @@ export function OrderDetailPage() {
 
       {data ? (
         <>
-          <div className="card">
-            <h2>Статус</h2>
-            {data.allowed_transitions.length > 0 ? (
-              <div className="transitions">
-                {data.allowed_transitions.map((option) => (
-                  <button
-                    key={option.status}
-                    type="button"
-                    className={
-                      option.status === "cancelled" ? "button button-danger" : "button"
-                    }
-                    disabled={busy}
-                    onClick={() => move(option.status)}
-                  >
-                    {option.status === "cancelled" ? "Отменить заказ" : `→ ${option.label}`}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="muted">Статус окончательный.</p>
-            )}
-          </div>
+          <StatusChanger order={data} busy={busy} onSubmit={move} />
 
           {data.payment_method === "online" ? (
             <PaymentsCard
@@ -150,7 +124,9 @@ export function OrderDetailPage() {
                       {change.actor_email && change.changed_by === "admin"
                         ? ` (${change.actor_email})`
                         : ""}
+                      {change.notified ? " · письмо клиенту" : ""}
                     </span>
+                    {change.comment ? <span className="history-note">{change.comment}</span> : null}
                   </li>
                 ))}
               </ul>
@@ -171,7 +147,10 @@ export function OrderDetailPage() {
             <tbody>
               {data.items.map((item) => (
                 <tr key={item.id}>
-                  <td>{item.product_name}</td>
+                  <td>
+                    {item.product_name}
+                    {item.status_name ? <div className="muted small">{item.status_name}</div> : null}
+                  </td>
                   <td>{item.size || "—"}</td>
                   <td>{item.sku}</td>
                   <td className="num">{formatKopecks(item.price_kopecks)}</td>

@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { ApiError } from "../api/errors";
-import { type Article, type ArticleDetail, type Contact, contentService } from "./contentService";
+import {
+  type Article,
+  type ArticleDetail,
+  type Contact,
+  type HomeBlock,
+  contentService,
+} from "./contentService";
 
 function errorText(error: unknown): string {
   return error instanceof ApiError ? error.message : "Не удалось загрузить данные.";
@@ -42,4 +48,9 @@ export function useContactsTab() {
 
 export function useArticle(slug: string) {
   return useLoad<ArticleDetail>(() => contentService.article(slug), slug);
+}
+
+/** Блоки главной; ошибка не мешает ленте — блоков просто нет. */
+export function useHomeBlocks() {
+  return useLoad<HomeBlock[]>(() => contentService.home(), "home-blocks");
 }
