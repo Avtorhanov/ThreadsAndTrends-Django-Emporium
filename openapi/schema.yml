@@ -1546,8 +1546,8 @@ paths:
   /api/v1/admin/staff/:
     get:
       operationId: admin_staff_list
-      description: 'Сотрудники панели: приглашение по email, права по разделам, отключение. Только
-        владелец.'
+      description: 'Сотрудники панели: приглашение по email, права по разделам, отключение.
+        Только владелец.'
       tags:
       - admin
       security:
@@ -1584,8 +1584,8 @@ paths:
   /api/v1/admin/staff/{id}/:
     patch:
       operationId: admin_staff_partial_update
-      description: 'Сотрудники панели: приглашение по email, права по разделам, отключение. Только
-        владелец.'
+      description: 'Сотрудники панели: приглашение по email, права по разделам, отключение.
+        Только владелец.'
       parameters:
       - in: path
         name: id
@@ -5584,8 +5584,8 @@ components:
           type: boolean
           readOnly: true
           title: Статус персонала
-          description: Отметьте, если пользователь может входить в административную часть
-            сайта.
+          description: Отметьте, если пользователь может входить в административную
+            часть сайта.
       required:
       - date_joined
       - email
@@ -5745,8 +5745,8 @@ components:
             эту отметку вместо удаления учётной записи.
         invited:
           type: boolean
-          description: Приглашён, но ещё не задал пароль
           readOnly: true
+          description: Приглашён, но ещё не задал пароль
         last_login:
           type: string
           format: date-time
@@ -5791,11 +5791,21 @@ components:
         settings:
           allOf:
           - $ref: '#/components/schemas/StaffLevelEnum'
-          description: Только владелец
+          description: |-
+            Только владелец
+
+            * `none` - Нет доступа
+            * `view` - Смотреть
+            * `edit` - Менять
         staff:
           allOf:
           - $ref: '#/components/schemas/StaffLevelEnum'
-          description: Только владелец
+          description: |-
+            Только владелец
+
+            * `none` - Нет доступа
+            * `view` - Смотреть
+            * `edit` - Менять
       required:
       - articles
       - categories
