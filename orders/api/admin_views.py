@@ -39,6 +39,8 @@ def _date_param(params, name):
 class AdminOrderViewSet(
     AdminAPIMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
+    section = "orders"
+
     def get_serializer_class(self):
         return AdminOrderListSerializer if self.action == "list" else AdminOrderDetailSerializer
 

@@ -633,6 +633,7 @@ PANEL_ROUTES = (
     "settings",
     "home",
     "theme",
+    "staff",
 )
 
 
@@ -654,8 +655,18 @@ def panel_ids() -> dict[str, list[int]]:
 
 
 def panel_snapshot() -> dict:
-    staff = User.objects.create_user(
-        email=ADMIN_EMAIL, password=ADMIN_PASSWORD, first_name="Администратор", is_staff=True
+    staff = User.objects.create_superuser(
+        email=ADMIN_EMAIL, password=ADMIN_PASSWORD, first_name="Администратор"
+    )
+    # Пример сотрудника для раздела «Сотрудники»: приглашён, права менеджера заказов.
+    from accounts import staff as staff_rights
+    from accounts.models import StaffAccess
+
+    manager = User.objects.create_user(
+        email="manager@didi-shop.ru", password=None, first_name="Ольга", is_staff=True
+    )
+    StaffAccess.objects.create(
+        user=manager, permissions=staff_rights.PRESETS["orders_manager"], invited_by=staff
     )
     client = Client()
     client.force_login(staff)
@@ -688,6 +699,7 @@ def panel_snapshot() -> dict:
     grab(f"{ADMIN_API}/content/settings/")
     grab(f"{ADMIN_API}/content/home/")
     grab(f"{ADMIN_API}/content/theme/")
+    grab(f"{ADMIN_API}/staff/")
     # Ссылки на фото — абсолютные от тестового сервера; в превью медиа лежат рядом.
     text = json.dumps(snapshot, ensure_ascii=False).replace("http://testserver", "")
     return {**json.loads(text), "_login": {"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}}
@@ -736,6 +748,7 @@ def panel_section(orders: list[Order]) -> tuple[str, list[tuple[str, str]]]:
         ("Клиенты", f"{panel}/customers/"),
         ("Главная из блоков", f"{panel}/home/"),
         ("Тема для покупателей", f"{panel}/theme/"),
+        ("Сотрудники и права", f"{panel}/staff/"),
         ("Настройки магазина", f"{panel}/settings/"),
         ("Вход в панель", f"{panel}/login/"),
     ]

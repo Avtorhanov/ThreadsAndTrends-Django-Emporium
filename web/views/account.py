@@ -168,7 +168,11 @@ def password_reset_confirm(request):
                 user = accounts.authenticate_user(
                     email=email, password=form.cleaned_data["new_password"]
                 )
-                if user is not None and not user.is_staff:
+                if user is not None and user.is_staff:
+                    # Сотрудник по приглашению: пароль задан — дальше вход в панель.
+                    messages.success(request, "Пароль задан. Войдите в панель магазина.")
+                    return redirect(PANEL_URL)
+                if user is not None:
                     _login_with_cart(request, user)
                     messages.success(request, "Пароль изменён, вы вошли в аккаунт.")
                     return redirect("web:profile")

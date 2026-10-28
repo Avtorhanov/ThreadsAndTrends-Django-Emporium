@@ -1543,6 +1543,90 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminOrderDetail'
           description: ''
+  /api/v1/admin/staff/:
+    get:
+      operationId: admin_staff_list
+      description: 'Сотрудники панели: приглашение по email, права по разделам, отключение. Только
+        владелец.'
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StaffMember'
+          description: ''
+    post:
+      operationId: admin_staff_create
+      description: 'Пригласить: письмо с кодом, по которому сотрудник сам задаёт пароль.'
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffInviteRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffMember'
+          description: ''
+  /api/v1/admin/staff/{id}/:
+    patch:
+      operationId: admin_staff_partial_update
+      description: 'Сотрудники панели: приглашение по email, права по разделам, отключение. Только
+        владелец.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Пользователь.
+        required: true
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffUpdateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffMember'
+          description: ''
+  /api/v1/admin/staff/{id}/resend/:
+    post:
+      operationId: admin_staff_resend
+      description: Отправить приглашение ещё раз (новый код; прежний перестаёт действовать).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Пользователь.
+        required: true
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/admin/summary/:
     get:
       operationId: admin_summary
@@ -2092,7 +2176,8 @@ paths:
   /api/v1/content/theme/:
     get:
       operationId: content_theme_retrieve
-      description: Палитры, доступные покупателю, и оформление для нового посетителя (приложение).
+      description: Палитры, доступные покупателю, и оформление для нового посетителя
+        (приложение).
       tags:
       - content
       security:
@@ -5390,6 +5475,17 @@ components:
           type: string
           title: Фамилия
           maxLength: 150
+    PatchedStaffUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        is_active:
+          type: boolean
+          description: 'false — отключить: вход закрыт, сессии завершены'
+        permissions:
+          $ref: '#/components/schemas/StaffPermissionsInputRequest'
     PaymentMethodEnum:
       enum:
       - online
@@ -5574,6 +5670,150 @@ components:
       - default_palette
       - default_radius
       - palettes
+    StaffInviteRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        first_name:
+          type: string
+          default: ''
+          maxLength: 150
+        permissions:
+          $ref: '#/components/schemas/StaffPermissionsInputRequest'
+      required:
+      - email
+      - permissions
+    StaffLevelEnum:
+      enum:
+      - none
+      - view
+      - edit
+      type: string
+      description: |-
+        * `none` - Нет доступа
+        * `view` - Смотреть
+        * `edit` - Менять
+    StaffMember:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+          title: Имя
+        last_name:
+          type: string
+          readOnly: true
+          title: Фамилия
+        is_superuser:
+          type: boolean
+          readOnly: true
+          title: Статус суперпользователя
+          description: Указывает, что пользователь имеет все права без явного их назначения.
+        is_owner:
+          type: boolean
+          readOnly: true
+        permissions:
+          allOf:
+          - $ref: '#/components/schemas/StaffPermissions'
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+          title: Активный
+          description: Отметьте, если пользователь должен считаться активным. Уберите
+            эту отметку вместо удаления учётной записи.
+        invited:
+          type: boolean
+          description: Приглашён, но ещё не задал пароль
+          readOnly: true
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Последний вход
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Дата регистрации
+      required:
+      - date_joined
+      - email
+      - first_name
+      - id
+      - invited
+      - is_active
+      - is_owner
+      - is_superuser
+      - last_login
+      - last_name
+      - permissions
+    StaffPermissions:
+      type: object
+      description: Уровень доступа по каждому разделу панели.
+      properties:
+        summary:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        orders:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        products:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        categories:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        articles:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        storefront:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        customers:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        settings:
+          allOf:
+          - $ref: '#/components/schemas/StaffLevelEnum'
+          description: Только владелец
+        staff:
+          allOf:
+          - $ref: '#/components/schemas/StaffLevelEnum'
+          description: Только владелец
+      required:
+      - articles
+      - categories
+      - customers
+      - orders
+      - products
+      - settings
+      - staff
+      - storefront
+      - summary
+    StaffPermissionsInputRequest:
+      type: object
+      description: 'Права сотрудника: не переданный раздел — нет доступа. Владельческие
+        разделы не выдаются.'
+      properties:
+        summary:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        orders:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        products:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        categories:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        articles:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        storefront:
+          $ref: '#/components/schemas/StaffLevelEnum'
+        customers:
+          $ref: '#/components/schemas/StaffLevelEnum'
     StaffUser:
       type: object
       properties:
@@ -5597,12 +5837,21 @@ components:
           readOnly: true
           title: Статус суперпользователя
           description: Указывает, что пользователь имеет все права без явного их назначения.
+        is_owner:
+          type: boolean
+          readOnly: true
+        permissions:
+          allOf:
+          - $ref: '#/components/schemas/StaffPermissions'
+          readOnly: true
       required:
       - email
       - first_name
       - id
+      - is_owner
       - is_superuser
       - last_name
+      - permissions
     ThemeAccent:
       type: object
       properties:

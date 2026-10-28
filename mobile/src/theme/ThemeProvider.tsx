@@ -120,9 +120,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.multiGet([STORAGE_KEY, LOOK_KEY])
-      .then(([[, theme], [, look]]) => {
+      .then((pairs) => {
+        const theme = pairs[0]?.[1] ?? null;
         if (theme === "light" || theme === "dark" || theme === "system") setStored(theme);
-        setChosen(parseLook(look));
+        setChosen(parseLook(pairs[1]?.[1] ?? null));
       })
       .catch(() => undefined);
     // Что разрешил администратор; без сети — все палитры и значения по умолчанию.

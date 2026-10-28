@@ -2838,3 +2838,135 @@ a.stat:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* --- Сотрудники --- */
+
+.view-only {
+  margin-bottom: var(--gap);
+}
+
+.staff-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(min(100%, 340px), 1fr);
+  gap: var(--gap);
+  align-items: start;
+}
+
+.staff-list {
+  display: grid;
+  gap: var(--gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.staff-card {
+  display: grid;
+  gap: 12px;
+}
+
+.staff-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+}
+
+.staff-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.staff-name {
+  display: grid;
+  flex: 1;
+  min-width: 160px;
+  overflow-wrap: anywhere;
+}
+
+.staff-body {
+  display: grid;
+  gap: 12px;
+}
+
+.staff-invite-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 10px;
+}
+
+.perm-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.perm-presets .button {
+  min-height: 36px;
+  font-size: 13px;
+}
+
+.perm-table {
+  display: grid;
+  gap: 6px;
+}
+
+.perm-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.perm-levels {
+  display: inline-grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--radius-ctl);
+  background: var(--neutral-bg);
+}
+
+.perm-levels button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: calc(var(--radius-ctl) - 4px);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.perm-levels button.is-on {
+  background: var(--seg-on-bg);
+  color: var(--seg-on-ink);
+}
+
+.perm-levels button.perm-none.is-on {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow-control);
+}
+
+@media (max-width: 960px) {
+  .staff-grid {
+    grid-template-columns: 1fr;
+  }
+}

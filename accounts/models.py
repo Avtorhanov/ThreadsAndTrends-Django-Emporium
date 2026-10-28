@@ -103,3 +103,37 @@ class PasswordResetCode(models.Model):
 
     def __str__(self):
         return f"Код сброса для {self.user_id} от {self.created_at:%Y-%m-%d %H:%M}"
+
+
+class StaffAccess(models.Model):
+    """Права сотрудника панели по разделам: {раздел: none | view | edit}.
+
+    Есть только у приглашённых сотрудников. Владелец (суперпользователь) и администратор без
+    этой записи (созданный до появления сотрудников) — без ограничений.
+    """
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="staff_access",
+        verbose_name="Сотрудник",
+    )
+    permissions = models.JSONField("Права по разделам", default=dict)
+    invited_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="Пригласил",
+    )
+    created_at = models.DateTimeField("Приглашён", auto_now_add=True)
+    updated_at = models.DateTimeField("Изменён", auto_now=True)
+
+    class Meta:
+        verbose_name = "Права сотрудника"
+        verbose_name_plural = "Права сотрудников"
+
+    def __str__(self):
+        return f"Права {self.user_id}"

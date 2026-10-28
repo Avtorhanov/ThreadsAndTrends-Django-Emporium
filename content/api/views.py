@@ -111,6 +111,8 @@ class AdminArticleViewSet(
 ):
     """Статьи, включая черновики и удалённые (фильтр status)."""
 
+    section = "articles"
+
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_serializer_class(self):
@@ -228,6 +230,8 @@ class AdminArticleViewSet(
 
 @extend_schema(tags=[ADMIN_TAG])
 class AdminArticleImageViewSet(AdminAPIMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    section = "articles"
+
     serializer_class = AdminArticleImageSerializer
     queryset = ArticleImage.objects.all()
     http_method_names = ["delete", "options"]
@@ -247,6 +251,8 @@ class AdminArticleImageViewSet(AdminAPIMixin, mixins.DestroyModelMixin, viewsets
 @extend_schema(tags=[ADMIN_TAG])
 class AdminSiteTextView(AdminAPIMixin, generics.GenericAPIView):
     """Текст витрины по ключу: PUT — сохранить (пусто — скрыть), DELETE — вернуть исходный."""
+
+    section = "storefront"
 
     serializer_class = AdminSiteTextSerializer
 
@@ -269,6 +275,8 @@ class AdminBlockViewSet(
 ):
     """Блоки разделов «Контакты», «Помощь» и подвала. Первое изменение раздела переносит его
     значения по умолчанию в БД (customize) — дальше блоки меняются по id."""
+
+    section = "storefront"
 
     serializer_class = AdminBlockSerializer
     pagination_class = None
@@ -339,6 +347,8 @@ class AdminBlockViewSet(
 class AdminShopSettingsView(AdminAPIMixin, generics.GenericAPIView):
     """Доставка, оплата и реквизиты продавца. Пустое поле — значение из .env (`defaults`)."""
 
+    section = "settings"
+
     serializer_class = AdminShopSettingsSerializer
 
     @extend_schema(operation_id="admin_content_settings_retrieve")
@@ -386,6 +396,8 @@ def _admin_home(request) -> Response:
 class AdminHomeView(AdminAPIMixin, generics.GenericAPIView):
     """Черновик главной: все блоки (и скрытые), есть ли неопубликованные правки."""
 
+    section = "storefront"
+
     serializer_class = AdminHomeSerializer
 
     @extend_schema(operation_id="admin_content_home_retrieve")
@@ -395,6 +407,8 @@ class AdminHomeView(AdminAPIMixin, generics.GenericAPIView):
 
 @extend_schema(tags=[ADMIN_TAG])
 class AdminHomePublishView(AdminAPIMixin, generics.GenericAPIView):
+    section = "storefront"
+
     serializer_class = AdminHomeSerializer
 
     @extend_schema(
@@ -411,6 +425,8 @@ class AdminHomePublishView(AdminAPIMixin, generics.GenericAPIView):
 class AdminHomeReorderView(AdminAPIMixin, generics.GenericAPIView):
     """Новый порядок блоков главной (все id, каждый один раз)."""
 
+    section = "storefront"
+
     serializer_class = AdminHomeReorderSerializer
 
     @extend_schema(operation_id="admin_content_home_reorder", responses=AdminHomeSerializer)
@@ -423,6 +439,8 @@ class AdminHomeReorderView(AdminAPIMixin, generics.GenericAPIView):
 
 @extend_schema(tags=[ADMIN_TAG])
 class AdminHomeBlockCreateView(AdminAPIMixin, generics.GenericAPIView):
+    section = "storefront"
+
     serializer_class = AdminHomeBlockCreateSerializer
 
     @extend_schema(
@@ -441,6 +459,8 @@ class AdminHomeBlockCreateView(AdminAPIMixin, generics.GenericAPIView):
 @extend_schema(tags=[ADMIN_TAG])
 class AdminHomeBlockView(AdminAPIMixin, generics.GenericAPIView):
     """Блок главной: правка в черновик или удаление."""
+
+    section = "storefront"
 
     serializer_class = AdminHomeBlockUpdateSerializer
     queryset = HomeBlock.objects.all()
@@ -464,6 +484,8 @@ class AdminHomeBlockView(AdminAPIMixin, generics.GenericAPIView):
 @extend_schema(tags=[ADMIN_TAG])
 class AdminHomeBlockImageView(AdminAPIMixin, generics.GenericAPIView):
     """Картинка баннера: загрузить (заменяет прежнюю) или убрать."""
+
+    section = "storefront"
 
     serializer_class = AdminHomeImageUploadSerializer
     queryset = HomeBlock.objects.all()
@@ -520,6 +542,8 @@ class ShopThemeView(PublicAPIMixin, generics.GenericAPIView):
 @extend_schema(tags=[ADMIN_TAG])
 class AdminThemeView(AdminAPIMixin, generics.GenericAPIView):
     """Панель → «Тема»: все палитры, какие доступны покупателям, оформление по умолчанию."""
+
+    section = "storefront"
 
     serializer_class = AdminThemeSerializer
 

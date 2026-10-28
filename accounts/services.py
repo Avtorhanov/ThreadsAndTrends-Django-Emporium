@@ -128,6 +128,17 @@ def _hash_reset_code(user_id: int, code: str) -> str:
     return salted_hmac("accounts.password_reset", f"{user_id}:{code}").hexdigest()
 
 
+def issue_reset_code(user: User, ttl: timedelta) -> str:
+    """Новый одноразовый код (действует только последний). Вызывать внутри транзакции."""
+    now = timezone.now()
+    code = f"{secrets.randbelow(10**6):06d}"
+    PasswordResetCode.objects.filter(user=user, used_at__isnull=True).update(used_at=now)
+    PasswordResetCode.objects.create(
+        user=user, code_hash=_hash_reset_code(user.pk, code), expires_at=now + ttl
+    )
+    return code
+
+
 def request_password_reset(email: str) -> None:
     """Всегда завершается без ошибки: ответ не раскрывает, есть ли такой email."""
     user = User.objects.alive().filter(email=normalize_email(email), is_active=True).first()
@@ -142,15 +153,8 @@ def request_password_reset(email: str) -> None:
     if recent.filter(created_at__gte=now - RESET_CODE_RESEND_COOLDOWN).exists():
         return
 
-    code = f"{secrets.randbelow(10**6):06d}"
     with transaction.atomic():
-        # Действует только последний код.
-        PasswordResetCode.objects.filter(user=user, used_at__isnull=True).update(used_at=now)
-        PasswordResetCode.objects.create(
-            user=user,
-            code_hash=_hash_reset_code(user.pk, code),
-            expires_at=now + RESET_CODE_TTL,
-        )
+        code = issue_reset_code(user, RESET_CODE_TTL)
         body = render_to_string(
             "accounts/email/password_reset.txt",
             {"user": user, "code": code, "ttl_minutes": int(RESET_CODE_TTL.total_seconds() // 60)},

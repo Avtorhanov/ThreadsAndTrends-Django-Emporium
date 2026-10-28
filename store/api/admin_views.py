@@ -55,6 +55,9 @@ class AdminCategoryViewSet(
 ):
     """Все категории плоским списком (включая скрытые); дерево строит панель по parent."""
 
+    section = "categories"
+    read_also = ("products", "storefront")
+
     serializer_class = AdminCategorySerializer
     pagination_class = None
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
@@ -112,6 +115,9 @@ class AdminProductViewSet(
     viewsets.GenericViewSet,
 ):
     """Товары, включая скрытые и удалённые (фильтр status)."""
+
+    section = "products"
+    read_also = ("storefront",)
 
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
@@ -293,6 +299,8 @@ class AdminProductViewSet(
 class AdminVariantViewSet(
     AdminAPIMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet
 ):
+    section = "products"
+
     serializer_class = AdminVariantSerializer
     http_method_names = ["patch", "delete", "options"]
 
@@ -318,6 +326,8 @@ class AdminVariantViewSet(
 
 @extend_schema(tags=[TAG])
 class AdminImageViewSet(AdminAPIMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    section = "products"
+
     serializer_class = AdminImageSerializer
     queryset = ProductImage.objects.all()
     http_method_names = ["delete", "options"]
@@ -341,6 +351,8 @@ class AdminProductStatusViewSet(
     viewsets.GenericViewSet,
 ):
     """Справочник статусов товаров. Удаление снимает метку с товаров."""
+
+    section = "products"
 
     serializer_class = AdminProductStatusSerializer
     pagination_class = None

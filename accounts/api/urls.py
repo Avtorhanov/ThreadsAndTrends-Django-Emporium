@@ -21,6 +21,7 @@ auth_urlpatterns = [
 
 admin_router = SimpleRouter()
 admin_router.register("customers", admin_views.CustomerViewSet, basename="admin-customer")
+admin_router.register("staff", admin_views.StaffViewSet, basename="admin-staff")
 
 admin_urlpatterns = [
     path("auth/csrf/", admin_views.AdminCsrfView.as_view(), name="admin-csrf"),
