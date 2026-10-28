@@ -9,9 +9,9 @@ from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
-from content import services, shop, site
+from content import home, services, shop, site
 from content.contacts import get_contacts
-from content.models import Article, ArticleImage, Block, BlockArea
+from content.models import Article, ArticleImage, Block, BlockArea, HomeBlock
 from core.api.mixins import AdminAPIMixin, PublicAPIMixin
 
 from .serializers import (
@@ -25,12 +25,19 @@ from .serializers import (
     AdminBlockReorderSerializer,
     AdminBlockSerializer,
     AdminBlockUpdateSerializer,
+    AdminHomeBlockCreateSerializer,
+    AdminHomeBlockSerializer,
+    AdminHomeBlockUpdateSerializer,
+    AdminHomeImageUploadSerializer,
+    AdminHomeReorderSerializer,
+    AdminHomeSerializer,
     AdminShopSettingsSerializer,
     AdminShopSettingsWriteSerializer,
     AdminSiteTextSerializer,
     ArticleDetailSerializer,
     ArticleSerializer,
     ContactSerializer,
+    HomeSerializer,
 )
 
 TAG = "content"
@@ -345,3 +352,130 @@ class AdminShopSettingsView(AdminAPIMixin, generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         row = shop.update(**serializer.validated_data)
         return Response(AdminShopSettingsSerializer(row).data)
+
+
+# --- Главная из блоков ---
+
+
+@extend_schema(tags=[TAG])
+class HomeView(PublicAPIMixin, generics.GenericAPIView):
+    """Опубликованная главная: блоки по порядку с товарами и категориями."""
+
+    serializer_class = HomeSerializer
+
+    @extend_schema(operation_id="content_home_retrieve")
+    def get(self, request):
+        blocks = home.published_blocks()
+        return Response(HomeSerializer({"blocks": blocks}, context={"request": request}).data)
+
+
+def _admin_home(request) -> Response:
+    page = home.get_page()
+    data = {
+        "blocks": home.draft_blocks(),
+        "has_changes": home.has_changes(page),
+        "published_at": page.published_at,
+    }
+    return Response(AdminHomeSerializer(data, context={"request": request}).data)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminHomeView(AdminAPIMixin, generics.GenericAPIView):
+    """Черновик главной: все блоки (и скрытые), есть ли неопубликованные правки."""
+
+    serializer_class = AdminHomeSerializer
+
+    @extend_schema(operation_id="admin_content_home_retrieve")
+    def get(self, request):
+        return _admin_home(request)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminHomePublishView(AdminAPIMixin, generics.GenericAPIView):
+    serializer_class = AdminHomeSerializer
+
+    @extend_schema(
+        operation_id="admin_content_home_publish",
+        request=None,
+        description="Опубликовать черновик: покупатели увидят видимые блоки в этом порядке.",
+    )
+    def post(self, request):
+        home.publish()
+        return _admin_home(request)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminHomeReorderView(AdminAPIMixin, generics.GenericAPIView):
+    serializer_class = AdminHomeReorderSerializer
+
+    @extend_schema(operation_id="admin_content_home_reorder", responses=AdminHomeSerializer)
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        home.reorder_blocks(serializer.validated_data["ids"])
+        return _admin_home(request)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminHomeBlockCreateView(AdminAPIMixin, generics.GenericAPIView):
+    serializer_class = AdminHomeBlockCreateSerializer
+
+    @extend_schema(
+        operation_id="admin_content_home_blocks_create",
+        responses={201: AdminHomeBlockSerializer},
+        description="Новый блок в конец страницы с текстом по умолчанию.",
+    )
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        block = home.add_block(serializer.validated_data["kind"])
+        data = AdminHomeBlockSerializer(block, context={"request": request}).data
+        return Response(data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminHomeBlockView(AdminAPIMixin, generics.GenericAPIView):
+    serializer_class = AdminHomeBlockUpdateSerializer
+    queryset = HomeBlock.objects.all()
+
+    @extend_schema(
+        operation_id="admin_content_home_blocks_partial_update",
+        responses=AdminHomeBlockSerializer,
+    )
+    def patch(self, request, pk: int):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        block = home.update_block(self.get_object(), **serializer.validated_data)
+        return Response(AdminHomeBlockSerializer(block, context={"request": request}).data)
+
+    @extend_schema(operation_id="admin_content_home_blocks_destroy", responses={204: None})
+    def delete(self, request, pk: int):
+        home.delete_block(self.get_object())
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminHomeBlockImageView(AdminAPIMixin, generics.GenericAPIView):
+    serializer_class = AdminHomeImageUploadSerializer
+    queryset = HomeBlock.objects.all()
+    parser_classes = [MultiPartParser]
+
+    @extend_schema(
+        operation_id="admin_content_home_blocks_image_create",
+        responses=AdminHomeBlockSerializer,
+        description="Картинка баннера (JPEG/PNG/WebP, до 5 МБ); заменяет прежнюю.",
+    )
+    def post(self, request, pk: int):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        block = home.set_banner_image(self.get_object(), serializer.validated_data["image"])
+        return Response(AdminHomeBlockSerializer(block, context={"request": request}).data)
+
+    @extend_schema(
+        operation_id="admin_content_home_blocks_image_destroy",
+        request=None,
+        responses=AdminHomeBlockSerializer,
+    )
+    def delete(self, request, pk: int):
+        block = home.remove_banner_image(self.get_object())
+        return Response(AdminHomeBlockSerializer(block, context={"request": request}).data)

@@ -8,6 +8,7 @@ export type Article = Schemas["Article"];
 export type ArticleDetail = Schemas["ArticleDetail"];
 export type Contact = Schemas["Contact"];
 export type ContactKind = Schemas["ContactKindEnum"];
+export type HomeBlock = Schemas["HomeBlock"];
 
 /** Статьи и контакты магазина — публичные, без входа. */
 export const contentService = {
@@ -19,6 +20,10 @@ export const contentService = {
   },
   contacts(): Promise<Contact[]> {
     return unwrap(api.GET("/api/v1/content/contacts/"));
+  },
+  /** Опубликованная главная: блоки из панели («Главная»). */
+  home(): Promise<HomeBlock[]> {
+    return unwrap(api.GET("/api/v1/content/home/")).then((data) => data.blocks);
   },
 };
 

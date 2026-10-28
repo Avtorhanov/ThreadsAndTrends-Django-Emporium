@@ -247,6 +247,8 @@ SPECTACULAR_SETTINGS = {
         "ContactKindEnum": "content.contacts.ContactKind.CHOICES",
         "BlockKindEnum": "content.models.BlockKind.choices",
         "BlockAreaEnum": "content.models.BlockArea.choices",
+        "HomeBlockKindEnum": "content.models.HomeBlockKind.choices",
+        "CollectionSourceEnum": "content.models.CollectionSource.choices",
     },
 }
 

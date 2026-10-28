@@ -962,6 +962,181 @@ paths:
                 items:
                   $ref: '#/components/schemas/AdminBlock'
           description: ''
+  /api/v1/admin/content/home/:
+    get:
+      operationId: admin_content_home_retrieve
+      description: 'Черновик главной: все блоки (и скрытые), есть ли неопубликованные правки.'
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHome'
+          description: ''
+  /api/v1/admin/content/home/blocks/:
+    post:
+      operationId: admin_content_home_blocks_create
+      description: Новый блок в конец страницы с текстом по умолчанию.
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminHomeBlockCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdminHomeBlockCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminHomeBlockCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHomeBlock'
+          description: ''
+  /api/v1/admin/content/home/blocks/{id}/:
+    patch:
+      operationId: admin_content_home_blocks_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminHomeBlockUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminHomeBlockUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminHomeBlockUpdateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHomeBlock'
+          description: ''
+    delete:
+      operationId: admin_content_home_blocks_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/content/home/blocks/{id}/image/:
+    post:
+      operationId: admin_content_home_blocks_image_create
+      description: Картинка баннера (JPEG/PNG/WebP, до 5 МБ); заменяет прежнюю.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminHomeImageUploadRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHomeBlock'
+          description: ''
+    delete:
+      operationId: admin_content_home_blocks_image_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHomeBlock'
+          description: ''
+  /api/v1/admin/content/home/publish/:
+    post:
+      operationId: admin_content_home_publish
+      description: 'Опубликовать черновик: покупатели увидят видимые блоки в этом порядке.'
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHome'
+          description: ''
+  /api/v1/admin/content/home/reorder/:
+    post:
+      operationId: admin_content_home_reorder
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminHomeReorderRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdminHomeReorderRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdminHomeReorderRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminHome'
+          description: ''
   /api/v1/admin/content/settings/:
     get:
       operationId: admin_content_settings_retrieve
@@ -1317,8 +1492,8 @@ paths:
     post:
       operationId: admin_orders_transition
       description: Перевести заказ в статус из allowed_transitions. Отмена возвращает
-        остатки; «Оплачен» ставит только платёжная система. comment виден клиенту в
-        истории и в письме; notify=false — без письма.
+        остатки; «Оплачен» ставит только платёжная система. comment виден клиенту
+        в истории и в письме; notify=false — без письма.
       parameters:
       - in: path
         name: id
@@ -1873,6 +2048,21 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Contact'
+          description: ''
+  /api/v1/content/home/:
+    get:
+      operationId: content_home_retrieve
+      description: 'Опубликованная главная: блоки по порядку с товарами и категориями.'
+      tags:
+      - content
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Home'
           description: ''
   /api/v1/health/:
     get:
@@ -2442,6 +2632,124 @@ components:
           title: Показывать
       required:
       - name
+    AdminHome:
+      type: object
+      properties:
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminHomeBlock'
+        has_changes:
+          type: boolean
+          description: Есть неопубликованные правки
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - blocks
+      - has_changes
+      - published_at
+    AdminHomeBlock:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/HomeBlockKindEnum'
+          readOnly: true
+          title: Тип
+        position:
+          type: integer
+          readOnly: true
+          title: Порядок
+        is_visible:
+          type: boolean
+          readOnly: true
+          title: Показывать
+        title:
+          type: string
+          readOnly: true
+          title: Заголовок
+        text:
+          type: string
+          readOnly: true
+          title: Текст
+        color:
+          type: string
+          readOnly: true
+          title: Цвет
+        ink:
+          type: string
+          readOnly: true
+        image_url:
+          type: string
+          nullable: true
+          readOnly: true
+        category:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Категория
+        source:
+          allOf:
+          - $ref: '#/components/schemas/CollectionSourceEnum'
+          readOnly: true
+          title: Какие товары
+        product_ids:
+          type: array
+          items:
+            type: integer
+          readOnly: true
+          description: Ручная подборка по порядку
+        preview_products:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogProduct'
+          description: Товары подборки, как их увидит покупатель
+          readOnly: true
+      required:
+      - category
+      - color
+      - id
+      - image_url
+      - ink
+      - is_visible
+      - kind
+      - position
+      - preview_products
+      - product_ids
+      - source
+      - text
+      - title
+    AdminHomeBlockCreateRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/HomeBlockKindEnum'
+      required:
+      - kind
+    AdminHomeImageUploadRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          format: binary
+          description: JPEG, PNG или WebP, до 5 МБ
+      required:
+      - image
+    AdminHomeReorderRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          description: Все id блоков в новом порядке
+      required:
+      - ids
     AdminImage:
       type: object
       properties:
@@ -4091,6 +4399,16 @@ components:
       - delivery_options
       - free_delivery_from_kopecks
       - payment_methods
+    CollectionSourceEnum:
+      enum:
+      - new
+      - category
+      - manual
+      type: string
+      description: |-
+        * `new` - Новинки
+        * `category` - Категория
+        * `manual` - Вручную
     Contact:
       type: object
       properties:
@@ -4239,6 +4557,88 @@ components:
       description: |-
         * `ok` - ok
         * `error` - error
+    Home:
+      type: object
+      properties:
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/HomeBlock'
+      required:
+      - blocks
+    HomeBlock:
+      type: object
+      description: Блок опубликованной главной с данными для показа.
+      properties:
+        id:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/HomeBlockKindEnum'
+        title:
+          type: string
+        text:
+          type: string
+          description: Баннер — описание; текст — абзацы через пустую строку
+        color:
+          type: string
+          description: 'Фон баннера #RRGGBB; у других блоков пусто'
+        ink:
+          type: string
+          description: Цвет текста на фоне баннера
+        image_url:
+          type: string
+          nullable: true
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/HomeCategory'
+          nullable: true
+          description: Баннер — переход в категорию; подборка — «Все»
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogProduct'
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/HomeCategory'
+          description: 'Лента категорий: корневые'
+      required:
+      - categories
+      - category
+      - color
+      - id
+      - image_url
+      - ink
+      - kind
+      - products
+      - text
+      - title
+    HomeBlockKindEnum:
+      enum:
+      - banner
+      - collection
+      - categories
+      - text
+      type: string
+      description: |-
+        * `banner` - Баннер
+        * `collection` - Подборка товаров
+        * `categories` - Лента категорий
+        * `text` - Текст
+    HomeCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+      required:
+      - id
+      - name
+      - slug
     LoginRequest:
       type: object
       properties:
@@ -4749,6 +5149,31 @@ components:
         is_active:
           type: boolean
           title: Показывать
+    PatchedAdminHomeBlockUpdateRequest:
+      type: object
+      properties:
+        is_visible:
+          type: boolean
+        title:
+          type: string
+          maxLength: 60
+        text:
+          type: string
+          maxLength: 1000
+        color:
+          type: string
+          maxLength: 7
+        category:
+          type: integer
+          nullable: true
+        source:
+          $ref: '#/components/schemas/CollectionSourceEnum'
+        product_ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          maxItems: 12
     PatchedAdminProductStatusRequest:
       type: object
       properties:

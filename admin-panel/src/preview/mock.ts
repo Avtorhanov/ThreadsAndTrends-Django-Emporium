@@ -14,6 +14,7 @@ type Snapshot = Record<string, unknown>;
 
 const API = "/api/v1/admin";
 const SESSION = "didi-preview-admin";
+let previewBlockId = 900_000;
 
 type Login = { email: string; password: string };
 
@@ -89,6 +90,35 @@ export async function installPreview(): Promise<void> {
       return json(null, 204);
     }
     if (request.method === "DELETE") return json(null, 204);
+    // Новый блок главной: сервер вернул бы блок с текстом по умолчанию — собираем похожий.
+    if (path === `${API}/content/home/blocks/`) {
+      const { kind } = (await request.clone().json()) as { kind: string };
+      const titles: Record<string, string> = {
+        banner: "Новый баннер",
+        collection: "Подборка",
+        categories: "Категории",
+        text: "Новый текст",
+      };
+      previewBlockId += 1;
+      return json(
+        {
+          id: previewBlockId,
+          kind,
+          position: 0,
+          is_visible: true,
+          title: titles[kind] ?? "",
+          text: kind === "banner" ? "Короткое описание" : "",
+          color: kind === "banner" ? "#FFE38F" : "",
+          ink: "#13261C",
+          image_url: null,
+          category: null,
+          source: "new",
+          product_ids: [],
+          preview_products: [],
+        },
+        201,
+      );
+    }
     // Действие над объектом (…/{id}/transition/, …/restore/) → объект как был.
     const owner = path.replace(/[a-z-]+\/$/, "");
     const current = snapshot[path] ?? snapshot[owner];

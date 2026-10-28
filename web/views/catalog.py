@@ -16,6 +16,7 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 
+from content import home as home_page
 from content.contacts import ask_links
 from store.models import Category, Product, ProductImage, ProductVariant
 from store.services.cart import max_quantity
@@ -146,7 +147,24 @@ def home(request):
         values=values,
         pages=False,
     )
-    return render(request, "web/catalog/home.html", {"grid": grid, "tab": "catalog"})
+    return render(
+        request, "web/catalog/home.html", {"grid": grid, "blocks": _home_blocks(), "tab": "catalog"}
+    )
+
+
+def _home_blocks():
+    """Опубликованные блоки главной (HTML из кэша сеток: товары меняются — пересобирается)."""
+    items, published_at = home_page.published()
+    if not items:
+        return ""
+
+    def render_blocks() -> str:
+        return render_to_string(
+            "web/catalog/_home_blocks.html", {"blocks": home_page.resolve(items)}
+        ).strip()
+
+    cache_key = catalog_cache.key("home-blocks", published_at)
+    return mark_safe(catalog_cache.get_or_render(cache_key, render_blocks))
 
 
 def _listing(request, *, category: Category | None, search: bool):

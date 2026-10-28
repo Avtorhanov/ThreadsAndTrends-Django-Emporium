@@ -1,11 +1,22 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from content import shop
+from content import home, shop
 from content.contacts import ContactKind
-from content.models import Article, ArticleImage, Block, BlockArea, BlockKind, ShopSettings
+from content.models import (
+    Article,
+    ArticleImage,
+    Block,
+    BlockArea,
+    BlockKind,
+    CollectionSource,
+    HomeBlock,
+    HomeBlockKind,
+    ShopSettings,
+)
 from content.services import MAX_BODY_LENGTH
-from store.api.serializers import absolute_url
+from store.api.serializers import CatalogProductSerializer, absolute_url
+from store.models import Category
 
 # --- Публичное чтение (приложение) ---
 
@@ -218,3 +229,129 @@ class AdminShopSettingsWriteSerializer(serializers.Serializer):
     seller_address = serializers.CharField(max_length=300, allow_blank=True)
     seller_phone = serializers.CharField(max_length=30, allow_blank=True)
     seller_email = serializers.CharField(max_length=254, allow_blank=True)
+
+
+# --- Главная из блоков ---
+
+
+def _image_url(context, image) -> str | None:
+    """Копия 960 px, если готова, иначе оригинал (баннер на телефоне уже не нужен крупнее)."""
+    if image is None:
+        return None
+    sources = image.sources
+    url = next((u for u, width in sources if width == 960), sources[-1][0])
+    request = context.get("request")
+    return request.build_absolute_uri(url) if request else url
+
+
+class HomeCategorySerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    slug = serializers.CharField()
+    name = serializers.CharField()
+
+
+class HomeBlockSerializer(serializers.Serializer):
+    """Блок опубликованной главной с данными для показа."""
+
+    id = serializers.IntegerField()
+    kind = serializers.ChoiceField(choices=HomeBlockKind.choices)
+    title = serializers.CharField()
+    text = serializers.CharField(help_text="Баннер — описание; текст — абзацы через пустую строку")
+    color = serializers.CharField(help_text="Фон баннера #RRGGBB; у других блоков пусто")
+    ink = serializers.CharField(help_text="Цвет текста на фоне баннера")
+    image_url = serializers.SerializerMethodField()
+    category = HomeCategorySerializer(
+        allow_null=True, help_text="Баннер — переход в категорию; подборка — «Все»"
+    )
+    products = CatalogProductSerializer(many=True)
+    categories = HomeCategorySerializer(many=True, help_text="Лента категорий: корневые")
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_image_url(self, block):
+        return _image_url(self.context, block.image)
+
+
+class HomeSerializer(serializers.Serializer):
+    blocks = HomeBlockSerializer(many=True)
+
+
+class AdminHomeBlockSerializer(serializers.ModelSerializer):
+    ink = serializers.SerializerMethodField()
+    product_ids = serializers.ListField(
+        child=serializers.IntegerField(), read_only=True, help_text="Ручная подборка по порядку"
+    )
+    image_url = serializers.SerializerMethodField()
+    preview_products = serializers.SerializerMethodField(
+        help_text="Товары подборки, как их увидит покупатель"
+    )
+
+    class Meta:
+        model = HomeBlock
+        fields = [
+            "id",
+            "kind",
+            "position",
+            "is_visible",
+            "title",
+            "text",
+            "color",
+            "ink",
+            "image_url",
+            "category",
+            "source",
+            "product_ids",
+            "preview_products",
+        ]
+        read_only_fields = fields
+
+    def get_ink(self, block) -> str:
+        return home.ink_for(block.color)
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_image_url(self, block):
+        return _image_url(self.context, block.image)
+
+    @extend_schema_field(CatalogProductSerializer(many=True))
+    def get_preview_products(self, block):
+        if block.kind != HomeBlockKind.COLLECTION:
+            return []
+        resolved = home.resolve([home.snapshot_of(block)], keep_empty=True)[0]
+        return CatalogProductSerializer(resolved.products, many=True, context=self.context).data
+
+
+class AdminHomeSerializer(serializers.Serializer):
+    blocks = AdminHomeBlockSerializer(many=True)
+    has_changes = serializers.BooleanField(help_text="Есть неопубликованные правки")
+    published_at = serializers.DateTimeField(allow_null=True)
+
+
+class AdminHomeBlockCreateSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=HomeBlockKind.choices)
+
+
+class AdminHomeBlockUpdateSerializer(serializers.Serializer):
+    is_visible = serializers.BooleanField(required=False)
+    title = serializers.CharField(max_length=home.TITLE_MAX, required=False, allow_blank=True)
+    text = serializers.CharField(
+        max_length=home.TEXT_MAX, required=False, allow_blank=True, trim_whitespace=False
+    )
+    color = serializers.CharField(max_length=7, required=False, allow_blank=True)
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), allow_null=True, required=False
+    )
+    source = serializers.ChoiceField(choices=CollectionSource.choices, required=False)
+    product_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        max_length=home.MAX_MANUAL_PRODUCTS,
+        required=False,
+    )
+
+
+class AdminHomeImageUploadSerializer(serializers.Serializer):
+    image = serializers.FileField(help_text="JPEG, PNG или WebP, до 5 МБ")
+
+
+class AdminHomeReorderSerializer(serializers.Serializer):
+    ids = serializers.ListField(
+        child=serializers.IntegerField(), help_text="Все id блоков в новом порядке"
+    )
