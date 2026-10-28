@@ -1,5 +1,5 @@
 {% load static storefront %}<!doctype html>
-<html lang="ru"{% if theme %} data-theme="{{ theme }}"{% endif %}{% for name, value in look.attrs.items %} {{ name }}="{{ value }}"{% endfor %}>
+<html lang="ru"{% if theme %} data-theme="{{ theme }}"{% endif %}{% for name, value in look.attrs.items %} {{ name }}="{{ value }}"{% endfor %}{% if nav_style != "solid" %} data-nav="{{ nav_style }}"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">

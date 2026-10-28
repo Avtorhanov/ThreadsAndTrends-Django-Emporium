@@ -206,9 +206,9 @@ def test_storefront_renders_published_blocks(client):
     home.publish()
 
     html = client.get("/").content.decode()
-    assert 'class="hb hb-banner"' in html and "Новая коллекция" in html
+    assert 'class="hblock hblock-banner"' in html and "Новая коллекция" in html
     assert 'href="/category/clothes/"' in html
-    assert "hb-rail" in html and "Рубашка" in html
+    assert "hblock-rail" in html and "Рубашка" in html
     assert "<p>Курьером по городу.</p>" in html and "Все товары" in html
 
 

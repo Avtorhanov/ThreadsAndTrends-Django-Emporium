@@ -53,6 +53,8 @@
   {% if not compact %}
   {# Выпадающий поиск (вверху каталога): поле, фильтры и быстрые сортировки одной формой. #}
   <form class="drop" id="drop-search" action="{% url 'web:search' %}" method="get" role="search" data-drop hidden>
+    {# Enter в поле — обычный поиск: кнопка по умолчанию стоит первой, иначе форма ушла бы с первым чипсом сортировки. #}
+    <button class="sr" type="submit" tabindex="-1">Найти</button>
     <div class="search">
       <svg class="ic" width="20" height="20"><use href="#i-search"/></svg>
       <input type="search" name="q" value="{{ values.q|default:'' }}" placeholder="Футболка, термос, плед…" aria-label="Поиск по каталогу" maxlength="100" autocomplete="off" enterkeyhint="search">

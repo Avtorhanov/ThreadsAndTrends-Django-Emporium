@@ -46,10 +46,6 @@
   {# Название, цена, размеры, описание и кнопка — одна объёмная карточка. #}
   <div class="pd__info">
     <div class="rise r1">
-      <nav class="crumbs" aria-label="Навигация">
-        <a href="{% url 'web:home' %}">Каталог</a>
-        {% if product.category.parent %}<svg class="ic" width="14" height="14"><use href="#i-chevron"/></svg><a href="{% url 'web:category' product.category.parent.slug %}">{{ product.category.parent.name }}</a>{% endif %}
-      </nav>
       <a class="tag" href="{% url 'web:category' product.category.slug %}">{{ product.category.name }}</a>
       <h1 class="pd__title">{{ product.name }}</h1>
       {% if product.status %}<p class="status status--{{ product.status.tone }} pd__status"{% if product.status.hint %} title="{{ product.status.hint }}"{% endif %}>{{ product.status.name }}</p>{% if product.status.hint %}<p class="muted pd__status-hint">{{ product.status.hint }}</p>{% endif %}{% endif %}

@@ -13,16 +13,15 @@
 {% block header %}{% include "web/partials/header.html" with compact=search %}{% endblock %}
 {% block content %}
 <section class="feed">
-  {% if category %}
-  <nav class="crumbs" aria-label="Навигация">
-    <a href="{% url 'web:home' %}">Каталог</a>
-    {% if category.parent %}<svg class="ic" width="14" height="14"><use href="#i-chevron"/></svg><a href="{% url 'web:category' category.parent.slug %}">{{ category.parent.name }}</a>{% endif %}
-  </nav>
-  {% endif %}
+  {% if search %}
   <header class="section-head">
-    <p class="overline">{% if search %}Поиск{% elif category %}{% sitetext "listing.category" %}Категория{% endsitetext %}{% else %}{% sitetext "listing.all" %}Каталог{% endsitetext %}{% endif %}</p>
-    <h1 class="h1">{% if search %}{% if values.q %}«{{ values.q }}»{% else %}Найти товар{% endif %}{% elif category %}{{ category.name }}{% else %}Все товары{% endif %}</h1>
+    <p class="overline">Поиск</p>
+    <h1 class="h1">{% if values.q %}«{{ values.q }}»{% else %}Найти товар{% endif %}</h1>
   </header>
+  {% else %}
+  {# Категория уже выбрана в ленте шапки (подкатегории — чипсами ниже): видимый заголовок её бы повторял. #}
+  <h1 class="visually-hidden">{% if category %}{{ category.name }}{% else %}Все товары{% endif %}</h1>
+  {% endif %}
 
   {% if root %}
   {% with children=root|subcategories %}{% if children %}

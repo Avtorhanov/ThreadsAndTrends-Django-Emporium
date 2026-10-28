@@ -1,10 +1,12 @@
-{# Плавающая нижняя панель — на телефонах (на десктопе разделы в шапке). Активная вкладка шире и с подписью. #}
+{% comment %}Нижняя панель — на телефонах (на десктопе разделы в шапке). Вид — панель → «Тема» (data-nav на <html>):
+   сплошная полоса (по умолчанию) и плавающая капсула — активная вкладка шире и с подписью;
+   нижняя панель — подписи у всех вкладок.{% endcomment %}
 <nav class="tabbar" aria-label="Разделы">
   <a class="tab{% if tab == 'catalog' %} is-on{% endif %}" href="{% url 'web:home' %}"{% if tab == "catalog" %} aria-current="page"{% endif %}>
-    <svg class="ic" width="22" height="22"><use href="#i-grid"/></svg><span>Каталог</span>
+    <span class="tab__icon"><svg class="ic" width="22" height="22"><use href="#i-grid"/></svg></span><span>Каталог</span>
   </a>
   <a class="tab{% if tab == 'contacts' %} is-on{% endif %}" href="{% url 'web:contacts' %}"{% if tab == "contacts" %} aria-current="page"{% endif %}>
-    <svg class="ic" width="22" height="22"><use href="#i-chat"/></svg><span>Контакты</span>
+    <span class="tab__icon"><svg class="ic" width="22" height="22"><use href="#i-chat"/></svg></span><span>Контакты</span>
   </a>
   <a class="tab{% if tab == 'cart' %} is-on{% endif %}" href="{% url 'web:cart' %}"{% if tab == "cart" %} aria-current="page"{% endif %}>
     <span class="tab__icon">
@@ -13,6 +15,6 @@
     </span><span>Корзина</span>
   </a>
   <a class="tab{% if tab == 'profile' %} is-on{% endif %}" href="{% url 'web:profile' %}"{% if tab == "profile" %} aria-current="page"{% endif %}>
-    <svg class="ic" width="22" height="22"><use href="#i-user"/></svg><span>Профиль</span>
+    <span class="tab__icon"><svg class="ic" width="22" height="22"><use href="#i-user"/></svg></span><span>Профиль</span>
   </a>
 </nav>
