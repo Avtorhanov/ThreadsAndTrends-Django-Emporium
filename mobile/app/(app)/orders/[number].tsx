@@ -158,9 +158,12 @@ export default function OrderScreen() {
       <Card style={s.card}>
         <Text style={s.caption}>История</Text>
         {order.status_history.map((change) => (
-          <View key={`${change.to_status}-${change.created_at}`} style={s.historyRow}>
-            <Text style={s.text}>{change.to_status_display}</Text>
-            <Text style={s.muted}>{formatDateTime(change.created_at)}</Text>
+          <View key={`${change.to_status}-${change.created_at}`} style={s.historyItem}>
+            <View style={s.historyRow}>
+              <Text style={s.text}>{change.to_status_display}</Text>
+              <Text style={s.muted}>{formatDateTime(change.created_at)}</Text>
+            </View>
+            {change.comment ? <Text style={s.historyNote}>{change.comment}</Text> : null}
           </View>
         ))}
       </Card>
@@ -183,6 +186,18 @@ const useStyles = makeStyles(({ c }) => ({
   itemName: { fontFamily: fonts.text700, fontSize: 15, color: c.ink },
   itemTotal: { fontFamily: fonts.display700, fontSize: 15, color: c.ink },
   fieldBox: { gap: 2 },
+  historyItem: { gap: 6 },
+  historyNote: {
+    fontFamily: fonts.text600,
+    fontSize: 13,
+    lineHeight: 19,
+    color: c.ink,
+    backgroundColor: c.surface,
+    borderRadius: radius.control - 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    overflow: "hidden",
+  },
   historyRow: { flexDirection: "row", justifyContent: "space-between", gap: 16 },
   caption: { fontFamily: fonts.text700, fontSize: 13, color: c.muted },
   text: { fontFamily: fonts.text600, fontSize: 15, lineHeight: 21, color: c.ink },

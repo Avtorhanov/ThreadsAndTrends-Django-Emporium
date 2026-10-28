@@ -243,3 +243,16 @@ def test_buy_now_preview_and_create(client_api, customer, filled_cart, cap):
 
 def test_buy_now_preview_validates_params(client_api):
     assert client_api.get(CHECKOUT, {"variant": "abc"}).status_code == 400
+
+
+def test_admin_transition_with_comment_visible_to_customer(admin_client, client_api, customer):
+    order = make_order(customer)
+    body = {"status": "assembled", "comment": "Заменили пакет на коробку", "notify": False}
+    response = admin_client.post(f"{ADMIN_ORDERS}{order.pk}/transition/", body, format="json")
+    assert response.status_code == 200, response.content
+    last = response.json()["status_history"][-1]
+    assert (last["comment"], last["notified"]) == ("Заменили пакет на коробку", False)
+
+    history = client_api.get(detail_url(order.number)).json()["status_history"]
+    assert history[-1]["comment"] == "Заменили пакет на коробку"
+    assert "notified" not in history[-1]

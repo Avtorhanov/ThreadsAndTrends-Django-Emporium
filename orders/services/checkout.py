@@ -329,16 +329,17 @@ def checkout(
                 if updated != 1:  # невозможно под блокировкой; страховка от отрицательных остатков
                     raise ValidationError(_problems_message(summary), code="cart_changed")
 
+            sent = notifications.notify_status(order, created=True)
             OrderStatusChange.objects.create(
                 order=order,
                 from_status="",
                 to_status=order.status,
                 changed_by=ChangedBy.CUSTOMER,
                 actor=user,
+                notified=sent,
             )
             if buy_now is None:
                 cart.items.all().delete()
-            notifications.notify_status(order, created=True)
     except IntegrityError:
         # Гонка по уникальному ключу (owner, idempotency_key) без корзины-блокировки.
         existing = _find_existing(user, idempotency_key)

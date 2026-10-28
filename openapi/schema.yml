@@ -271,28 +271,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminProductDetail'
           description: ''
-  /api/v1/admin/catalog/products/bulk/:
-    post:
-      operationId: admin_catalog_products_bulk_create
-      description: 'Массово: статус, категория или видимость у отмеченных товаров (до
-        200).'
-      tags:
-      - admin-catalog
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AdminProductBulkRequest'
-        required: true
-      security:
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminProductBulkResult'
-          description: ''
   /api/v1/admin/catalog/products/{id}/:
     get:
       operationId: admin_catalog_products_retrieve
@@ -464,6 +442,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminVariant'
+          description: ''
+  /api/v1/admin/catalog/products/bulk/:
+    post:
+      operationId: admin_catalog_products_bulk_create
+      description: 'Массово: статус, категория или видимость у отмеченных товаров
+        (до 200).'
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductBulkRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductBulkResult'
           description: ''
   /api/v1/admin/catalog/statuses/:
     get:
@@ -1317,7 +1317,8 @@ paths:
     post:
       operationId: admin_orders_transition
       description: Перевести заказ в статус из allowed_transitions. Отмена возвращает
-        остатки; «Оплачен» ставит только платёжная система.
+        остатки; «Оплачен» ставит только платёжная система. comment виден клиенту в
+        истории и в письме; notify=false — без письма.
       parameters:
       - in: path
         name: id
@@ -2720,6 +2721,9 @@ components:
           type: string
         changed_by:
           $ref: '#/components/schemas/ChangedByEnum'
+        comment:
+          type: string
+          description: Комментарий магазина для клиента; пусто — нет
         created_at:
           type: string
           format: date-time
@@ -2727,11 +2731,16 @@ components:
           type: string
           nullable: true
           readOnly: true
+        notified:
+          type: boolean
+          description: Клиенту отправлено письмо
       required:
       - actor_email
       - changed_by
+      - comment
       - created_at
       - from_status
+      - notified
       - to_status
       - to_status_display
     AdminPayment:
@@ -3376,6 +3385,15 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/OrderStatusEnum'
+        comment:
+          type: string
+          default: ''
+          description: 'Пояснение для клиента: история заказа и письмо'
+          maxLength: 500
+        notify:
+          type: boolean
+          default: true
+          description: Отправить клиенту письмо о смене статуса
       required:
       - status
     AdminVariant:
@@ -4471,11 +4489,15 @@ components:
           type: string
         changed_by:
           $ref: '#/components/schemas/ChangedByEnum'
+        comment:
+          type: string
+          description: Комментарий магазина для клиента; пусто — нет
         created_at:
           type: string
           format: date-time
       required:
       - changed_by
+      - comment
       - created_at
       - from_status
       - to_status

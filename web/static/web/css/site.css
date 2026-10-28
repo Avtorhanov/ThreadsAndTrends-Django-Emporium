@@ -603,7 +603,8 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .order-info { display: grid; gap: 0; }
 .order-info p + p { margin-top: 4px; }
 .history { display: grid; gap: 10px; padding: 0; list-style: none; }
-.history li { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
+.history li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; font-size: 13px; }
+.history__note { flex-basis: 100%; margin: 0; padding: 8px 10px; border-radius: var(--radius-seg); background: var(--surface); color: var(--ink); font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
 .pay { display: grid; gap: 12px; }
 .pay__text { display: flex; align-items: center; gap: 6px; font: 600 15px/1.4 var(--font-text); }
 .cancel { margin-top: 4px; }

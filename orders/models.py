@@ -167,6 +167,13 @@ class OrderStatusChange(models.Model):
         related_name="+",
         verbose_name="Пользователь",
     )
+    comment = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name="Комментарий для клиента",
+        help_text="Видит клиент в истории заказа и в письме",
+    )
+    notified = models.BooleanField(default=False, verbose_name="Клиенту отправлено письмо")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Когда")
 
     class Meta:

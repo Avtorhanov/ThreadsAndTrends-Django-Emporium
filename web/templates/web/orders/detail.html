@@ -67,7 +67,7 @@
     <p class="panel__title">История</p>
     <ol class="history">
       {% for change in history %}
-      <li><span class="status status--{{ change.to_status|status_tone }}">{{ change.get_to_status_display }}</span><span class="muted">{{ change.created_at|date:"j E, H:i" }}</span></li>
+      <li><span class="status status--{{ change.to_status|status_tone }}">{{ change.get_to_status_display }}</span><span class="muted">{{ change.created_at|date:"j E, H:i" }}</span>{% if change.comment %}<p class="history__note">{{ change.comment }}</p>{% endif %}</li>
       {% endfor %}
     </ol>
   </div>

@@ -159,11 +159,19 @@ python3 deploy/e2e_storefront.py "$BASE" "$OUT/storefront" 2>&1 | tee "$OUT/stor
 step "Lighthouse (мобильный): страница товара"
 if command -v npx >/dev/null; then
   chrome=$(python3 -c "from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()")
-  CHROME_PATH="$chrome" npx --yes lighthouse@12 "$product_url" \
-    --only-categories=seo,performance,accessibility,best-practices --form-factor=mobile \
-    --chrome-flags="--headless=new --no-sandbox --ignore-certificate-errors" \
-    --output=json --output=html --output-path="$OUT/lighthouse-product" --quiet \
-    || fail "Lighthouse не запустился"
+  lighthouse() {
+    CHROME_PATH="$chrome" npx --yes lighthouse@12 "$product_url" \
+      --only-categories=seo,performance,accessibility,best-practices --form-factor=mobile \
+      --chrome-flags="--headless=new --no-sandbox --ignore-certificate-errors" \
+      --output=json --output=html --output-path="$OUT/lighthouse-product" --quiet
+  }
+  lighthouse || fail "Lighthouse не запустился"
+  # Сбой записи трейса (NO_NAVSTART и т.п.) — ошибка самого Lighthouse, не страницы: один повтор.
+  if python3 -c 'import json,sys; sys.exit(0 if json.load(open(sys.argv[1])).get("runtimeError") else 1)' \
+    "$OUT/lighthouse-product.report.json"; then
+    echo "Lighthouse: сбой трейса, повтор"
+    lighthouse || fail "Lighthouse не запустился"
+  fi
   python3 - "$OUT/lighthouse-product.report.json" <<'PY' || fail "Lighthouse ниже порога (отчёт — lighthouse-product.report.html)"
 import json, sys
 report = json.load(open(sys.argv[1]))
