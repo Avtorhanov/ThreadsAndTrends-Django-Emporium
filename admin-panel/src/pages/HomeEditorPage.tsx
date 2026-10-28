@@ -74,7 +74,17 @@ export function HomeEditorPage() {
       prev.map((block) => {
         if (block.id !== saved.id) return block;
         if (!pending.current.has(saved.id)) return saved;
-        return { ...block, ink: saved.ink, image_url: saved.image_url, preview_products: saved.preview_products };
+        return {
+          ...block,
+          ink: saved.ink,
+          image_url: saved.image_url,
+          image_ids: saved.image_ids,
+          images: saved.images,
+          preview_products: saved.preview_products,
+          preview_product: saved.preview_product,
+          preview_images: saved.preview_images,
+          preview_links: saved.preview_links,
+        };
       }),
     );
   }
@@ -179,32 +189,25 @@ export function HomeEditorPage() {
     });
   }
 
+  // Несколько картинок за раз — по очереди: каждый ответ содержит все картинки баннера,
+  // и более ранний ответ не перезапишет более полный.
+  const uploads = useRef<Promise<void>>(Promise.resolve());
   function upload(id: number, file: File) {
     if (file.size > 5 * 1024 * 1024) {
       setBlockError(id, "Файл больше 5 МБ.");
       return;
     }
-    void run(async () => {
-      try {
-        merge(await homeService.uploadImage(id, file));
-        setHasChanges(true);
-        setBlockError(id, null);
-      } catch (err) {
-        setBlockError(id, message(err));
-      }
-    });
-  }
-
-  function removeImage(id: number) {
-    void run(async () => {
-      try {
-        merge(await homeService.removeImage(id));
-        setHasChanges(true);
-        setBlockError(id, null);
-      } catch (err) {
-        setBlockError(id, message(err));
-      }
-    });
+    uploads.current = uploads.current.then(() =>
+      run(async () => {
+        try {
+          merge(await homeService.uploadImage(id, file));
+          setHasChanges(true);
+          setBlockError(id, null);
+        } catch (err) {
+          setBlockError(id, message(err));
+        }
+      }),
+    );
   }
 
   function publish() {
@@ -376,7 +379,6 @@ export function HomeEditorPage() {
                 busy={busy}
                 onChange={(changes, delay) => edit(selected.id, changes, delay)}
                 onUpload={(file) => upload(selected.id, file)}
-                onRemoveImage={() => removeImage(selected.id)}
                 onDelete={() => remove(selected.id)}
                 onBack={() => setView("list")}
               />

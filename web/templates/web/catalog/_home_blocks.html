@@ -1,17 +1,18 @@
 {% load storefront %}{% comment %}Блоки главной (панель → «Главная»): так же, как в предпросмотре панели
-   (admin-panel/src/components/home/HomePreview.tsx) — баннер, подборка с прокруткой вбок,
-   лента категорий, текст.{% endcomment %}
+   (admin-panel/src/components/home/HomePreview.tsx) — баннер (несколько подряд — карусель),
+   подборка с прокруткой вбок, лента категорий (свои вкладки или корневые категории), текст.{% endcomment %}
 {% for b in blocks %}
-{% if b.kind == "banner" %}
-<section class="hblock hblock-banner{% if b.image %} hblock-banner--img{% endif %}" style="--hb-bg:{{ b.color }};--hb-ink:{{ b.ink }}">
-  {% if b.category %}<a class="hblock-banner__link" href="{% url 'web:category' b.category.slug %}" aria-label="{% if b.title %}{{ b.title }} — {% endif %}{{ b.category.name }}">{% endif %}
-  <span class="hblock-banner__body">
-    {% if b.title %}<span class="hblock-banner__title">{{ b.title }}</span>{% endif %}
-    {% if b.text %}<span class="hblock-banner__text">{{ b.text }}</span>{% endif %}
-  </span>
-  {% if b.image %}<span class="hblock-banner__media">{% if forloop.first %}{% product_img b.image "(min-width: 900px) 360px, 45vw" css="hblock-banner__img" eager=True %}{% else %}{% product_img b.image "(min-width: 900px) 360px, 45vw" css="hblock-banner__img" %}{% endif %}</span>{% endif %}
-  {% if b.category %}</a>{% endif %}
+{% if b.kind == "carousel" %}
+<section class="hblock hblock-carousel" data-carousel aria-roledescription="карусель" aria-label="Баннеры">
+  <div class="hblock-carousel__track" data-carousel-track>
+    {% for item in b.items %}<div class="hblock-carousel__slide" aria-roledescription="слайд" aria-label="{{ forloop.counter }} из {{ b.items|length }}">{% include "web/catalog/_home_banner.html" with b=item eager=forloop.first %}</div>{% endfor %}
+  </div>
+  <div class="hblock-carousel__dots" role="group" aria-label="Выбор баннера">
+    {% for item in b.items %}<button class="hblock-carousel__dot{% if forloop.first %} is-on{% endif %}" type="button" data-carousel-dot aria-label="Баннер {{ forloop.counter }}"{% if forloop.first %} aria-current="true"{% endif %}></button>{% endfor %}
+  </div>
 </section>
+{% elif b.kind == "banner" %}
+{% include "web/catalog/_home_banner.html" with eager=forloop.first %}
 {% elif b.kind == "collection" %}
 <section class="hblock hblock-rail" aria-label="{{ b.title|default:'Подборка' }}">
   <div class="hblock-head">
@@ -27,7 +28,8 @@
 <nav class="hblock hblock-cats" aria-label="{{ b.title|default:'Категории' }}">
   {% if b.title %}<h2 class="hblock-head__title">{{ b.title }}</h2>{% endif %}
   <div class="hblock-cats__list">
-    {% for c in b.categories %}<a class="hblock-cats__item" href="{% url 'web:category' c.slug %}">{{ c.name }}</a>{% endfor %}
+    {% if b.links %}{% for link in b.links %}<a class="hblock-cats__item" href="{{ link.url }}"{% if link.kind == "url" and "://" in link.url %} target="_blank" rel="noopener noreferrer"{% endif %}>{{ link.title }}</a>{% endfor %}
+    {% else %}{% for c in b.categories %}<a class="hblock-cats__item" href="{% url 'web:category' c.slug %}">{{ c.name }}</a>{% endfor %}{% endif %}
   </div>
 </nav>
 {% elif b.kind == "text" %}

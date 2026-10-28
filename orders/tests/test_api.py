@@ -256,3 +256,51 @@ def test_admin_transition_with_comment_visible_to_customer(admin_client, client_
     history = client_api.get(detail_url(order.number)).json()["status_history"]
     assert history[-1]["comment"] == "Заменили пакет на коробку"
     assert "notified" not in history[-1]
+
+
+def test_admin_bulk_transition(admin_client, customer, staff):
+    first = make_order(customer)
+    second = make_order(customer)
+    pickup = make_order(customer, delivery_method=DeliveryMethod.PICKUP)
+    done = make_order(customer, status=OrderStatus.DELIVERED)
+    url = f"{ADMIN_ORDERS}bulk-transition/"
+
+    ids = [first.pk, second.pk, pickup.pk, done.pk]
+    response = admin_client.post(url, {"ids": ids, "status": "assembled"}, format="json")
+    assert response.status_code == 200, response.content
+    body = response.json()
+    assert sorted(body["updated"]) == sorted([first.pk, second.pk, pickup.pk])
+    assert [row["number"] for row in body["skipped"]] == [done.number]
+    assert "Нельзя перевести" in body["skipped"][0]["reason"]
+
+    # Курьерский статус не подходит заказу с самовывозом — он пропускается, остальные идут.
+    response = admin_client.post(url, {"ids": ids[:3], "status": "shipped"}, format="json")
+    body = response.json()
+    assert sorted(body["updated"]) == sorted([first.pk, second.pk])
+    assert [row["id"] for row in body["skipped"]] == [pickup.pk]
+    statuses = dict(Order.objects.filter(pk__in=ids).values_list("pk", "status"))
+    assert statuses == {
+        first.pk: "shipped",
+        second.pk: "shipped",
+        pickup.pk: "assembled",
+        done.pk: "delivered",
+    }
+    last = first.status_changes.order_by("-id").first()
+    assert (last.changed_by, last.actor_id) == ("admin", staff.pk)
+
+    # Повтор — ничего не меняется, все в skipped.
+    response = admin_client.post(url, {"ids": [first.pk], "status": "shipped"}, format="json")
+    assert response.json() == {
+        "updated": [],
+        "skipped": [{"id": first.pk, "number": first.number, "reason": "Уже в этом статусе."}],
+    }
+
+
+def test_admin_bulk_transition_validates(admin_client):
+    url = f"{ADMIN_ORDERS}bulk-transition/"
+    assert (
+        admin_client.post(url, {"ids": [], "status": "assembled"}, format="json").status_code == 400
+    )
+    body = {"ids": list(range(1, 102)), "status": "assembled"}
+    assert admin_client.post(url, body, format="json").status_code == 400
+    assert admin_client.post(url, {"ids": [1], "status": "nope"}, format="json").status_code == 400

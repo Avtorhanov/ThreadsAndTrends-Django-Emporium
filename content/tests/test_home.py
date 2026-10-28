@@ -28,6 +28,13 @@ def image_file():
     return SimpleUploadedFile("x.jpg", buffer.getvalue(), content_type="image/jpeg")
 
 
+def gif_file():
+    buffer = BytesIO()
+    frames = [Image.new("P", (300, 200), color) for color in (1, 2, 3)]
+    frames[0].save(buffer, "GIF", save_all=True, append_images=frames[1:], duration=100, loop=0)
+    return SimpleUploadedFile("x.gif", buffer.getvalue(), content_type="image/gif")
+
+
 @pytest.fixture
 def admin_api(db):
     staff = User.objects.create_user(
@@ -120,12 +127,18 @@ def test_reorder_requires_all_blocks():
         home.reorder_blocks([second.pk])
 
 
-def test_banner_image_replaced_and_orphan_removed_on_publish(django_capture_on_commit_callbacks):
+def test_banner_images_listed_and_orphan_removed_on_publish(django_capture_on_commit_callbacks):
     banner = home.add_block("banner")
     with django_capture_on_commit_callbacks(execute=True):
-        first = home.set_banner_image(banner, image_file()).image
-        second = home.set_banner_image(banner, image_file()).image
-    assert first.pk != second.pk
+        home.add_banner_image(banner, image_file())
+        banner = home.add_banner_image(banner, image_file())
+    first, second = (HomeImage.objects.get(pk=pk) for pk in banner.image_ids)
+    # Порядок меняется, убранная картинка удаляется при публикации.
+    banner = home.update_block(banner, image_ids=[second.pk, first.pk])
+    assert banner.image_ids == [second.pk, first.pk]
+    home.update_block(banner, image_ids=[second.pk])
+    with pytest.raises(ValidationError):
+        home.update_block(banner, image_ids=[second.pk, 99999])
     # Свежая незакреплённая картинка живёт сутки (вкладка панели могла её ещё показывать).
     HomeImage.objects.filter(pk=first.pk).update(created_at=timezone.now() - timedelta(days=2))
     storage, name = first.image.storage, first.image.name
@@ -139,7 +152,109 @@ def test_banner_image_replaced_and_orphan_removed_on_publish(django_capture_on_c
 def test_image_only_for_banner():
     text = home.add_block("text")
     with pytest.raises(ValidationError):
-        home.set_banner_image(text, image_file())
+        home.add_banner_image(text, image_file())
+
+
+def test_banner_image_limit_and_gif(django_capture_on_commit_callbacks):
+    banner = home.add_block("banner")
+    with django_capture_on_commit_callbacks(execute=True):
+        banner = home.add_banner_image(banner, gif_file())
+    gif = HomeImage.objects.get(pk=banner.image_ids[0])
+    # Анимация не превращается в неподвижные копии — витрина отдаёт оригинал.
+    assert gif.image.name.endswith(".gif") and (gif.width, gif.height) == (300, 200)
+    assert [url for url, _ in gif.sources] == [gif.image.url]
+    for _ in range(home.MAX_BANNER_IMAGES - 1):
+        banner = home.add_banner_image(banner, image_file())
+    with pytest.raises(ValidationError):
+        home.add_banner_image(banner, image_file())
+
+
+def test_product_banner_uses_product_photos_and_link(client, django_capture_on_commit_callbacks):
+    from store.services import catalog
+
+    product = make_product("Термос Stanley", slug="termos")
+    with django_capture_on_commit_callbacks(execute=True):
+        catalog.add_product_image(product, image_file())
+        catalog.add_product_image(product, image_file())
+    banner = home.add_block("banner")
+    home.update_block(banner, title="", text="", product=product)
+    home.publish()
+
+    block = home.published_blocks()[0]
+    assert block.is_photo and len(block.images) == 2 and block.heading == "Термос Stanley"
+    html = client.get("/").content.decode()
+    assert 'class="hblock hblock-banner hblock-photo"' in html
+    assert 'href="/product/termos/"' in html and "data-slides" in html
+    public = APIClient().get(PUBLIC).json()["blocks"][0]
+    assert public["product"]["slug"] == "termos" and len(public["images"]) == 2
+
+    # Товар скрыли — баннер без своего текста и картинок пропадает.
+    product.is_active = False
+    product.save()
+    assert home.published_blocks() == []
+
+
+def test_consecutive_banners_become_carousel(client):
+    for title in ("Первый", "Второй"):
+        block = home.add_block("banner")
+        home.update_block(block, title=title)
+    home.add_block("text")
+    single = home.add_block("banner")
+    home.update_block(single, title="Отдельный")
+    home.publish()
+    rows = home.with_carousels(home.published_blocks())
+    assert [row.kind for row in rows] == ["carousel", "text", "banner"]
+    html = client.get("/").content.decode()
+    assert html.count("data-carousel-dot") == 2 and "Отдельный" in html
+
+
+def test_category_strip_custom_links(client):
+    from content.models import Article
+
+    clothes = make_category("Одежда", slug="clothes")
+    article = Article.objects.create(
+        title="Как выбрать размер",
+        slug="size",
+        body="Текст",
+        is_published=True,
+        published_at=timezone.now(),
+    )
+    strip = home.add_block("categories")
+    links = [
+        {"kind": "category", "id": clothes.pk},
+        {"kind": "article", "id": article.pk, "title": "Размеры"},
+        {"kind": "page", "key": "contacts"},
+        {"kind": "url", "url": "https://t.me/didi", "title": "Telegram"},
+    ]
+    home.update_block(strip, links=links)
+    home.publish()
+    html = client.get("/").content.decode()
+    for href, title in [
+        ("/category/clothes/", "Одежда"),
+        ("/articles/size/", "Размеры"),
+        ("/contacts/", "Контакты"),
+        ("https://t.me/didi", "Telegram"),
+    ]:
+        assert f'href="{href}"' in html and title in html
+    public = APIClient().get(PUBLIC).json()["blocks"][0]["links"]
+    assert [link["kind"] for link in public] == ["category", "article", "page", "url"]
+
+
+@pytest.mark.parametrize(
+    "link",
+    [
+        {"kind": "url", "url": "javascript:alert(1)", "title": "x"},
+        {"kind": "url", "url": "//evil.example", "title": "x"},
+        {"kind": "url", "url": "/ok/"},
+        {"kind": "page", "key": "admin"},
+        {"kind": "category", "id": 99999},
+        {"kind": "nope"},
+    ],
+)
+def test_category_strip_rejects_bad_links(link):
+    strip = home.add_block("categories")
+    with pytest.raises(ValidationError):
+        home.update_block(strip, links=[link])
 
 
 # --- API ---
@@ -160,7 +275,7 @@ def test_admin_api_flow(admin_api):
         f"{ADMIN}blocks/{pk}/image/", {"image": image_file()}, format="multipart"
     )
     assert upload.status_code == 200, upload.content
-    assert upload.json()["image_url"]
+    assert upload.json()["image_url"] and len(upload.json()["images"]) == 1
 
     state = admin_api.get(ADMIN).json()
     assert state["has_changes"] is True and state["published_at"] is None

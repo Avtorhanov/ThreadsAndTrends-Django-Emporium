@@ -254,6 +254,9 @@ SPECTACULAR_SETTINGS = {
         "ThemeModeEnum": "content.look.MODE_CHOICES",
         "ThemeRadiusEnum": "content.look.RADIUS_CHOICES",
         "ThemeNavEnum": "content.look.NAV_CHOICES",
+        "ThemeTextEnum": "content.look.TEXT_CHOICES",
+        "HomeLinkKindEnum": "content.home.LINK_KIND_CHOICES",
+        "HomeLinkPageEnum": "content.home.LINK_PAGE_CHOICES",
         "StaffLevelEnum": "accounts.staff.LEVEL_CHOICES",
     },
 }

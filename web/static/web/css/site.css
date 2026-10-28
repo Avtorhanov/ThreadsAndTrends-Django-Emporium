@@ -111,16 +111,21 @@ a { color: var(--brand); }
   /* Цвет стекла — на самой шапке, размытие — на ::before. Safari 26 красит полосу под
      статус-баром в цвет фиксированного элемента у верхнего края, но элемент с backdrop-filter
      не учитывает — без этого над тёмной страницей оставалась светлая полоса. */
-  background-color: var(--glass);
+  /* Развёрнутая шапка (верх страницы) — без своего фона: ни полосы по краю, ни ступеньки
+     у тени ленты категорий. Стекло появляется в свёрнутом виде, когда под шапкой страница. */
+  background-color: transparent;
   border-bottom: 1px solid transparent;
   border-radius: 0 0 24px 24px;
   transition: padding .4s var(--ease-soft), box-shadow .35s ease, border-color .35s ease, background-color .45s ease;
 }
 .top::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+}
+.top.is-compact::before, .top--fixed::before {
   -webkit-backdrop-filter: blur(22px) saturate(180%);
   backdrop-filter: blur(22px) saturate(180%);
 }
+.top.is-compact, .top--fixed { background-color: var(--glass); }
 .top.is-compact {
   padding-top: calc(6px + var(--safe-top));
   padding-bottom: 8px;
@@ -224,7 +229,7 @@ a { color: var(--brand); }
   display: grid; grid-template-rows: 1fr; margin-top: 12px;
   transition: grid-template-rows .4s var(--ease-soft), margin-top .4s var(--ease-soft), opacity .25s ease, transform .4s var(--ease-soft), visibility 0s;
 }
-.top__clip { min-height: 0; overflow: hidden; margin: -12px; padding: 12px; }
+.top__clip { min-height: 0; overflow: hidden; margin: -12px -12px -32px; padding: 12px 12px 32px; }
 .is-compact .top__more {
   grid-template-rows: 0fr; margin-top: 0; opacity: 0; transform: translateY(-10px) scale(.96); visibility: hidden;
   transition: grid-template-rows .4s var(--ease-soft), margin-top .4s var(--ease-soft), opacity .25s ease, transform .4s var(--ease-soft), visibility 0s linear .4s;
@@ -379,6 +384,8 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .check input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--brand); }
 .form { display: grid; gap: 4px; }
 .form > p { margin-bottom: 8px; }
+/* Кнопки подряд («Войти» и «Зарегистрироваться», «Сохранить» и «Выйти») не слипаются. */
+.form > :is(.cta, .btn) + :is(.cta, .btn) { margin-top: 8px; }
 .form__links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin: 10px 0 0 !important; font: 700 14px var(--font-text); }
 .form__links a, .summary__hint a { color: var(--brand); }
 
@@ -429,7 +436,6 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 }
 .incart .ic { stroke-width: 2.4; }
 .card__img .incart { position: absolute; top: 8px; right: 8px; z-index: 1; box-shadow: var(--shadow-accent-glow); }
-.incart--detail { margin: 0 0 8px; }
 
 /* --- Карточка товара --- */
 .pd { padding: 0 var(--gutter); }
@@ -485,6 +491,10 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .pd__desc p + p { margin-top: 10px; }
 .buy__bar { display: grid; gap: 10px; }
 .buy__result:empty { display: none; }
+/* Уже в корзине: метка-ссылка и «−/+» в одну строку над кнопками. */
+.incart-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.incart-row[hidden], .incart-row [hidden] { display: none; }
+.incart-row .incart { height: 32px; padding: 0 12px; font-size: 13px; }
 .buy__done { display: flex; align-items: center; gap: 6px; color: var(--success); font: 700 14px var(--font-text); }
 .buy__done a { color: inherit; }
 .price__now--ask { font-size: .82em; letter-spacing: -.2px; }
@@ -797,18 +807,69 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .hblock-banner__body { display: flex; flex-direction: column; justify-content: center; gap: 6px; flex: 1; min-width: 0; padding: 18px 20px; }
 .hblock-banner__title { font: 700 20px/1.2 var(--font-display); letter-spacing: -.3px; overflow-wrap: anywhere; text-wrap: balance; }
 .hblock-banner__text { font: 600 14px/1.4 var(--font-text); opacity: .86; overflow-wrap: anywhere; }
-.hblock-banner__media { flex: 0 0 40%; max-width: 360px; }
-.hblock-banner__img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Фото-баннер: фото в рамке карточки (как у товаров, та же тень), заголовок поверх снизу.
+   Несколько картинок сменяют друг друга растворением с лёгким приближением/отдалением. */
+.hblock-photo { display: block; min-height: 0; padding: var(--space-card-pad); background: var(--card); }
+.hblock-photo__frame {
+  position: relative; display: block; overflow: hidden; aspect-ratio: 4 / 3;
+  border-radius: var(--radius-image); background: var(--surface); color: #fff; text-decoration: none;
+  isolation: isolate;
+}
+a.hblock-photo__frame { transition: transform .18s ease; }
+a.hblock-photo__frame:active { transform: scale(.985); }
+.hblock-photo__slides, .hblock-photo__slide { position: absolute; inset: 0; }
+.hblock-photo__slide { opacity: 0; transition: opacity 1.1s ease; }
+.hblock-photo__slide.is-on { opacity: 1; }
+.hblock-photo__img { display: block; width: 100%; height: 100%; object-fit: cover; transform-origin: 50% 60%; }
+[data-slides] .hblock-photo__slide.is-on .hblock-photo__img { animation: hb-zoom-in 7s ease-out both; }
+[data-slides] .hblock-photo__slide.is-on:nth-child(even) .hblock-photo__img { animation-name: hb-zoom-out; }
+@keyframes hb-zoom-in { from { transform: scale(1); } to { transform: scale(1.09); } }
+@keyframes hb-zoom-out { from { transform: scale(1.09); } to { transform: scale(1); } }
+.hblock-photo__shade {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; display: grid; gap: 4px;
+  padding: 48px 18px 16px;
+  background: linear-gradient(to top, rgba(8, 16, 11, .78), rgba(8, 16, 11, .38) 55%, transparent);
+}
+.hblock-photo__title {
+  font: 700 22px/1.15 var(--font-display); letter-spacing: -.3px; color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, .35); overflow-wrap: anywhere; text-wrap: balance;
+}
+.hblock-photo__text { font: 700 14px/1.35 var(--font-text); color: #fff; opacity: .92; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) {
+  [data-slides] .hblock-photo__slide.is-on .hblock-photo__img { animation: none; }
+}
+/* Баннеры подряд — карусель: листаются сами (site.js) и пальцем; точки — переход к баннеру. */
+.hblock-carousel { display: grid; gap: 10px; }
+.hblock-carousel__track {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 100%; gap: var(--gutter);
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
+  margin: -16px calc(-1 * var(--gutter)) -58px; padding: 16px var(--gutter) 64px; scroll-padding-inline: var(--gutter);
+}
+.hblock-carousel__track::-webkit-scrollbar { display: none; }
+.hblock-carousel__slide { scroll-snap-align: start; scroll-snap-stop: always; min-width: 0; display: grid; }
+.hblock-carousel__slide > .hblock { min-width: 0; }
+.hblock-carousel__dots { display: flex; justify-content: center; gap: 2px; position: relative; z-index: 1; }
+.hblock-carousel__dot {
+  display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+  padding: 0; border: 0; background: transparent; cursor: pointer;
+}
+.hblock-carousel__dot::before {
+  content: ""; width: 7px; height: 7px; border-radius: 99px; background: var(--muted); opacity: .45;
+  transition: width .3s var(--ease-soft), opacity .3s ease, background-color .3s ease;
+}
+.hblock-carousel__dot.is-on::before { width: 20px; opacity: 1; background: var(--ink); }
 /* Подборка: ряд карточек с прокруткой вбок, у краёв экрана — без обрезки тени. */
+/* Прокрутка вбок обрезает и по вертикали: поле под тень карточек (до 70 px вниз) компенсировано
+   отрицательным отступом — размеры блока те же, тень не срезается прямой линией. */
 .hblock-rail__track {
   display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - var(--space-grid-gap)) / 2.15);
   gap: var(--space-grid-gap); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
-  margin: -6px calc(-1 * var(--gutter)); padding: 6px var(--gutter) 12px;
+  margin: -16px calc(-1 * var(--gutter)) -58px; padding: 16px var(--gutter) 64px;
   scroll-padding-inline: var(--gutter);
 }
 .hblock-rail__track::-webkit-scrollbar { display: none; }
 .hblock-rail__cell { scroll-snap-align: start; min-width: 0; }
-.hblock-cats__list { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin: -4px calc(-1 * var(--gutter)) -6px; padding: 4px var(--gutter) 6px; }
+.hblock-cats__list { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin: -12px calc(-1 * var(--gutter)) -32px; padding: 12px var(--gutter) 32px; }
 .hblock-cats__list::-webkit-scrollbar { display: none; }
 .hblock-cats .hblock-head__title { padding-bottom: 10px; }
 .hblock-cats__item {
@@ -821,14 +882,20 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .hblock-text .hblock-head__title { padding-bottom: 8px; }
 .hblock-text p { margin: 0 0 10px; color: var(--ink); font: 500 15px/1.55 var(--font-text); overflow-wrap: anywhere; }
 @media (min-width: 600px) {
+  .hblock-photo__frame { aspect-ratio: 16 / 9; }
+  .hblock-photo__title { font-size: 28px; }
+  .hblock-photo__shade { padding: 64px 26px 22px; }
   .hblock-rail__track { grid-auto-columns: calc((100% - 2 * 14px) / 3.2); gap: 14px; }
   .hblock-banner, .hblock-banner__link { min-height: 180px; }
   .hblock-banner__title { font-size: 26px; }
 }
 @media (min-width: 900px) {
   .home-blocks { gap: 26px; }
-  .hblock-rail__track { grid-auto-columns: calc((100% - 3 * 18px) / 4); gap: 18px; margin-inline: 0; padding-inline: 0; }
-  .hblock-cats__list { margin-inline: 0; padding-inline: 0; }
+  /* По бокам — поле под тень (24 px), карточки остаются в колонке страницы. */
+  .hblock-rail__track { grid-auto-columns: calc((100% - 3 * 18px) / 4); gap: 18px; margin-inline: -24px; padding-inline: 24px; scroll-padding-inline: 24px; }
+  .hblock-cats__list { margin-inline: -24px; padding-inline: 24px; }
+  .hblock-photo__frame { aspect-ratio: 21 / 9; }
+  .hblock-carousel__track { margin-inline: -24px; padding-inline: 24px; scroll-padding-inline: 24px; gap: 24px; }
 }
 
 @media (display-mode: standalone) { .appbar { display: none; } }

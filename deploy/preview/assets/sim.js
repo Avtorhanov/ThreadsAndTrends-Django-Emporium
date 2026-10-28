@@ -105,7 +105,7 @@
     var t = db.theme;
     var look = {
       palettes: t.enabled, palette: t.default_palette, mode: t.default_mode, radius: t.default_radius,
-      nav: t.nav_style || "solid",
+      text: t.default_text || "s", nav: t.nav_style || "solid",
       // Вошёл ли покупатель: theme.js до отрисовки уводит на страницу нужного дерева (гость / /me/).
       user: db.session ? 1 : 0,
       out: db.loggedOut ? 1 : 0
@@ -156,6 +156,7 @@
     var home = clone(snap[A + "/content/home/"]);
     var theme = clone(snap[A + "/content/theme/"]);
     if (!theme.nav_style) theme.nav_style = "solid";
+    if (!theme.default_text) theme.default_text = "s";
     var variants = [];
     products.forEach(function (p) { variants = variants.concat(p.variants); });
     var images = [];
@@ -208,6 +209,7 @@
     db.seq.category = maxId(db.categories);
     db.seq.status = maxId(db.statuses);
     db.seq.block = maxId(home.blocks);
+    db.seq.homeImage = home.blocks.reduce(function (m, b) { return Math.max(m, maxId(b.images || [])); }, 0);
     db.seq.customer = Math.max(maxId(customers), maxId(staff));
     db.seq.staff = db.seq.customer;
     return db;
@@ -435,10 +437,44 @@
     }
     return list.slice(0, 12).map(function (p) { return publicProduct(db, p); });
   }
+  // Картинки баннера: [{id, url}]; снимок до галерей хранил одну картинку (image_url).
+  function bannerImages(b) {
+    if (b.images) return b.images;
+    return b.image_url ? [{ id: 0, url: b.image_url }] : [];
+  }
+  var LINK_PAGES = { products: ["Все товары", "/products/"], contacts: ["Контакты", "/contacts/"], delivery: ["Доставка и оплата", "/legal/delivery/"] };
+  function resolveLinks(db, links) {
+    var out = [];
+    (links || []).forEach(function (l) {
+      if (l.kind === "category") {
+        var c = byId(db.categories, l.id);
+        if (c && c.is_active) out.push({ kind: "category", title: l.title || c.name, url: "/category/" + c.slug + "/", slug: c.slug });
+      } else if (l.kind === "article") {
+        var a = byId(db.articles, l.id);
+        if (a && a.is_published && !a.deleted_at) out.push({ kind: "article", title: l.title || a.title, url: "/articles/" + a.slug + "/", slug: a.slug });
+      } else if (l.kind === "page" && LINK_PAGES[l.key]) {
+        out.push({ kind: "page", title: l.title || LINK_PAGES[l.key][0], url: LINK_PAGES[l.key][1], slug: l.key });
+      } else if (l.kind === "url") {
+        out.push({ kind: "url", title: l.title, url: l.url, slug: "" });
+      }
+    });
+    return out;
+  }
   function homeBlock(db, b) {
     var row = clone(b);
     row.ink = inkFor(b.color);
     row.preview_products = b.kind === "collection" ? blockProducts(db, b) : [];
+    var images = bannerImages(b);
+    row.images = clone(images);
+    row.image_ids = images.map(function (x) { return x.id; });
+    row.image_url = images.length ? images[0].url : null;
+    row.product = b.product || null;
+    var product = b.kind === "banner" && b.product ? byId(db.products, b.product) : null;
+    row.preview_product = product && isLive(db, product) ? publicProduct(db, product) : null;
+    row.preview_images = b.kind !== "banner" ? [] : images.length ? images.map(function (x) { return x.url; }) :
+      row.preview_product ? product.images.slice().sort(function (x, y) { return x.position - y.position; }).slice(0, 6).map(function (x) { return x.url; }) : [];
+    row.links = clone(b.links || []);
+    row.preview_links = b.kind === "categories" ? resolveLinks(db, b.links) : [];
     return row;
   }
   function homeState(db) {
@@ -451,9 +487,19 @@
 
   // --- Фото: файл → уменьшенная копия data:URL (localStorage вмещает несколько мегабайт) ---
 
-  function readImage(file) {
+  function readImage(file, allowGif) {
     return new Promise(function (resolve, reject) {
       if (!file || !/^image\//.test(file.type || "")) return reject(new Error("type"));
+      if (file.type === "image/gif") {
+        // GIF баннера — как есть (иначе пропадёт анимация); большой не влезет в хранилище.
+        if (!allowGif) return reject(new Error("type"));
+        if (file.size > 1500000) return reject(new Error("size"));
+        var reader = new FileReader();
+        reader.onload = function () { resolve(reader.result); };
+        reader.onerror = function () { reject(new Error("decode")); };
+        reader.readAsDataURL(file);
+        return;
+      }
       var url = URL.createObjectURL(file);
       var img = new Image();
       img.onload = function () {
@@ -600,9 +646,34 @@
     if (!o) return fail(404, { detail: "Не найдено." });
     if (o.status === body.status) return ok(orderDetail(o));
     var allowed = allowedTransitions(o).map(function (t) { return t.status; });
-    if (allowed.indexOf(body.status) < 0) return bad("Из статуса «" + STATUS_LABELS[o.status] + "» в «" + (STATUS_LABELS[body.status] || body.status) + "» перейти нельзя.");
+    if (allowed.indexOf(body.status) < 0) return bad(transitionError(o, body.status));
     setStatus(db, o, body.status, "admin", db.me.email, String(body.comment || "").trim(), body.notify !== false);
     return { status: 200, body: orderDetail(o), save: true };
+  });
+  function transitionError(o, to) {
+    return "Нельзя перевести заказ из статуса «" + STATUS_LABELS[o.status] + "» в «" + (STATUS_LABELS[to] || to) + "».";
+  }
+  // Групповая обработка: каждый заказ проверяется отдельно, неподходящие — в skipped.
+  route("POST", "/orders/bulk-transition/", function (db, m, q, body) {
+    var ids = Array.isArray(body.ids) ? body.ids.map(Number) : [];
+    if (!ids.length) return fail(400, { ids: ["Отметьте хотя бы один заказ."] });
+    if (ids.length > 100) return fail(400, { ids: ["Не больше 100 заказов за раз."] });
+    if (!STATUS_LABELS[body.status]) return fail(400, { status: ["Неизвестный статус."] });
+    var comment = String(body.comment || "").replace(/\s+/g, " ").trim();
+    var updated = [];
+    var skipped = [];
+    db.orders.filter(function (o) { return ids.indexOf(o.id) >= 0; })
+      .sort(function (a, b) { return a.created_at < b.created_at ? -1 : 1; })
+      .forEach(function (o) {
+        var allowed = allowedTransitions(o).map(function (t) { return t.status; });
+        if (o.status === body.status) skipped.push({ id: o.id, number: o.number, reason: "Уже в этом статусе." });
+        else if (allowed.indexOf(body.status) < 0) skipped.push({ id: o.id, number: o.number, reason: transitionError(o, body.status) });
+        else {
+          setStatus(db, o, body.status, "admin", db.me.email, comment, body.notify !== false);
+          updated.push(o.id);
+        }
+      });
+    return { status: 200, body: { updated: updated, skipped: skipped }, save: updated.length > 0 };
   });
   route("POST", "/orders/(\\d+)/refund/", function (db, m) {
     var o = byId(db.orders, m[1]);
@@ -951,8 +1022,8 @@
     var b = {
       id: next(db, "block"), kind: body.kind, position: db.home.blocks.length, is_visible: true, title: titles[body.kind],
       text: body.kind === "banner" ? "Короткое описание" : body.kind === "text" ? "Первый абзац.\n\nВторой абзац." : "",
-      color: body.kind === "banner" ? "#DDF38A" : "", ink: "#13261C", image_url: null, category: null,
-      source: "new", product_ids: [], preview_products: []
+      color: body.kind === "banner" ? "#DDF38A" : "", ink: "#13261C", images: [], product: null, category: null,
+      source: "new", product_ids: [], links: []
     };
     db.home.blocks.push(b);
     touchHome(db);
@@ -966,8 +1037,24 @@
     if (body.text !== undefined && b.kind === "banner" && String(body.text).length > 120) errors.text = ["Не больше 120 символов."];
     if (body.color !== undefined && body.color && !/^#[0-9a-fA-F]{6}$/.test(body.color)) errors.color = ["Цвет — в формате #RRGGBB."];
     if (body.product_ids !== undefined && body.product_ids.length > 12) errors.product_ids = ["Не больше 12 товаров."];
+    if (body.image_ids !== undefined) {
+      var own = bannerImages(b);
+      var ownIds = own.map(function (x) { return x.id; });
+      var bad = body.image_ids.some(function (id, i) { return ownIds.indexOf(id) < 0 || body.image_ids.indexOf(id) !== i; });
+      if (bad) errors.image_ids = ["Картинки — только из загруженных к баннеру."];
+      else b.images = body.image_ids.map(function (id) { return own[ownIds.indexOf(id)]; });
+    }
+    if (body.product !== undefined && body.product !== null && !byId(db.products, body.product)) errors.product = ["Товар не найден."];
+    if (body.links !== undefined) {
+      if (body.links.length > 12) errors.links = ["В ленте — не больше 12 вкладок."];
+      body.links.forEach(function (l) {
+        if (l.kind === "url" && (!/^(\/(?!\/)|https?:\/\/)\S+$/.test(l.url || "") || !String(l.title || "").trim())) errors.links = ["Адрес — путь на сайте (/…) или https://…, и подпись."];
+        if ((l.kind === "category" || l.kind === "article") && !l.id) errors.links = ["Выберите категорию или статью."];
+      });
+    }
     if (Object.keys(errors).length) return fields(errors);
-    ["is_visible", "title", "text", "color", "category", "source", "product_ids"].forEach(function (k) { if (body[k] !== undefined) b[k] = body[k]; });
+    ["is_visible", "title", "text", "color", "category", "source", "product_ids", "product", "links"].forEach(function (k) { if (body[k] !== undefined) b[k] = body[k]; });
+    if (b.kind === "banner" && !b.title && !b.text && !bannerImages(b).length && !b.product) return fields({ title: ["У баннера нужен заголовок, описание, картинка или товар."] });
     if (b.color) b.color = b.color.toUpperCase();
     touchHome(db);
     return { status: 200, body: homeBlock(db, b), save: true };
@@ -984,6 +1071,7 @@
     var b = byId(db.home.blocks, m[1]);
     if (!b) return fail(404, { detail: "Не найдено." });
     b.image_url = null;
+    b.images = [];
     touchHome(db);
     return { status: 200, body: homeBlock(db, b), save: true };
   });
@@ -1011,6 +1099,12 @@
     db.theme.default_mode = body.default_mode || "system";
     db.theme.default_radius = body.default_radius || "normal";
     if (body.nav_style) db.theme.nav_style = body.nav_style;
+    if (body.default_text) db.theme.default_text = body.default_text;
+    // Как на сервере: личный выбор оформления в этом браузере сбрасывается — магазин сразу
+    // показывает то, что задал администратор.
+    ["theme", "palette", "accent", "radius", "text_size"].forEach(function (name) {
+      document.cookie = name + "=; path=/; max-age=0; samesite=lax";
+    });
     return { status: 200, body: themeState(db), save: true };
   });
 
@@ -1091,10 +1185,16 @@
     },
     {
       re: new RegExp("^" + A + "/content/home/blocks/(\\d+)/image/$"),
+      gif: true,
       apply: function (db, m, url) {
         var b = byId(db.home.blocks, m[1]);
         if (!b) return fail(404, { detail: "Не найдено." });
-        b.image_url = url;
+        if (b.kind !== "banner") return fields({ image: ["Картинка есть только у баннера."] });
+        var images = bannerImages(b);
+        if (images.length >= 6) return fields({ image: ["У баннера — не больше 6 картинок."] });
+        var img = { id: next(db, "homeImage"), url: url };
+        b.images = images.concat([img]);
+        b.image_ids = b.images.map(function (x) { return x.id; });
         touchHome(db);
         return { status: 200, body: homeBlock(db, b), save: true };
       }
@@ -1134,11 +1234,12 @@
           if (!um) continue;
           var file = body.get("image");
           var upload = uploads[u];
-          return readImage(file).then(function (dataUrl) {
+          return readImage(file, upload.gif).then(function (dataUrl) {
             var fresh = load();
             return commit(fresh, upload.apply(fresh, um, dataUrl));
-          }, function () {
-            return fields({ image: ["Загрузите JPEG, PNG или WebP."] });
+          }, function (error) {
+            if (error && error.message === "size") return fields({ image: ["GIF в демо — до 1,5 МБ."] });
+            return fields({ image: [upload.gif ? "Загрузите JPEG, PNG, WebP или GIF." : "Загрузите JPEG, PNG или WebP."] });
           });
         }
       }

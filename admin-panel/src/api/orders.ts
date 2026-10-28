@@ -12,6 +12,7 @@ export type DeliveryMethod = Schemas["DeliveryMethodEnum"];
 export type AdminPayment = Schemas["AdminPayment"];
 export type PaymentStatus = Schemas["PaymentStatusEnum"];
 export type RefundStatus = Schemas["RefundStatusEnum"];
+export type BulkTransitionResult = Schemas["AdminBulkTransitionResult"];
 
 export type OrderQuery = {
   search: string;
@@ -78,6 +79,13 @@ export const ordersService = {
         params: { path: { id } },
         body: { status, comment, notify },
       }),
+    );
+  },
+
+  /** Групповая смена статуса: неподходящие заказы возвращаются в skipped с причиной. */
+  bulkTransition(ids: number[], status: OrderStatus, comment = "", notify = true): Promise<BulkTransitionResult> {
+    return unwrap(
+      api.POST("/api/v1/admin/orders/bulk-transition/", { body: { ids, status, comment, notify } }),
     );
   },
 

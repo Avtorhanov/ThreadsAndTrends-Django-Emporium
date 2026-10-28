@@ -35,17 +35,31 @@ export function HomePreview({ blocks, categories, selectedId, onSelect, onBack }
           {visible.length === 0 ? (
             <p className="muted small he-phone-empty">Все блоки скрыты — покупатель увидит только каталог.</p>
           ) : null}
-          {visible.map((block) => (
-            <button
-              key={block.id}
-              type="button"
-              className={block.id === selectedId ? "he-pv is-selected" : "he-pv"}
-              onClick={() => onSelect(block.id)}
-              aria-label={`Настроить блок «${block.title || block.kind}»`}
-            >
-              <PreviewBlock block={block} roots={roots} />
-            </button>
-          ))}
+          {groups(visible).map((group) => {
+            const item = (block: HomeBlock) => (
+              <button
+                key={block.id}
+                type="button"
+                className={block.id === selectedId ? "he-pv is-selected" : "he-pv"}
+                onClick={() => onSelect(block.id)}
+                aria-label={`Настроить блок «${block.title || block.kind}»`}
+              >
+                <PreviewBlock block={block} roots={roots} />
+              </button>
+            );
+            if (group.length === 1) return item(group[0]!);
+            // Баннеры подряд — карусель, как на витрине.
+            return (
+              <span key={`c-${group[0]!.id}`} className="he-pv-carousel">
+                <span className="he-pv-carousel-track">{group.map(item)}</span>
+                <span className="he-pv-dots" aria-hidden="true">
+                  {group.map((block, index) => (
+                    <i key={block.id} className={index === 0 ? "is-on" : undefined} />
+                  ))}
+                </span>
+              </span>
+            );
+          })}
           <span className="he-pv-title">Все товары</span>
           <span className="he-pv-grid" aria-hidden="true">
             <span />
@@ -57,7 +71,36 @@ export function HomePreview({ blocks, categories, selectedId, onSelect, onBack }
   );
 }
 
+/** Видимые блоки, баннеры подряд — одной группой (content.home.with_carousels). */
+function groups(blocks: HomeBlock[]): HomeBlock[][] {
+  const result: HomeBlock[][] = [];
+  for (const block of blocks) {
+    const last = result[result.length - 1];
+    if (block.kind === "banner" && last && last[0]!.kind === "banner") last.push(block);
+    else result.push([block]);
+  }
+  return result;
+}
+
 function PreviewBlock({ block, roots }: { block: HomeBlock; roots: Category[] }) {
+  if (block.kind === "banner" && block.preview_images.length) {
+    const heading = block.title || block.preview_product?.name || "";
+    const price = block.preview_product?.price_kopecks;
+    return (
+      <span className="he-pv-photo-banner">
+        <span className="he-pv-photo-frame">
+          <img src={block.preview_images[0]} alt="" />
+          {block.preview_images.length > 1 ? (
+            <span className="he-pv-count">{block.preview_images.length} фото · сменяются</span>
+          ) : null}
+          <span className="he-pv-shade">
+            {heading ? <strong>{heading}</strong> : null}
+            {block.text ? <span>{block.text}</span> : price ? <span>{formatKopecks(price)}</span> : null}
+          </span>
+        </span>
+      </span>
+    );
+  }
   if (block.kind === "banner") {
     const ink = inkFor(block.color);
     return (
@@ -66,7 +109,6 @@ function PreviewBlock({ block, roots }: { block: HomeBlock; roots: Category[] })
           {block.title ? <strong>{block.title}</strong> : null}
           {block.text ? <span>{block.text}</span> : null}
         </span>
-        {block.image_url ? <img src={block.image_url} alt="" /> : null}
       </span>
     );
   }
@@ -100,9 +142,9 @@ function PreviewBlock({ block, roots }: { block: HomeBlock; roots: Category[] })
       <>
         {block.title ? <span className="he-pv-title">{block.title}</span> : null}
         <span className="he-pv-chips">
-          {roots.map((item) => (
-            <span key={item.id}>{item.name}</span>
-          ))}
+          {block.preview_links.length
+            ? block.preview_links.map((link, index) => <span key={`${link.url}-${index}`}>{link.title}</span>)
+            : roots.map((item) => <span key={item.id}>{item.name}</span>)}
         </span>
       </>
     );

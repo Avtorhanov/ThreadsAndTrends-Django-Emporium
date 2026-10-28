@@ -1,20 +1,16 @@
 import { useState } from "react";
 
 import type { AdminOrderDetail, OrderStatus } from "../../api/orders";
+import { MARK_LABELS, orderSteps, stepIndex } from "../../lib/orderFlow";
 
 const COMMENT_MAX = 500;
 
-// Необратимые переходы: предупреждение прямо в форме, отдельный confirm не нужен.
-const WARNINGS: Partial<Record<OrderStatus, string>> = {
-  cancelled: "Остатки вернутся на склад; оплаченный заказ уйдёт на возврат денег.",
-  delivered: "Статус станет окончательным.",
-};
-
 const PLACEHOLDERS: Partial<Record<OrderStatus, string>> = {
   assembled: "Например: собрали, передадим курьеру завтра до 12:00",
-  shipped: "Например: курьер позвонит за час до приезда",
+  shipped: "Например: курьер позвонит за час",
   ready_for_pickup: "Например: заказ ждёт вас 7 дней, возьмите паспорт",
-  cancelled: "Причина отмены — клиент увидит её в письме и истории",
+  delivered: "Например: спасибо за покупку!",
+  cancelled: "Причина отмены — покупатель увидит её в письме и истории",
 };
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
@@ -26,129 +22,159 @@ type Props = {
 };
 
 /**
- * Смена статуса: выбор следующего шага → комментарий для клиента → предпросмотр письма.
- * Рядом с текущим статусом — что клиент узнал в последний раз.
+ * Обработка заказа: полоса шагов (Принят · Собран · В пути / В пункте выдачи · Получен),
+ * уведомление покупателю с комментарием и предпросмотром, «Отметить: …» и отмена.
+ * Отмена необратима — сначала показывает предупреждение и просит подтвердить.
  */
 export function StatusChanger({ order, busy, onSubmit }: Props) {
-  const [target, setTarget] = useState<OrderStatus | null>(null);
   const [comment, setComment] = useState("");
   const [notify, setNotify] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
   const canNotify = !order.customer.is_deleted;
-  const option = order.allowed_transitions.find((item) => item.status === target);
+  const sendMail = notify && canNotify;
+  const steps = orderSteps(order.delivery_method);
+  const reached = stepIndex(order.status);
+  const forward = order.allowed_transitions.filter((item) => item.status !== "cancelled");
+  const cancel = order.allowed_transitions.find((item) => item.status === "cancelled");
+  const target = cancelling ? cancel : forward[0];
   const last = order.status_history[order.status_history.length - 1];
   const text = comment.trim().replace(/\s+/g, " ");
 
-  function pick(status: OrderStatus) {
-    setTarget(status === target ? null : status);
-    setNotify(canNotify);
-  }
-
-  async function submit() {
-    if (!target) return;
-    if (await onSubmit(target, text, notify && canNotify)) {
-      setTarget(null);
+  async function submit(status: OrderStatus) {
+    if (await onSubmit(status, text, sendMail)) {
       setComment("");
+      setCancelling(false);
     }
   }
 
   return (
     <div className="card status-card">
       <div className="status-head">
-        <h2>Статус</h2>
+        <h2>Статус заказа</h2>
         {last ? (
           <span className="muted small">
-            {last.notified ? "Клиенту отправлено письмо" : "Клиент не уведомлялся письмом"} ·{" "}
+            {last.notified ? "Покупателю ушло письмо" : "Без письма покупателю"} ·{" "}
             {dateFormat.format(new Date(last.created_at))}
           </span>
         ) : null}
       </div>
+
+      <ol className={reached < 0 ? "status-track is-cancelled" : "status-track"} aria-label="Обработка заказа">
+        {steps.map((label, index) => {
+          const done = index <= reached;
+          const current = index === reached;
+          return (
+            <li
+              key={label}
+              className={done ? (current ? "is-done is-current" : "is-done") : undefined}
+              aria-current={current ? "step" : undefined}
+            >
+              {label}
+            </li>
+          );
+        })}
+      </ol>
+      {reached < 0 ? <p className="note note-info">Заказ отменён.</p> : null}
+      {order.status === "awaiting_payment" ? (
+        <p className="muted small">Ждём оплату — после неё заказ можно собирать.</p>
+      ) : null}
       {last?.comment ? <p className="status-last-comment">«{last.comment}»</p> : null}
 
       {order.allowed_transitions.length === 0 ? (
-        <p className="muted">Статус окончательный.</p>
+        reached === 3 ? <p className="muted">Заказ получен — статус окончательный.</p> : null
       ) : (
-        <div className="transitions" role="group" aria-label="Следующий статус">
-          {order.allowed_transitions.map((item) => {
-            const danger = item.status === "cancelled";
-            const active = item.status === target;
-            const base = danger ? "button button-danger" : "button button-outline";
-            return (
-              <button
-                key={item.status}
-                type="button"
-                className={active ? `${base} is-active` : base}
-                aria-pressed={active}
-                disabled={busy}
-                onClick={() => pick(item.status)}
-              >
-                {danger ? "Отменить заказ" : `→ ${item.label}`}
-              </button>
-            );
-          })}
-        </div>
-      )}
+        <>
+          <div className="status-box">
+            <span className="status-box-title">Покупатель получит уведомление</span>
+            <label className={sendMail ? "notify-chip is-on" : "notify-chip"}>
+              <input
+                type="checkbox"
+                checked={sendMail}
+                disabled={!canNotify || busy}
+                onChange={(event) => setNotify(event.target.checked)}
+              />
+              {canNotify ? `Письмо на ${order.customer.email}` : "Аккаунт удалён — письмо не отправить"}
+            </label>
 
-      {option ? (
-        <div className="status-compose">
-          <label className="field">
-            <span>Комментарий для клиента — необязательно</span>
-            <textarea
-              rows={3}
-              maxLength={COMMENT_MAX}
-              value={comment}
-              placeholder={PLACEHOLDERS[option.status] ?? "Пояснение к новому статусу"}
-              onChange={(event) => setComment(event.target.value)}
-            />
-            <span className="muted small">
-              {comment.length} / {COMMENT_MAX} · виден в истории заказа на сайте и в приложении
-            </span>
-          </label>
+            <label className="field">
+              <span>Комментарий для покупателя — необязательно</span>
+              <textarea
+                rows={2}
+                maxLength={COMMENT_MAX}
+                value={comment}
+                placeholder={(target && PLACEHOLDERS[target.status]) ?? "Пояснение к новому статусу"}
+                onChange={(event) => setComment(event.target.value)}
+              />
+              <span className="muted small">
+                {comment.length} / {COMMENT_MAX} · виден в истории заказа на сайте и в приложении
+              </span>
+            </label>
 
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={notify && canNotify}
-              disabled={!canNotify}
-              onChange={(event) => setNotify(event.target.checked)}
-            />
-            {canNotify ? `Отправить письмо на ${order.customer.email}` : "Аккаунт клиента удалён — письмо не отправить"}
-          </label>
+            {sendMail && target ? (
+              <div className="notice-preview" aria-label="Предпросмотр письма">
+                <span className="notice-logo" aria-hidden="true">
+                  DiDi
+                </span>
+                <div>
+                  <div className="notice-top">
+                    <strong>
+                      DiDi-shop: заказ {order.number} — {target.label.toLowerCase()}
+                    </strong>
+                    <span className="muted small">сейчас</span>
+                  </div>
+                  <p>
+                    Статус заказа {order.number} изменился: {target.label}.
+                    {text ? ` Комментарий магазина: ${text}` : ""}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </div>
 
-          {notify && canNotify ? (
-            <div className="mail-preview" aria-label="Предпросмотр письма">
-              <span className="muted small">Клиент получит</span>
-              <strong>
-                DiDi-shop: заказ {order.number} — {option.label.toLowerCase()}
-              </strong>
-              <p>
-                Статус заказа {order.number} изменился: {option.label}.
-                {text ? (
-                  <>
-                    <br />
-                    Комментарий магазина: {text}
-                  </>
-                ) : null}
-              </p>
-            </div>
+          {cancelling ? (
+            <p className="note note-info">
+              Остатки вернутся на склад; оплаченный заказ уйдёт на возврат денег. Отмену не отменить.
+            </p>
           ) : null}
 
-          {WARNINGS[option.status] ? <p className="note note-info">{WARNINGS[option.status]}</p> : null}
-
           <div className="status-actions">
-            <button
-              type="button"
-              className={option.status === "cancelled" ? "button button-danger" : "button button-accent"}
-              disabled={busy}
-              onClick={() => void submit()}
-            >
-              {option.status === "cancelled" ? "Отменить заказ" : `Перевести в «${option.label}»`}
-            </button>
-            <button type="button" className="button button-ghost" disabled={busy} onClick={() => setTarget(null)}>
-              Не менять
-            </button>
+            {cancel && cancelling ? (
+              <>
+                <button type="button" className="button button-ghost" disabled={busy} onClick={() => setCancelling(false)}>
+                  Не отменять
+                </button>
+                <button
+                  type="button"
+                  className="button button-danger-solid status-main"
+                  disabled={busy}
+                  onClick={() => void submit("cancelled")}
+                >
+                  Подтвердить отмену
+                </button>
+              </>
+            ) : (
+              <>
+                {cancel ? (
+                  <button type="button" className="button button-danger" disabled={busy} onClick={() => setCancelling(true)}>
+                    Отменить заказ
+                  </button>
+                ) : null}
+                {forward.map((item) => (
+                  <button
+                    key={item.status}
+                    type="button"
+                    className="button status-main"
+                    disabled={busy}
+                    onClick={() => void submit(item.status)}
+                  >
+                    Отметить: {MARK_LABELS[item.status] ?? item.label.toLowerCase()}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
-        </div>
-      ) : null}
+        </>
+      )}
     </div>
   );
 }

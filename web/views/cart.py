@@ -3,7 +3,7 @@
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -142,6 +142,13 @@ def line(request, variant_id: int):
             errors = error_messages(exc)
         except Http404:
             pass  # позиция уже удалена (повторный клик, вторая вкладка) — просто показать корзину
+    if request.headers.get("Accept") == "application/json":
+        # «+/−» на карточке товара: сколько теперь в корзине и счётчик для шапки.
+        quantity = web_cart.variant_quantities(request, [variant_id]).get(variant_id, 0)
+        return JsonResponse(
+            {"quantity": quantity, "count": web_cart.count(request), "errors": errors},
+            status=400 if errors else 200,
+        )
     if is_htmx(request):
         return _respond_line(request, variant_id, errors)
     return _respond(request, errors)

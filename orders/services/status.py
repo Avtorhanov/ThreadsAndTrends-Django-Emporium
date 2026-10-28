@@ -125,6 +125,28 @@ def transition(
     return locked
 
 
+def bulk_transition(
+    order_ids, to_status: str, *, by: str, actor=None, comment: str = "", notify: bool = True
+) -> tuple[list[Order], list[tuple[Order, str]]]:
+    """Групповая смена статуса: каждый заказ — в своей транзакции, чтобы один неподходящий
+    заказ не откатывал остальные. Возвращает (переведённые, [(пропущенный, причина)]).
+    Заказ уже в этом статусе считается пропущенным — администратор видит, что ничего
+    не изменилось."""
+    done: list[Order] = []
+    skipped: list[tuple[Order, str]] = []
+    for order in Order.objects.filter(pk__in=list(order_ids)).order_by("created_at", "id"):
+        if order.status == to_status:
+            skipped.append((order, "Уже в этом статусе."))
+            continue
+        try:
+            done.append(
+                transition(order, to_status, by=by, actor=actor, comment=comment, notify=notify)
+            )
+        except ValidationError as exc:
+            skipped.append((order, " ".join(exc.messages)))
+    return done, skipped
+
+
 def cancel(order: Order, *, by: str, actor=None, comment: str = "") -> Order:
     return transition(order, S.CANCELLED, by=by, actor=actor, comment=comment)
 

@@ -483,7 +483,8 @@ class AdminHomeBlockView(AdminAPIMixin, generics.GenericAPIView):
 
 @extend_schema(tags=[ADMIN_TAG])
 class AdminHomeBlockImageView(AdminAPIMixin, generics.GenericAPIView):
-    """Картинка баннера: загрузить (заменяет прежнюю) или убрать."""
+    """Картинки баннера: добавить ещё одну (до 6) или убрать все. Порядок и удаление
+    одной — PATCH блока с image_ids."""
 
     section = "storefront"
 
@@ -494,12 +495,15 @@ class AdminHomeBlockImageView(AdminAPIMixin, generics.GenericAPIView):
     @extend_schema(
         operation_id="admin_content_home_blocks_image_create",
         responses=AdminHomeBlockSerializer,
-        description="Картинка баннера (JPEG/PNG/WebP, до 5 МБ); заменяет прежнюю.",
+        description=(
+            "Добавить картинку баннера (JPEG, PNG, WebP или GIF, до 5 МБ) в конец списка; "
+            "несколько картинок сменяют друг друга на витрине."
+        ),
     )
     def post(self, request, pk: int):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        block = home.set_banner_image(self.get_object(), serializer.validated_data["image"])
+        block = home.add_banner_image(self.get_object(), serializer.validated_data["image"])
         return Response(AdminHomeBlockSerializer(block, context={"request": request}).data)
 
     @extend_schema(
@@ -508,7 +512,7 @@ class AdminHomeBlockImageView(AdminAPIMixin, generics.GenericAPIView):
         responses={200: AdminHomeBlockSerializer},
     )
     def delete(self, request, pk: int):
-        block = home.remove_banner_image(self.get_object())
+        block = home.remove_banner_images(self.get_object())
         return Response(AdminHomeBlockSerializer(block, context={"request": request}).data)
 
 
@@ -524,6 +528,7 @@ def _theme_data(*, all_palettes: bool = False) -> dict:
         "default_palette": theme.default_palette,
         "default_mode": theme.default_mode,
         "default_radius": theme.default_radius,
+        "default_text": theme.default_text,
         "nav_style": theme.nav_style,
         "enabled": list(theme.palettes),
     }
@@ -556,9 +561,16 @@ class AdminThemeView(AdminAPIMixin, generics.GenericAPIView):
         operation_id="admin_content_theme_update",
         request=AdminThemeWriteSerializer,
         responses=AdminThemeSerializer,
+        description=(
+            "Сохранение сбрасывает личный выбор оформления в этом браузере (cookie темы, "
+            "палитры, углов, текста): администратор сразу видит витрину как новый посетитель."
+        ),
     )
     def put(self, request):
         serializer = AdminThemeWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         look.update(**serializer.validated_data)
-        return Response(AdminThemeSerializer(_theme_data(all_palettes=True)).data)
+        response = Response(AdminThemeSerializer(_theme_data(all_palettes=True)).data)
+        for name in look.VISITOR_COOKIES:
+            response.delete_cookie(name, samesite="Lax")
+        return response

@@ -44,6 +44,12 @@ def make_thumbnails(image) -> bool:
     storage = image.image.storage
     try:
         with storage.open(image.image.name, "rb") as fh, Image.open(fh) as source:
+            if getattr(source, "is_animated", False):
+                # Анимация (GIF баннера): копии были бы неподвижными — только размеры,
+                # витрина показывает оригинал.
+                image.width, image.height = source.size
+                image.save(update_fields=["width", "height"])
+                return True
             # Ориентация из EXIF (фото с телефона), затем RGB/RGBA — WebP не умеет CMYK и палитры.
             picture = ImageOps.exif_transpose(source)
             picture = picture.convert("RGBA" if picture.mode in ("RGBA", "LA", "P") else "RGB")

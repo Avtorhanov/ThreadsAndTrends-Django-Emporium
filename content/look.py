@@ -44,9 +44,14 @@ PALETTE_CHOICES = [(key, item["name"]) for key, item in PALETTES.items()]
 PALETTE_GROUP_CHOICES = list(PALETTE_GROUPS.items())
 MODE_CHOICES = list(MODE_LABELS.items())
 RADIUS_CHOICES = [(key, RADIUS_LABELS[key]) for key in RADIUS]
+TEXT_CHOICES = [(key, TEXT_LABELS[key]) for key in TEXT]
 NAV_CHOICES = list(NAV_LABELS.items())
 
-CACHE_KEY = "content:theme-settings:v2"
+CACHE_KEY = "content:theme-settings:v3"
+
+# Cookie личного выбора покупателя (пишут web/theme.py и site.js). Сохранение темы в панели
+# удаляет их в браузере администратора — он сразу видит витрину как новый посетитель.
+VISITOR_COOKIES = ("theme", "palette", "accent", "radius", "text_size")
 
 
 @dataclass(frozen=True)
@@ -56,18 +61,20 @@ class ShopTheme:
     default_mode: str
     default_radius: str
     nav_style: str = DEFAULT_NAV
+    default_text: str = DEFAULT_TEXT
 
 
 def _from_row(row: ThemeSettings | None) -> ShopTheme:
     if row is None:
-        return ShopTheme(tuple(PALETTES), DEFAULT_PALETTE, "system", DEFAULT_RADIUS, DEFAULT_NAV)
+        return ShopTheme(tuple(PALETTES), DEFAULT_PALETTE, "system", DEFAULT_RADIUS)
     # Палитру могли убрать из tokens.json — неизвестные ключи отбрасываются.
     palettes = tuple(key for key in row.palettes if key in PALETTES) or (DEFAULT_PALETTE,)
     default = row.default_palette if row.default_palette in palettes else palettes[0]
     mode = row.default_mode if row.default_mode in MODES else "system"
     radius = row.default_radius if row.default_radius in RADIUS else DEFAULT_RADIUS
     nav = row.nav_style if row.nav_style in NAV else DEFAULT_NAV
-    return ShopTheme(palettes, default, mode, radius, nav)
+    text = row.default_text if row.default_text in TEXT else DEFAULT_TEXT
+    return ShopTheme(palettes, default, mode, radius, nav, text)
 
 
 def shop_theme() -> ShopTheme:
@@ -91,6 +98,7 @@ def update(
     default_mode: str,
     default_radius: str,
     nav_style: str | None = None,
+    default_text: str | None = None,
 ):
     unknown = [key for key in palettes if key not in PALETTES]
     if unknown:
@@ -107,6 +115,8 @@ def update(
         raise ValidationError({"default_radius": "Неизвестный вариант углов."})
     if nav_style is not None and nav_style not in NAV:
         raise ValidationError({"nav_style": "Неизвестный вид нижнего меню."})
+    if default_text is not None and default_text not in TEXT:
+        raise ValidationError({"default_text": "Неизвестный размер текста."})
     row = get_row()
     # Порядок — как в tokens.json, без повторов.
     row.palettes = [key for key in PALETTES if key in set(palettes)]
@@ -115,6 +125,8 @@ def update(
     row.default_radius = default_radius
     if nav_style is not None:
         row.nav_style = nav_style
+    if default_text is not None:
+        row.default_text = default_text
     row.save()
     cache.delete(CACHE_KEY)
     transaction.on_commit(lambda: cache.delete(CACHE_KEY))
@@ -156,5 +168,5 @@ def resolve_look(*, palette: str = "", accent: str = "", radius: str = "", text:
         palette=palette if palette in shop.palettes else shop.default_palette,
         accent=accent if accent in ACCENTS else DEFAULT_ACCENT,
         radius=radius if radius in RADIUS else shop.default_radius,
-        text=text if text in TEXT else DEFAULT_TEXT,
+        text=text if text in TEXT else shop.default_text,
     )

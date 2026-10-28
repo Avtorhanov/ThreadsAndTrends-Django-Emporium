@@ -175,9 +175,13 @@ def test_htmx_line_error_is_shown_in_line(client, shop):
 
 def test_in_cart_marks(client, shop):
     product_url = reverse("web:product", args=["kepka"])
-    assert "В корзине" not in client.get(product_url).content.decode()
+    html = client.get(product_url).content.decode()
+    assert "В корзине ·" not in html and "Добавить ещё" not in html
     add(client, shop["cap"], quantity=2)
-    assert "В корзине · 2 шт." in client.get(product_url).content.decode()
+    html = client.get(product_url).content.decode()
+    pk = variant(shop["cap"]).pk
+    assert "В корзине · 2 шт." in html and "Добавить ещё" in html
+    assert f'"{pk}": {{"q": 2, "max": 5' in html  # состояние для «−/+» (site.js)
     # Сетки товаров общие (кэш) — список товаров корзины для меток приходит отдельно.
     html = client.get(reverse("web:home")).content.decode()
     assert '<script id="cart-state" type="application/json">["kepka"]</script>' in html
@@ -193,3 +197,24 @@ def test_buy_now_goes_to_checkout_without_touching_cart(client, shop):
     assert htmx.status_code == 204 and htmx["HX-Redirect"].endswith(f"?variant={pk}&qty=1")
     missing = client.post(reverse("web:buy_now"), {}, **HTMX)
     assert "Выберите размер." in missing.content.decode()
+
+
+def test_product_page_stepper_json(client, shop):
+    """«−/+» на карточке товара: JSON с количеством и счётчиком, 0 — убрать из корзины."""
+    add(client, shop["shirt"], "M", quantity=1)
+    pk = variant(shop["shirt"], "M").pk
+    url = reverse("web:cart_line", args=[pk])
+    response = client.post(url, {"quantity": 3}, HTTP_ACCEPT="application/json")
+    assert response.json() == {"quantity": 3, "count": 3, "errors": []}
+    too_many = client.post(url, {"quantity": 50}, HTTP_ACCEPT="application/json")
+    assert too_many.status_code == 400 and too_many.json()["quantity"] == 3
+    gone = client.post(url, {"quantity": 0}, HTTP_ACCEPT="application/json")
+    assert gone.json() == {"quantity": 0, "count": 0, "errors": []}
+
+
+def test_single_size_in_cart_is_preselected(client, shop):
+    add(client, shop["shirt"], "M")
+    html = client.get(reverse("web:product", args=["futbolka-belaya"])).content.decode()
+    pk = variant(shop["shirt"], "M").pk
+    assert f'value="{pk}" checked required' in html
+    assert "В корзине · 1 шт." in html

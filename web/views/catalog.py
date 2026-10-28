@@ -160,7 +160,8 @@ def _home_blocks():
 
     def render_blocks() -> str:
         return render_to_string(
-            "web/catalog/_home_blocks.html", {"blocks": home_page.resolve(items)}
+            "web/catalog/_home_blocks.html",
+            {"blocks": home_page.with_carousels(home_page.resolve(items))},
         ).strip()
 
     cache_key = catalog_cache.key("home-blocks", published_at)
@@ -240,7 +241,21 @@ def product(request, slug: str):
     in_stock = any(size["available"] for size in sizes)
     single = variants[0] if len(variants) == 1 and not variants[0].size else None
     images = list(found.images.all())
-    in_cart = web_cart.quantities(request).get(found.pk, 0)
+    # Что уже в корзине: по размерам, с пределом (остаток и лимит строки) — для «+/−» на
+    # карточке. Один размер в корзине — он и выбран: «Добавить ещё» без поиска размера.
+    in_cart = web_cart.variant_quantities(request, [variant.pk for variant in variants])
+    cart_state = {
+        str(size["variant"].pk): {
+            "q": in_cart.get(size["variant"].pk, 0),
+            "max": max_quantity(size["variant"]),
+            "size": size["variant"].size_label,
+        }
+        for size in sizes
+    }
+    chosen = single
+    if chosen is None and len(in_cart) == 1:
+        only = next(v for v in variants if v.pk in in_cart)
+        chosen = only if max_quantity(only) > 0 else None
     ask = []
     if found.price_on_request:
         url = absolute_url(request, reverse("web:product", args=[found.slug]))
@@ -251,7 +266,10 @@ def product(request, slug: str):
         {
             "product": found,
             "ask_links": ask,
-            "in_cart": in_cart,
+            "in_cart_total": sum(in_cart.values()),
+            "cart_state": cart_state,
+            "chosen_variant": chosen,
+            "chosen_state": cart_state.get(str(chosen.pk)) if chosen else None,
             "images": images,
             "sizes": sizes,
             "single_variant": single,

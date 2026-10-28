@@ -217,6 +217,25 @@
     });
     var accents = form.querySelector("[data-accents]");
     if (accents && t.enabled.indexOf("custom") < 0) accents.hidden = true;
+    // Отмечено то, что действует сейчас: личный выбор (cookie) или настройки магазина.
+    var palette = cookieValue("palette");
+    if (t.enabled.indexOf(palette) < 0) palette = t.default_palette;
+    var current = {
+      theme: cookieValue("theme") || t.default_mode,
+      palette: palette,
+      accent: cookieValue("accent"),
+      radius: cookieValue("radius") || t.default_radius,
+      text: cookieValue("text_size") || t.default_text || "s"
+    };
+    Object.keys(current).forEach(function (name) {
+      if (!current[name]) return;
+      var input = form.querySelector('input[name="' + name + '"][value="' + current[name] + '"]');
+      if (input) input.checked = true;
+    });
+  }
+  function cookieValue(name) {
+    var match = document.cookie.match(new RegExp("(?:^|; )" + name + "=([a-z0-9_-]+)(?:;|$)"));
+    return match ? match[1] : "";
   }
 
   // --- Карточки и сетки (web/catalog/_card.html, _grid.html) ---
@@ -251,20 +270,56 @@
 
   // --- Главная из блоков (web/catalog/_home_blocks.html) ---
 
+  // Баннер (web/catalog/_home_banner.html): с картинками или товаром — фото в рамке карточки,
+  // заголовок поверх; иначе — цветная плашка.
+  function bannerHTML(b, eager) {
+    var product = b.preview_product;
+    var heading = b.title || (product ? product.name : "");
+    var images = b.preview_images || [];
+    var cat = b.category ? sim.category(b.category) : null;
+    if (cat && !cat.is_active) cat = null;
+    var url = product ? link("/product/" + product.slug + "/") : cat ? link("/category/" + cat.slug + "/") : "";
+    if (images.length) {
+      var slides = images.map(function (src, i) {
+        return '<span class="hblock-photo__slide' + (i === 0 ? " is-on" : "") + '">' + img(src, "(min-width: 1200px) 1100px, 100vw", "hblock-photo__img", eager && i === 0, "") + "</span>";
+      }).join("");
+      var text = b.text || (product && !product.price_on_request ? rub(product.price_kopecks) + "&nbsp;₽" : "");
+      var shade = heading || text ? '<span class="hblock-photo__shade">' + (heading ? '<span class="hblock-photo__title">' + esc(heading) + "</span>" : "") +
+        (text ? '<span class="hblock-photo__text">' + (b.text ? esc(b.text) : text) + "</span>" : "") + "</span>" : "";
+      var inner = '<span class="hblock-photo__slides"' + (images.length > 1 ? " data-slides" : "") + ">" + slides + "</span>" + shade;
+      return '<section class="hblock hblock-banner hblock-photo">' + (url ? '<a class="hblock-photo__frame" href="' + url + '"' + (heading ? ' aria-label="' + esc(heading) + '"' : "") + ">" + inner + "</a>" :
+        '<div class="hblock-photo__frame">' + inner + "</div>") + "</section>";
+    }
+    if (!b.title && !b.text) return "";
+    var body = '<span class="hblock-banner__body">' + (b.title ? '<span class="hblock-banner__title">' + esc(b.title) + "</span>" : "") +
+      (b.text ? '<span class="hblock-banner__text">' + esc(b.text) + "</span>" : "") + "</span>";
+    return '<section class="hblock hblock-banner" style="--hb-bg:' + esc(b.color || "#DDF38A") + ";--hb-ink:" + esc(b.ink) + '">' +
+      (url ? '<a class="hblock-banner__link" href="' + url + '" aria-label="' + esc((b.title ? b.title + " — " : "") + (cat ? cat.name : "")) + '">' + body + "</a>" : body) + "</section>";
+  }
+
   function homeBlocksHTML(blocks) {
     var inCart = cartSlugs();
-    return blocks.map(function (b, index) {
-      if (b.kind === "banner") {
-        var inner = '<span class="hblock-banner__body">' +
-          (b.title ? '<span class="hblock-banner__title">' + esc(b.title) + "</span>" : "") +
-          (b.text ? '<span class="hblock-banner__text">' + esc(b.text) + "</span>" : "") + "</span>" +
-          (b.image_url ? '<span class="hblock-banner__media">' + img(b.image_url, "(min-width: 900px) 360px, 45vw", "hblock-banner__img", index === 0, "") + "</span>" : "");
-        var cat = b.category ? sim.category(b.category) : null;
-        if (cat && !cat.is_active) cat = null;
-        if (!b.title && !b.text && !b.image_url) return "";
-        return '<section class="hblock hblock-banner' + (b.image_url ? " hblock-banner--img" : "") + '" style="--hb-bg:' + esc(b.color || "#DDF38A") + ";--hb-ink:" + esc(b.ink) + '">' +
-          (cat ? '<a class="hblock-banner__link" href="' + link("/category/" + cat.slug + "/") + '" aria-label="' + esc((b.title || "") + " — " + cat.name) + '">' + inner + "</a>" : inner) + "</section>";
-      }
+    var parts = blocks.map(function (b, index) {
+      if (b.kind === "banner") return { banner: true, html: bannerHTML(b, index === 0) };
+      return { banner: false, html: blockHTML(b, inCart) };
+    }).filter(function (part) { return part.html; });
+    // Баннеры подряд — карусель (content.home.with_carousels).
+    var out = [];
+    for (var i = 0; i < parts.length; i++) {
+      if (!parts[i].banner) { out.push(parts[i].html); continue; }
+      var group = [parts[i].html];
+      while (i + 1 < parts.length && parts[i + 1].banner) group.push(parts[++i].html);
+      if (group.length === 1) { out.push(group[0]); continue; }
+      out.push('<section class="hblock hblock-carousel" data-carousel aria-roledescription="карусель" aria-label="Баннеры"><div class="hblock-carousel__track" data-carousel-track>' +
+        group.map(function (html, n) { return '<div class="hblock-carousel__slide" aria-roledescription="слайд" aria-label="' + (n + 1) + " из " + group.length + '">' + html + "</div>"; }).join("") +
+        '</div><div class="hblock-carousel__dots" role="group" aria-label="Выбор баннера">' +
+        group.map(function (html, n) { return '<button class="hblock-carousel__dot' + (n === 0 ? " is-on" : "") + '" type="button" data-carousel-dot aria-label="Баннер ' + (n + 1) + '"' + (n === 0 ? ' aria-current="true"' : "") + "></button>"; }).join("") +
+        "</div></section>");
+    }
+    return out.join("");
+  }
+
+  function blockHTML(b, inCart) {
       if (b.kind === "collection") {
         if (!b.preview_products.length) return "";
         var all = "";
@@ -277,18 +332,24 @@
           "</div></section>";
       }
       if (b.kind === "categories") {
-        var roots = sim.categories().filter(function (c) { return !c.parent; });
-        if (!roots.length) return "";
+        // Свои вкладки (категории, статьи, страницы, ссылки) или корневые категории.
+        var items = (b.preview_links || []).map(function (l) {
+          var external = /^https?:\/\//.test(l.url);
+          return '<a class="hblock-cats__item" href="' + (external ? esc(l.url) : link(l.url)) + '"' + (external ? ' target="_blank" rel="noopener noreferrer"' : "") + ">" + esc(l.title) + "</a>";
+        });
+        if (!items.length) {
+          items = sim.categories().filter(function (c) { return !c.parent; }).map(function (c) {
+            return '<a class="hblock-cats__item" href="' + link("/category/" + c.slug + "/") + '">' + esc(c.name) + "</a>";
+          });
+        }
+        if (!items.length) return "";
         return '<nav class="hblock hblock-cats" aria-label="' + esc(b.title || "Категории") + '">' +
-          (b.title ? '<h2 class="hblock-head__title">' + esc(b.title) + "</h2>" : "") + '<div class="hblock-cats__list">' +
-          roots.map(function (c) { return '<a class="hblock-cats__item" href="' + link("/category/" + c.slug + "/") + '">' + esc(c.name) + "</a>"; }).join("") +
-          "</div></nav>";
+          (b.title ? '<h2 class="hblock-head__title">' + esc(b.title) + "</h2>" : "") + '<div class="hblock-cats__list">' + items.join("") + "</div></nav>";
       }
       var pars = paragraphs(b.text);
       if (!b.title && !pars.length) return "";
       return '<section class="hblock hblock-text">' + (b.title ? '<h2 class="hblock-head__title">' + esc(b.title) + "</h2>" : "") +
         pars.map(function (p) { return "<p>" + esc(p).replace(/\n/g, "<br>") + "</p>"; }).join("") + "</section>";
-    }).join("");
   }
 
   function renderHome() {
@@ -303,6 +364,7 @@
       html += '<p class="more"><a class="btn btn--ghost" href="' + link("/products/") + '">Весь каталог' + icon("chevron", 18) + "</a></p>";
     }
     feed.innerHTML = html;
+    if (window.didiHomeMotion) window.didiHomeMotion(feed);
   }
 
   // --- Каталог, категория, поиск (web/catalog/listing.html) ---
@@ -454,7 +516,19 @@
     var single = variants.length === 1 && !variants[0].size ? variants[0] : null;
     var sizes = variants.map(function (v) { return { v: v, available: sim.maxQuantity(v.id) > 0 }; });
     var inStock = sizes.some(function (s) { return s.available; });
-    var inCart = cartSlugs()[p.slug] || 0;
+    // Сколько уже в корзине по размерам — как web/views/catalog.product (state для site.js).
+    var lineQty = {};
+    sim.cart().lines.forEach(function (line) { lineQty[line.variant_id] = line.quantity; });
+    var state = {};
+    var inCartIds = [];
+    sizes.forEach(function (s) {
+      var q = lineQty[s.v.id] || 0;
+      if (q) inCartIds.push(s.v.id);
+      state[s.v.id] = { q: q, max: sim.maxQuantity(s.v.id), size: s.v.size || "Без размера" };
+    });
+    var chosen = single ? single.id : (inCartIds.length === 1 && state[inCartIds[0]].max > 0 ? inCartIds[0] : null);
+    var chosenState = chosen ? state[chosen] : null;
+    var inCartTotal = inCartIds.reduce(function (n, id) { return n + state[id].q; }, 0);
     var st = p.status;
     var off = discount(p);
     var t = tone(p.slug);
@@ -482,7 +556,6 @@
       head += '<p class="status status--' + esc(st.tone) + ' pd__status"' + (st.hint ? ' title="' + esc(st.hint) + '"' : "") + ">" + esc(st.name) + "</p>" +
         (st.hint ? '<p class="muted pd__status-hint">' + esc(st.hint) + "</p>" : "");
     }
-    if (inCart) head += '<a class="incart incart--detail" href="' + link("/cart/") + '">' + icon("bag", 16) + "В корзине · " + inCart + " шт.</a>";
     head += '<p class="price price--detail">' + (p.price_on_request ? '<span class="price__now price__now--ask">Цена по запросу</span>' :
       '<span class="price__now">' + rub(p.price_kopecks) + "&nbsp;₽</span>");
     if (p.compare_at_kopecks && !p.price_on_request) {
@@ -502,12 +575,20 @@
       else {
         buy += '<fieldset class="rise r2 sizes"><legend class="label">Размер</legend><div class="sizes__list">' + sizes.map(function (s) {
           return '<label class="sz' + (s.available ? "" : " is-off") + '"><input type="radio" name="variant" value="' + s.v.id + '"' +
-            (s.available ? "" : " disabled") + ' required><span>' + esc(s.v.size || "Без размера") + "</span></label>";
+            (s.available ? "" : " disabled") + (s.v.id === chosen ? " checked" : "") + ' required><span>' + esc(s.v.size || "Без размера") + "</span></label>";
         }).join("") + "</div></fieldset>";
       }
       buy += descHTML + '<div class="rise r4 buy__bar">';
       if (inStock) {
-        buy += '<button class="cta" type="submit" data-cta><span class="cta__label">В корзину</span><span class="cta__price">' + rub(p.price_kopecks) + "&nbsp;₽</span></button>" +
+        var q = chosenState ? chosenState.q : 0;
+        buy += '<div class="incart-row" data-incart data-line-url="' + link("/cart/line/0/") + '"' + (inCartTotal ? "" : " hidden") + '>' +
+          '<a class="incart" href="' + link("/cart/") + '">' + icon("bag", 16) + '<span data-incart-text>В корзине · ' + (q || inCartTotal) + ' шт.</span></a>' +
+          '<div class="stepper" role="group" aria-label="Количество в корзине" data-incart-stepper' + (q ? "" : " hidden") + '>' +
+          '<button class="stepper__btn" type="button" data-incart-step="-1" aria-label="Убрать одну">' + icon("minus", 18) + '</button>' +
+          '<span class="stepper__value" data-incart-qty aria-live="polite">' + q + '</span>' +
+          '<button class="stepper__btn" type="button" data-incart-step="1" aria-label="Добавить ещё одну"' + (q && q >= chosenState.max ? " disabled" : "") + '>' + icon("plus", 18) + '</button>' +
+          '</div></div><script id="incart-state" type="application/json">' + JSON.stringify(state).replace(/</g, "\\u003c") + "</script>";
+        buy += '<button class="cta" type="submit" data-cta><span class="cta__label" data-cta-label>' + (q ? "Добавить ещё" : "В корзину") + '</span><span class="cta__price">' + rub(p.price_kopecks) + "&nbsp;₽</span></button>" +
           '<button class="cta cta--alt" type="submit" data-buy-now><span class="cta__label">Купить сейчас</span></button>';
       } else {
         buy += '<button class="cta" type="button" disabled><span class="cta__label">Нет в наличии</span></button>';
@@ -560,25 +641,9 @@
       return;
     }
     result.innerHTML = '<p class="buy__done" data-added>' + icon("check", 18) + 'Товар в корзине · <a href="' + link("/cart/") + '">Перейти в корзину</a></p>';
-    var cta = form.querySelector("[data-cta]");
-    if (cta) {
-      cta.classList.add("is-done");
-      cta.querySelector(".cta__label").textContent = "Добавлено в корзину";
-    }
     setBadges();
-    var info = form.closest(".pd__info");
-    var count = cartSlugs()[(HERE.split("/")[2])] || 0;
-    var badge = info && info.querySelector(".incart--detail");
-    if (count && info) {
-      if (!badge) {
-        badge = document.createElement("a");
-        badge.className = "incart incart--detail";
-        badge.href = link("/cart/");
-        var price = info.querySelector(".price--detail");
-        price.parentNode.insertBefore(badge, price);
-      }
-      badge.innerHTML = icon("bag", 16) + "В корзине · " + count + " шт.";
-    }
+    // «В корзине · N», «−/+» и «Добавить ещё» обновляет site.js — как после ответа сервера.
+    form.dispatchEvent(new CustomEvent("didi:cart-added", { bubbles: true }));
   }
 
   // --- Корзина (web/cart/_cart.html) ---
@@ -1058,19 +1123,6 @@
     toast("Это действие в демо не выполняется");
   }
 
-  // Новая позиция («Купить сейчас»): размер выбран — снова «В корзину».
-  function onChange(event) {
-    var buy = event.target.closest && event.target.closest("[data-buy]");
-    if (!buy) return;
-    var cta = buy.querySelector("[data-cta]");
-    if (cta) {
-      cta.classList.remove("is-done");
-      cta.querySelector(".cta__label").textContent = "В корзину";
-    }
-    var result = buy.querySelector("#buy-result");
-    if (result) result.innerHTML = "";
-  }
-
   // --- Новые товары, заказы, статьи и категории: страницы нет, Pages отдаёт 404 ---
   // 404 подгружает настоящую страницу того же вида и подставляет данные по адресу.
 
@@ -1111,11 +1163,15 @@
   if (!window.__didiPreviewBound) {
     window.__didiPreviewBound = true;
     document.addEventListener("submit", function (event) { if (window.__didiPreviewSubmit) window.__didiPreviewSubmit(event); });
-    document.addEventListener("change", function (event) { if (window.__didiPreviewChange) window.__didiPreviewChange(event); });
   }
   // Обработчики — последней загруженной копии скрипта (после подмены страницы 404 он запускается снова).
   window.__didiPreviewSubmit = onSubmit;
-  window.__didiPreviewChange = onChange;
+  // «−/+» на карточке товара (site.js) — в «базу» демо вместо запроса к серверу.
+  window.didiCartLine = function (variantId, quantity) {
+    sim.cartSet(variantId, quantity);
+    var line = sim.cart().lines.filter(function (l) { return l.variant_id === Number(variantId); })[0];
+    return { quantity: line ? line.quantity : 0, count: sim.cartCount(), errors: [] };
+  };
 
   Promise.all([sim.ready(), dataReady]).then(function (res) {
     var data = res[1];

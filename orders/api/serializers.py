@@ -300,6 +300,37 @@ class AdminOrderDetailSerializer(OrderDetailSerializer):
         ]
 
 
+class AdminBulkTransitionSerializer(serializers.Serializer):
+    ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        min_length=1,
+        max_length=100,
+        help_text="id заказов (до 100)",
+    )
+    status = serializers.ChoiceField(choices=OrderStatus.choices)
+    comment = serializers.CharField(
+        max_length=500,
+        required=False,
+        allow_blank=True,
+        default="",
+        help_text="Пояснение для клиента: история заказа и письмо",
+    )
+    notify = serializers.BooleanField(
+        required=False, default=True, help_text="Отправить клиентам письма о смене статуса"
+    )
+
+
+class AdminBulkSkippedSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    number = serializers.CharField()
+    reason = serializers.CharField()
+
+
+class AdminBulkTransitionResultSerializer(serializers.Serializer):
+    updated = serializers.ListField(child=serializers.IntegerField(), help_text="id переведённых")
+    skipped = AdminBulkSkippedSerializer(many=True)
+
+
 class AdminTransitionSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=OrderStatus.choices)
     comment = serializers.CharField(

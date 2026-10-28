@@ -1044,7 +1044,8 @@ paths:
   /api/v1/admin/content/home/blocks/{id}/image/:
     post:
       operationId: admin_content_home_blocks_image_create
-      description: Картинка баннера (JPEG/PNG/WebP, до 5 МБ); заменяет прежнюю.
+      description: Добавить картинку баннера (JPEG, PNG, WebP или GIF, до 5 МБ) в конец
+        списка; несколько картинок сменяют друг друга на витрине.
       parameters:
       - in: path
         name: id
@@ -1225,8 +1226,9 @@ paths:
           description: ''
     put:
       operationId: admin_content_theme_update
-      description: 'Панель → «Тема»: все палитры, какие доступны покупателям, оформление
-        по умолчанию.'
+      description: 'Сохранение сбрасывает личный выбор оформления в этом браузере
+        (cookie темы, палитры, углов, текста): администратор сразу видит витрину как
+        новый посетитель.'
       tags:
       - admin-content
       requestBody:
@@ -1441,6 +1443,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedAdminOrderListList'
+          description: ''
+  /api/v1/admin/orders/bulk-transition/:
+    post:
+      operationId: admin_orders_bulk_transition
+      description: 'Перевести несколько заказов в один статус. Каждый заказ проверяется
+        отдельно: неподходящие (другой способ доставки, финальный статус) попадают
+        в skipped с причиной, остальные переводятся.'
+      tags:
+      - admin-orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminBulkTransitionRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBulkTransitionResult'
           description: ''
   /api/v1/admin/orders/{id}/:
     get:
@@ -2675,6 +2700,59 @@ components:
       required:
       - area
       - value
+    AdminBulkSkipped:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        reason:
+          type: string
+      required:
+      - id
+      - number
+      - reason
+    AdminBulkTransitionRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          description: id заказов (до 100)
+          maxItems: 100
+          minItems: 1
+        status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+        comment:
+          type: string
+          default: ''
+          description: 'Пояснение для клиента: история заказа и письмо'
+          maxLength: 500
+        notify:
+          type: boolean
+          default: true
+          description: Отправить клиентам письма о смене статуса
+      required:
+      - ids
+      - status
+    AdminBulkTransitionResult:
+      type: object
+      properties:
+        updated:
+          type: array
+          items:
+            type: integer
+          description: id переведённых
+        skipped:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminBulkSkipped'
+      required:
+      - skipped
+      - updated
     AdminCategory:
       type: object
       properties:
@@ -2813,6 +2891,36 @@ components:
           type: string
           nullable: true
           readOnly: true
+          description: Первая картинка баннера
+        image_ids:
+          type: array
+          items:
+            type: integer
+          readOnly: true
+          description: Картинки баннера по порядку
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminHomeImage'
+          readOnly: true
+        product:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Товар
+        preview_product:
+          allOf:
+          - $ref: '#/components/schemas/CatalogProduct'
+          nullable: true
+          readOnly: true
+          description: Товар баннера, как его увидит покупатель; null — не выбран или
+            скрыт
+        preview_images:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          description: Картинки баннера на витрине (свои или фото товара)
         category:
           type: integer
           readOnly: true
@@ -2835,16 +2943,35 @@ components:
             $ref: '#/components/schemas/CatalogProduct'
           readOnly: true
           description: Товары подборки, как их увидит покупатель
+        links:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        preview_links:
+          type: array
+          items:
+            $ref: '#/components/schemas/HomeLink'
+          readOnly: true
+          description: Вкладки ленты, как их увидит покупатель
       required:
       - category
       - color
       - id
+      - image_ids
       - image_url
+      - images
       - ink
       - is_visible
       - kind
+      - links
       - position
+      - preview_images
+      - preview_links
+      - preview_product
       - preview_products
+      - product
       - product_ids
       - source
       - text
@@ -2856,15 +2983,47 @@ components:
           $ref: '#/components/schemas/HomeBlockKindEnum'
       required:
       - kind
+    AdminHomeImage:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+      required:
+      - id
+      - url
     AdminHomeImageUploadRequest:
       type: object
       properties:
         image:
           type: string
           format: binary
-          description: JPEG, PNG или WebP, до 5 МБ
+          description: JPEG, PNG, WebP или GIF, до 5 МБ
       required:
       - image
+    AdminHomeLinkRequest:
+      type: object
+      description: 'Вкладка ленты: категория или статья (id), страница магазина (key)
+        или адрес (url).'
+      properties:
+        kind:
+          $ref: '#/components/schemas/HomeLinkKindEnum'
+        title:
+          type: string
+          default: ''
+          maxLength: 40
+        id:
+          type: integer
+          minimum: 1
+        key:
+          $ref: '#/components/schemas/HomeLinkPageEnum'
+        url:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - kind
     AdminHomeReorderRequest:
       type: object
       properties:
@@ -3823,6 +3982,8 @@ components:
           $ref: '#/components/schemas/ThemeModeEnum'
         default_radius:
           $ref: '#/components/schemas/ThemeRadiusEnum'
+        default_text:
+          $ref: '#/components/schemas/ThemeTextEnum'
         nav_style:
           allOf:
           - $ref: '#/components/schemas/ThemeNavEnum'
@@ -3842,6 +4003,7 @@ components:
       - default_mode
       - default_palette
       - default_radius
+      - default_text
       - enabled
       - nav_style
       - palettes
@@ -3859,6 +4021,15 @@ components:
           $ref: '#/components/schemas/ThemeModeEnum'
         default_radius:
           $ref: '#/components/schemas/ThemeRadiusEnum'
+        default_text:
+          allOf:
+          - $ref: '#/components/schemas/ThemeTextEnum'
+          description: |-
+            Размер текста для нового посетителя; не передан — прежний
+
+            * `s` - Обычный
+            * `m` - Крупнее
+            * `l` - Крупный
         nav_style:
           allOf:
           - $ref: '#/components/schemas/ThemeNavEnum'
@@ -4784,6 +4955,19 @@ components:
           type: string
           nullable: true
           readOnly: true
+          description: Первая картинка баннера
+        images:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          description: Картинки баннера по порядку (сменяют друг друга); у баннера товара
+            — его фото
+        product:
+          allOf:
+          - $ref: '#/components/schemas/CatalogProduct'
+          nullable: true
+          description: Баннер товара — переход на товар
         category:
           allOf:
           - $ref: '#/components/schemas/HomeCategory'
@@ -4798,14 +4982,22 @@ components:
           items:
             $ref: '#/components/schemas/HomeCategory'
           description: 'Лента категорий: корневые'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/HomeLink'
+          description: 'Лента категорий: свои вкладки; пусто — показать categories'
       required:
       - categories
       - category
       - color
       - id
       - image_url
+      - images
       - ink
       - kind
+      - links
+      - product
       - products
       - text
       - title
@@ -4834,6 +5026,46 @@ components:
       - id
       - name
       - slug
+    HomeLink:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/HomeLinkKindEnum'
+        title:
+          type: string
+        url:
+          type: string
+          description: Адрес на сайте (/…) или внешний
+        slug:
+          type: string
+          description: Категория или статья — slug; страница — ключ
+      required:
+      - kind
+      - slug
+      - title
+      - url
+    HomeLinkKindEnum:
+      enum:
+      - category
+      - article
+      - page
+      - url
+      type: string
+      description: |-
+        * `category` - Категория
+        * `article` - Статья
+        * `page` - Страница магазина
+        * `url` - Ссылка
+    HomeLinkPageEnum:
+      enum:
+      - products
+      - contacts
+      - delivery
+      type: string
+      description: |-
+        * `products` - Все товары
+        * `contacts` - Контакты
+        * `delivery` - Доставка и оплата
     LoginRequest:
       type: object
       properties:
@@ -5399,6 +5631,23 @@ components:
             type: integer
             minimum: 1
           maxItems: 12
+        image_ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          description: Порядок картинок баннера; без id — картинка убрана
+          maxItems: 6
+        product:
+          type: integer
+          nullable: true
+          description: 'Баннер товара: фото товара и переход на него'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminHomeLinkRequest'
+          description: 'Лента категорий: свои вкладки; пустой список — корневые категории'
+          maxItems: 12
     PatchedAdminProductStatusRequest:
       type: object
       properties:
@@ -5692,6 +5941,8 @@ components:
           $ref: '#/components/schemas/ThemeModeEnum'
         default_radius:
           $ref: '#/components/schemas/ThemeRadiusEnum'
+        default_text:
+          $ref: '#/components/schemas/ThemeTextEnum'
         nav_style:
           allOf:
           - $ref: '#/components/schemas/ThemeNavEnum'
@@ -5706,6 +5957,7 @@ components:
       - default_mode
       - default_palette
       - default_radius
+      - default_text
       - nav_style
       - palettes
     StaffInviteRequest:
@@ -5979,6 +6231,16 @@ components:
         * `sharp` - Острые
         * `normal` - Средние
         * `soft` - Мягкие
+    ThemeTextEnum:
+      enum:
+      - s
+      - m
+      - l
+      type: string
+      description: |-
+        * `s` - Обычный
+        * `m` - Крупнее
+        * `l` - Крупный
     TokenPair:
       type: object
       properties:

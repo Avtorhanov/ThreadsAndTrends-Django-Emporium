@@ -337,9 +337,9 @@ def delete_variant(variant: ProductVariant) -> None:
 # --- Изображения ---
 
 
-def inspect_image(uploaded) -> str:
+def inspect_image(uploaded, *, allow_gif: bool = False) -> str:
     """Проверяет файл и возвращает правильное расширение по фактическому формату.
-    Общая проверка фото: товары и статьи (content.services)."""
+    Общая проверка фото: товары и статьи (content.services); GIF — только баннеры главной."""
     if uploaded.size > MAX_IMAGE_BYTES:
         raise ValidationError({"image": "Файл больше 5 МБ."})
     try:
@@ -352,11 +352,13 @@ def inspect_image(uploaded) -> str:
         raise ValidationError({"image": "Файл не является изображением."}) from exc
     finally:
         uploaded.seek(0)
-    if image_format not in IMAGE_FORMATS:
-        raise ValidationError({"image": "Допустимые форматы: JPEG, PNG, WebP."})
+    formats = {**IMAGE_FORMATS, "GIF": ".gif"} if allow_gif else IMAGE_FORMATS
+    if image_format not in formats:
+        allowed = "JPEG, PNG, WebP" + (", GIF" if allow_gif else "")
+        raise ValidationError({"image": f"Допустимые форматы: {allowed}."})
     if width * height > MAX_IMAGE_PIXELS:
         raise ValidationError({"image": "Слишком большое разрешение изображения."})
-    return IMAGE_FORMATS[image_format]
+    return formats[image_format]
 
 
 @transaction.atomic

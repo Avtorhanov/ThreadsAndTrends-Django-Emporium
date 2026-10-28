@@ -88,6 +88,19 @@ def quantities(request) -> dict[int, int]:
     return result
 
 
+def variant_quantities(request, variant_ids) -> dict[int, int]:
+    """Сколько штук каждого размера уже в корзине: {variant_id: штук} — для карточки товара."""
+    ids = set(variant_ids)
+    if _is_customer(request):
+        rows = CartItem.objects.filter(cart__owner=request.user, variant_id__in=ids)
+        return dict(rows.values_list("variant_id", "quantity"))
+    if SESSION_KEY not in getattr(request, "session", {}):
+        return {}
+    return {
+        line.variant_id: line.quantity for line in _read_session(request) if line.variant_id in ids
+    }
+
+
 def product_slugs(request) -> list[str]:
     """Slug товаров в корзине (один запрос): сетки товаров общие для всех (кэш), метку
     «В корзине» на карточки ставит site.js."""

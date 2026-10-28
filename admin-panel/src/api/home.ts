@@ -8,9 +8,39 @@ export type HomeBlock = Schemas["AdminHomeBlock"];
 export type HomeBlockKind = Schemas["HomeBlockKindEnum"];
 export type CollectionSource = Schemas["CollectionSourceEnum"];
 export type HomeBlockChanges = Schemas["PatchedAdminHomeBlockUpdateRequest"];
+export type HomeLinkInput = Schemas["AdminHomeLinkRequest"];
+export type HomeLinkKind = Schemas["HomeLinkKindEnum"];
+export type HomeLinkPage = Schemas["HomeLinkPageEnum"];
 
 /** Лимиты — как content.home на сервере. */
-export const HOME_LIMITS = { title: 60, bannerText: 120, text: 1000, manualProducts: 12 } as const;
+export const HOME_LIMITS = {
+  title: 60,
+  bannerText: 120,
+  text: 1000,
+  manualProducts: 12,
+  bannerImages: 6,
+  links: 12,
+  linkTitle: 40,
+} as const;
+
+/** Вкладки ленты категорий (content.home.LINK_KIND_CHOICES / LINK_PAGES). */
+export const LINK_KIND_LABELS: Record<HomeLinkKind, string> = {
+  category: "Категория",
+  article: "Статья",
+  page: "Страница",
+  url: "Ссылка",
+};
+
+export const LINK_PAGES: Record<HomeLinkPage, string> = {
+  products: "Все товары",
+  contacts: "Контакты",
+  delivery: "Доставка и оплата",
+};
+
+/** Сохранённые вкладки блока (в схеме — свободные объекты). */
+export function blockLinks(block: HomeBlock): HomeLinkInput[] {
+  return block.links as unknown as HomeLinkInput[];
+}
 
 /** Готовые тона баннера; свой цвет — любой (input type=color). */
 export const BANNER_TONES: { label: string; color: string }[] = [
@@ -23,9 +53,9 @@ export const BANNER_TONES: { label: string; color: string }[] = [
 ];
 
 export const BLOCK_TYPES: { kind: HomeBlockKind; label: string; hint: string }[] = [
-  { kind: "banner", label: "Баннер", hint: "Цвет, заголовок, описание и картинка" },
+  { kind: "banner", label: "Баннер", hint: "Фото товара или свои картинки (и GIF), заголовок на фото" },
   { kind: "collection", label: "Подборка товаров", hint: "Ряд товаров: новинки, категория или вручную" },
-  { kind: "categories", label: "Лента категорий", hint: "Быстрый переход в разделы" },
+  { kind: "categories", label: "Лента категорий", hint: "Категории, статьи, страницы и ссылки" },
   { kind: "text", label: "Текст", hint: "Заголовок и пара абзацев" },
 ];
 
@@ -82,9 +112,6 @@ export const homeService = {
         },
       }),
     );
-  },
-  removeImage(id: number): Promise<HomeBlock> {
-    return unwrap(api.DELETE("/api/v1/admin/content/home/blocks/{id}/image/", { params: { path: { id } } }));
   },
   reorder(ids: number[]): Promise<HomeState> {
     return unwrap(api.POST("/api/v1/admin/content/home/reorder/", { body: { ids } }));

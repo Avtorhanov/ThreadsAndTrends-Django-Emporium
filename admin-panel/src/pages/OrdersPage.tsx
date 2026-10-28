@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 
+import { ApiError } from "../api/errors";
 import {
   DELIVERY_LABELS,
   type DeliveryMethod,
@@ -9,11 +10,13 @@ import {
   PAYMENT_LABELS,
   type PaymentMethod,
   STATUS_LABELS,
+  ordersService,
 } from "../api/orders";
 import { OrderStatusBadge } from "../components/orders/OrderStatusBadge";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useOrders } from "../hooks/useOrders";
 import { formatKopecks } from "../lib/money";
+import { ADMIN_TARGETS, TARGET_LABELS } from "../lib/orderFlow";
 import { Table } from "../components/Table";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
@@ -37,17 +40,66 @@ export function OrdersPage() {
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebouncedValue(search.trim());
 
-  const { data, loading, error } = useOrders({
+  const query = {
     search: debouncedSearch,
-    status: status === "unfinished" ? "" : status,
+    status: status === "unfinished" ? ("" as const) : status,
     unfinished: status === "unfinished",
     payment,
     delivery,
     createdFrom,
     createdTo,
     page,
-  });
+  };
+  const orders = useOrders(query);
+  const { data, loading, error } = orders;
   const pages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1;
+  const rows = data?.results ?? [];
+
+  // Групповая обработка: выбор касается только видимых строк, фильтр или страница его сбрасывают.
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [target, setTarget] = useState<OrderStatus | "">("");
+  const [bulkComment, setBulkComment] = useState("");
+  const [bulkNotify, setBulkNotify] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const queryKey = JSON.stringify(query);
+  useEffect(() => setSelected(new Set()), [queryKey]);
+  const allChecked = rows.length > 0 && rows.every((row) => selected.has(row.id));
+
+  function toggle(id: number) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function applyBulk() {
+    if (!target) return;
+    if (target === "cancelled" && !window.confirm(`Отменить заказы (${selected.size})? Это необратимо.`)) return;
+    setBusy(true);
+    setNotice(null);
+    setActionError(null);
+    try {
+      const result = await ordersService.bulkTransition([...selected], target, bulkComment.trim(), bulkNotify);
+      const skipped = result.skipped.map((row) => `${row.number} — ${row.reason}`);
+      setNotice(
+        `Переведено в «${TARGET_LABELS[target] ?? STATUS_LABELS[target]}»: ${result.updated.length}` +
+          (skipped.length ? `. Пропущено: ${skipped.join("; ")}` : ""),
+      );
+      setSelected(new Set(result.skipped.map((row) => row.id)));
+      setBulkComment("");
+      orders.reload();
+    } catch (err) {
+      setActionError(
+        err instanceof ApiError ? (Object.values(err.fieldErrors)[0]?.[0] ?? err.message) : "Статусы не изменены.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
 
   /** Любой фильтр возвращает на первую страницу. */
   function filter<T>(setter: (value: T) => void) {
@@ -127,10 +179,62 @@ export function OrdersPage() {
       </div>
 
       {error ? <p className="alert">{error}</p> : null}
+      {actionError ? <p className="alert">{actionError}</p> : null}
+      {notice ? <p className="note note-success">{notice}</p> : null}
+
+      {selected.size > 0 ? (
+        <div className="bulk-bar" role="region" aria-label="Обработка отмеченных заказов">
+          <strong>Выбрано: {selected.size}</strong>
+          <button type="button" className="bulk-link" onClick={() => setSelected(new Set())}>
+            Снять выбор
+          </button>
+          <span className="bulk-gap" />
+          <label className="bulk-field">
+            Отметить
+            <select value={target} onChange={(event) => setTarget(event.target.value as OrderStatus | "")}>
+              <option value="">Выберите…</option>
+              {ADMIN_TARGETS.map((value) => (
+                <option key={value} value={value}>
+                  {TARGET_LABELS[value]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <input
+            className="bulk-comment"
+            type="text"
+            maxLength={500}
+            placeholder="Комментарий для покупателей"
+            aria-label="Комментарий для покупателей"
+            value={bulkComment}
+            onChange={(event) => setBulkComment(event.target.value)}
+          />
+          <label className="bulk-field">
+            <input type="checkbox" checked={bulkNotify} onChange={(event) => setBulkNotify(event.target.checked)} />
+            Письма
+          </label>
+          <button
+            type="button"
+            className={target === "cancelled" ? "button button-danger-solid" : "button button-accent"}
+            disabled={busy || !target}
+            onClick={() => void applyBulk()}
+          >
+            Применить
+          </button>
+        </div>
+      ) : null}
 
       <Table loading={loading}>
         <thead>
           <tr>
+            <th className="check-cell">
+              <input
+                type="checkbox"
+                aria-label="Отметить все на странице"
+                checked={allChecked}
+                onChange={() => setSelected(allChecked ? new Set() : new Set(rows.map((row) => row.id)))}
+              />
+            </th>
             <th>Номер</th>
             <th>Дата</th>
             <th>Статус</th>
@@ -140,8 +244,16 @@ export function OrdersPage() {
           </tr>
         </thead>
         <tbody>
-          {data?.results.map((order) => (
-            <tr key={order.id}>
+          {rows.map((order) => (
+            <tr key={order.id} className={selected.has(order.id) ? "is-selected" : undefined}>
+              <td className="check-cell">
+                <input
+                  type="checkbox"
+                  aria-label={`Отметить заказ ${order.number}`}
+                  checked={selected.has(order.id)}
+                  onChange={() => toggle(order.id)}
+                />
+              </td>
               <td>
                 <Link to={`/orders/${order.id}`}>{order.number}</Link>
               </td>
@@ -165,15 +277,15 @@ export function OrdersPage() {
               </td>
             </tr>
           ))}
-          {data && data.results.length === 0 ? (
+          {data && rows.length === 0 ? (
             <tr>
-              <td colSpan={6} className="empty">
+              <td colSpan={7} className="empty">
                 Заказов не найдено
               </td>
             </tr>
           ) : null}
         </tbody>
-        </Table>
+      </Table>
 
       <div className="pagination">
         <button

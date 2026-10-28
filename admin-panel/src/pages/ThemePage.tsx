@@ -15,6 +15,8 @@ import {
   type ThemePalette,
   type ThemeRadius,
   type ThemeState,
+  type ThemeText,
+  TEXT_LABELS,
   themeService,
 } from "../api/theme";
 import { useLoader } from "../hooks/useCatalog";
@@ -30,6 +32,7 @@ function inputOf(state: ThemeState): ThemeInput {
     default_palette: state.default_palette,
     default_mode: state.default_mode,
     default_radius: state.default_radius,
+    default_text: state.default_text,
     nav_style: state.nav_style,
   };
 }
@@ -64,6 +67,7 @@ export function ThemePage() {
       default_palette: next.default_palette,
       default_mode: next.default_mode,
       default_radius: next.default_radius,
+      default_text: next.default_text ?? state.default_text,
       nav_style: next.nav_style ?? state.nav_style,
     });
     setBusy(true);
@@ -180,7 +184,28 @@ export function ThemePage() {
                   ))}
                 </div>
               </div>
-              <p className="muted small">Покупатель может поменять палитру, углы и размер текста в профиле.</p>
+              <div className="field">
+                <span>Размер текста</span>
+                <div className="seg-switch seg-switch-3" role="radiogroup" aria-label="Размер текста по умолчанию">
+                  {(Object.entries(TEXT_LABELS) as [ThemeText, string][]).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      role="radio"
+                      aria-checked={state.default_text === value}
+                      className={state.default_text === value ? "is-on" : undefined}
+                      disabled={busy}
+                      onClick={() => void save({ default_text: value })}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="muted small">
+                Действует у всех, кто не менял оформление в профиле. Ваш личный выбор в этом браузере
+                сбрасывается при сохранении — витрина сразу показывает настройки магазина.
+              </p>
             </div>
 
             <div className="card form-card">

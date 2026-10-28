@@ -49,7 +49,6 @@
       <a class="tag" href="{% url 'web:category' product.category.slug %}">{{ product.category.name }}</a>
       <h1 class="pd__title">{{ product.name }}</h1>
       {% if product.status %}<p class="status status--{{ product.status.tone }} pd__status"{% if product.status.hint %} title="{{ product.status.hint }}"{% endif %}>{{ product.status.name }}</p>{% if product.status.hint %}<p class="muted pd__status-hint">{{ product.status.hint }}</p>{% endif %}{% endif %}
-      {% if in_cart %}<a class="incart incart--detail" href="{% url 'web:cart' %}"><svg class="ic" width="16" height="16" aria-hidden="true"><use href="#i-bag"/></svg>В корзине · {{ in_cart }} шт.</a>{% endif %}
       <p class="price price--detail">
         {% if product.price_on_request %}<span class="price__now price__now--ask">Цена по запросу</span>{% else %}
         <span class="price__now">{{ product.price_kopecks|rub }}&nbsp;₽</span>{% endif %}
@@ -91,7 +90,7 @@
         <div class="sizes__list">
           {% for size in sizes %}
           <label class="sz{% if not size.available %} is-off{% endif %}">
-            <input type="radio" name="variant" value="{{ size.variant.pk }}"{% if not size.available %} disabled{% endif %} required>
+            <input type="radio" name="variant" value="{{ size.variant.pk }}"{% if not size.available %} disabled{% endif %}{% if size.variant == chosen_variant %} checked{% endif %} required>
             <span>{{ size.variant.size_label }}</span>
           </label>
           {% endfor %}
@@ -105,8 +104,18 @@
 
       <div class="rise r4 buy__bar">
         {% if in_stock %}
+        {# Уже в корзине: сколько штук выбранного размера, «−/+» прямо здесь (site.js). #}
+        <div class="incart-row" data-incart data-line-url="{% url 'web:cart_line' 0 %}"{% if not in_cart_total %} hidden{% endif %}>
+          <a class="incart" href="{% url 'web:cart' %}"><svg class="ic" width="16" height="16" aria-hidden="true"><use href="#i-bag"/></svg><span data-incart-text>В корзине{% if chosen_state.q %} · {{ chosen_state.q }} шт.{% else %} · {{ in_cart_total }} шт.{% endif %}</span></a>
+          <div class="stepper" role="group" aria-label="Количество в корзине" data-incart-stepper{% if not chosen_state.q %} hidden{% endif %}>
+            <button class="stepper__btn" type="button" data-incart-step="-1" aria-label="Убрать одну"><svg class="ic" width="18" height="18"><use href="#i-minus"/></svg></button>
+            <span class="stepper__value" data-incart-qty aria-live="polite">{{ chosen_state.q|default:0 }}</span>
+            <button class="stepper__btn" type="button" data-incart-step="1" aria-label="Добавить ещё одну"{% if chosen_state.q and chosen_state.q >= chosen_state.max %} disabled{% endif %}><svg class="ic" width="18" height="18"><use href="#i-plus"/></svg></button>
+          </div>
+        </div>
+        {{ cart_state|json_script:"incart-state" }}
         <button class="cta" type="submit" data-cta>
-          <span class="cta__label">В корзину</span>
+          <span class="cta__label" data-cta-label>{% if chosen_state.q %}Добавить ещё{% else %}В корзину{% endif %}</span>
           <span class="cta__price">{{ product.price_kopecks|rub }}&nbsp;₽</span>
         </button>
         {# «Купить сейчас»: оформление только этого товара, корзина не меняется. #}

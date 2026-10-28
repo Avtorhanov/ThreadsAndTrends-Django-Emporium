@@ -1,4 +1,5 @@
-import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import { router } from "expo-router";
+import { Image, Linking, Pressable, ScrollView, Text, View } from "react-native";
 
 import { ProductCard } from "../catalog/components";
 import { Icon } from "../components/Icon";
@@ -7,6 +8,15 @@ import { fonts } from "../theme/fonts";
 import { makeStyles, useTheme } from "../theme/ThemeProvider";
 import { radius, space } from "../theme/tokens";
 import type { HomeBlock } from "./contentService";
+
+type HomeLink = HomeBlock["links"][number];
+
+/** Вкладка ленты: категория — фильтр на этом экране, статья — экран статьи, остальное — сайт. */
+function openLink(link: HomeLink, onCategory: (slug: string) => void) {
+  if (link.kind === "category") onCategory(link.slug);
+  else if (link.kind === "article") router.push({ pathname: "/articles/[slug]", params: { slug: link.slug } });
+  else if (/^https?:\/\//.test(link.url)) void Linking.openURL(link.url);
+}
 
 type Props = {
   blocks: HomeBlock[];
@@ -26,6 +36,38 @@ export function HomeBlocks({ blocks, onCategory }: Props) {
   return (
     <View style={s.blocks}>
       {blocks.map((block) => {
+        if (block.kind === "banner" && block.images.length) {
+          // Фото-баннер: первая картинка в рамке карточки, заголовок поверх снизу.
+          const heading = block.title || block.product?.name || "";
+          const product = block.product;
+          const category = block.category;
+          const open = product
+            ? () => router.push({ pathname: "/product/[slug]", params: { slug: product.slug } })
+            : category
+              ? () => onCategory(category.slug)
+              : undefined;
+          return (
+            <Pressable
+              key={block.id}
+              disabled={!open}
+              accessibilityRole={open ? "button" : undefined}
+              accessibilityLabel={heading || undefined}
+              onPress={open}
+              style={({ pressed }) => [s.photoCard, pressed && s.pressed]}
+            >
+              <View style={s.photoFrame}>
+                <Image source={{ uri: block.images[0] }} style={s.photo} resizeMode="cover" />
+                {heading || block.text ? (
+                  <View style={s.photoShade}>
+                    {heading ? <Text style={s.photoTitle}>{heading}</Text> : null}
+                    {block.text ? <Text style={s.photoText}>{block.text}</Text> : null}
+                  </View>
+                ) : null}
+              </View>
+            </Pressable>
+          );
+        }
+
         if (block.kind === "banner") {
           const category = block.category;
           const body = (
@@ -105,16 +147,27 @@ export function HomeBlocks({ blocks, onCategory }: Props) {
                 style={s.rail}
                 contentContainerStyle={s.chips}
               >
-                {block.categories.map((item) => (
-                  <Pressable
-                    key={item.id}
-                    accessibilityRole="button"
-                    onPress={() => onCategory(item.slug)}
-                    style={({ pressed }) => [s.chip, pressed && s.pressed]}
-                  >
-                    <Text style={s.chipText}>{item.name}</Text>
-                  </Pressable>
-                ))}
+                {block.links.length
+                  ? block.links.map((link, index) => (
+                      <Pressable
+                        key={`${link.kind}-${link.slug}-${index}`}
+                        accessibilityRole="button"
+                        onPress={() => openLink(link, onCategory)}
+                        style={({ pressed }) => [s.chip, pressed && s.pressed]}
+                      >
+                        <Text style={s.chipText}>{link.title}</Text>
+                      </Pressable>
+                    ))
+                  : block.categories.map((item) => (
+                      <Pressable
+                        key={item.id}
+                        accessibilityRole="button"
+                        onPress={() => onCategory(item.slug)}
+                        style={({ pressed }) => [s.chip, pressed && s.pressed]}
+                      >
+                        <Text style={s.chipText}>{item.name}</Text>
+                      </Pressable>
+                    ))}
               </ScrollView>
             </View>
           );
@@ -137,6 +190,8 @@ export function HomeBlocks({ blocks, onCategory }: Props) {
   );
 }
 
+const absoluteFill = { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 } as const;
+
 const useStyles = makeStyles(({ c }) => ({
   blocks: { gap: 18, paddingBottom: 4 },
   banner: { flexDirection: "row", minHeight: 132, borderRadius: radius.card, overflow: "hidden" },
@@ -146,6 +201,22 @@ const useStyles = makeStyles(({ c }) => ({
   bannerMore: { flexDirection: "row", alignItems: "center", gap: 2, marginTop: 4 },
   bannerMoreText: { fontFamily: fonts.text700, fontSize: 13 },
   bannerImage: { width: "42%" },
+  photoCard: { padding: 6, borderRadius: radius.card, backgroundColor: c.card },
+  photoFrame: { aspectRatio: 4 / 3, borderRadius: radius.image, overflow: "hidden", backgroundColor: c.surface },
+  photo: { ...absoluteFill },
+  photoShade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    gap: 4,
+    paddingHorizontal: 16,
+    paddingTop: 36,
+    paddingBottom: 14,
+    backgroundColor: "rgba(10, 20, 14, 0.42)",
+  },
+  photoTitle: { fontFamily: fonts.display700, fontSize: 22, lineHeight: 26, color: "#FFFFFF" },
+  photoText: { fontFamily: fonts.text600, fontSize: 14, lineHeight: 19, color: "#FFFFFF", opacity: 0.92 },
   head: {
     flexDirection: "row",
     alignItems: "center",

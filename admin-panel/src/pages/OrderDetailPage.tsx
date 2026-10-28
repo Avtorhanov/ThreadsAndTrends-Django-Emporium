@@ -8,7 +8,6 @@ import { PaymentsCard } from "../components/orders/PaymentsCard";
 import { StatusChanger } from "../components/orders/StatusChanger";
 import { useOrder } from "../hooks/useOrders";
 import { formatKopecks } from "../lib/money";
-import { Table } from "../components/Table";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
@@ -61,56 +60,32 @@ export function OrderDetailPage() {
         <h1>{data ? `Заказ ${data.number}` : "Заказ"}</h1>
         {data ? <OrderStatusBadge status={data.status} label={data.status_display} /> : null}
       </div>
+      {data ? (
+        <p className="muted order-sub">
+          {dateFormat.format(new Date(data.created_at))} ·{" "}
+          {data.delivery_method === "pickup" ? "самовывоз" : "доставка курьером"} ·{" "}
+          оплата {data.payment_method_display.toLowerCase()}
+        </p>
+      ) : null}
 
       {order.error ? <p className="alert">{order.error}</p> : null}
       {actionError ? <p className="alert">{actionError}</p> : null}
       {order.loading && !data ? <p className="muted">Загрузка…</p> : null}
 
       {data ? (
-        <>
-          <StatusChanger order={data} busy={busy} onSubmit={move} />
+        <div className="order-layout">
+          <div className="order-col">
+            <StatusChanger order={data} busy={busy} onSubmit={move} />
 
-          {data.payment_method === "online" ? (
-            <PaymentsCard
-              payments={data.payments}
-              canRetryRefund={data.can_retry_refund}
-              busy={busy}
-              onRetryRefund={retryRefund}
-              onSync={() => void run((id) => ordersService.syncPayment(id), "Не удалось проверить.")}
-            />
-          ) : null}
-
-          <div className="order-grid">
-            <div className="card">
-              <h2>Получатель</h2>
-              <dl className="details">
-                <dt>Имя</dt>
-                <dd>{data.recipient_name || "—"}</dd>
-                <dt>Телефон</dt>
-                <dd>
-                  {data.recipient_phone ? (
-                    <a href={`tel:${data.recipient_phone}`}>{data.recipient_phone}</a>
-                  ) : (
-                    "—"
-                  )}
-                </dd>
-                <dt>Клиент</dt>
-                <dd>
-                  {data.customer.email}
-                  {data.customer.is_deleted ? " (аккаунт удалён)" : ""}
-                </dd>
-                <dt>{data.delivery_method_display}</dt>
-                <dd>{data.delivery_address || "—"}</dd>
-                <dt>Оплата</dt>
-                <dd>{data.payment_method_display}</dd>
-                {data.comment ? (
-                  <>
-                    <dt>Комментарий</dt>
-                    <dd>{data.comment}</dd>
-                  </>
-                ) : null}
-              </dl>
-            </div>
+            {data.payment_method === "online" ? (
+              <PaymentsCard
+                payments={data.payments}
+                canRetryRefund={data.can_retry_refund}
+                busy={busy}
+                onRetryRefund={retryRefund}
+                onSync={() => void run((id) => ordersService.syncPayment(id), "Не удалось проверить.")}
+              />
+            ) : null}
 
             <div className="card">
               <h2>История</h2>
@@ -124,7 +99,7 @@ export function OrderDetailPage() {
                       {change.actor_email && change.changed_by === "admin"
                         ? ` (${change.actor_email})`
                         : ""}
-                      {change.notified ? " · письмо клиенту" : ""}
+                      {change.notified ? " · письмо покупателю" : ""}
                     </span>
                     {change.comment ? <span className="history-note">{change.comment}</span> : null}
                   </li>
@@ -133,60 +108,70 @@ export function OrderDetailPage() {
             </div>
           </div>
 
-          <Table>
-            <thead>
-              <tr>
-                <th>Товар</th>
-                <th>Размер</th>
-                <th>Артикул</th>
-                <th className="num">Цена</th>
-                <th className="num">Кол-во</th>
-                <th className="num">Сумма</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.items.map((item) => (
-                <tr key={item.id}>
-                  <td>
-                    {item.product_name}
-                    {item.status_name ? <div className="muted small">{item.status_name}</div> : null}
-                  </td>
-                  <td>{item.size || "—"}</td>
-                  <td>{item.sku}</td>
-                  <td className="num">{formatKopecks(item.price_kopecks)}</td>
-                  <td className="num">{item.quantity}</td>
-                  <td className="num">{formatKopecks(item.line_total_kopecks)}</td>
-                </tr>
-              ))}
-              <tr>
-                <td colSpan={5} className="num muted">
-                  Товары
-                </td>
-                <td className="num">{formatKopecks(data.items_total_kopecks)}</td>
-              </tr>
-              <tr>
-                <td colSpan={5} className="num muted">
-                  Доставка
-                </td>
-                <td className="num">
-                  {data.delivery_kopecks ? formatKopecks(data.delivery_kopecks) : "бесплатно"}
-                </td>
-              </tr>
-              <tr>
-                <td colSpan={5} className="num">
-                  <strong>Итого</strong>
-                </td>
-                <td className="num">
-                  <strong>{formatKopecks(data.total_kopecks)}</strong>
-                </td>
-              </tr>
-            </tbody>
-            </Table>
-          <p className="muted small">
-            Оформлен {dateFormat.format(new Date(data.created_at))}, изменён{" "}
-            {dateFormat.format(new Date(data.updated_at))}
-          </p>
-        </>
+          <div className="order-col">
+            <div className="card">
+              <h2>Состав</h2>
+              <ul className="order-items">
+                {data.items.map((item) => (
+                  <li key={item.id}>
+                    <div>
+                      <strong>{item.product_name}</strong>
+                      <span className="muted small">
+                        {item.size ? `Размер ${item.size} · ` : ""}
+                        {item.quantity} шт. × {formatKopecks(item.price_kopecks)} · {item.sku}
+                      </span>
+                      {item.status_name ? <span className="muted small">{item.status_name}</span> : null}
+                    </div>
+                    <strong className="num">{formatKopecks(item.line_total_kopecks)}</strong>
+                  </li>
+                ))}
+              </ul>
+              <dl className="order-sums">
+                <dt>Товары</dt>
+                <dd>{formatKopecks(data.items_total_kopecks)}</dd>
+                <dt>{data.delivery_method === "pickup" ? "Самовывоз" : "Доставка курьером"}</dt>
+                <dd>{data.delivery_kopecks ? formatKopecks(data.delivery_kopecks) : "бесплатно"}</dd>
+                <dt className="order-total">Итого</dt>
+                <dd className="order-total">{formatKopecks(data.total_kopecks)}</dd>
+              </dl>
+            </div>
+
+            <div className="card">
+              <h2>Покупатель</h2>
+              <dl className="details">
+                <dt>Имя</dt>
+                <dd>{data.recipient_name || "—"}</dd>
+                <dt>Телефон</dt>
+                <dd>
+                  {data.recipient_phone ? (
+                    <a href={`tel:${data.recipient_phone}`}>{data.recipient_phone}</a>
+                  ) : (
+                    "—"
+                  )}
+                </dd>
+                <dt>Аккаунт</dt>
+                <dd>
+                  {data.customer.email}
+                  {data.customer.is_deleted ? " (удалён)" : ""}
+                </dd>
+                <dt>{data.delivery_method_display}</dt>
+                <dd>{data.delivery_address || "—"}</dd>
+                <dt>Оплата</dt>
+                <dd>{data.payment_method_display}</dd>
+                {data.comment ? (
+                  <>
+                    <dt>Комментарий</dt>
+                    <dd>{data.comment}</dd>
+                  </>
+                ) : null}
+              </dl>
+            </div>
+            <p className="muted small">
+              Оформлен {dateFormat.format(new Date(data.created_at))}, изменён{" "}
+              {dateFormat.format(new Date(data.updated_at))}
+            </p>
+          </div>
+        </div>
       ) : null}
     </section>
   );

@@ -1,0 +1,28 @@
+{% load storefront money %}{% comment %}Баннер главной. С картинками или товаром — фото в рамке карточки, заголовок поверх
+   снизу; несколько картинок (и GIF) сменяют друг друга с лёгким приближением (site.js).
+   Без картинок — цветная плашка с текстом.{% endcomment %}
+{% if b.is_photo %}
+<section class="hblock hblock-banner hblock-photo">
+  {% if b.url %}<a class="hblock-photo__frame" href="{{ b.url }}"{% if b.heading %} aria-label="{{ b.heading }}"{% endif %}>{% else %}<div class="hblock-photo__frame">{% endif %}
+    <span class="hblock-photo__slides"{% if b.images|length > 1 %} data-slides{% endif %}>
+      {% for im in b.images %}<span class="hblock-photo__slide{% if forloop.first %} is-on{% endif %}">{% if eager and forloop.first %}{% product_img im "(min-width: 1200px) 1100px, 100vw" css="hblock-photo__img" eager=True %}{% else %}{% product_img im "(min-width: 1200px) 1100px, 100vw" css="hblock-photo__img" %}{% endif %}</span>{% endfor %}
+    </span>
+    {% if b.heading or b.text or b.product %}
+    <span class="hblock-photo__shade">
+      {% if b.heading %}<span class="hblock-photo__title">{{ b.heading }}</span>{% endif %}
+      {% if b.text %}<span class="hblock-photo__text">{{ b.text }}</span>
+      {% elif b.product and not b.product.price_on_request %}<span class="hblock-photo__text">{{ b.product.price_kopecks|rub }}&nbsp;₽</span>{% endif %}
+    </span>
+    {% endif %}
+  {% if b.url %}</a>{% else %}</div>{% endif %}
+</section>
+{% else %}
+<section class="hblock hblock-banner" style="--hb-bg:{{ b.color }};--hb-ink:{{ b.ink }}">
+  {% if b.url %}<a class="hblock-banner__link" href="{{ b.url }}" aria-label="{% if b.title %}{{ b.title }} — {% endif %}{% if b.category %}{{ b.category.name }}{% endif %}">{% endif %}
+  <span class="hblock-banner__body">
+    {% if b.title %}<span class="hblock-banner__title">{{ b.title }}</span>{% endif %}
+    {% if b.text %}<span class="hblock-banner__text">{{ b.text }}</span>{% endif %}
+  </span>
+  {% if b.url %}</a>{% endif %}
+</section>
+{% endif %}

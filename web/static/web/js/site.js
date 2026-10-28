@@ -411,23 +411,219 @@
     }
   }
 
-  // --- «В корзину»: заливка и «Добавлено в корзину» после ответа htmx ---
-  var buy = document.querySelector("[data-buy]");
-  if (buy) {
-    var cta = buy.querySelector("[data-cta]");
-    var label = cta && cta.querySelector(".cta__label");
-    buy.addEventListener("htmx:afterSwap", function () {
-      if (!cta) return;
-      var added = !!buy.querySelector("[data-added]");
-      cta.classList.toggle("is-done", added);
-      label.textContent = added ? "Добавлено в корзину" : "В корзину";
+  // --- Главная: картинки фото-баннера сменяют друг друга, баннеры подряд — карусель ---
+  // Только пока блок на экране и вкладка открыта; «уменьшить движение» — без автолистания
+  // карусели (картинки баннера меняются растворением без приближения — это задаёт CSS).
+  function initHomeMotion(scope) {
+    var visible = new WeakMap();
+    var io = "IntersectionObserver" in window ? new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) { visible.set(entry.target, entry.isIntersecting); });
+    }, { threshold: 0.35 }) : null;
+    function onScreen(el) { return !io || visible.get(el) === true; }
+
+    scope.querySelectorAll("[data-slides]").forEach(function (box) {
+      if (box._bound) return;
+      box._bound = true;
+      var slides = box.querySelectorAll(".hblock-photo__slide");
+      if (slides.length < 2) return;
+      if (io) io.observe(box);
+      var index = 0;
+      setInterval(function () {
+        if (document.hidden || !onScreen(box)) return;
+        slides[index].classList.remove("is-on");
+        index = (index + 1) % slides.length;
+        var img = slides[index].querySelector("img");
+        if (img && img.loading === "lazy") img.loading = "eager";
+        slides[index].classList.add("is-on");
+      }, 4800);
     });
-    buy.addEventListener("change", function () {
-      if (!cta) return;
+
+    scope.querySelectorAll("[data-carousel]").forEach(function (carousel) {
+      if (carousel._bound) return;
+      carousel._bound = true;
+      var track = carousel.querySelector("[data-carousel-track]");
+      var dots = carousel.querySelectorAll("[data-carousel-dot]");
+      var count = dots.length;
+      if (!track || count < 2) return;
+      var current = 0;
+      var pausedUntil = 0;
+      function slideWidth() { return track.querySelector(".hblock-carousel__slide").getBoundingClientRect().width; }
+      function step() {
+        var gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+        return slideWidth() + gap;
+      }
+      function mark(index) {
+        current = index;
+        dots.forEach(function (dot, i) {
+          dot.classList.toggle("is-on", i === index);
+          if (i === index) dot.setAttribute("aria-current", "true");
+          else dot.removeAttribute("aria-current");
+        });
+      }
+      function go(index, smooth) {
+        track.scrollTo({ left: index * step(), behavior: smooth && !reduced.matches ? "smooth" : "auto" });
+        mark(index);
+      }
+      var ticking = false;
+      track.addEventListener("scroll", function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () {
+          ticking = false;
+          mark(Math.max(0, Math.min(count - 1, Math.round(track.scrollLeft / step()))));
+        });
+      }, { passive: true });
+      dots.forEach(function (dot, i) {
+        dot.addEventListener("click", function () {
+          pausedUntil = Date.now() + 10000;
+          go(i, true);
+        });
+      });
+      // Палец, мышь или фокус на карусели — пауза, чтобы баннер не уехал из-под руки.
+      ["pointerdown", "wheel", "focusin", "mouseenter"].forEach(function (name) {
+        carousel.addEventListener(name, function () { pausedUntil = Date.now() + 10000; }, { passive: true });
+      });
+      if (io) io.observe(carousel);
+      setInterval(function () {
+        if (reduced.matches || document.hidden || Date.now() < pausedUntil || !onScreen(carousel)) return;
+        go((current + 1) % count, true);
+      }, 6000);
+    });
+  }
+  initHomeMotion(document);
+  window.didiHomeMotion = initHomeMotion; // демо на Pages перерисовывает главную
+
+  // --- Карточка товара: «В корзину» / «Добавить ещё», сколько уже в корзине и «−/+» ---
+  // Обработчики делегированы документу: форму могут перерисовать (демо на Pages).
+  function setCartBadges(count) {
+    ["cart-badge-top", "cart-badge-tab"].forEach(function (id) {
+      var badge = document.getElementById(id);
+      if (!badge) return;
+      badge.textContent = count > 99 ? "99+" : String(count);
+      badge.hidden = !count;
+    });
+  }
+  function incartState() {
+    var el = document.getElementById("incart-state");
+    if (!el) return null;
+    if (!el._data) {
+      try { el._data = JSON.parse(el.textContent) || {}; } catch (e) { el._data = {}; }
+    }
+    return el._data;
+  }
+  function chosenVariant(form) {
+    var input = form.querySelector('input[name="variant"]:checked') || form.querySelector('input[type="hidden"][name="variant"]');
+    return input ? input.value : "";
+  }
+  function renderIncart(form, keepDone) {
+    var state = incartState();
+    var row = form.querySelector("[data-incart]");
+    var cta = form.querySelector("[data-cta]");
+    var current = state && state[chosenVariant(form)];
+    var quantity = current ? current.q : 0;
+    if (cta && !keepDone) {
       cta.classList.remove("is-done");
-      label.textContent = "В корзину";
-      var result = buy.querySelector("#buy-result");
+      cta.querySelector(".cta__label").textContent = quantity ? "Добавить ещё" : "В корзину";
+    }
+    if (!row || !state) return;
+    var parts = [];
+    Object.keys(state).forEach(function (id) {
+      if (state[id].q) parts.push(state[id].size + " × " + state[id].q);
+    });
+    row.hidden = !parts.length;
+    // Выбранный размер в корзине — его количество и «−/+»; иначе — какие размеры уже там.
+    row.querySelector("[data-incart-text]").textContent = quantity ? "В корзине · " + quantity + " шт." : "В корзине: " + parts.join(", ");
+    var stepper = row.querySelector("[data-incart-stepper]");
+    stepper.hidden = !quantity;
+    stepper.querySelector("[data-incart-qty]").textContent = String(quantity);
+    stepper.querySelector('[data-incart-step="1"]').disabled = !current || quantity >= current.max;
+  }
+  function sendCartLine(form, id, quantity) {
+    // Демо на GitHub Pages подменяет отправку (window.didiCartLine) — сервера там нет.
+    if (window.didiCartLine) return Promise.resolve(window.didiCartLine(id, quantity));
+    var row = form.querySelector("[data-incart]");
+    var url = row.getAttribute("data-line-url").replace(/\/0\/$/, "/" + id + "/");
+    var token = form.querySelector('input[name="csrfmiddlewaretoken"]');
+    var body = new URLSearchParams({ quantity: String(quantity), csrfmiddlewaretoken: token ? token.value : "" });
+    return fetch(url, {
+      method: "POST", body: body, credentials: "same-origin", keepalive: true, headers: { Accept: "application/json" }
+    }).then(function (response) { return response.json(); });
+  }
+  // Нажатия копятся: уходит последнее значение, следующий запрос — после ответа на прошлый.
+  var incartWanted = {};
+  var incartBusy = {};
+  function flushCartLine(form, id) {
+    if (incartBusy[id] || !(id in incartWanted)) return;
+    var quantity = incartWanted[id];
+    delete incartWanted[id];
+    incartBusy[id] = true;
+    sendCartLine(form, id, quantity)
+      .then(function (data) {
+        if (!data) return;
+        var state = incartState();
+        if (state && state[id] && !(id in incartWanted)) state[id].q = data.quantity;
+        if (typeof data.count === "number") setCartBadges(data.count);
+        var result = form.querySelector("#buy-result");
+        if (result) {
+          result.innerHTML = "";
+          (data.errors || []).forEach(function (text) {
+            var note = document.createElement("p");
+            note.className = "note note--danger";
+            note.textContent = text;
+            result.appendChild(note);
+          });
+        }
+        renderIncart(form);
+      })
+      .catch(function () {})
+      .then(function () {
+        incartBusy[id] = false;
+        flushCartLine(form, id);
+      });
+  }
+  // Демо на Pages может запустить этот файл повторно на той же странице — без двойных шагов.
+  if (!window.__didiIncartBound) {
+    window.__didiIncartBound = true;
+    document.addEventListener("click", function (event) {
+      var button = event.target.closest && event.target.closest("[data-incart-step]");
+      if (!button) return;
+      var form = button.closest("[data-buy]");
+      var state = incartState();
+      var id = form && chosenVariant(form);
+      if (!state || !state[id]) return;
+      var step = parseInt(button.getAttribute("data-incart-step"), 10);
+      var current = state[id];
+      current.q = Math.max(0, Math.min(current.max, current.q + step));
+      incartWanted[id] = current.q;
+      renderIncart(form);
+      flushCartLine(form, id);
+    });
+    // Добавлено («В корзину»): +1 к выбранному размеру. htmx — ответ сервера, демо — своё событие.
+    function onAdded(form) {
+      var state = incartState();
+      var current = state && state[chosenVariant(form)];
+      if (current) current.q = Math.min(current.max, current.q + 1);
+      var cta = form.querySelector("[data-cta]");
+      if (cta) {
+        cta.classList.add("is-done");
+        cta.querySelector(".cta__label").textContent = "Добавлено в корзину";
+      }
+      renderIncart(form, true);
+    }
+    document.addEventListener("htmx:afterSwap", function (event) {
+      var form = event.target.closest && event.target.closest("[data-buy]");
+      if (form && form.querySelector("[data-added]")) onAdded(form);
+    });
+    document.addEventListener("didi:cart-added", function (event) {
+      var form = event.target.closest && event.target.closest("[data-buy]");
+      if (form) onAdded(form);
+    });
+    document.addEventListener("change", function (event) {
+      var form = event.target.closest && event.target.closest("[data-buy]");
+      if (!form || event.target.name !== "variant") return;
+      var result = form.querySelector("#buy-result");
       if (result) result.innerHTML = "";
+      renderIncart(form);
     });
   }
 

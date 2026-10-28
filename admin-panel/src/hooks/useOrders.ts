@@ -17,6 +17,7 @@ type ListState = { data: AdminOrderPage | null; loading: boolean; error: string 
 /** Страница заказов по фильтрам; устаревшие ответы (быстрый ввод в поиске) отбрасываются. */
 export function useOrders(query: OrderQuery) {
   const [state, setState] = useState<ListState>({ data: null, loading: true, error: null });
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,9 +48,11 @@ export function useOrders(query: OrderQuery) {
     query.createdFrom,
     query.createdTo,
     query.page,
+    version,
   ]);
 
-  return state;
+  const reload = useCallback(() => setVersion((v) => v + 1), []);
+  return { ...state, reload };
 }
 
 type DetailState = { data: AdminOrderDetail | null; loading: boolean; error: string | null };

@@ -57,8 +57,9 @@
   var radius = cookie("radius") || shop.radius || "";
   if (radius === "sharp" || radius === "soft") root.setAttribute("data-radius", radius);
   else if (radius === "normal") root.removeAttribute("data-radius");
-  var text = cookie("text_size");
+  var text = cookie("text_size") || shop.text || "";
   if (text === "m" || text === "l") root.setAttribute("data-text", text);
+  else if (text === "s") root.removeAttribute("data-text");
   // Нижнее меню: «Сплошное» (по умолчанию) — без атрибута.
   if (shop.nav && shop.nav !== "solid") root.setAttribute("data-nav", shop.nav);
   else if (shop.nav) root.removeAttribute("data-nav");

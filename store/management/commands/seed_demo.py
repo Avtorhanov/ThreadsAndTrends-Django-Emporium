@@ -99,6 +99,12 @@ class Command(BaseCommand):
             color="#DDF38A",
             category=by_slug.get("dlya-doma"),
         )
+        # Второй баннер подряд — товар с фото: на витрине оба листаются каруселью.
+        featured = (
+            Product.objects.live().filter(images__isnull=False).order_by("-created_at").first()
+        )
+        if featured is not None:
+            home.update_block(home.add_block("banner"), title="", text="", product=featured)
         home.update_block(home.add_block("categories"), title="Категории")
         home.update_block(home.add_block("collection"), title="Новинки")
         if "luxe" in by_slug:

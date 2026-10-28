@@ -147,7 +147,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     palette: chosen.palette && palettes.includes(chosen.palette) ? chosen.palette : defaultPalette,
     accent: chosen.accent ?? DEFAULT_LOOK.accent,
     radius: chosen.radius ?? (shop && isKey(shop.default_radius, RADIUS_KEYS) ? shop.default_radius : "normal"),
-    text: chosen.text ?? DEFAULT_LOOK.text,
+    text: chosen.text ?? (shop && isKey(shop.default_text, TEXT_KEYS) ? shop.default_text : DEFAULT_LOOK.text),
   };
   const theme = buildTheme(name, look);
 

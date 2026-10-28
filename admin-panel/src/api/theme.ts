@@ -10,6 +10,7 @@ export type PaletteKey = Schemas["PaletteKeyEnum"];
 export type ThemeMode = Schemas["ThemeModeEnum"];
 export type ThemeRadius = Schemas["ThemeRadiusEnum"];
 export type ThemeNav = Schemas["ThemeNavEnum"];
+export type ThemeText = Schemas["ThemeTextEnum"];
 
 export const GROUP_TITLES: Record<Schemas["PaletteGroupEnum"], string> = {
   bright: "Яркие",
@@ -28,6 +29,8 @@ export const RADIUS_LABELS: Record<ThemeRadius, string> = {
   normal: "Средние",
   soft: "Мягкие",
 };
+
+export const TEXT_LABELS: Record<ThemeText, string> = { s: "Обычный", m: "Крупнее", l: "Крупный" };
 
 export const RADIUS_SCALE: Record<ThemeRadius, number> = { sharp: 0.6, normal: 1, soft: 1.35 };
 
