@@ -1,8 +1,10 @@
 import { router, useFocusEffect } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useState } from "react";
 import { Text, View } from "react-native";
 
 import { useAuth } from "../../../src/auth/AuthProvider";
+import { API_URL } from "../../../src/config";
 import { Icon, type IconName } from "../../../src/components/Icon";
 import { Segmented } from "../../../src/components/Segmented";
 import { HelpCard } from "../../../src/content/HelpCard";
@@ -134,6 +136,20 @@ function ThemeCard() {
   );
 }
 
+/** Сотруднику магазина — вход в панель управления (сайт панели во встроенном браузере). */
+function PanelCard() {
+  const s = useStyles();
+  return (
+    <Card style={s.card}>
+      <Text style={s.cardTitle}>Панель управления</Text>
+      <Text style={s.caption}>
+        Заказы, товары, главная и тема магазина. Откроется панель — войдите тем же email и паролем.
+      </Text>
+      <Button title="Открыть панель" onPress={() => void WebBrowser.openBrowserAsync(`${API_URL}/panel/`)} />
+    </Card>
+  );
+}
+
 function MenuRow({ icon, title, onPress }: { icon: IconName; title: string; onPress: () => void }) {
   const s = useStyles();
   const { c } = useTheme();
@@ -234,6 +250,7 @@ function SignedInProfile() {
 
   return (
     <Screen tabs title={name || "Профиль"} overline="Аккаунт">
+      {user.is_staff ? <PanelCard /> : null}
       <CurrentOrder />
       <Card style={s.card}>
         <Text style={s.caption}>Email</Text>

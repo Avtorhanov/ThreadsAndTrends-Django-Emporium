@@ -39,7 +39,7 @@
       </span>
       <div class="line__body">
         <p class="line__title">{{ item.product_name }}</p>
-        <p class="line__meta">{% if item.size %}Размер {{ item.size }} · {% endif %}{{ item.quantity }} × {{ item.price_kopecks|rub }}&nbsp;₽</p>
+        <p class="line__meta">{% if item.size %}Размер {{ item.size }} · {% endif %}{% if item.status_name %}{{ item.status_name }} · {% endif %}{{ item.quantity }} × {{ item.price_kopecks|rub }}&nbsp;₽</p>
       </div>
       <p class="line__price">{{ item.line_total_kopecks|rub }}&nbsp;₽</p>
     </li>

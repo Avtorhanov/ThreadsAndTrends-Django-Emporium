@@ -4975,6 +4975,9 @@ components:
           description: Пусто — товар без размера
         sku:
           type: string
+        status_name:
+          type: string
+          description: Статус товара на момент заказа («Под заказ»); пусто — без статуса
         price_kopecks:
           type: integer
           description: Цена на момент заказа, коп.
@@ -4996,6 +4999,7 @@ components:
       - quantity
       - size
       - sku
+      - status_name
     OrderList:
       type: object
       properties:
@@ -5576,10 +5580,17 @@ components:
           format: date-time
           readOnly: true
           title: Дата регистрации
+        is_staff:
+          type: boolean
+          readOnly: true
+          title: Статус персонала
+          description: Отметьте, если пользователь может входить в административную часть
+            сайта.
       required:
       - date_joined
       - email
       - id
+      - is_staff
     RecipientDefaults:
       type: object
       properties:

@@ -147,7 +147,10 @@ export function OrderDetailPage() {
             <tbody>
               {data.items.map((item) => (
                 <tr key={item.id}>
-                  <td>{item.product_name}</td>
+                  <td>
+                    {item.product_name}
+                    {item.status_name ? <div className="muted small">{item.status_name}</div> : null}
+                  </td>
                   <td>{item.size || "—"}</td>
                   <td>{item.sku}</td>
                   <td className="num">{formatKopecks(item.price_kopecks)}</td>

@@ -15,8 +15,9 @@ class TokenPairSerializer(serializers.Serializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name", "date_joined"]
-        read_only_fields = ["id", "email", "date_joined"]
+        # is_staff — в приложении у сотрудника есть вход в панель управления.
+        fields = ["id", "email", "first_name", "last_name", "date_joined", "is_staff"]
+        read_only_fields = ["id", "email", "date_joined", "is_staff"]
 
 
 class RegisterSerializer(serializers.Serializer):

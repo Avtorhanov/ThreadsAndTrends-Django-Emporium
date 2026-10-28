@@ -92,6 +92,9 @@ class OrderItemSerializer(serializers.Serializer):
     product_name = serializers.CharField()
     size = serializers.CharField(help_text="Пусто — товар без размера")
     sku = serializers.CharField()
+    status_name = serializers.CharField(
+        help_text="Статус товара на момент заказа («Под заказ»); пусто — без статуса"
+    )
     price_kopecks = serializers.IntegerField(help_text="Цена на момент заказа, коп.")
     quantity = serializers.IntegerField()
     line_total_kopecks = serializers.IntegerField()

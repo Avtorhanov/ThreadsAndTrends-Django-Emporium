@@ -129,3 +129,28 @@ def test_storefront_card_quiet_mark_and_product_pill(client):
     assert 'class="mark mark--warning">Под заказ<' in grid
     page = client.get(reverse("web:product", args=[product.slug])).content.decode()
     assert "status--warning pd__status" in page
+
+
+def test_order_item_keeps_status_snapshot():
+    from django.contrib.auth import get_user_model
+
+    from orders.services.checkout import CheckoutInput, checkout
+
+    label = ProductStatus.objects.get(name="Под заказ")
+    product = make_product("Термос", status=label)
+    user = get_user_model().objects.create_user(email="buyer@example.com", password="x-Pass-1234")
+    data = CheckoutInput(
+        delivery_method="courier",
+        payment_method="on_delivery",
+        recipient_name="Иван",
+        recipient_phone="+79001234567",
+        delivery_address="Москва, ул. Пушкина, 1",
+    )
+    line = LineInput(variant_id=product.variants.first().pk, quantity=1)
+    order, created = checkout(user, data, "status-snapshot-0001", buy_now=line)
+    item = order.items.get()
+    assert created and item.status_name == "Под заказ"
+    # Справочник поменяли — в заказе осталось как было.
+    catalog.update_status(label, name="Под заказ 7 дней")
+    item.refresh_from_db()
+    assert item.status_name == "Под заказ"

@@ -44,6 +44,7 @@ function Items({ order }: { order: OrderDetail }) {
             </Text>
             <Text style={s.muted}>
               {item.size ? `Размер ${item.size} · ` : ""}
+              {item.status_name ? `${item.status_name} · ` : ""}
               {item.quantity} × {formatKopecks(item.price_kopecks)}
             </Text>
           </View>

@@ -316,6 +316,7 @@ def checkout(
                         product_name=line.variant.product.name,
                         size=line.variant.size,
                         sku=line.variant.sku,
+                        status_name=_status_name(line.variant.product),
                         price_kopecks=line.unit_price_kopecks,
                         quantity=line.quantity,
                     )
@@ -347,3 +348,8 @@ def checkout(
             raise
         return existing, False
     return order, True
+
+
+def _status_name(product) -> str:
+    status = product.status if product.status_id else None
+    return status.name if status else ""

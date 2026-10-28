@@ -125,6 +125,8 @@ class OrderItem(models.Model):
     product_name = models.CharField(max_length=200, verbose_name="Название")
     size = models.CharField(max_length=50, blank=True, verbose_name="Размер")
     sku = models.CharField(max_length=64, verbose_name="Артикул")
+    # Снимок статуса товара («Под заказ») на момент заказа: справочник могут поменять.
+    status_name = models.CharField(max_length=40, blank=True, verbose_name="Статус товара")
     price_kopecks = models.PositiveBigIntegerField(verbose_name="Цена, коп.")
     quantity = models.PositiveIntegerField(verbose_name="Количество")
 
