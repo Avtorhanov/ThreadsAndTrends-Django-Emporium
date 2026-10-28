@@ -106,7 +106,7 @@
         {% if in_stock %}
         {# Уже в корзине: сколько штук выбранного размера, «−/+» прямо здесь (site.js). #}
         <div class="incart-row" data-incart data-line-url="{% url 'web:cart_line' 0 %}"{% if not in_cart_total %} hidden{% endif %}>
-          <a class="incart" href="{% url 'web:cart' %}"><svg class="ic" width="16" height="16" aria-hidden="true"><use href="#i-bag"/></svg><span data-incart-text>В корзине{% if chosen_state.q %} · {{ chosen_state.q }} шт.{% else %} · {{ in_cart_total }} шт.{% endif %}</span></a>
+          <a class="incart" href="{% url 'web:cart' %}"><svg class="ic" width="16" height="16" aria-hidden="true"><use href="#i-bag"/></svg><span data-incart-text>{% if chosen_state.q %}В корзине · {{ chosen_state.q }} шт.{% elif in_cart_total %}В корзине · {{ in_cart_total }} шт.{% endif %}</span></a>
           <div class="stepper" role="group" aria-label="Количество в корзине" data-incart-stepper{% if not chosen_state.q %} hidden{% endif %}>
             <button class="stepper__btn" type="button" data-incart-step="-1" aria-label="Убрать одну"><svg class="ic" width="18" height="18"><use href="#i-minus"/></svg></button>
             <span class="stepper__value" data-incart-qty aria-live="polite">{{ chosen_state.q|default:0 }}</span>
