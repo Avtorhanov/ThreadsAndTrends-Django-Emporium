@@ -25,7 +25,10 @@ export function HomePreview({ blocks, categories, selectedId, onSelect, onBack }
       </div>
       <div className="he-phone" aria-label="Предпросмотр главной">
         <div className="he-phone-bar">
-          <strong>DiDi shop</strong>
+          <span className="he-phone-logo" aria-hidden="true">
+            <i>DiDi</i>
+            <strong>shop</strong>
+          </span>
           <span className="he-phone-dot" />
         </div>
         <div className="he-phone-screen">

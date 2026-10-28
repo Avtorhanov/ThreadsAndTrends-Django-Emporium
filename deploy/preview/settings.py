@@ -27,9 +27,6 @@ STORAGES = {
 }
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
-# Корзина «со всеми товарами» для имитации собирается одним заказом позиций.
-CART_MAX_ITEMS = 1000
-
 # Шаблон страницы «Все комнаты».
 TEMPLATES[0]["DIRS"] = [BASE_DIR / "deploy/preview/templates"]
 

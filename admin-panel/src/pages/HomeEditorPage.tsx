@@ -10,6 +10,7 @@ import {
   homeService,
   inkFor,
 } from "../api/home";
+import { Icon } from "../components/Icon";
 import { BlockSettings } from "../components/home/BlockSettings";
 import { HomePreview } from "../components/home/HomePreview";
 import { useCategories, useLoader } from "../hooks/useCatalog";
@@ -302,27 +303,30 @@ export function HomeEditorPage() {
                         <button
                           type="button"
                           aria-label="Выше"
+                          title="Выше"
                           disabled={busy || index === 0}
                           onClick={() => move(index, -1)}
                         >
-                          ↑
+                          <Icon name="up" size={18} />
                         </button>
                         <button
                           type="button"
                           aria-label="Ниже"
+                          title="Ниже"
                           disabled={busy || index === blocks.length - 1}
                           onClick={() => move(index, 1)}
                         >
-                          ↓
+                          <Icon name="down" size={18} />
                         </button>
                         <button
                           type="button"
                           className={block.is_visible ? "he-eye is-on" : "he-eye"}
                           aria-label={block.is_visible ? "Скрыть блок" : "Показать блок"}
+                          title={block.is_visible ? "Виден покупателям — скрыть" : "Скрыт — показать"}
                           aria-pressed={block.is_visible}
                           onClick={() => edit(block.id, { is_visible: !block.is_visible }, 0)}
                         >
-                          {block.is_visible ? "Виден" : "Скрыт"}
+                          <Icon name={block.is_visible ? "eye" : "eyeOff"} size={18} />
                         </button>
                       </div>
                     </li>

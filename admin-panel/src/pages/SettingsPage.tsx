@@ -337,6 +337,47 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
   );
 }
 
+/** Только демо на GitHub Pages: вернуть магазин и панель к исходным данным. */
+function DemoReset() {
+  const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+
+  async function reset() {
+    setBusy(true);
+    // Имитация сервера (preview/mock.ts → sim.js) уже загружена: панель работает через неё.
+    await window.DidiSim?.reset();
+    window.location.reload();
+  }
+
+  return (
+    <section className="card form-card">
+      <h2>Демо-данные</h2>
+      <p className="muted small">
+        Это демо: товары, заказы, клиенты и настройки хранятся в этом браузере — общие для панели и магазина.
+      </p>
+      {confirming ? (
+        <div className="he-confirm">
+          <span>Удалить все изменения и вернуть исходный каталог, заказы и настройки?</span>
+          <div className="actions">
+            <button type="button" className="button button-danger" disabled={busy} onClick={() => void reset()}>
+              {busy ? "Сбрасываем…" : "Сбросить"}
+            </button>
+            <button type="button" className="button button-ghost" disabled={busy} onClick={() => setConfirming(false)}>
+              Отмена
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <button type="button" className="button button-outline" onClick={() => setConfirming(true)}>
+            Сбросить демо-данные
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function SettingsPage() {
   const settings = useShopSettings();
   return (
@@ -350,6 +391,7 @@ export function SettingsPage() {
           onSaved={settings.set}
         />
       ) : null}
+      {import.meta.env.VITE_PREVIEW === "1" ? <DemoReset /> : null}
     </section>
   );
 }

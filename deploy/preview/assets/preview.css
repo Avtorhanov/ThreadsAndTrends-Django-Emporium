@@ -1,33 +1,4 @@
-/* Превью на GitHub Pages: боковой ярлык «Превью», панель и подсказки. На сайте не подключается.
-   Нарочно отличается от «Лайм-тек» (пунктир), чтобы не путать с интерфейсом магазина. */
-.pv { position: fixed; left: 0; top: 50%; z-index: 60; transform: translateY(-50%); font: 700 13px/1.35 var(--font-text); }
-.pv__tab {
-  display: flex; align-items: center; justify-content: center; width: 28px; min-height: 96px; padding: 10px 0;
-  border: 1.5px dashed var(--muted); border-left: 0; border-radius: 0 12px 12px 0;
-  background: var(--surface); color: var(--ink); box-shadow: var(--shadow-control);
-  font: 800 12px var(--font-text); letter-spacing: .04em; writing-mode: vertical-rl; transform: rotate(180deg);
-  cursor: pointer;
-}
-.pv__panel {
-  position: absolute; left: 36px; top: 50%; width: min(280px, calc(100vw - 52px)); padding: 16px;
-  border: 1.5px dashed var(--muted); border-radius: 20px; background: var(--surface); color: var(--ink);
-  box-shadow: var(--shadow-card); transform: translateY(-50%);
-}
-.pv__panel[hidden] { display: none; }
-.pv__title { margin: 0 0 4px; font: 700 15px var(--font-display); }
-.pv__text { margin: 0 0 12px; color: var(--muted); font-weight: 600; }
-.pv__seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 10px; padding: 4px; border-radius: 14px; background: var(--neutral-bg); }
-.pv__opt {
-  display: flex; align-items: center; justify-content: center; min-height: 40px; border-radius: 11px;
-  color: var(--muted); font-weight: 800; text-decoration: none;
-}
-.pv__opt.is-on { background: var(--seg-on-bg); color: var(--seg-on-ink); }
-.pv__link {
-  display: flex; align-items: center; width: 100%; min-height: 44px; padding: 0 12px; margin-top: 6px;
-  border: 0; border-radius: 12px; background: var(--neutral-bg); color: var(--ink);
-  font: 800 14px var(--font-text); text-align: left; text-decoration: none; cursor: pointer;
-}
-
+/* Магазин на GitHub Pages (демо): всплывающие подсказки имитации. На сайте не подключается. */
 .pv-toast {
   position: fixed; left: 50%; bottom: calc(110px + env(safe-area-inset-bottom, 0px)); z-index: 70;
   max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 16px;

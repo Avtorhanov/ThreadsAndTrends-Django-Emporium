@@ -1,7 +1,8 @@
 """Проверка собранного превью в браузере (Playwright): каждая страница открывается без ошибок
-в консоли и без битых ресурсов, имитация корзины и оформления работает; скриншоты ключевых
-комнат на телефоне и десктопе в обеих темах. Панель администратора (`/panel/`) — каждый экран
-открывается с данными из снимка API, без сообщений об ошибке; скриншоты — panel-*.
+в консоли и без битых ресурсов; имитация работает от начала до конца (товар → корзина → вход →
+оформление → заказ виден в панели; новый товар из панели открывается в магазине); скриншоты
+ключевых комнат на телефоне и десктопе в обеих темах. Панель администратора (`/panel/`) — каждый
+экран открывается с данными, без сообщений об ошибке; скриншоты — panel-*.
 
     python deploy/preview/check.py _site shots
 Сайт раздаётся локально по тому же пути, что на Pages (PREVIEW_BASE).
@@ -39,8 +40,24 @@ SHOTS = [  # (имя, адрес без BASE)
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
+    """Как GitHub Pages: несуществующий адрес — 404.html сайта с кодом 404."""
+
+    site: Path
+
     def log_message(self, *args):
         pass
+
+    def send_error(self, code, message=None, explain=None):
+        page = self.site / "404.html"
+        if code != 404 or not page.exists():
+            return super().send_error(code, message, explain)
+        body = page.read_bytes()
+        self.send_response(404)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(body)
 
 
 def serve(site: Path) -> tuple[str, http.server.ThreadingHTTPServer]:
@@ -51,6 +68,7 @@ def serve(site: Path) -> tuple[str, http.server.ThreadingHTTPServer]:
         target.symlink_to(site.resolve(), target_is_directory=True)
     else:
         holder = site.resolve()
+    QuietHandler.site = site.resolve()
     handler = functools.partial(QuietHandler, directory=str(holder))
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -66,20 +84,26 @@ def main(site: Path, shots: Path) -> None:
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
 
-        def page_for(device, theme=None):
+        def page_for(device, theme=None, *, pages_404=False):
+            """pages_404 — адреса новых товаров и заказов: Pages отвечает 404.html (это норма)."""
             context = browser.new_context(**device, locale="ru-RU")
             if theme:
                 context.add_cookies([{"name": "theme", "value": theme, "url": origin}])
             page = context.new_page()
-            page.on(
-                "console",
-                lambda msg: msg.type == "error" and problems.append(f"{page.url}: {msg.text}"),
-            )
+
+            def on_console(msg):
+                if msg.type == "error" and not (pages_404 and "404" in msg.text):
+                    problems.append(f"{page.url}: {msg.text}")
+
+            def on_response(response):
+                expected = pages_404 and response.request.is_navigation_request()
+                if response.status >= 400 and not (expected and response.status == 404):
+                    problems.append(f"{response.status} {response.url}")
+
+            page.on("dialog", lambda dialog: dialog.accept())
+            page.on("console", on_console)
             page.on("pageerror", lambda exc: problems.append(f"{page.url}: {exc}"))
-            page.on(
-                "response",
-                lambda r: r.status >= 400 and problems.append(f"{r.status} {r.url}"),
-            )
+            page.on("response", on_response)
             return page
 
         # 1. Все страницы открываются чисто.
@@ -88,39 +112,61 @@ def main(site: Path, shots: Path) -> None:
             page.goto(origin + path, wait_until="load")
         print(f"Страниц проверено: {len(data['pages']) + 1}")
 
-        # 2. Имитация: в корзину → корзина (+1) → оформление → «заказ оформлен».
-        page = page_for(IPHONE)
-        variant_id, variant = next(
-            (k, v) for k, v in data["variants"].items() if v["size"] and v["max"] > 1
-        )
-        product = find_product_page(site, data, variant_id)
-        page.goto(origin + product, wait_until="load")
-        page.click(f'label.sz:has(input[value="{variant_id}"])')
+        # 2. Покупатель: товар → корзина (+1) → вход → оформление → страница заказа.
+        page = page_for(IPHONE, pages_404=True)
+        check = data["check"]
+        page.goto(origin + BASE + check["path"], wait_until="load")
+        page.click(f'label.sz:has(input[value="{check["variant"]}"])')
         page.click("[data-cta]")
         page.wait_for_selector("[data-added]")
         assert page.text_content("#cart-badge-tab").strip() == "1"
         page.goto(origin + f"{BASE}/cart/", wait_until="load")
         page.wait_for_selector(".lines .line")
         page.click('form[data-op="inc"] button')
-        page.wait_for_function(
-            "document.querySelector('.stepper__value').textContent.trim() === '2'"
-        )
+        page.wait_for_selector(".stepper__value:text-is('2')")
         page.screenshot(path=shots / "sim-cart-iphone.png")
         page.click(".cta--link")  # гость → вход
-        page.fill('main input[name="email"]', "anna@example.ru")
-        page.fill('main input[name="password"]', "Preview-Passw0rd!")
+        page.fill('main input[name="email"]', data["customer"]["email"])
+        page.fill('main input[name="password"]', data["customer"]["password"])
         page.click('main form[method="post"] button[type="submit"]')
         page.wait_for_url(f"**{BASE}/me/checkout/")
-        page.wait_for_function("document.querySelector('.mini li') !== null")
-        assert variant["name"] in page.text_content(".mini")
+        page.wait_for_selector(f".mini li:has-text('{check['name']}')")
         page.screenshot(path=shots / "sim-checkout-iphone.png", full_page=True)
         page.click("[data-checkout] button[type=submit]")
-        page.wait_for_url(f"**{BASE}/me/orders/placed*/")
-        assert page.evaluate("localStorage.getItem('didi-preview-cart')") == "[]"
-        print("Имитация корзины и оформления: ок")
+        page.wait_for_url(f"**{BASE}/me/orders/DD-*/")
+        page.wait_for_selector(".page .h1:has-text('Заказ')")
+        number = page.text_content(".page .h1 .nowrap").strip()
+        assert page.evaluate("window.DidiSim.cartCount()") == 0
+        page.screenshot(path=shots / "sim-order-iphone.png", full_page=True)
+        print(f"Имитация: корзина и оформление — заказ {number}")
 
-        # 3. Скриншоты комнат.
-        first_product = find_product_page(site, data, variant_id)
+        # 3. Тот же заказ — в панели; товар, созданный в панели, — в магазине.
+        page.evaluate("localStorage.setItem('didi-preview-admin', '1')")
+        page.goto(origin + f"{BASE}/panel/orders/", wait_until="load")
+        page.wait_for_selector(f"text={number}")
+        created = page.evaluate(
+            """async () => {
+              const result = await window.DidiSim.api("POST", "/api/v1/admin/catalog/products/", {
+                name: "Демо-товар проверки", category: window.DidiSim.categories()[0].id,
+                price_kopecks: 123400, variants: [{ size: "M" }],
+              });
+              const variant = result.body.variants[0].id;
+              const url = `/api/v1/admin/catalog/variants/${variant}/`;
+              await window.DidiSim.api("PATCH", url, { stock: 5 });
+              return result.body;
+            }"""
+        )
+        page.goto(origin + f"{BASE}/product/{created['slug']}/", wait_until="load")
+        page.wait_for_selector(".pd__title:has-text('Демо-товар проверки')")
+        page.goto(origin + f"{BASE}/panel/catalog/products/{created['id']}/", wait_until="load")
+        page.wait_for_function(
+            "[...document.querySelectorAll('main input')]"
+            ".some((input) => input.value === 'Демо-товар проверки')"
+        )
+        print("Имитация: заказ виден в панели, новый товар открывается в магазине и в панели")
+
+        # 4. Скриншоты комнат.
+        first_product = BASE + check["path"]
         for theme in ("light", "dark"):
             for device_name, device in (("iphone", IPHONE), ("desktop", DESKTOP)):
                 page = page_for(device, theme)
@@ -129,7 +175,7 @@ def main(site: Path, shots: Path) -> None:
                     page.goto(origin + url, wait_until="load")
                     page.wait_for_timeout(300)
                     page.screenshot(path=shots / f"{name}-{device_name}-{theme}.png")
-        # 4. Панель администратора (если собрана).
+        # 5. Панель администратора (если собрана).
         if (site / "panel/preview-api.json").exists():
             check_panel(page_for, site, origin, shots, problems)
         browser.close()
@@ -216,16 +262,6 @@ def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[s
                 page.wait_for_timeout(400)
                 page.screenshot(path=shots / f"panel-menu-iphone-{theme}.png")
     print(f"Панель: экранов проверено {len(screens)} × 4")
-
-
-def find_product_page(site: Path, data: dict, variant_id: str) -> str:
-    marker = f'name="variant" value="{variant_id}"'
-    for path in data["pages"]:
-        if "/product/" in path and not path.startswith(f"{BASE}/me/"):
-            file = site / path[len(BASE) :].strip("/") / "index.html"
-            if marker in file.read_text(encoding="utf-8"):
-                return path
-    raise AssertionError(f"нет страницы товара с вариантом {variant_id}")
 
 
 if __name__ == "__main__":

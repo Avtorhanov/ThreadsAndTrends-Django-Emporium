@@ -127,6 +127,22 @@ a {
   margin: 0 0 12px;
 }
 
+/* Карточка с полями друг под другом: одинаковый шаг между заголовком, полями и подсказкой. */
+.form-card {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.form-card > h2,
+.form-card > p.muted {
+  margin: 0;
+}
+
+.form-card > h2 + p.muted {
+  margin-top: -8px;
+}
+
 /* --- Вход --- */
 
 .login-card {
@@ -380,22 +396,26 @@ textarea {
   flex: none;
   display: inline-grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 13px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   background: var(--accent);
   color: var(--on-accent);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 16px;
+  font-size: 11.5px;
+  letter-spacing: -0.04em;
   box-shadow: var(--shadow-accent-glow);
 }
 
 .brand-name {
   font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 17px;
-  color: #fff;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  color: var(--accent);
+  white-space: nowrap;
 }
 
 .brand-accent {
@@ -969,10 +989,14 @@ a.stat:hover {
   }
 
   .mobilebar .brand-mark {
-    width: 34px;
-    height: 34px;
-    border-radius: 11px;
-    font-size: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+
+  .mobilebar .brand-name {
+    font-size: 18px;
   }
 
   .sidebar {
@@ -1184,34 +1208,6 @@ a.stat:hover {
     font-size: 24px;
   }
 
-}
-
-/* --- Превью на GitHub Pages (src/preview/mock.ts) --- */
-
-.preview-note {
-  position: fixed;
-  z-index: 50;
-  right: 12px;
-  bottom: 12px;
-  max-width: calc(100vw - 24px);
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 13px;
-  font-weight: 700;
-  box-shadow: var(--shadow-accent-glow);
-  pointer-events: none;
-}
-
-@media (max-width: 720px) {
-  .preview-note {
-    left: 12px;
-    right: auto;
-    bottom: 8px;
-    padding: 6px 12px;
-    font-size: 12px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2195,6 +2191,8 @@ a.stat:hover {
 
 .he-row-actions button,
 .he-picked button {
+  display: inline-grid;
+  place-items: center;
   min-width: 36px;
   min-height: 40px;
   padding: 0 8px;
@@ -2213,9 +2211,13 @@ a.stat:hover {
   cursor: default;
 }
 
-.he-row-actions .he-eye {
-  min-width: 64px;
-  font-size: 12px;
+.he-row-actions {
+  flex: none;
+}
+
+.he-row-actions button {
+  width: 36px;
+  padding: 0;
 }
 
 .he-row-actions .he-eye.is-on {
@@ -2425,6 +2427,33 @@ a.stat:hover {
   padding: 12px 16px 8px;
   font-family: var(--font-display);
   font-size: 15px;
+}
+
+.he-phone-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.he-phone-logo i {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-family: var(--font-display);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.he-phone-logo strong {
+  color: var(--brand);
+  font-size: 17px;
+  letter-spacing: -0.4px;
 }
 
 .he-phone-dot {
@@ -2775,8 +2804,9 @@ a.stat:hover {
   width: 32px;
   height: 32px;
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 8.5px;
   font-weight: 700;
+  letter-spacing: -0.04em;
 }
 
 .theme-preview-btn {
@@ -2814,6 +2844,115 @@ a.stat:hover {
   flex: none;
   width: 64px;
   height: 64px;
+}
+
+.theme-preview-nav {
+  display: flex;
+  gap: 6px;
+  height: 30px;
+  margin: 2px -12px 0;
+  padding: 6px 12px;
+}
+
+.theme-preview-nav-floating {
+  margin: 2px 0 0;
+  padding: 6px;
+}
+
+.theme-preview-nav i {
+  flex: 1;
+}
+
+.theme-preview-nav i:first-child {
+  flex: 2;
+}
+
+.theme-preview-nav-bar i:first-child {
+  flex: 1;
+}
+
+/* Нижнее меню витрины: три варианта со схемой. */
+.nav-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 10px;
+}
+
+.nav-option {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 10px;
+  border: 0;
+  border-radius: var(--radius-ctl);
+  background: var(--surface);
+  box-shadow: var(--shadow-control);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.nav-option.is-on {
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.nav-option:disabled {
+  cursor: default;
+}
+
+.nav-sketch {
+  display: flex;
+  align-items: flex-end;
+  height: 64px;
+  margin-bottom: 4px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.nav-sketch-track {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  flex: 1;
+  height: 20px;
+  padding: 5px 8px;
+  background: #13261c;
+}
+
+.nav-sketch-track i {
+  flex: 1;
+  min-width: 0;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.nav-sketch-track i.is-on {
+  flex: 2;
+  background: var(--accent);
+}
+
+.nav-sketch.is-floating .nav-sketch-track {
+  margin: 0 8px 8px;
+  border-radius: 9px;
+}
+
+/* «Нижняя панель»: в цвет темы, все вкладки одинаковые (подписи под значками). */
+.nav-sketch.is-bar .nav-sketch-track {
+  height: 24px;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+}
+
+.nav-sketch.is-bar .nav-sketch-track i {
+  background: var(--neutral-bg);
+}
+
+.nav-sketch.is-bar .nav-sketch-track i.is-on {
+  flex: 1;
+  background: var(--accent);
 }
 
 .theme-accents {

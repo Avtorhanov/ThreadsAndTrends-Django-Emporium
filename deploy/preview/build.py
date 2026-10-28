@@ -4,13 +4,14 @@
 и демо-заказах, поэтому любая правка вёрстки, стилей или токенов сразу видна в превью.
 Два дерева страниц: гость — `<base>/…`, вошедший покупатель — `<base>/me/…`; отдельные
 состояния (ошибки форм, проблемная корзина, баннер) — `<base>/rooms/…`, оглавление —
-`<base>/rooms/`. Отправка форм и корзину имитирует static/preview/preview.js (только здесь,
-на боевом сайте его нет).
+`<base>/rooms/`. Логику сервера (корзина, оформление, заказы, вход, поиск и фильтры, изменения
+из панели) имитируют static/preview/sim.js и preview.js — только здесь, на боевом сайте их нет.
 
 Панель администратора — `<base>/panel/`: настоящая сборка admin-panel (VITE_PREVIEW=1), а ответы
-admin-API на тех же демо-данных записываются здесь в `<base>/panel/preview-api.json`; панель
-читает их вместо сервера (admin-panel/src/preview/). Сборку панели (`npm run build` с
-PREVIEW_PANEL_DIST) делает workflow до этого скрипта; без неё раздел панели пропускается.
+admin-API на тех же демо-данных записываются здесь в `<base>/panel/preview-api.json` — это
+начальные данные имитации (sim.js), общей для панели и магазина (admin-panel/src/preview/).
+Сборку панели (`npm run build` с PREVIEW_PANEL_DIST) делает workflow до этого скрипта; без неё
+раздел панели пропускается.
 
 Запуск (нужен Postgres из DB_*):
     PREVIEW_BASE=/ThreadsAndTrends-Django-Emporium python deploy/preview/build.py _site
@@ -43,14 +44,15 @@ from django.test import Client, RequestFactory  # noqa: E402
 from django.urls import set_script_prefix  # noqa: E402
 from django.utils import timezone  # noqa: E402
 
-from content.models import Article  # noqa: E402
+from content.contacts import ask_links  # noqa: E402
+from content.models import Article, ArticleImage, HomeImage  # noqa: E402
 from orders.models import ChangedBy, DeliveryMethod, Order, OrderStatus, PaymentMethod  # noqa: E402
 from orders.services import checkout as checkout_service  # noqa: E402
 from orders.services import status as status_service  # noqa: E402
 from payments import providers  # noqa: E402
 from payments import services as payments  # noqa: E402
 from payments.tests.fake import FakeProvider  # noqa: E402
-from store.models import CartItem, Category, Product, ProductVariant  # noqa: E402
+from store.models import CartItem, Category, Product, ProductImage, ProductVariant  # noqa: E402
 from store.services import cart as cart_service  # noqa: E402
 
 User = get_user_model()
@@ -141,7 +143,10 @@ class Site:
             f'  <link rel="stylesheet" href="{BASE}/static/preview/preview.css">\n'
         )
         html = html.replace("</head>", head + "</head>", 1)
-        body = f'<script src="{BASE}/static/preview/preview.js" defer></script>\n'
+        body = (
+            f'<script src="{BASE}/static/preview/sim.js" data-base="{BASE}" defer></script>\n'
+            f'<script src="{BASE}/static/preview/preview.js" defer></script>\n'
+        )
         return html.replace("</body>", body + "</body>", 1)
 
 
@@ -255,6 +260,42 @@ def demo_orders(user, variants, fake) -> list[Order]:
     return [Order.objects.get(pk=order.pk) for order in orders]
 
 
+def image_sources() -> dict[str, dict]:
+    """Фото → srcset из уменьшенных копий и размеры (sim.js рисует карточки, как product_img)."""
+    result = {}
+    for model in (ProductImage, ArticleImage, HomeImage):
+        for image in model.objects.all():
+            sources = image.sources
+            entry = {"w": image.width, "h": image.height}
+            if len(sources) > 1 and all(width for _, width in sources):
+                entry["srcset"] = ", ".join(f"{url} {width}w" for url, width in sources)
+            result[image.image.url] = entry
+    return result
+
+
+def templates(orders: list[Order]) -> dict[str, str]:
+    """Страницы-образцы (адрес внутри дерева): по ним 404 показывает новый товар, заказ и т. п."""
+    product = Product.objects.live().order_by("pk").first()
+    category = Category.objects.filter(is_active=True).order_by("pk").first()
+    article = Article.objects.filter(is_published=True).order_by("pk").first()
+    return {
+        "product": f"/product/{product.slug}/",
+        "category": f"/category/{category.slug}/",
+        "article": f"/articles/{article.slug}/",
+        "order": f"/orders/{orders[0].number}/",
+    }
+
+
+def check_product(variants: list[ProductVariant]) -> dict:
+    """Товар с размерами и остатком больше одного — для сценария корзины в check.py."""
+    variant = next(v for v in variants if v.size and v.stock > 1)
+    return {
+        "path": f"/product/{variant.product.slug}/",
+        "variant": variant.pk,
+        "name": variant.product.name,
+    }
+
+
 # --- Сборка ---
 
 
@@ -322,26 +363,24 @@ def build(out: Path) -> None:
     site.save(me, ME, "/checkout/", tree="me")
     site.save_raw(me, ME, "/manifest.webmanifest")
     rooms = render_rooms_states(site, guest, me, customer, variants, query, fake)
-    site.save(guest, BASE, "/no-such-page/", "/404.html", tree="guest", status=404)
+    # 404: новые товары, заказы, статьи и категории из имитации (страниц на Pages нет)
+    # и маршруты панели — preview.js подставляет нужную страницу по адресу.
+    site.save(guest, BASE, "/no-such-page/", "/404.html", tree="guest", room="404", status=404)
 
-    # Данные имитации: корзина со всеми товарами (строки берутся из настоящего шаблона).
-    sim_cart(site, variants)
+    # Данные имитации (sim.js, preview.js): фото с уменьшенными копиями, мессенджеры для «Узнать»,
+    # страницы-образцы для новых товаров и заказов, товар для проверки в браузере (check.py).
     data = {
         "base": BASE,
         "pages": sorted(site.pages),
-        "freeFrom": settings.DELIVERY_FREE_FROM_KOPECKS,
-        "courier": settings.DELIVERY_COURIER_KOPECKS,
-        "maxQuantity": settings.CART_MAX_QUANTITY,
         "admin": {"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-        "variants": {
-            str(v.pk): {
-                "name": v.product.name,
-                "size": v.size,
-                "price": v.product.price_kopecks,
-                "max": min(v.stock, settings.CART_MAX_QUANTITY),
-            }
-            for v in variants
-        },
+        "customer": {"email": CUSTOMER_EMAIL, "password": PASSWORD},
+        "images": image_sources(),
+        "ask": [
+            {"kind": str(link.kind), "title": link.title, "url": link.url}
+            for link in ask_links("")
+        ],
+        "templates": templates(orders),
+        "check": check_product(variants),
     }
     (out / "static/preview").mkdir(parents=True)
     write_rooms(out, orders, rooms, query)
@@ -491,32 +530,6 @@ def render_rooms_states(site, guest, me, customer, variants, query, fake) -> dic
     ProductVariant.objects.filter(pk=picks[1].pk).update(stock=picks[1].stock)
     ProductVariant.objects.filter(pk=picks[2].pk).update(stock=picks[2].stock)
     return rooms
-
-
-def sim_cart(site: Site, variants) -> None:
-    """Корзины со всеми товарами в наличии (гость и покупатель) и фрагмент «Добавлено»:
-    preview.js берёт из них разметку строк и пересчитывает количество и суммы."""
-    guest = Client()
-    for variant in variants:
-        site.request(guest, BASE, "/cart/add/", data={"variant": variant.pk, "quantity": 1})
-    site.save(guest, BASE, "/cart/", "/_sim/cart-guest/", tree="guest", room="sim")
-    added = site.request(
-        guest, BASE, "/cart/add/", data={"variant": variants[0].pk}, HTTP_HX_REQUEST="true"
-    )
-    (site.out / "_sim").mkdir(exist_ok=True)
-    (site.out / "_sim/added-guest.html").write_bytes(added.content)
-
-    buyer = make_customer("sim@example.ru", "Сим")
-    for variant in variants:
-        cart_service.add(buyer, variant.pk, 1)
-    client = Client()
-    client.force_login(buyer)
-    site.save(client, ME, "/cart/", "/_sim/cart-me/", tree="me", room="sim")
-    added = site.request(
-        client, ME, "/cart/add/", data={"variant": variants[0].pk}, HTTP_HX_REQUEST="true"
-    )
-    (site.out / "_sim/added-me.html").write_bytes(added.content)
-    site.pages -= {f"{BASE}/_sim/cart-guest/", f"{BASE}/_sim/cart-me/"}
 
 
 def write_rooms(out: Path, orders: list[Order], rooms: dict, query: str) -> None:
