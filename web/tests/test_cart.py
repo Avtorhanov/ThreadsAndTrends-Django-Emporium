@@ -176,11 +176,11 @@ def test_htmx_line_error_is_shown_in_line(client, shop):
 def test_in_cart_marks(client, shop):
     product_url = reverse("web:product", args=["kepka"])
     html = client.get(product_url).content.decode()
-    assert "В корзине ·" not in html and "Добавить ещё" not in html
+    assert "В корзине ·" not in html and "data-cta-label>В корзину<" in html
     add(client, shop["cap"], quantity=2)
     html = client.get(product_url).content.decode()
     pk = variant(shop["cap"]).pk
-    assert "В корзине · 2 шт." in html and "Добавить ещё" in html
+    assert "В корзине · 2 шт." in html and "data-cta-label>Добавить ещё<" in html
     assert f'"{pk}": {{"q": 2, "max": 5' in html  # состояние для «−/+» (site.js)
     # Сетки товаров общие (кэш) — список товаров корзины для меток приходит отдельно.
     html = client.get(reverse("web:home")).content.decode()
