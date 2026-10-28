@@ -364,6 +364,7 @@ class ThemeSettings(models.Model):
     default_radius = models.CharField(
         max_length=10, default="normal", verbose_name="Углы по умолчанию"
     )
+    nav_style = models.CharField(max_length=10, default="solid", verbose_name="Нижнее меню")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменены")
 
     class Meta:

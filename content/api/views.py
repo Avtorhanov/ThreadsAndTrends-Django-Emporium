@@ -524,6 +524,7 @@ def _theme_data(*, all_palettes: bool = False) -> dict:
         "default_palette": theme.default_palette,
         "default_mode": theme.default_mode,
         "default_radius": theme.default_radius,
+        "nav_style": theme.nav_style,
         "enabled": list(theme.palettes),
     }
 

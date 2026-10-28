@@ -4,11 +4,14 @@ import { ApiError } from "../api/errors";
 import {
   GROUP_TITLES,
   MODE_LABELS,
+  NAV_HINTS,
+  NAV_LABELS,
   type PaletteKey,
   RADIUS_LABELS,
   RADIUS_SCALE,
   type ThemeInput,
   type ThemeMode,
+  type ThemeNav,
   type ThemePalette,
   type ThemeRadius,
   type ThemeState,
@@ -27,6 +30,7 @@ function inputOf(state: ThemeState): ThemeInput {
     default_palette: state.default_palette,
     default_mode: state.default_mode,
     default_radius: state.default_radius,
+    nav_style: state.nav_style,
   };
 }
 
@@ -60,6 +64,7 @@ export function ThemePage() {
       default_palette: next.default_palette,
       default_mode: next.default_mode,
       default_radius: next.default_radius,
+      nav_style: next.nav_style ?? state.nav_style,
     });
     setBusy(true);
     setError(null);
@@ -136,7 +141,7 @@ export function ThemePage() {
               ))}
             </div>
 
-            <div className="card">
+            <div className="card form-card">
               <h2>Для нового посетителя</h2>
               <div className="field">
                 <span>Тема</span>
@@ -177,14 +182,36 @@ export function ThemePage() {
               </div>
               <p className="muted small">Покупатель может поменять палитру, углы и размер текста в профиле.</p>
             </div>
+
+            <div className="card form-card">
+              <h2>Нижнее меню витрины</h2>
+              <p className="muted small">Вкладки «Каталог · Контакты · Корзина · Профиль» на телефоне.</p>
+              <div className="nav-options" role="radiogroup" aria-label="Вид нижнего меню">
+                {(Object.keys(NAV_LABELS) as ThemeNav[]).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={state.nav_style === value}
+                    className={state.nav_style === value ? "nav-option is-on" : "nav-option"}
+                    disabled={busy}
+                    onClick={() => void save({ nav_style: value })}
+                  >
+                    <NavSketch kind={value} />
+                    <strong>{NAV_LABELS[value]}</strong>
+                    <span className="muted small">{NAV_HINTS[value]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {shown ? (
             <div className="card theme-preview-card">
               <h2>Предпросмотр: {shown.name}</h2>
               <div className="theme-previews">
-                <ThemePreview palette={shown} dark={false} radius={state.default_radius} />
-                <ThemePreview palette={shown} dark radius={state.default_radius} />
+                <ThemePreview palette={shown} dark={false} radius={state.default_radius} nav={state.nav_style} />
+                <ThemePreview palette={shown} dark radius={state.default_radius} nav={state.nav_style} />
               </div>
               {shown.key === "custom" ? (
                 <p className="muted small">«Своя»: покупатель выбирает акцент из {state.accents.length} проверенных цветов.</p>
@@ -249,7 +276,31 @@ function PaletteRow(props: {
   );
 }
 
-function ThemePreview({ palette, dark, radius }: { palette: ThemePalette; dark: boolean; radius: ThemeRadius }) {
+/** Схема нижнего меню: полоса, капсула или панель с подписями. */
+function NavSketch({ kind }: { kind: ThemeNav }) {
+  return (
+    <span className={`nav-sketch is-${kind}`} aria-hidden="true">
+      <span className="nav-sketch-track">
+        <i className="is-on" />
+        <i />
+        <i />
+        <i />
+      </span>
+    </span>
+  );
+}
+
+function ThemePreview({
+  palette,
+  dark,
+  radius,
+  nav,
+}: {
+  palette: ThemePalette;
+  dark: boolean;
+  radius: ThemeRadius;
+  nav: ThemeNav;
+}) {
   const k = RADIUS_SCALE[radius];
   const r = (value: number) => `${Math.round(value * k)}px`;
   const ink = dark ? "#EEF2EE" : "#16191D";
@@ -261,9 +312,9 @@ function ThemePreview({ palette, dark, radius }: { palette: ThemePalette; dark: 
     >
       <div className="theme-preview-head">
         <span className="theme-preview-logo" style={{ background: dark ? palette.accent : palette.brand, color: dark ? "#16191D" : palette.accent, borderRadius: r(10) }}>
-          DD
+          DiDi
         </span>
-        <strong style={{ color: dark ? ink : palette.brand }}>DiDi shop</strong>
+        <strong style={{ color: dark ? palette.accent : palette.brand }}>shop</strong>
         <span className="theme-preview-btn" style={{ background: palette.accent, borderRadius: r(10) }} />
       </div>
       <div className="theme-preview-chips">
@@ -278,6 +329,24 @@ function ThemePreview({ palette, dark, radius }: { palette: ThemePalette; dark: 
           <span>3 600 ₽</span>
         </span>
       </div>
+      <span
+        className={`theme-preview-nav theme-preview-nav-${nav}`}
+        style={{
+          background: nav === "bar" ? surface : dark ? "#050A07" : "#13261C",
+          borderRadius: nav === "floating" ? r(16) : 0,
+        }}
+        aria-hidden="true"
+      >
+        {[0, 1, 2, 3].map((index) => (
+          <i
+            key={index}
+            style={{
+              background: index === 0 ? palette.accent : nav === "bar" ? (dark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.14)") : "rgba(255,255,255,0.22)",
+              borderRadius: r(8),
+            }}
+          />
+        ))}
+      </span>
       <span className="muted small">{dark ? "Тёмная" : "Светлая"}</span>
     </div>
   );

@@ -129,9 +129,9 @@ def test_shop_default_mode_and_palette_for_new_visitor(client):
 def test_theme_form_saves_look_without_javascript(client):
     response = client.post(
         reverse("web:theme"),
-        {"theme": "light", "palette": "graphite", "radius": "soft", "text": "m", "accent": "bad"},
+        {"theme": "light", "palette": "olive", "radius": "soft", "text": "m", "accent": "bad"},
     )
-    assert response.cookies["palette"].value == "graphite"
+    assert response.cookies["palette"].value == "olive"
     assert response.cookies["radius"].value == "soft"
     assert response.cookies["text_size"].value == "m"
     assert "accent" not in response.cookies
@@ -156,22 +156,47 @@ def test_public_and_admin_api(admin_api):
     assert public["default_palette"] == "lime" and len(public["accents"]) == 14
 
     body = {
-        "palettes": ["lime", "graphite"],
-        "default_palette": "graphite",
+        "palettes": ["lime", "olive"],
+        "default_palette": "olive",
         "default_mode": "light",
         "default_radius": "sharp",
     }
     saved = admin_api.put(ADMIN, body, format="json")
     assert saved.status_code == 200, saved.content
-    assert saved.json()["enabled"] == ["lime", "graphite"]
+    assert saved.json()["enabled"] == ["lime", "olive"]
+    assert saved.json()["nav_style"] == "solid"  # не передан — прежний
     assert len(saved.json()["palettes"]) == len(look.PALETTES)  # панели — все палитры
 
     public = APIClient().get("/api/v1/content/theme/").json()
-    assert [p["key"] for p in public["palettes"]] == ["lime", "graphite"]
+    assert [p["key"] for p in public["palettes"]] == ["lime", "olive"]
     assert public["default_mode"] == "light"
 
-    bad = admin_api.put(ADMIN, {**body, "default_palette": "olive"}, format="json")
+    bad = admin_api.put(ADMIN, {**body, "default_palette": "steel"}, format="json")
     assert bad.status_code == 400
+
+
+def test_nav_style_saved_and_rendered(admin_api, client):
+    body = {
+        "palettes": list(look.PALETTES),
+        "default_palette": "lime",
+        "default_mode": "system",
+        "default_radius": "normal",
+        "nav_style": "floating",
+    }
+    saved = admin_api.put(ADMIN, body, format="json")
+    assert saved.status_code == 200, saved.content
+    assert saved.json()["nav_style"] == "floating"
+    assert APIClient().get("/api/v1/content/theme/").json()["nav_style"] == "floating"
+    assert '<html lang="ru" data-nav="floating">' in client.get("/").content.decode()
+
+    assert admin_api.put(ADMIN, {**body, "nav_style": "side"}, format="json").status_code == 400
+    look.update(**{**body, "nav_style": "solid"})
+    assert "data-nav" not in client.get("/").content.decode()
+
+
+def test_graphite_palette_removed():
+    assert "graphite" not in look.PALETTES
+    assert look.resolve_look(palette="graphite").palette == "lime"
 
 
 def test_admin_api_rejects_customer(db):

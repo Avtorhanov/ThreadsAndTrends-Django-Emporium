@@ -49,14 +49,15 @@ function StoreLink() {
   );
 }
 
+/** Логотип как в магазине и приложении: плашка «DiDi» + «shop». */
 function Brand() {
   return (
-    <span className="brand">
+    <span className="brand" aria-label="DiDi shop">
       <span className="brand-mark" aria-hidden="true">
-        Di
+        DiDi
       </span>
-      <span className="brand-name">
-        DiDi<span className="brand-accent">-shop</span>
+      <span className="brand-name" aria-hidden="true">
+        shop
       </span>
     </span>
   );

@@ -31,10 +31,10 @@ export function LoginPage() {
       <form className="card login-card" onSubmit={(event) => void handleSubmit(event)}>
         <div className="login-head">
           <span className="brand-mark" aria-hidden="true">
-            Di
+            DiDi
           </span>
           <div>
-            <p className="eyebrow">DiDi-shop</p>
+            <p className="eyebrow">DiDi shop</p>
             <h1>Вход администратора</h1>
           </div>
         </div>

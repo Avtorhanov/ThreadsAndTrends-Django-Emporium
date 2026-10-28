@@ -209,10 +209,11 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
           style={({ pressed }) => [s.brand, pressed && s.pressed]}
         >
           <Animated.View style={[s.logo, button]}>
-            <Text style={s.logoText}>Di</Text>
+            <Text style={s.logoText}>DiDi</Text>
           </Animated.View>
+          {/* Логотип как на сайте и в панели: плашка «DiDi» + «shop». */}
           <Animated.Text style={[s.word, wordmark]}>
-            DiDi<Text style={s.wordAccent}>-shop</Text>
+            <Text style={s.wordAccent}>shop</Text>
           </Animated.Text>
         </Pressable>
         <View style={s.actions}>
@@ -416,7 +417,7 @@ const useStyles = makeStyles(({ c, shadow }) => ({
     justifyContent: "center",
     boxShadow: "0 12px 22px -8px rgba(31,77,58,.75), inset 0 1px 0 rgba(255,255,255,.3)",
   },
-  logoText: { fontFamily: fonts.display700, fontSize: 15, color: c.brandInk },
+  logoText: { fontFamily: fonts.display700, fontSize: 12, letterSpacing: -0.5, color: c.brandInk },
   word: { fontFamily: fonts.display700, letterSpacing: -0.5, color: c.ink },
   wordAccent: { color: c.brand },
   actions: { flexDirection: "row", alignItems: "center", gap: 10 },

@@ -3823,6 +3823,10 @@ components:
           $ref: '#/components/schemas/ThemeModeEnum'
         default_radius:
           $ref: '#/components/schemas/ThemeRadiusEnum'
+        nav_style:
+          allOf:
+          - $ref: '#/components/schemas/ThemeNavEnum'
+          description: Вид нижнего меню витрины на телефоне
         enabled:
           type: array
           items:
@@ -3834,6 +3838,7 @@ components:
       - default_palette
       - default_radius
       - enabled
+      - nav_style
       - palettes
     AdminThemeWriteRequest:
       type: object
@@ -3849,6 +3854,10 @@ components:
           $ref: '#/components/schemas/ThemeModeEnum'
         default_radius:
           $ref: '#/components/schemas/ThemeRadiusEnum'
+        nav_style:
+          allOf:
+          - $ref: '#/components/schemas/ThemeNavEnum'
+          description: Вид нижнего меню витрины; не передан — прежний
       required:
       - default_mode
       - default_palette
@@ -5256,7 +5265,6 @@ components:
       - mint
       - sun
       - steel
-      - graphite
       - olive
       - custom
       type: string
@@ -5265,7 +5273,6 @@ components:
         * `mint` - Мята
         * `sun` - Солнце
         * `steel` - Сталь
-        * `graphite` - Графит
         * `olive` - Олива
         * `custom` - Своя
     PasswordResetConfirmRequest:
@@ -5675,11 +5682,16 @@ components:
           $ref: '#/components/schemas/ThemeModeEnum'
         default_radius:
           $ref: '#/components/schemas/ThemeRadiusEnum'
+        nav_style:
+          allOf:
+          - $ref: '#/components/schemas/ThemeNavEnum'
+          description: Вид нижнего меню витрины на телефоне
       required:
       - accents
       - default_mode
       - default_palette
       - default_radius
+      - nav_style
       - palettes
     StaffInviteRequest:
       type: object
@@ -5900,6 +5912,16 @@ components:
         * `system` - Как в системе
         * `light` - Светлая
         * `dark` - Тёмная
+    ThemeNavEnum:
+      enum:
+      - solid
+      - floating
+      - bar
+      type: string
+      description: |-
+        * `solid` - Сплошное
+        * `floating` - Плавающее
+        * `bar` - Нижняя панель
     ThemePalette:
       type: object
       properties:

@@ -1,5 +1,5 @@
 // Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать.
-// Версия токенов: 1.6.0 (2026-10-28).
+// Версия токенов: 1.7.0 (2026-10-28).
 
 export type ThemeName = "light" | "dark";
 
@@ -201,7 +201,7 @@ export const radius = {
   "sheet": 28
 } as const;
 
-export type PaletteName = "lime" | "mint" | "sun" | "steel" | "graphite" | "olive" | "custom";
+export type PaletteName = "lime" | "mint" | "sun" | "steel" | "olive" | "custom";
 export type AccentName = "lime" | "mint" | "sun" | "sky" | "pink" | "lilac" | "steel" | "orange" | "olive" | "sand" | "navy" | "wine" | "graphite" | "forest";
 export type PaletteGroup = "bright" | "calm" | "custom";
 
@@ -246,12 +246,6 @@ export const paletteList: readonly PaletteInfo[] = [
     "name": "Сталь",
     "group": "calm",
     "note": "Холодный синий, строгая"
-  },
-  {
-    "key": "graphite",
-    "name": "Графит",
-    "group": "calm",
-    "note": "Тёмно-серая с оранжевым"
   },
   {
     "key": "olive",
@@ -605,90 +599,6 @@ export const paletteThemes: Record<PaletteName, ByTheme<Palette>> = {
       ]
     }
   },
-  "graphite": {
-    "light": {
-      "bg": "#E8EAED",
-      "surface": "#FFFFFF",
-      "ink": "#16191D",
-      "muted": "#5D6064",
-      "strike": "#878A8D",
-      "brand": "#3A4049",
-      "brandInk": "#FFFFFF",
-      "accent": "#FF8A3D",
-      "onAccent": "#16191D",
-      "segOnBg": "#16191D",
-      "segOnInk": "#FF8A3D",
-      "tag": "#DADDE2",
-      "tagInk": "#3A4049",
-      "glass": "rgba(232,234,237,0.74)",
-      "glassLine": "rgba(255,255,255,0.80)",
-      "btnGlass": "rgba(255,255,255,0.82)",
-      "nav": "#16191D",
-      "navInk": "#969899",
-      "navActiveInk": "#16191D",
-      "ctaBg": "#16191D",
-      "ctaInk": "#FFFFFF",
-      "ctaFill": "#FF8A3D",
-      "ctaDoneInk": "#16191D",
-      "border": "#D5D7DA",
-      "inputLine": "#C6C9CC",
-      "neutral": "#5D6064",
-      "neutralBg": "#E0E2E5",
-      "danger": "#B3261E",
-      "dangerBg": "#FBE7E4",
-      "success": "#24703F",
-      "successBg": "#DFF2D2",
-      "warning": "#8A5300",
-      "warningBg": "#FFEFC7",
-      "info": "#1E5FA6",
-      "infoBg": "#E2EDF9",
-      "card": "#FFFFFF",
-      "cardStops": null
-    },
-    "dark": {
-      "bg": "#0B0C0E",
-      "surface": "#212429",
-      "ink": "#F1F1F2",
-      "muted": "#A7A8A9",
-      "strike": "#8A8A8B",
-      "brand": "#FF8A3D",
-      "brandInk": "#16191D",
-      "accent": "#FF8A3D",
-      "onAccent": "#16191D",
-      "segOnBg": "#FF8A3D",
-      "segOnInk": "#16191D",
-      "tag": "#3A3F47",
-      "tagInk": "#FF9956",
-      "glass": "rgba(11,12,14,0.74)",
-      "glassLine": "rgba(255,138,61,0.14)",
-      "btnGlass": "rgba(33,36,41,0.85)",
-      "nav": "#08080A",
-      "navInk": "#7F7F80",
-      "navActiveInk": "#16191D",
-      "ctaBg": "#FF8A3D",
-      "ctaInk": "#16191D",
-      "ctaFill": "#F1F1F2",
-      "ctaDoneInk": "#16191D",
-      "border": "#303236",
-      "inputLine": "#46474B",
-      "neutral": "#A7A8A9",
-      "neutralBg": "#292C31",
-      "danger": "#FF9A8F",
-      "dangerBg": "#3B1F1B",
-      "success": "#A6E38A",
-      "successBg": "#1C3522",
-      "warning": "#FFCB6B",
-      "warningBg": "#3A2E12",
-      "info": "#9CCBFF",
-      "infoBg": "#172A3D",
-      "card": "#26292F",
-      "cardStops": [
-        "#34383F",
-        "#26292F",
-        "#1B1D21"
-      ]
-    }
-  },
   "olive": {
     "light": {
       "bg": "#ECEEE2",
@@ -930,24 +840,6 @@ export const paletteShadows: Record<PaletteName, ByTheme<Shadows>> = {
       "imageInset": "inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.05), inset 0 -34px 52px -26px rgba(0,0,0,.6), 0 10px 18px -12px rgba(0,0,0,.75)",
       "nav": "0 0 0 1px rgba(127,167,207,.16), 0 0 30px -6px rgba(127,167,207,.24), 0 22px 40px -14px rgba(0,0,0,.9)",
       "accentGlow": "0 10px 22px -6px rgba(127,167,207,.55)"
-    }
-  },
-  "graphite": {
-    "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(58,64,73,.48), 0 40px 60px -30px rgba(58,64,73,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(58,64,73,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(58,64,73,.68)",
-      "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
-      "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
-      "accentGlow": "0 10px 22px -6px rgba(255,138,61,.55)"
-    },
-    "dark": {
-      "card": "0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(255,138,61,.12), 0 0 26px -4px rgba(255,138,61,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95)",
-      "control": "0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,138,61,.10), 0 0 18px -4px rgba(255,138,61,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85)",
-      "header": "0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(255,138,61,.10), 0 0 30px -8px rgba(255,138,61,.20), 0 22px 38px -14px rgba(0,0,0,.9)",
-      "imageInset": "inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.05), inset 0 -34px 52px -26px rgba(0,0,0,.6), 0 10px 18px -12px rgba(0,0,0,.75)",
-      "nav": "0 0 0 1px rgba(255,138,61,.16), 0 0 30px -6px rgba(255,138,61,.24), 0 22px 40px -14px rgba(0,0,0,.9)",
-      "accentGlow": "0 10px 22px -6px rgba(255,138,61,.55)"
     }
   },
   "olive": {

@@ -253,6 +253,7 @@ SPECTACULAR_SETTINGS = {
         "PaletteGroupEnum": "content.look.PALETTE_GROUP_CHOICES",
         "ThemeModeEnum": "content.look.MODE_CHOICES",
         "ThemeRadiusEnum": "content.look.RADIUS_CHOICES",
+        "ThemeNavEnum": "content.look.NAV_CHOICES",
         "StaffLevelEnum": "accounts.staff.LEVEL_CHOICES",
     },
 }

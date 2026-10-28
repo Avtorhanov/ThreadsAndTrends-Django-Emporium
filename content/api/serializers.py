@@ -386,6 +386,9 @@ class ShopThemeSerializer(serializers.Serializer):
     default_palette = serializers.ChoiceField(choices=look.PALETTE_CHOICES)
     default_mode = serializers.ChoiceField(choices=look.MODE_CHOICES)
     default_radius = serializers.ChoiceField(choices=look.RADIUS_CHOICES)
+    nav_style = serializers.ChoiceField(
+        choices=look.NAV_CHOICES, help_text="Вид нижнего меню витрины на телефоне"
+    )
 
 
 class AdminThemeSerializer(ShopThemeSerializer):
@@ -403,3 +406,8 @@ class AdminThemeWriteSerializer(serializers.Serializer):
     default_palette = serializers.ChoiceField(choices=look.PALETTE_CHOICES)
     default_mode = serializers.ChoiceField(choices=look.MODE_CHOICES)
     default_radius = serializers.ChoiceField(choices=look.RADIUS_CHOICES)
+    nav_style = serializers.ChoiceField(
+        choices=look.NAV_CHOICES,
+        required=False,
+        help_text="Вид нижнего меню витрины; не передан — прежний",
+    )
