@@ -69,6 +69,7 @@ def test_product_list_shows_only_live_products(api_client, tree):
         "in_stock": True,
         "cover_url": None,
         "category": {"id": tree["shirts"].pk, "slug": "futbolki", "name": "Футболки"},
+        "status": None,
     }
 
 
