@@ -339,3 +339,37 @@ class HomePage(models.Model):
 
     def __str__(self):
         return "Главная"
+
+
+# --- Тема для покупателей (панель → «Тема») ---
+
+
+def all_palettes() -> list[str]:
+    from content.look import PALETTES
+
+    return list(PALETTES)
+
+
+class ThemeSettings(models.Model):
+    """Какие палитры доступны покупателям и что видит новый посетитель."""
+
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    palettes = models.JSONField(default=all_palettes, verbose_name="Доступные палитры")
+    default_palette = models.CharField(
+        max_length=20, default="lime", verbose_name="Палитра по умолчанию"
+    )
+    default_mode = models.CharField(
+        max_length=10, default="system", verbose_name="Тема по умолчанию"
+    )
+    default_radius = models.CharField(
+        max_length=10, default="normal", verbose_name="Углы по умолчанию"
+    )
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменены")
+
+    class Meta:
+        verbose_name = "Тема магазина"
+        verbose_name_plural = "Тема магазина"
+        constraints = [models.CheckConstraint(condition=Q(id=1), name="theme_settings_singleton")]
+
+    def __str__(self):
+        return "Тема магазина"

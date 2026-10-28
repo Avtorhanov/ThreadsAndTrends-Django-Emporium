@@ -13,6 +13,7 @@ const SECTIONS: { to: string; label: string; icon: IconName; end?: boolean }[] =
   { to: "/content/articles", label: "Статьи", icon: "articles" },
   { to: "/customers", label: "Клиенты", icon: "customers" },
   { to: "/home", label: "Главная", icon: "home" },
+  { to: "/theme", label: "Тема", icon: "palette" },
   { to: "/settings", label: "Настройки", icon: "settings" },
 ];
 

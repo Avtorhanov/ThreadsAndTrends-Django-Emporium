@@ -965,7 +965,8 @@ paths:
   /api/v1/admin/content/home/:
     get:
       operationId: admin_content_home_retrieve
-      description: 'Черновик главной: все блоки (и скрытые), есть ли неопубликованные правки.'
+      description: 'Черновик главной: все блоки (и скрытые), есть ли неопубликованные
+        правки.'
       tags:
       - admin-content
       security:
@@ -988,12 +989,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AdminHomeBlockCreateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AdminHomeBlockCreateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AdminHomeBlockCreateRequest'
         required: true
       security:
       - cookieAuth: []
@@ -1007,6 +1002,7 @@ paths:
   /api/v1/admin/content/home/blocks/{id}/:
     patch:
       operationId: admin_content_home_blocks_partial_update
+      description: 'Блок главной: правка в черновик или удаление.'
       parameters:
       - in: path
         name: id
@@ -1020,12 +1016,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedAdminHomeBlockUpdateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedAdminHomeBlockUpdateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedAdminHomeBlockUpdateRequest'
       security:
       - cookieAuth: []
       responses:
@@ -1037,6 +1027,7 @@ paths:
           description: ''
     delete:
       operationId: admin_content_home_blocks_destroy
+      description: 'Блок главной: правка в черновик или удаление.'
       parameters:
       - in: path
         name: id
@@ -1079,6 +1070,7 @@ paths:
           description: ''
     delete:
       operationId: admin_content_home_blocks_image_destroy
+      description: 'Картинка баннера: загрузить (заменяет прежнюю) или убрать.'
       parameters:
       - in: path
         name: id
@@ -1099,7 +1091,8 @@ paths:
   /api/v1/admin/content/home/publish/:
     post:
       operationId: admin_content_home_publish
-      description: 'Опубликовать черновик: покупатели увидят видимые блоки в этом порядке.'
+      description: 'Опубликовать черновик: покупатели увидят видимые блоки в этом
+        порядке.'
       tags:
       - admin-content
       security:
@@ -1114,17 +1107,12 @@ paths:
   /api/v1/admin/content/home/reorder/:
     post:
       operationId: admin_content_home_reorder
+      description: Новый порядок блоков главной (все id, каждый один раз).
       tags:
       - admin-content
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/AdminHomeReorderRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AdminHomeReorderRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/AdminHomeReorderRequest'
         required: true
@@ -1219,6 +1207,43 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/admin/content/theme/:
+    get:
+      operationId: admin_content_theme_retrieve
+      description: 'Панель → «Тема»: все палитры, какие доступны покупателям, оформление
+        по умолчанию.'
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTheme'
+          description: ''
+    put:
+      operationId: admin_content_theme_update
+      description: 'Панель → «Тема»: все палитры, какие доступны покупателям, оформление
+        по умолчанию.'
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminThemeWriteRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTheme'
+          description: ''
   /api/v1/admin/customers/:
     get:
       operationId: admin_customers_list
@@ -2064,6 +2089,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/Home'
           description: ''
+  /api/v1/content/theme/:
+    get:
+      operationId: content_theme_retrieve
+      description: Палитры, доступные покупателю, и оформление для нового посетителя (приложение).
+      tags:
+      - content
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopTheme'
+          description: ''
   /api/v1/health/:
     get:
       operationId: health_retrieve
@@ -2708,8 +2748,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CatalogProduct'
-          description: Товары подборки, как их увидит покупатель
           readOnly: true
+          description: Товары подборки, как их увидит покупатель
       required:
       - category
       - color
@@ -3678,6 +3718,57 @@ components:
       required:
       - orders
       - turnover_kopecks
+    AdminTheme:
+      type: object
+      description: Что может выбрать покупатель и что видит новый посетитель.
+      properties:
+        palettes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThemePalette'
+          description: Доступные палитры по порядку
+        accents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThemeAccent'
+          description: Акценты палитры «Своя»
+        default_palette:
+          $ref: '#/components/schemas/PaletteKeyEnum'
+        default_mode:
+          $ref: '#/components/schemas/ThemeModeEnum'
+        default_radius:
+          $ref: '#/components/schemas/ThemeRadiusEnum'
+        enabled:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaletteKeyEnum'
+          description: Ключи палитр, доступных покупателям
+      required:
+      - accents
+      - default_mode
+      - default_palette
+      - default_radius
+      - enabled
+      - palettes
+    AdminThemeWriteRequest:
+      type: object
+      properties:
+        palettes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaletteKeyEnum'
+          description: Ключи палитр, доступных покупателям
+        default_palette:
+          $ref: '#/components/schemas/PaletteKeyEnum'
+        default_mode:
+          $ref: '#/components/schemas/ThemeModeEnum'
+        default_radius:
+          $ref: '#/components/schemas/ThemeRadiusEnum'
+      required:
+      - default_mode
+      - default_palette
+      - default_radius
+      - palettes
     AdminTransitionOption:
       type: object
       properties:
@@ -5060,6 +5151,34 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OrderList'
+    PaletteGroupEnum:
+      enum:
+      - bright
+      - calm
+      - custom
+      type: string
+      description: |-
+        * `bright` - Яркие
+        * `calm` - Сдержанные
+        * `custom` - Свой цвет
+    PaletteKeyEnum:
+      enum:
+      - lime
+      - mint
+      - sun
+      - steel
+      - graphite
+      - olive
+      - custom
+      type: string
+      description: |-
+        * `lime` - Лайм-тек
+        * `mint` - Мята
+        * `sun` - Солнце
+        * `steel` - Сталь
+        * `graphite` - Графит
+        * `olive` - Олива
+        * `custom` - Своя
     PasswordResetConfirmRequest:
       type: object
       properties:
@@ -5429,6 +5548,32 @@ components:
       required:
       - email
       - password
+    ShopTheme:
+      type: object
+      description: Что может выбрать покупатель и что видит новый посетитель.
+      properties:
+        palettes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThemePalette'
+          description: Доступные палитры по порядку
+        accents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThemeAccent'
+          description: Акценты палитры «Своя»
+        default_palette:
+          $ref: '#/components/schemas/PaletteKeyEnum'
+        default_mode:
+          $ref: '#/components/schemas/ThemeModeEnum'
+        default_radius:
+          $ref: '#/components/schemas/ThemeRadiusEnum'
+      required:
+      - accents
+      - default_mode
+      - default_palette
+      - default_radius
+      - palettes
     StaffUser:
       type: object
       properties:
@@ -5458,6 +5603,75 @@ components:
       - id
       - is_superuser
       - last_name
+    ThemeAccent:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        color:
+          type: string
+        'on':
+          type: string
+          description: Цвет текста на акценте
+      required:
+      - color
+      - key
+      - name
+      - 'on'
+    ThemeModeEnum:
+      enum:
+      - system
+      - light
+      - dark
+      type: string
+      description: |-
+        * `system` - Как в системе
+        * `light` - Светлая
+        * `dark` - Тёмная
+    ThemePalette:
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/PaletteKeyEnum'
+        name:
+          type: string
+        group:
+          $ref: '#/components/schemas/PaletteGroupEnum'
+        note:
+          type: string
+        accent:
+          type: string
+          description: Цвет акцента — для образца
+        brand:
+          type: string
+          description: Фирменный цвет — для образца
+        bg_light:
+          type: string
+          description: Фон светлой темы
+        bg_dark:
+          type: string
+          description: Фон тёмной темы
+      required:
+      - accent
+      - bg_dark
+      - bg_light
+      - brand
+      - group
+      - key
+      - name
+      - note
+    ThemeRadiusEnum:
+      enum:
+      - sharp
+      - normal
+      - soft
+      type: string
+      description: |-
+        * `sharp` - Острые
+        * `normal` - Средние
+        * `soft` - Мягкие
     TokenPair:
       type: object
       properties:

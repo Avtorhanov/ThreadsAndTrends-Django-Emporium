@@ -189,12 +189,7 @@ def profile(request):
         return render(
             request,
             "web/account/guest.html",
-            {
-                "theme_choices": theme.CHOICES,
-                "theme_value": theme.get_theme(request) or theme.SYSTEM,
-                "tab": "profile",
-                "noindex": True,
-            },
+            {**theme.options(request), "tab": "profile", "noindex": True},
         )
     user = request.user
     form = ProfileForm(
@@ -216,8 +211,7 @@ def profile(request):
         {
             "form": form,
             "current_order": current,
-            "theme_choices": theme.CHOICES,
-            "theme_value": theme.get_theme(request) or theme.SYSTEM,
+            **theme.options(request),
             "tab": "profile",
             "noindex": True,
         },

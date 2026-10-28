@@ -249,6 +249,10 @@ SPECTACULAR_SETTINGS = {
         "BlockAreaEnum": "content.models.BlockArea.choices",
         "HomeBlockKindEnum": "content.models.HomeBlockKind.choices",
         "CollectionSourceEnum": "content.models.CollectionSource.choices",
+        "PaletteKeyEnum": "content.look.PALETTE_CHOICES",
+        "PaletteGroupEnum": "content.look.PALETTE_GROUP_CHOICES",
+        "ThemeModeEnum": "content.look.MODE_CHOICES",
+        "ThemeRadiusEnum": "content.look.RADIUS_CHOICES",
     },
 }
 

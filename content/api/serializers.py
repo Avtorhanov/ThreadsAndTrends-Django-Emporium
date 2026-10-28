@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from content import home, shop
+from content import home, look, shop
 from content.contacts import ContactKind
 from content.models import (
     Article,
@@ -355,3 +355,51 @@ class AdminHomeReorderSerializer(serializers.Serializer):
     ids = serializers.ListField(
         child=serializers.IntegerField(), help_text="Все id блоков в новом порядке"
     )
+
+
+# --- Тема для покупателей ---
+
+
+class ThemePaletteSerializer(serializers.Serializer):
+    key = serializers.ChoiceField(choices=look.PALETTE_CHOICES)
+    name = serializers.CharField()
+    group = serializers.ChoiceField(choices=look.PALETTE_GROUP_CHOICES)
+    note = serializers.CharField()
+    accent = serializers.CharField(help_text="Цвет акцента — для образца")
+    brand = serializers.CharField(help_text="Фирменный цвет — для образца")
+    bg_light = serializers.CharField(source="bg.light", help_text="Фон светлой темы")
+    bg_dark = serializers.CharField(source="bg.dark", help_text="Фон тёмной темы")
+
+
+class ThemeAccentSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    name = serializers.CharField()
+    color = serializers.CharField()
+    on = serializers.CharField(help_text="Цвет текста на акценте")
+
+
+class ShopThemeSerializer(serializers.Serializer):
+    """Что может выбрать покупатель и что видит новый посетитель."""
+
+    palettes = ThemePaletteSerializer(many=True, help_text="Доступные палитры по порядку")
+    accents = ThemeAccentSerializer(many=True, help_text="Акценты палитры «Своя»")
+    default_palette = serializers.ChoiceField(choices=look.PALETTE_CHOICES)
+    default_mode = serializers.ChoiceField(choices=look.MODE_CHOICES)
+    default_radius = serializers.ChoiceField(choices=look.RADIUS_CHOICES)
+
+
+class AdminThemeSerializer(ShopThemeSerializer):
+    enabled = serializers.ListField(
+        child=serializers.ChoiceField(choices=look.PALETTE_CHOICES),
+        help_text="Ключи палитр, доступных покупателям",
+    )
+
+
+class AdminThemeWriteSerializer(serializers.Serializer):
+    palettes = serializers.ListField(
+        child=serializers.ChoiceField(choices=look.PALETTE_CHOICES),
+        help_text="Ключи палитр, доступных покупателям",
+    )
+    default_palette = serializers.ChoiceField(choices=look.PALETTE_CHOICES)
+    default_mode = serializers.ChoiceField(choices=look.MODE_CHOICES)
+    default_radius = serializers.ChoiceField(choices=look.RADIUS_CHOICES)

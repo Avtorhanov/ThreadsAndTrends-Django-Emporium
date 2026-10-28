@@ -305,20 +305,24 @@
     return darkQuery.matches ? "dark" : "light";
   }
 
+  // Цвет строки состояния — фон текущей палитры и темы (после смены атрибутов <html>).
+  function syncThemeColor() {
+    var color = getComputedStyle(root).getPropertyValue("--bg").trim();
+    if (!color) return;
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
+      meta.content = color;
+      meta.removeAttribute("media");
+    });
+  }
+
   function applyTheme(value) {
-    // value: "light" | "dark" | "system"
-    if (value === "light" || value === "dark") {
-      root.setAttribute("data-theme", value);
-      setCookie("theme", value, YEAR);
-    } else {
-      root.removeAttribute("data-theme");
-      setCookie("theme", "", 0);
-    }
+    // value: "light" | "dark" | "system"; «как в системе» тоже хранится — иначе тема магазина.
+    if (value === "light" || value === "dark") root.setAttribute("data-theme", value);
+    else root.removeAttribute("data-theme");
+    setCookie("theme", value === "light" || value === "dark" ? value : "system", YEAR);
     var scheme = document.querySelector('meta[name="color-scheme"]');
     if (scheme) scheme.content = value === "system" ? "light dark" : value;
-    var colors = document.querySelectorAll('meta[name="theme-color"]');
-    var color = effectiveTheme() === "dark" ? "#070E0A" : "#EBF1E2";
-    colors.forEach(function (meta) { meta.content = color; meta.removeAttribute("media"); });
+    syncThemeColor();
     var hidden = document.querySelectorAll('[data-theme-form] input[name="theme"]');
     hidden.forEach(function (input) { input.value = effectiveTheme() === "dark" ? "light" : "dark"; });
     document.querySelectorAll('[data-theme-select] input[name="theme"]').forEach(function (input) {
@@ -332,9 +336,39 @@
       applyTheme(effectiveTheme() === "dark" ? "light" : "dark");
     });
   });
+  // Палитра, акцент «Своей», углы, размер текста: атрибут <html> + cookie (сервер проверяет
+  // значения по белому списку; значение по умолчанию — без атрибута).
+  var LOOK = {
+    palette: { attr: "data-palette", cookie: "palette", plain: "lime" },
+    accent: { attr: "data-accent", cookie: "accent", plain: null },
+    radius: { attr: "data-radius", cookie: "radius", plain: "normal" },
+    text: { attr: "data-text", cookie: "text_size", plain: "s" }
+  };
+
+  function applyLook(name, value, form) {
+    var spec = LOOK[name];
+    setCookie(spec.cookie, value, YEAR);
+    if (name === "palette") {
+      var accents = form.querySelector("[data-accents]");
+      if (accents) accents.hidden = value !== "custom";
+      if (value === "custom") {
+        var checked = form.querySelector('input[name="accent"]:checked');
+        if (checked) root.setAttribute("data-accent", checked.value);
+      } else {
+        root.removeAttribute("data-accent");
+      }
+    }
+    if (name === "accent" && root.getAttribute("data-palette") !== "custom") return;
+    if (value === spec.plain) root.removeAttribute(spec.attr);
+    else root.setAttribute(spec.attr, value);
+    syncThemeColor();
+  }
+
   document.querySelectorAll("[data-theme-select]").forEach(function (form) {
     form.addEventListener("change", function (event) {
-      if (event.target.name === "theme") applyTheme(event.target.value);
+      var name = event.target.name;
+      if (name === "theme") applyTheme(event.target.value);
+      else if (LOOK[name]) applyLook(name, event.target.value, form);
     });
     form.addEventListener("submit", function (event) { event.preventDefault(); });
   });

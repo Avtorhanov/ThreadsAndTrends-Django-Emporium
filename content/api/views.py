@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
-from content import home, services, shop, site
+from content import home, look, services, shop, site
 from content.contacts import get_contacts
 from content.models import Article, ArticleImage, Block, BlockArea, HomeBlock
 from core.api.mixins import AdminAPIMixin, PublicAPIMixin
@@ -34,10 +34,13 @@ from .serializers import (
     AdminShopSettingsSerializer,
     AdminShopSettingsWriteSerializer,
     AdminSiteTextSerializer,
+    AdminThemeSerializer,
+    AdminThemeWriteSerializer,
     ArticleDetailSerializer,
     ArticleSerializer,
     ContactSerializer,
     HomeSerializer,
+    ShopThemeSerializer,
 )
 
 TAG = "content"
@@ -406,6 +409,8 @@ class AdminHomePublishView(AdminAPIMixin, generics.GenericAPIView):
 
 @extend_schema(tags=[ADMIN_TAG])
 class AdminHomeReorderView(AdminAPIMixin, generics.GenericAPIView):
+    """Новый порядок блоков главной (все id, каждый один раз)."""
+
     serializer_class = AdminHomeReorderSerializer
 
     @extend_schema(operation_id="admin_content_home_reorder", responses=AdminHomeSerializer)
@@ -435,6 +440,8 @@ class AdminHomeBlockCreateView(AdminAPIMixin, generics.GenericAPIView):
 
 @extend_schema(tags=[ADMIN_TAG])
 class AdminHomeBlockView(AdminAPIMixin, generics.GenericAPIView):
+    """Блок главной: правка в черновик или удаление."""
+
     serializer_class = AdminHomeBlockUpdateSerializer
     queryset = HomeBlock.objects.all()
 
@@ -456,6 +463,8 @@ class AdminHomeBlockView(AdminAPIMixin, generics.GenericAPIView):
 
 @extend_schema(tags=[ADMIN_TAG])
 class AdminHomeBlockImageView(AdminAPIMixin, generics.GenericAPIView):
+    """Картинка баннера: загрузить (заменяет прежнюю) или убрать."""
+
     serializer_class = AdminHomeImageUploadSerializer
     queryset = HomeBlock.objects.all()
     parser_classes = [MultiPartParser]
@@ -474,8 +483,57 @@ class AdminHomeBlockImageView(AdminAPIMixin, generics.GenericAPIView):
     @extend_schema(
         operation_id="admin_content_home_blocks_image_destroy",
         request=None,
-        responses=AdminHomeBlockSerializer,
+        responses={200: AdminHomeBlockSerializer},
     )
     def delete(self, request, pk: int):
         block = home.remove_banner_image(self.get_object())
         return Response(AdminHomeBlockSerializer(block, context={"request": request}).data)
+
+
+# --- Тема для покупателей ---
+
+
+def _theme_data(*, all_palettes: bool = False) -> dict:
+    theme = look.shop_theme()
+    keys = list(look.PALETTES) if all_palettes else list(theme.palettes)
+    return {
+        "palettes": [look.PALETTES[key] for key in keys],
+        "accents": list(look.ACCENTS.values()),
+        "default_palette": theme.default_palette,
+        "default_mode": theme.default_mode,
+        "default_radius": theme.default_radius,
+        "enabled": list(theme.palettes),
+    }
+
+
+@extend_schema(tags=[TAG])
+class ShopThemeView(PublicAPIMixin, generics.GenericAPIView):
+    """Палитры, доступные покупателю, и оформление для нового посетителя (приложение)."""
+
+    serializer_class = ShopThemeSerializer
+
+    @extend_schema(operation_id="content_theme_retrieve")
+    def get(self, request):
+        return Response(ShopThemeSerializer(_theme_data()).data)
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminThemeView(AdminAPIMixin, generics.GenericAPIView):
+    """Панель → «Тема»: все палитры, какие доступны покупателям, оформление по умолчанию."""
+
+    serializer_class = AdminThemeSerializer
+
+    @extend_schema(operation_id="admin_content_theme_retrieve")
+    def get(self, request):
+        return Response(AdminThemeSerializer(_theme_data(all_palettes=True)).data)
+
+    @extend_schema(
+        operation_id="admin_content_theme_update",
+        request=AdminThemeWriteSerializer,
+        responses=AdminThemeSerializer,
+    )
+    def put(self, request):
+        serializer = AdminThemeWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        look.update(**serializer.validated_data)
+        return Response(AdminThemeSerializer(_theme_data(all_palettes=True)).data)

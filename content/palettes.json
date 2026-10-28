@@ -1,0 +1,185 @@
+{
+  "comment": "Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать.",
+  "palettes": [
+    {
+      "key": "lime",
+      "name": "Лайм-тек",
+      "group": "bright",
+      "note": "Фирменная",
+      "accent": "#C6F432",
+      "brand": "#1F4D3A",
+      "bg": {
+        "light": "#EBF1E2",
+        "dark": "#070E0A"
+      }
+    },
+    {
+      "key": "mint",
+      "name": "Мята",
+      "group": "bright",
+      "note": "Холоднее и спокойнее",
+      "accent": "#5EE6A8",
+      "brand": "#17594A",
+      "bg": {
+        "light": "#E6F2EC",
+        "dark": "#06100D"
+      }
+    },
+    {
+      "key": "sun",
+      "name": "Солнце",
+      "group": "bright",
+      "note": "Тёплая",
+      "accent": "#FFD23F",
+      "brand": "#6B4E0A",
+      "bg": {
+        "light": "#F4F0E2",
+        "dark": "#0E0C06"
+      }
+    },
+    {
+      "key": "steel",
+      "name": "Сталь",
+      "group": "calm",
+      "note": "Холодный синий, строгая",
+      "accent": "#7FA7CF",
+      "brand": "#24476B",
+      "bg": {
+        "light": "#E6EBF0",
+        "dark": "#070C12"
+      }
+    },
+    {
+      "key": "graphite",
+      "name": "Графит",
+      "group": "calm",
+      "note": "Тёмно-серая с оранжевым",
+      "accent": "#FF8A3D",
+      "brand": "#3A4049",
+      "bg": {
+        "light": "#E8EAED",
+        "dark": "#0B0C0E"
+      }
+    },
+    {
+      "key": "olive",
+      "name": "Олива",
+      "group": "calm",
+      "note": "Хаки, «полевая»",
+      "accent": "#B5C267",
+      "brand": "#4B5320",
+      "bg": {
+        "light": "#ECEEE2",
+        "dark": "#0B0D07"
+      }
+    },
+    {
+      "key": "custom",
+      "name": "Своя",
+      "group": "custom",
+      "note": "Покупатель выбирает цвет акцента",
+      "accent": "#7FA7CF",
+      "brand": "#2A3038",
+      "bg": {
+        "light": "#E8EBEE",
+        "dark": "#0A0C0F"
+      }
+    }
+  ],
+  "accents": [
+    {
+      "key": "lime",
+      "name": "Лайм",
+      "color": "#C6F432",
+      "on": "#16191D"
+    },
+    {
+      "key": "mint",
+      "name": "Мята",
+      "color": "#5EE6A8",
+      "on": "#16191D"
+    },
+    {
+      "key": "sun",
+      "name": "Солнце",
+      "color": "#FFD23F",
+      "on": "#16191D"
+    },
+    {
+      "key": "sky",
+      "name": "Небо",
+      "color": "#9CCBFF",
+      "on": "#16191D"
+    },
+    {
+      "key": "pink",
+      "name": "Розовый",
+      "color": "#FF9EC4",
+      "on": "#16191D"
+    },
+    {
+      "key": "lilac",
+      "name": "Сирень",
+      "color": "#B9A6FF",
+      "on": "#16191D"
+    },
+    {
+      "key": "steel",
+      "name": "Сталь",
+      "color": "#7FA7CF",
+      "on": "#16191D"
+    },
+    {
+      "key": "orange",
+      "name": "Оранжевый",
+      "color": "#FF8A3D",
+      "on": "#16191D"
+    },
+    {
+      "key": "olive",
+      "name": "Олива",
+      "color": "#B5C267",
+      "on": "#16191D"
+    },
+    {
+      "key": "sand",
+      "name": "Песок",
+      "color": "#C8B98A",
+      "on": "#16191D"
+    },
+    {
+      "key": "navy",
+      "name": "Синий",
+      "color": "#2F5D8A",
+      "on": "#FFFFFF"
+    },
+    {
+      "key": "wine",
+      "name": "Вино",
+      "color": "#8E2C3E",
+      "on": "#FFFFFF"
+    },
+    {
+      "key": "graphite",
+      "name": "Графит",
+      "color": "#3A4049",
+      "on": "#FFFFFF"
+    },
+    {
+      "key": "forest",
+      "name": "Изумруд",
+      "color": "#1F7A5C",
+      "on": "#FFFFFF"
+    }
+  ],
+  "radius": {
+    "sharp": 0.6,
+    "normal": 1,
+    "soft": 1.35
+  },
+  "text": {
+    "s": 1,
+    "m": 1.15,
+    "l": 1.3
+  }
+}

@@ -8,6 +8,7 @@ content_urlpatterns = [
     path("articles/<slug:slug>/", views.ArticleDetailView.as_view(), name="content-article"),
     path("contacts/", views.ContactListView.as_view(), name="content-contacts"),
     path("home/", views.HomeView.as_view(), name="content-home"),
+    path("theme/", views.ShopThemeView.as_view(), name="content-theme"),
 ]
 
 admin_router = SimpleRouter()
@@ -20,6 +21,7 @@ admin_router.register("blocks", views.AdminBlockViewSet, basename="admin-content
 admin_content_urlpatterns = [
     path("texts/<str:key>/", views.AdminSiteTextView.as_view(), name="admin-content-text"),
     path("settings/", views.AdminShopSettingsView.as_view(), name="admin-content-settings"),
+    path("theme/", views.AdminThemeView.as_view(), name="admin-content-theme"),
     path("home/", views.AdminHomeView.as_view(), name="admin-content-home"),
     path("home/publish/", views.AdminHomePublishView.as_view(), name="admin-content-home-publish"),
     path("home/reorder/", views.AdminHomeReorderView.as_view(), name="admin-content-home-reorder"),

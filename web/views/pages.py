@@ -26,9 +26,10 @@ LEGAL_PAGES = {
 def set_theme(request):
     """Без JavaScript: переключатель темы — обычная форма. С JS тема меняется без перезагрузки,
     скрипт сам пишет ту же cookie."""
-    value = request.POST.get("theme", "")
     response = redirect(safe_next(request, reverse("web:home")))
-    return theme.apply_theme(response, value)
+    if "theme" in request.POST:
+        theme.apply_theme(response, request.POST["theme"])
+    return theme.apply_look(response, request.POST)
 
 
 @require_POST

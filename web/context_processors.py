@@ -62,6 +62,7 @@ def storefront(request):
 
     return {
         "theme": theme.get_theme(request),
+        "look": theme.get_look(request),
         "cart_count": cart_count,
         "nav_categories": nav_categories,
         "app_banner": banner,
