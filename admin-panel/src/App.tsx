@@ -12,6 +12,7 @@ import { OrderDetailPage } from "./pages/OrderDetailPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { ProductEditPage } from "./pages/ProductEditPage";
 import { ProductsPage } from "./pages/ProductsPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { SummaryPage } from "./pages/SummaryPage";
 
 // "/panel" в боевой сборке; в превью — "/<репозиторий>/panel" (vite.config.ts, VITE_BASE).
@@ -65,6 +66,7 @@ export function App() {
               <Route path="/content/articles" element={<ArticlesPage />} />
               <Route path="/content/articles/new" element={<ArticleEditPage />} />
               <Route path="/content/articles/:id" element={<ArticleEditPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

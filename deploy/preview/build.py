@@ -630,6 +630,7 @@ PANEL_ROUTES = (
     "catalog/categories",
     "content/articles",
     "content/articles/new",
+    "settings",
 )
 
 
@@ -681,6 +682,7 @@ def panel_snapshot() -> dict:
     for pk in panel_ids()["content/articles"]:
         grab(f"{ADMIN_API}/content/articles/{pk}/")
     grab(f"{ADMIN_API}/customers/")
+    grab(f"{ADMIN_API}/content/settings/")
     # Ссылки на фото — абсолютные от тестового сервера; в превью медиа лежат рядом.
     text = json.dumps(snapshot, ensure_ascii=False).replace("http://testserver", "")
     return {**json.loads(text), "_login": {"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}}
@@ -727,6 +729,7 @@ def panel_section(orders: list[Order]) -> tuple[str, list[tuple[str, str]]]:
         ("Категории", f"{panel}/catalog/categories/"),
         ("Статьи", f"{panel}/content/articles/"),
         ("Клиенты", f"{panel}/customers/"),
+        ("Настройки магазина", f"{panel}/settings/"),
         ("Вход в панель", f"{panel}/login/"),
     ]
     if first_product:

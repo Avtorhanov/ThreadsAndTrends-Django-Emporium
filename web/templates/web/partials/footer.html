@@ -10,12 +10,9 @@
       {% endfor %}
       {% if android_apk_url %}<a href="{{ android_apk_url }}">{% sitetext "footer.android" %}Приложение для Android{% endsitetext %}</a>{% endif %}
     </nav>
-    {% if seller.name %}
-    <p class="foot__seller">
-      {{ seller.name }}{% if seller.inn %} · ИНН {{ seller.inn }}{% endif %}{% if seller.ogrn %} · ОГРН {{ seller.ogrn }}{% endif %}
-      {% if seller.address %}<br>{{ seller.address }}{% endif %}
-      {% if seller.email or seller.phone %}<br>{% if seller.email %}<a href="mailto:{{ seller.email }}">{{ seller.email }}</a>{% endif %}{% if seller.email and seller.phone %} · {% endif %}{% if seller.phone %}<a href="tel:{{ seller.phone }}">{{ seller.phone }}</a>{% endif %}{% endif %}
-    </p>
+    {# Реквизиты одной строкой: пустые не показываются, перенос — только между реквизитами. #}
+    {% if seller_line %}
+    <p class="foot__seller">{% for part in seller_line %}<span class="foot__part">{% if part.href %}<a href="{{ part.href }}">{{ part.text }}</a>{% else %}{{ part.text }}{% endif %}</span>{% if not forloop.last %}&nbsp;· {% endif %}{% endfor %}</p>
     {% endif %}
     <p class="foot__copy">© {% now "Y" %} {% sitetext "footer.copy" %}DiDi-shop{% endsitetext %}</p>
   </div>

@@ -186,3 +186,48 @@ class Block(models.Model):
 
     def __str__(self):
         return f"{self.get_area_display()}: {self.title or self.value}"
+
+
+# --- Настройки магазина (панель → «Настройки») ---
+
+
+class ShopSettings(models.Model):
+    """Настройки магазина, которые администратор меняет в панели без деплоя.
+
+    Одна строка (id = 1). Пустое поле — значение из настроек сервера (.env): так магазин
+    работает и до первого сохранения. Ключи оплаты, SECRET_KEY и пароли здесь не хранятся.
+    Сервис — content.shop.
+    """
+
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    delivery_courier_kopecks = models.PositiveBigIntegerField(
+        null=True, blank=True, verbose_name="Доставка курьером, коп."
+    )
+    delivery_free_from_kopecks = models.PositiveBigIntegerField(
+        null=True, blank=True, verbose_name="Бесплатная доставка от, коп."
+    )
+    pickup_enabled = models.BooleanField(default=True, verbose_name="Самовывоз")
+    pickup_address = models.CharField(
+        max_length=300, blank=True, verbose_name="Адрес пункта выдачи"
+    )
+    cash_on_delivery_enabled = models.BooleanField(
+        default=True, verbose_name="Оплата при получении"
+    )
+    unpaid_timeout_minutes = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Автоотмена неоплаченного заказа, мин"
+    )
+    seller_name = models.CharField(max_length=200, blank=True, verbose_name="Продавец")
+    seller_inn = models.CharField(max_length=12, blank=True, verbose_name="ИНН")
+    seller_ogrn = models.CharField(max_length=15, blank=True, verbose_name="ОГРН / ОГРНИП")
+    seller_address = models.CharField(max_length=300, blank=True, verbose_name="Адрес продавца")
+    seller_phone = models.CharField(max_length=30, blank=True, verbose_name="Телефон")
+    seller_email = models.EmailField(blank=True, verbose_name="Email")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменены")
+
+    class Meta:
+        verbose_name = "Настройки магазина"
+        verbose_name_plural = "Настройки магазина"
+        constraints = [models.CheckConstraint(condition=Q(id=1), name="shop_settings_singleton")]
+
+    def __str__(self):
+        return "Настройки магазина"

@@ -12,6 +12,7 @@ const SECTIONS: { to: string; label: string; icon: IconName; end?: boolean }[] =
   { to: "/catalog/categories", label: "Категории", icon: "categories" },
   { to: "/content/articles", label: "Статьи", icon: "articles" },
   { to: "/customers", label: "Клиенты", icon: "customers" },
+  { to: "/settings", label: "Настройки", icon: "settings" },
 ];
 
 const THEME_ICONS: Record<ThemeChoice, IconName> = { system: "system", light: "sun", dark: "moon" };

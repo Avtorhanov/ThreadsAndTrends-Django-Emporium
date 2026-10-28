@@ -1,7 +1,6 @@
 """Корзина витрины. Формы работают и без JavaScript (POST → redirect); с htmx страница
 обновляет только нужный фрагмент и счётчики в шапке."""
 
-from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import Http404, HttpResponse
@@ -10,6 +9,7 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 
+from content import shop as shop_settings
 from store.models import ProductVariant
 
 from .. import cart as web_cart
@@ -21,7 +21,7 @@ def _cart_context(request) -> dict:
     summary = web_cart.summary(request)
     return {
         "cart": summary,
-        "free_delivery_from": settings.DELIVERY_FREE_FROM_KOPECKS,
+        "free_delivery_from": shop_settings.current().delivery_free_from_kopecks,
         "tab": "cart",
         "noindex": True,
     }

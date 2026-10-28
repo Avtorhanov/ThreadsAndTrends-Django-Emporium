@@ -854,6 +854,43 @@ paths:
                 items:
                   $ref: '#/components/schemas/AdminBlock'
           description: ''
+  /api/v1/admin/content/settings/:
+    get:
+      operationId: admin_content_settings_retrieve
+      description: Доставка, оплата и реквизиты продавца. Пустое поле — значение из
+        .env (`defaults`).
+      tags:
+      - admin-content
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminShopSettings'
+          description: ''
+    put:
+      operationId: admin_content_settings_update
+      description: Доставка, оплата и реквизиты продавца. Пустое поле — значение из
+        .env (`defaults`).
+      tags:
+      - admin-content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminShopSettingsWriteRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminShopSettings'
+          description: ''
   /api/v1/admin/content/texts/{key}/:
     put:
       operationId: admin_content_texts_update
@@ -2866,6 +2903,179 @@ components:
       - reason_display
       - status
       - status_display
+    AdminShopDefaults:
+      type: object
+      description: Значения из .env — действуют, пока поле в панели пустое.
+      properties:
+        delivery_courier_kopecks:
+          type: integer
+        delivery_free_from_kopecks:
+          type: integer
+        pickup_address:
+          type: string
+        unpaid_timeout_minutes:
+          type: integer
+        seller_name:
+          type: string
+        seller_inn:
+          type: string
+        seller_ogrn:
+          type: string
+        seller_address:
+          type: string
+        seller_phone:
+          type: string
+        seller_email:
+          type: string
+      required:
+      - delivery_courier_kopecks
+      - delivery_free_from_kopecks
+      - pickup_address
+      - seller_address
+      - seller_email
+      - seller_inn
+      - seller_name
+      - seller_ogrn
+      - seller_phone
+      - unpaid_timeout_minutes
+    AdminShopSettings:
+      type: object
+      properties:
+        delivery_courier_kopecks:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Доставка курьером, коп.
+        delivery_free_from_kopecks:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Бесплатная доставка от, коп.
+        pickup_enabled:
+          type: boolean
+          readOnly: true
+          title: Самовывоз
+        pickup_address:
+          type: string
+          readOnly: true
+          title: Адрес пункта выдачи
+        cash_on_delivery_enabled:
+          type: boolean
+          readOnly: true
+          title: Оплата при получении
+        unpaid_timeout_minutes:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Автоотмена неоплаченного заказа, мин
+        seller_name:
+          type: string
+          readOnly: true
+          title: Продавец
+        seller_inn:
+          type: string
+          readOnly: true
+          title: ИНН
+        seller_ogrn:
+          type: string
+          readOnly: true
+          title: ОГРН / ОГРНИП
+        seller_address:
+          type: string
+          readOnly: true
+          title: Адрес продавца
+        seller_phone:
+          type: string
+          readOnly: true
+          title: Телефон
+        seller_email:
+          type: string
+          format: email
+          readOnly: true
+          title: Email
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        online_payment_available:
+          type: boolean
+          description: Онлайн-оплата подключена на сервере (ключи ЮKassa в .env)
+          readOnly: true
+        defaults:
+          allOf:
+          - $ref: '#/components/schemas/AdminShopDefaults'
+          readOnly: true
+      required:
+      - cash_on_delivery_enabled
+      - defaults
+      - delivery_courier_kopecks
+      - delivery_free_from_kopecks
+      - online_payment_available
+      - pickup_address
+      - pickup_enabled
+      - seller_address
+      - seller_email
+      - seller_inn
+      - seller_name
+      - seller_ogrn
+      - seller_phone
+      - unpaid_timeout_minutes
+      - updated_at
+    AdminShopSettingsWriteRequest:
+      type: object
+      description: Все поля разом; пустая строка или null — значение из .env.
+      properties:
+        delivery_courier_kopecks:
+          type: integer
+          minimum: 0
+          nullable: true
+        delivery_free_from_kopecks:
+          type: integer
+          minimum: 0
+          nullable: true
+        pickup_enabled:
+          type: boolean
+        pickup_address:
+          type: string
+          maxLength: 300
+        cash_on_delivery_enabled:
+          type: boolean
+        unpaid_timeout_minutes:
+          type: integer
+          minimum: 1
+          nullable: true
+        seller_name:
+          type: string
+          maxLength: 200
+        seller_inn:
+          type: string
+          maxLength: 20
+        seller_ogrn:
+          type: string
+          maxLength: 20
+        seller_address:
+          type: string
+          maxLength: 300
+        seller_phone:
+          type: string
+          maxLength: 30
+        seller_email:
+          type: string
+          maxLength: 254
+      required:
+      - cash_on_delivery_enabled
+      - delivery_courier_kopecks
+      - delivery_free_from_kopecks
+      - pickup_address
+      - pickup_enabled
+      - seller_address
+      - seller_email
+      - seller_inn
+      - seller_name
+      - seller_ogrn
+      - seller_phone
+      - unpaid_timeout_minutes
     AdminSiteText:
       type: object
       properties:

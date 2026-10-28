@@ -1,7 +1,9 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from content import shop
 from content.contacts import ContactKind
-from content.models import Article, ArticleImage, Block, BlockArea, BlockKind
+from content.models import Article, ArticleImage, Block, BlockArea, BlockKind, ShopSettings
 from content.services import MAX_BODY_LENGTH
 from store.api.serializers import absolute_url
 
@@ -161,3 +163,58 @@ class AdminBlockReorderSerializer(serializers.Serializer):
     ids = serializers.ListField(
         child=serializers.IntegerField(), help_text="Все id блоков раздела в новом порядке"
     )
+
+
+# --- Настройки магазина (панель → «Настройки») ---
+
+
+class AdminShopDefaultsSerializer(serializers.Serializer):
+    """Значения из .env — действуют, пока поле в панели пустое."""
+
+    delivery_courier_kopecks = serializers.IntegerField()
+    delivery_free_from_kopecks = serializers.IntegerField()
+    pickup_address = serializers.CharField()
+    unpaid_timeout_minutes = serializers.IntegerField()
+    seller_name = serializers.CharField()
+    seller_inn = serializers.CharField()
+    seller_ogrn = serializers.CharField()
+    seller_address = serializers.CharField()
+    seller_phone = serializers.CharField()
+    seller_email = serializers.CharField()
+
+
+class AdminShopSettingsSerializer(serializers.ModelSerializer):
+    updated_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    online_payment_available = serializers.SerializerMethodField(
+        help_text="Онлайн-оплата подключена на сервере (ключи ЮKassa в .env)"
+    )
+    defaults = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ShopSettings
+        fields = [*shop.FIELDS, "updated_at", "online_payment_available", "defaults"]
+        read_only_fields = fields
+
+    def get_online_payment_available(self, obj) -> bool:
+        return shop.online_payment_available()
+
+    @extend_schema_field(AdminShopDefaultsSerializer)
+    def get_defaults(self, obj):
+        return AdminShopDefaultsSerializer(shop.env_defaults()).data
+
+
+class AdminShopSettingsWriteSerializer(serializers.Serializer):
+    """Все поля разом; пустая строка или null — значение из .env."""
+
+    delivery_courier_kopecks = serializers.IntegerField(min_value=0, allow_null=True)
+    delivery_free_from_kopecks = serializers.IntegerField(min_value=0, allow_null=True)
+    pickup_enabled = serializers.BooleanField()
+    pickup_address = serializers.CharField(max_length=300, allow_blank=True)
+    cash_on_delivery_enabled = serializers.BooleanField()
+    unpaid_timeout_minutes = serializers.IntegerField(min_value=1, allow_null=True)
+    seller_name = serializers.CharField(max_length=200, allow_blank=True)
+    seller_inn = serializers.CharField(max_length=20, allow_blank=True)
+    seller_ogrn = serializers.CharField(max_length=20, allow_blank=True)
+    seller_address = serializers.CharField(max_length=300, allow_blank=True)
+    seller_phone = serializers.CharField(max_length=30, allow_blank=True)
+    seller_email = serializers.CharField(max_length=254, allow_blank=True)

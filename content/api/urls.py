@@ -18,5 +18,6 @@ admin_router.register("blocks", views.AdminBlockViewSet, basename="admin-content
 
 admin_content_urlpatterns = [
     path("texts/<str:key>/", views.AdminSiteTextView.as_view(), name="admin-content-text"),
+    path("settings/", views.AdminShopSettingsView.as_view(), name="admin-content-settings"),
     *admin_router.urls,
 ]

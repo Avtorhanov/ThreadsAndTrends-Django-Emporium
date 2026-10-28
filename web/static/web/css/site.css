@@ -678,6 +678,9 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .foot__brand { display: flex; align-items: center; gap: 10px; color: var(--ink); }
 .foot__links { display: grid; gap: 4px; }
 .foot__links a, .foot__seller a { color: var(--muted); }
+.foot__seller { text-wrap: balance; }
+/* Реквизит переносится целиком; длиннее строки (адрес на телефоне) — переносится внутри. */
+.foot__part { display: inline-block; max-width: 100%; }
 .foot__links a { display: inline-flex; align-items: center; min-height: 32px; }
 
 /* Нижняя панель — футер экрана: от края до края, без скруглений, прижата к низу.

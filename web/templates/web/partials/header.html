@@ -20,8 +20,8 @@
     </nav>
 
     <div class="actions">
-      {# Поиск: вверху каталога — выпадает под строкой шапки, в свёрнутой шапке — поле выезжает влево.
-         Без JS — обычная ссылка на страницу поиска. #}
+      {% comment %}Поиск: вверху каталога — выпадает под строкой шапки, в свёрнутой шапке — поле выезжает влево.
+         Без JS — обычная ссылка на страницу поиска.{% endcomment %}
       <a class="sbtn" href="{% url 'web:search' %}" role="button" data-quick-open aria-label="Поиск" aria-expanded="false" aria-controls="{% if compact %}quick-search{% else %}drop-search{% endif %}">
         <svg class="ic" width="21" height="21"><use href="#i-search"/></svg>
       </a>

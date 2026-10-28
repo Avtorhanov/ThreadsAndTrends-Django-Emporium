@@ -1504,3 +1504,76 @@ a.stat:hover {
 .preset-clear {
   color: var(--danger);
 }
+
+/* --- Настройки магазина --- */
+
+.settings-lead {
+  margin: -8px 0 16px;
+}
+
+.settings-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.settings-wide {
+  grid-column: 1 / -1;
+}
+
+.settings-fields {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+
+.setting-switch {
+  justify-content: space-between;
+}
+
+.setting-switch.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.setting-text {
+  display: grid;
+  gap: 2px;
+}
+
+.note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-ctl);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.note-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.seller-preview {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: var(--radius-ctl);
+  background: var(--bg);
+}
+
+.seller-line {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  text-wrap: balance;
+}
+
+/* Реквизит переносится целиком, длинный адрес — внутри себя (как в подвале сайта). */
+.seller-part {
+  display: inline-block;
+  max-width: 100%;
+}

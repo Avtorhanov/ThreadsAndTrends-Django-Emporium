@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
-from content import services, site
+from content import services, shop, site
 from content.contacts import get_contacts
 from content.models import Article, ArticleImage, Block, BlockArea
 from core.api.mixins import AdminAPIMixin, PublicAPIMixin
@@ -25,6 +25,8 @@ from .serializers import (
     AdminBlockReorderSerializer,
     AdminBlockSerializer,
     AdminBlockUpdateSerializer,
+    AdminShopSettingsSerializer,
+    AdminShopSettingsWriteSerializer,
     AdminSiteTextSerializer,
     ArticleDetailSerializer,
     ArticleSerializer,
@@ -318,3 +320,28 @@ class AdminBlockViewSet(
         serializer.is_valid(raise_exception=True)
         blocks = site.reorder_blocks(**serializer.validated_data)
         return Response(AdminBlockSerializer(blocks, many=True).data)
+
+
+# --- Настройки магазина ---
+
+
+@extend_schema(tags=[ADMIN_TAG])
+class AdminShopSettingsView(AdminAPIMixin, generics.GenericAPIView):
+    """Доставка, оплата и реквизиты продавца. Пустое поле — значение из .env (`defaults`)."""
+
+    serializer_class = AdminShopSettingsSerializer
+
+    @extend_schema(operation_id="admin_content_settings_retrieve")
+    def get(self, request):
+        return Response(AdminShopSettingsSerializer(shop.get_row()).data)
+
+    @extend_schema(
+        operation_id="admin_content_settings_update",
+        request=AdminShopSettingsWriteSerializer,
+        responses=AdminShopSettingsSerializer,
+    )
+    def put(self, request):
+        serializer = AdminShopSettingsWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        row = shop.update(**serializer.validated_data)
+        return Response(AdminShopSettingsSerializer(row).data)
