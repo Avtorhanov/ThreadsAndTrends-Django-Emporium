@@ -21,7 +21,7 @@
 
   var STATUS_LABELS = {
     awaiting_payment: "Ожидает оплаты", confirmed: "Принят", paid: "Оплачен", assembled: "Собран",
-    shipped: "Отправлен", ready_for_pickup: "Готов к выдаче", delivered: "Получен", cancelled: "Отменён"
+    shipped: "В пути", ready_for_pickup: "В пункте выдачи", delivered: "Получен", cancelled: "Отменён"
   };
   var PAYMENT_LABELS = { online: "Онлайн", on_delivery: "При получении" };
   var DELIVERY_LABELS = { courier: "Курьер", pickup: "Самовывоз" };

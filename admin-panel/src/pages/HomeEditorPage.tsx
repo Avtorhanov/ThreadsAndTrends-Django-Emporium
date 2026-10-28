@@ -299,7 +299,7 @@ export function HomeEditorPage() {
                             {block.is_visible ? "" : " · скрыт"}
                             {blockErrors[block.id] ? " · ошибка" : ""}
                           </span>
-                          <strong>{block.title || "Без заголовка"}</strong>
+                          <strong>{block.title || block.preview_product?.name || "Без заголовка"}</strong>
                         </span>
                       </button>
                       <div className="he-row-actions">

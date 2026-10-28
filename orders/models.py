@@ -15,8 +15,8 @@ class OrderStatus(models.TextChoices):
     CONFIRMED = "confirmed", "Принят"
     PAID = "paid", "Оплачен"
     ASSEMBLED = "assembled", "Собран"
-    SHIPPED = "shipped", "Отправлен"
-    READY_FOR_PICKUP = "ready_for_pickup", "Готов к выдаче"
+    SHIPPED = "shipped", "В пути"
+    READY_FOR_PICKUP = "ready_for_pickup", "В пункте выдачи"
     DELIVERED = "delivered", "Получен"
     CANCELLED = "cancelled", "Отменён"
 

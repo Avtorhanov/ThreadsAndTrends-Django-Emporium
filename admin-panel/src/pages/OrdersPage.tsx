@@ -84,7 +84,7 @@ export function OrdersPage() {
     setActionError(null);
     try {
       const result = await ordersService.bulkTransition([...selected], target, bulkComment.trim(), bulkNotify);
-      const skipped = result.skipped.map((row) => `${row.number} — ${row.reason}`);
+      const skipped = result.skipped.map((row) => `${row.number} — ${row.reason.replace(/\.$/, "")}`);
       setNotice(
         `Переведено в «${TARGET_LABELS[target] ?? STATUS_LABELS[target]}»: ${result.updated.length}` +
           (skipped.length ? `. Пропущено: ${skipped.join("; ")}` : ""),

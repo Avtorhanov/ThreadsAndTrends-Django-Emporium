@@ -278,6 +278,8 @@ a { color: var(--brand); }
 
 /* --- Страница --- */
 .main { display: block; padding: calc(var(--hdr-compact) + 18px + var(--safe-top)) 0 24px; outline: none; }
+/* Поля под тень у лент и карусели выходят за колонку — без прокрутки страницы вбок. */
+.main { overflow-x: clip; }
 .page-feed .main { padding-top: calc(var(--hdr-full) + 14px + var(--safe-top)); }
 .main--bare { padding-top: 48px; }
 .feed, .page, .flash, .pd { max-width: var(--page-max); margin-inline: auto; }
@@ -843,12 +845,12 @@ a.hblock-photo__frame:active { transform: scale(.985); }
 .hblock-carousel__track {
   display: grid; grid-auto-flow: column; grid-auto-columns: 100%; gap: var(--gutter);
   overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
-  margin: -16px calc(-1 * var(--gutter)) -58px; padding: 16px var(--gutter) 64px; scroll-padding-inline: var(--gutter);
+  margin: -24px calc(-1 * var(--gutter)) -90px; padding: 24px var(--gutter) 90px; scroll-padding-inline: var(--gutter);
 }
 .hblock-carousel__track::-webkit-scrollbar { display: none; }
 .hblock-carousel__slide { scroll-snap-align: start; scroll-snap-stop: always; min-width: 0; display: grid; }
 .hblock-carousel__slide > .hblock { min-width: 0; }
-.hblock-carousel__dots { display: flex; justify-content: center; gap: 2px; position: relative; z-index: 1; }
+.hblock-carousel__dots { display: flex; justify-content: center; gap: 2px; position: relative; z-index: 1; margin-top: -2px; }
 .hblock-carousel__dot {
   display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
   padding: 0; border: 0; background: transparent; cursor: pointer;
@@ -894,8 +896,9 @@ a.hblock-photo__frame:active { transform: scale(.985); }
   /* По бокам — поле под тень (24 px), карточки остаются в колонке страницы. */
   .hblock-rail__track { grid-auto-columns: calc((100% - 3 * 18px) / 4); gap: 18px; margin-inline: -24px; padding-inline: 24px; scroll-padding-inline: 24px; }
   .hblock-cats__list { margin-inline: -24px; padding-inline: 24px; }
-  .hblock-photo__frame { aspect-ratio: 21 / 9; }
-  .hblock-carousel__track { margin-inline: -24px; padding-inline: 24px; scroll-padding-inline: 24px; gap: 24px; }
+  .hblock-photo__frame { aspect-ratio: 5 / 2; }
+  /* Поле под тень по бокам шире, промежуток — вдвое: соседний баннер не заглядывает в поле. */
+  .hblock-carousel__track { margin-inline: -48px; padding-inline: 48px; scroll-padding-inline: 48px; gap: 96px; }
 }
 
 @media (display-mode: standalone) { .appbar { display: none; } }

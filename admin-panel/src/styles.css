@@ -2279,6 +2279,7 @@ a.stat:hover {
 
 .he-settings-card {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
@@ -3349,9 +3350,15 @@ a.stat:hover {
 }
 
 .bulk-comment {
-  flex: 1 1 200px;
+  flex: 1 1 180px;
+  width: auto;
   min-width: 0;
   min-height: 40px;
+}
+
+.bulk-bar .bulk-field select {
+  width: auto;
+  max-width: 260px;
 }
 
 .bulk-field input[type="checkbox"] {
@@ -3516,8 +3523,12 @@ a.stat:hover {
   overflow-wrap: anywhere;
 }
 
+.he-links li {
+  flex-wrap: wrap;
+}
+
 .he-links li input {
-  flex: 1;
+  flex: 1 1 120px;
   min-width: 0;
   min-height: 40px;
 }

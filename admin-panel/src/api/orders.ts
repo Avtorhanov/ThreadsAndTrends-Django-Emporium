@@ -32,8 +32,8 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   confirmed: "Принят",
   paid: "Оплачен",
   assembled: "Собран",
-  shipped: "Отправлен",
-  ready_for_pickup: "Готов к выдаче",
+  shipped: "В пути",
+  ready_for_pickup: "В пункте выдачи",
   delivered: "Получен",
   cancelled: "Отменён",
 };
