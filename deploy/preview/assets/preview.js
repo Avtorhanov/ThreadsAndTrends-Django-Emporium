@@ -1077,6 +1077,8 @@
   function swapDocument(url) {
     return fetch(url).then(function (r) { return r.text(); }).then(function (html) {
       var doc = new DOMParser().parseFromString(html, "text/html");
+      // Пока данные не подставлены, содержимое страницы-образца не показывается.
+      doc.documentElement.setAttribute("data-sim-pending", "");
       document.documentElement.replaceWith(doc.documentElement);
       var scripts = Array.prototype.slice.call(document.querySelectorAll("script"));
       scripts.forEach(function (old) {
@@ -1144,5 +1146,7 @@
       var email = document.querySelector('[name="email"]');
       if (email && query.get("email")) email.value = query.get("email");
     }
+  }).finally(function () {
+    root.removeAttribute("data-sim-pending");
   });
 })();

@@ -1851,6 +1851,12 @@ a.stat:hover {
 }
 
 /* Галерея и остатки внутри группы — без своей карточки и заголовка. */
+/* У сохранённого товара «Цена и наличие» (с таблицей вариантов) и «Описание» — во всю ширину:
+   таблице нужно место. Если колонка всё же узкая, таблица прокручивается внутри группы. */
+.pf-groups:has(.pf-embed .table-wrap) > .pf-group:nth-child(n + 3) {
+  grid-column: 1 / -1;
+}
+
 /* Таблица вариантов шире колонки — прокручивается внутри группы, а не вылезает на соседнюю. */
 .pf-group > *,
 .pf-embed {
@@ -2113,7 +2119,7 @@ a.stat:hover {
 
 .he {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 320px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.1fr) 300px minmax(0, 1fr);
   gap: var(--gap);
   align-items: start;
 }
@@ -2196,10 +2202,13 @@ a.stat:hover {
   min-width: 0;
 }
 
+/* Название блока — до двух строк, а не «Новая кол…». */
 .he-row-text strong {
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .he-row-actions {
@@ -2234,7 +2243,8 @@ a.stat:hover {
 }
 
 .he-row-actions button {
-  width: 36px;
+  width: 34px;
+  min-width: 34px;
   padding: 0;
 }
 

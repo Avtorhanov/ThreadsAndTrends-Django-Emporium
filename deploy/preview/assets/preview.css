@@ -9,3 +9,6 @@
 .pv-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
 @media (min-width: 900px) { .pv-toast { bottom: 32px; } }
 @media (prefers-reduced-motion: reduce) { .pv-toast { transition: opacity .15s ease; transform: translate(-50%, 0); } }
+
+/* Новый товар или заказ (страница-образец через 404): содержимое — после подстановки данных. */
+html[data-sim-pending] #main { visibility: hidden; }
