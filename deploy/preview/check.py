@@ -115,8 +115,9 @@ def main(site: Path, shots: Path) -> None:
         # 2. Покупатель: товар → корзина (+1) → вход → оформление → страница заказа.
         page = page_for(IPHONE, pages_404=True)
         check = data["check"]
+        variant, name = check["variant"], check["name"]
         page.goto(origin + BASE + check["path"], wait_until="load")
-        page.click(f'label.sz:has(input[value="{check["variant"]}"])')
+        page.click(f'label.sz:has(input[value="{variant}"])')
         page.click("[data-cta]")
         page.wait_for_selector("[data-added]")
         assert page.text_content("#cart-badge-tab").strip() == "1"
@@ -130,7 +131,7 @@ def main(site: Path, shots: Path) -> None:
         page.fill('main input[name="password"]', data["customer"]["password"])
         page.click('main form[method="post"] button[type="submit"]')
         page.wait_for_url(f"**{BASE}/me/checkout/")
-        page.wait_for_selector(f".mini li:has-text('{check['name']}')")
+        page.wait_for_selector(f".mini li:has-text('{name}')")
         page.screenshot(path=shots / "sim-checkout-iphone.png", full_page=True)
         page.click("[data-checkout] button[type=submit]")
         page.wait_for_url(f"**{BASE}/me/orders/DD-*/")

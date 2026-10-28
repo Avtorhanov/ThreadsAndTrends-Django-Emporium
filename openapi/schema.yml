@@ -3826,7 +3826,12 @@ components:
         nav_style:
           allOf:
           - $ref: '#/components/schemas/ThemeNavEnum'
-          description: Вид нижнего меню витрины на телефоне
+          description: |-
+            Вид нижнего меню витрины на телефоне
+
+            * `solid` - Сплошное
+            * `floating` - Плавающее
+            * `bar` - Нижняя панель
         enabled:
           type: array
           items:
@@ -3857,7 +3862,12 @@ components:
         nav_style:
           allOf:
           - $ref: '#/components/schemas/ThemeNavEnum'
-          description: Вид нижнего меню витрины; не передан — прежний
+          description: |-
+            Вид нижнего меню витрины; не передан — прежний
+
+            * `solid` - Сплошное
+            * `floating` - Плавающее
+            * `bar` - Нижняя панель
       required:
       - default_mode
       - default_palette
@@ -5685,7 +5695,12 @@ components:
         nav_style:
           allOf:
           - $ref: '#/components/schemas/ThemeNavEnum'
-          description: Вид нижнего меню витрины на телефоне
+          description: |-
+            Вид нижнего меню витрины на телефоне
+
+            * `solid` - Сплошное
+            * `floating` - Плавающее
+            * `bar` - Нижняя панель
       required:
       - accents
       - default_mode

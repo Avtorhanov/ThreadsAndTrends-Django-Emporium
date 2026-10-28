@@ -376,8 +376,7 @@ def build(out: Path) -> None:
         "customer": {"email": CUSTOMER_EMAIL, "password": PASSWORD},
         "images": image_sources(),
         "ask": [
-            {"kind": str(link.kind), "title": link.title, "url": link.url}
-            for link in ask_links("")
+            {"kind": str(link.kind), "title": link.title, "url": link.url} for link in ask_links("")
         ],
         "templates": templates(orders),
         "check": check_product(variants),
