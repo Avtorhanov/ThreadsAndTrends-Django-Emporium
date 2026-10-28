@@ -3000,8 +3000,8 @@ components:
           nullable: true
         online_payment_available:
           type: boolean
-          description: Онлайн-оплата подключена на сервере (ключи ЮKassa в .env)
           readOnly: true
+          description: Онлайн-оплата подключена на сервере (ключи ЮKassa в .env)
         defaults:
           allOf:
           - $ref: '#/components/schemas/AdminShopDefaults'
