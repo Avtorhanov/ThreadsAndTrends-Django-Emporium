@@ -38,6 +38,38 @@ class Category(models.Model):
         return f"{self.parent.name} / {self.name}" if self.parent_id else self.name
 
 
+class StatusTone(models.TextChoices):
+    """Цвет метки статуса — из семантических цветов «Лайм-тек»: читаются в обеих темах."""
+
+    SUCCESS = "success", "Зелёный"
+    WARNING = "warning", "Жёлтый"
+    INFO = "info", "Синий"
+    NEUTRAL = "neutral", "Серый"
+
+
+class ProductStatus(models.Model):
+    """Статус товара для покупателя: «В наличии», «Под заказ», «Ожидается поставка»…
+    Справочник ведёт администратор; у товара — один статус или никакого (метка не видна).
+    Только метка: на остатки и оформление заказа не влияет."""
+
+    name = models.CharField(max_length=40, unique=True, verbose_name="Название")
+    hint = models.CharField(max_length=120, blank=True, verbose_name="Подсказка покупателю")
+    tone = models.CharField(
+        max_length=10, choices=StatusTone.choices, default=StatusTone.NEUTRAL, verbose_name="Цвет"
+    )
+    position = models.PositiveIntegerField(default=0, verbose_name="Порядок")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создан")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменён")
+
+    class Meta:
+        verbose_name = "Статус товара"
+        verbose_name_plural = "Статусы товаров"
+        ordering = ["position", "id"]
+
+    def __str__(self):
+        return self.name
+
+
 class ProductQuerySet(models.QuerySet):
     def live(self):
         """Видимые на витрине: товар и его категории активны (удалённые отсекает менеджер)."""
@@ -76,6 +108,15 @@ class Product(models.Model):
     )
     compare_at_kopecks = models.PositiveBigIntegerField(
         null=True, blank=True, verbose_name="Старая цена, коп."
+    )
+    # Удаление статуса из справочника снимает метку с товаров.
+    status = models.ForeignKey(
+        ProductStatus,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="products",
+        verbose_name="Статус",
     )
     is_active = models.BooleanField(default=True, verbose_name="Активен")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создан")

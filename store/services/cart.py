@@ -134,7 +134,7 @@ def _load_variants(ids: Iterable[int]) -> dict[int, ProductVariant]:
     Видимость товара — тот же Product.objects.live(), что и на витрине."""
     queryset = (
         ProductVariant.all_objects.filter(pk__in=set(ids))
-        .select_related("product")
+        .select_related("product", "product__status")
         .prefetch_related("product__images")
         .annotate(product_is_live=Exists(Product.objects.live().filter(pk=OuterRef("product_id"))))
     )

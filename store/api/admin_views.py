@@ -9,7 +9,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
 from core.api.mixins import AdminAPIMixin
-from store.models import Category, Product, ProductImage, ProductVariant
+from store.models import Category, Product, ProductImage, ProductStatus, ProductVariant
 from store.services import catalog
 
 from .serializers import (
@@ -17,9 +17,12 @@ from .serializers import (
     AdminImageReorderSerializer,
     AdminImageSerializer,
     AdminImageUploadSerializer,
+    AdminProductBulkResultSerializer,
+    AdminProductBulkSerializer,
     AdminProductCreateSerializer,
     AdminProductDetailSerializer,
     AdminProductSerializer,
+    AdminProductStatusSerializer,
     AdminProductUpdateSerializer,
     AdminVariantSerializer,
 )
@@ -27,7 +30,7 @@ from .serializers import (
 TAG = "admin-catalog"
 
 
-class ProductStatus:
+class Visibility:
     ACTIVE = "active"
     INACTIVE = "inactive"
     DELETED = "deleted"
@@ -130,15 +133,21 @@ class AdminProductViewSet(
             )
 
         params = self.request.query_params
-        product_status = params.get("status")
-        if product_status == ProductStatus.ACTIVE:
+        visibility = params.get("status")
+        if visibility == Visibility.ACTIVE:
             queryset = queryset.filter(deleted_at__isnull=True, is_active=True)
-        elif product_status == ProductStatus.INACTIVE:
+        elif visibility == Visibility.INACTIVE:
             queryset = queryset.filter(deleted_at__isnull=True, is_active=False)
-        elif product_status == ProductStatus.DELETED:
+        elif visibility == Visibility.DELETED:
             queryset = queryset.filter(deleted_at__isnull=False)
         else:
             queryset = queryset.filter(deleted_at__isnull=True)
+
+        label = params.get("label")
+        if label == "none":
+            queryset = queryset.filter(status__isnull=True)
+        elif label and label.isdigit():
+            queryset = queryset.filter(status_id=label)
 
         category_id = params.get("category")
         if category_id and category_id.isdigit():
@@ -171,9 +180,10 @@ class AdminProductViewSet(
             OpenApiParameter(
                 "status",
                 str,
-                enum=ProductStatus.CHOICES,
+                enum=Visibility.CHOICES,
                 description="По умолчанию — кроме удалённых",
             ),
+            OpenApiParameter("label", str, description="id статуса товара; none — без статуса"),
             OpenApiParameter("category", int, description="id категории (с подкатегориями)"),
             OpenApiParameter("stock", str, enum=StockFilter.CHOICES),
         ],
@@ -216,6 +226,20 @@ class AdminProductViewSet(
     def destroy(self, request, *args, **kwargs):
         catalog.soft_delete_product(self.get_object())
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        request=AdminProductBulkSerializer,
+        responses={200: AdminProductBulkResultSerializer},
+        description="Массово: статус, категория или видимость у отмеченных товаров (до 200).",
+    )
+    @action(detail=False, methods=["post"])
+    def bulk(self, request):
+        serializer = AdminProductBulkSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        changes = dict(serializer.validated_data)
+        ids = changes.pop("ids")
+        updated = catalog.bulk_update_products(ids, **changes)
+        return Response({"updated": updated})
 
     @extend_schema(
         request=None,
@@ -304,4 +328,53 @@ class AdminImageViewSet(AdminAPIMixin, mixins.DestroyModelMixin, viewsets.Generi
     )
     def destroy(self, request, *args, **kwargs):
         catalog.delete_product_image(self.get_object())
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(tags=[TAG])
+class AdminProductStatusViewSet(
+    AdminAPIMixin,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    """Справочник статусов товаров. Удаление снимает метку с товаров."""
+
+    serializer_class = AdminProductStatusSerializer
+    pagination_class = None
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+
+    def get_queryset(self):
+        return ProductStatus.objects.annotate(
+            products_count=Count("products", filter=Q(products__deleted_at__isnull=True))
+        ).order_by("position", "id")
+
+    def _respond(self, status_obj, status_code=status.HTTP_200_OK):
+        fresh = self.get_queryset().get(pk=status_obj.pk)
+        return Response(self.get_serializer(fresh).data, status=status_code)
+
+    @extend_schema(operation_id="admin_catalog_statuses_list")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(operation_id="admin_catalog_statuses_create")
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return self._respond(
+            catalog.create_status(**serializer.validated_data), status.HTTP_201_CREATED
+        )
+
+    @extend_schema(operation_id="admin_catalog_statuses_partial_update")
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        return self._respond(catalog.update_status(instance, **serializer.validated_data))
+
+    @extend_schema(operation_id="admin_catalog_statuses_destroy")
+    def destroy(self, request, *args, **kwargs):
+        catalog.delete_status(self.get_object())
         return Response(status=status.HTTP_204_NO_CONTENT)

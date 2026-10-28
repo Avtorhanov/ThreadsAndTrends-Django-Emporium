@@ -1577,3 +1577,358 @@ a.stat:hover {
   display: inline-block;
   max-width: 100%;
 }
+
+.note-success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.note-info {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- Статусы товаров: метки и справочник --- */
+
+.label-success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.label-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.label-info {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.label-neutral,
+.label-none {
+  background: var(--neutral-bg);
+  color: var(--neutral);
+}
+
+.label-select {
+  min-height: 36px;
+  border: 0;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.labels {
+  margin-top: 18px;
+}
+
+.labels summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  cursor: pointer;
+}
+
+.labels summary h2 {
+  margin: 0;
+}
+
+.label-list {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.label-row {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ctl);
+}
+
+.label-fields {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+}
+
+.label-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.labels .inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.labels .inline-form input {
+  flex: 1 1 220px;
+}
+
+@media (max-width: 640px) {
+  .label-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- Список товаров: выбор и массовые действия --- */
+
+.check-cell {
+  width: 40px;
+}
+
+.check-cell input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--brand);
+}
+
+.table tbody tr.is-selected {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.bulk-bar {
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-ctl);
+  background: var(--nav);
+  color: #fff;
+  box-shadow: var(--shadow-nav);
+}
+
+.bulk-gap {
+  flex: 1 1 auto;
+}
+
+.bulk-link {
+  border: 0;
+  background: transparent;
+  color: var(--nav-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bulk-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--nav-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bulk-field select {
+  min-height: 40px;
+}
+
+.button-accent {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.button-outline {
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  background: transparent;
+  color: var(--accent);
+  box-shadow: none;
+}
+
+/* --- Форма товара: четыре группы --- */
+
+.pf-form {
+  display: grid;
+  gap: 14px;
+  max-width: 1180px;
+}
+
+.pf-bar {
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-ctl);
+  background: var(--surface);
+  box-shadow: var(--shadow-control);
+}
+
+.pf-bar-gap {
+  flex: 1 1 auto;
+}
+
+.unsaved {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--warning);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.unsaved::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: currentColor;
+}
+
+.pf-groups {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  align-items: start;
+}
+
+.pf-group {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.pf-group-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pf-group-head h2 {
+  margin: 0;
+}
+
+.pf-group-aside {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pf-num {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: var(--nav);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Галерея и остатки внутри группы — без своей карточки и заголовка. */
+.pf-embed > .card {
+  padding: 0;
+  margin: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.pf-embed > .card > h2 {
+  display: none;
+}
+
+.drop-zone {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 18px 14px;
+  border: 2px dashed var(--input-line);
+  border-radius: var(--radius-panel);
+  text-align: center;
+  cursor: pointer;
+}
+
+.pending-photos {
+  display: grid;
+  gap: 10px;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.photo-tile {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-image);
+  background: var(--tone-sage);
+}
+
+.photo-tile img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.photo-cover {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--nav);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.photo-tile figcaption {
+  position: absolute;
+  inset: auto 4px 4px;
+  display: flex;
+  justify-content: space-between;
+  gap: 2px;
+}
+
+.photo-tile figcaption button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #13261c;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.photo-tile figcaption button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.photo-tile .photo-remove {
+  color: #b3261e;
+}

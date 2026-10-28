@@ -209,7 +209,7 @@ def category(request, slug: str):
 
 
 def product(request, slug: str):
-    queryset = Product.objects.live().select_related("category", "category__parent")
+    queryset = Product.objects.live().select_related("category", "category__parent", "status")
     found = get_object_or_404(
         queryset.prefetch_related(
             Prefetch("images", queryset=ProductImage.objects.order_by("position", "id")),

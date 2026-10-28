@@ -208,6 +208,11 @@ paths:
         schema:
           type: integer
         description: id категории (с подкатегориями)
+      - in: query
+        name: label
+        schema:
+          type: string
+        description: id статуса товара; none — без статуса
       - name: page
         required: false
         in: query
@@ -265,6 +270,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminProductDetail'
+          description: ''
+  /api/v1/admin/catalog/products/bulk/:
+    post:
+      operationId: admin_catalog_products_bulk_create
+      description: 'Массово: статус, категория или видимость у отмеченных товаров (до
+        200).'
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductBulkRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductBulkResult'
           description: ''
   /api/v1/admin/catalog/products/{id}/:
     get:
@@ -438,6 +465,87 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminVariant'
           description: ''
+  /api/v1/admin/catalog/statuses/:
+    get:
+      operationId: admin_catalog_statuses_list
+      description: Справочник статусов товаров. Удаление снимает метку с товаров.
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminProductStatus'
+          description: ''
+    post:
+      operationId: admin_catalog_statuses_create
+      description: Справочник статусов товаров. Удаление снимает метку с товаров.
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductStatusRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductStatus'
+          description: ''
+  /api/v1/admin/catalog/statuses/{id}/:
+    patch:
+      operationId: admin_catalog_statuses_partial_update
+      description: Справочник статусов товаров. Удаление снимает метку с товаров.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статус товара.
+        required: true
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminProductStatusRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductStatus'
+          description: ''
+    delete:
+      operationId: admin_catalog_statuses_destroy
+      description: Справочник статусов товаров. Удаление снимает метку с товаров.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Статус товара.
+        required: true
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/admin/catalog/variants/{id}/:
     patch:
       operationId: admin_catalog_variants_partial_update
@@ -2694,6 +2802,11 @@ components:
           readOnly: true
           nullable: true
           title: Старая цена, коп.
+        status:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Статус
         is_active:
           type: boolean
           readOnly: true
@@ -2734,8 +2847,39 @@ components:
       - name
       - price_kopecks
       - slug
+      - status
       - total_stock
       - updated_at
+    AdminProductBulkRequest:
+      type: object
+      description: 'Массовое изменение: передаются только меняемые поля.'
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          description: id товаров
+          maxItems: 200
+        status:
+          type: integer
+          nullable: true
+          description: Новый статус; null — снять метку
+        category:
+          type: integer
+          description: Перенести в категорию
+        is_active:
+          type: boolean
+          description: Показывать на витрине
+      required:
+      - ids
+    AdminProductBulkResult:
+      type: object
+      properties:
+        updated:
+          type: integer
+          description: Сколько товаров изменено
+      required:
+      - updated
     AdminProductCreateRequest:
       type: object
       properties:
@@ -2769,6 +2913,10 @@ components:
           minimum: 1
           format: int64
           nullable: true
+        status:
+          type: integer
+          nullable: true
+          description: id статуса; null — без метки
         is_active:
           type: boolean
         variants:
@@ -2811,6 +2959,11 @@ components:
           readOnly: true
           nullable: true
           title: Старая цена, коп.
+        status:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Статус
         is_active:
           type: boolean
           readOnly: true
@@ -2867,9 +3020,64 @@ components:
       - name
       - price_kopecks
       - slug
+      - status
       - total_stock
       - updated_at
       - variants
+    AdminProductStatus:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Название
+          maxLength: 40
+        hint:
+          type: string
+          title: Подсказка покупателю
+          maxLength: 120
+        tone:
+          allOf:
+          - $ref: '#/components/schemas/ToneEnum'
+          title: Цвет
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+        products_count:
+          type: integer
+          readOnly: true
+          description: Товаров с этим статусом
+      required:
+      - id
+      - name
+      - products_count
+    AdminProductStatusRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Название
+          maxLength: 40
+        hint:
+          type: string
+          title: Подсказка покупателю
+          maxLength: 120
+        tone:
+          allOf:
+          - $ref: '#/components/schemas/ToneEnum'
+          title: Цвет
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
+      required:
+      - name
     AdminRefund:
       type: object
       properties:
@@ -3563,11 +3771,17 @@ components:
           type: string
           nullable: true
           readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ProductStatus'
+          nullable: true
+          description: 'Метка товара: «Под заказ»…'
       required:
       - cover_url
       - id
       - name
       - slug
+      - status
     CatalogCategoryShort:
       type: object
       properties:
@@ -3662,6 +3876,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/CatalogCategoryShort'
           readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ProductStatus'
+          readOnly: true
+          nullable: true
       required:
       - category
       - compare_at_kopecks
@@ -3672,6 +3891,7 @@ components:
       - price_kopecks
       - price_on_request
       - slug
+      - status
     CatalogProductDetail:
       type: object
       properties:
@@ -3712,6 +3932,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/CatalogCategoryShort'
           readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ProductStatus'
+          readOnly: true
+          nullable: true
         description:
           type: string
           readOnly: true
@@ -3738,6 +3963,7 @@ components:
       - price_kopecks
       - price_on_request
       - slug
+      - status
       - variants
     CatalogVariant:
       type: object
@@ -4501,6 +4727,27 @@ components:
         is_active:
           type: boolean
           title: Показывать
+    PatchedAdminProductStatusRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Название
+          maxLength: 40
+        hint:
+          type: string
+          title: Подсказка покупателю
+          maxLength: 120
+        tone:
+          allOf:
+          - $ref: '#/components/schemas/ToneEnum'
+          title: Цвет
+        position:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Порядок
     PatchedAdminProductUpdateRequest:
       type: object
       properties:
@@ -4534,6 +4781,10 @@ components:
           minimum: 1
           format: int64
           nullable: true
+        status:
+          type: integer
+          nullable: true
+          description: id статуса; null — без метки
         is_active:
           type: boolean
     PatchedAdminVariantRequest:
@@ -4614,6 +4865,32 @@ components:
         * `succeeded` - Оплачен
         * `canceled` - Не оплачен
         * `refunded` - Возвращён
+    ProductStatus:
+      type: object
+      description: 'Метка товара для покупателя («Под заказ»…). tone — цвет: success,
+        warning, info, neutral.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          title: Название
+        hint:
+          type: string
+          readOnly: true
+          title: Подсказка покупателю
+        tone:
+          allOf:
+          - $ref: '#/components/schemas/ToneEnum'
+          readOnly: true
+          title: Цвет
+      required:
+      - hint
+      - id
+      - name
+      - tone
     Profile:
       type: object
       properties:
@@ -4746,6 +5023,18 @@ components:
       required:
       - access
       - refresh
+    ToneEnum:
+      enum:
+      - success
+      - warning
+      - info
+      - neutral
+      type: string
+      description: |-
+        * `success` - Зелёный
+        * `warning` - Жёлтый
+        * `info` - Синий
+        * `neutral` - Серый
   securitySchemes:
     cookieAuth:
       type: apiKey

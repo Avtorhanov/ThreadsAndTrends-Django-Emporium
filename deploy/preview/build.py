@@ -676,6 +676,7 @@ def panel_snapshot() -> dict:
         grab(f"{ADMIN_API}/orders/{order.pk}/")
     grab(f"{ADMIN_API}/catalog/categories/")
     grab(f"{ADMIN_API}/catalog/products/")
+    grab(f"{ADMIN_API}/catalog/statuses/")
     for pk in panel_ids()["catalog/products"]:
         grab(f"{ADMIN_API}/catalog/products/{pk}/")
     grab(f"{ADMIN_API}/content/articles/")

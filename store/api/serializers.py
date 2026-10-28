@@ -1,8 +1,8 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from store.models import Category, Product, ProductImage, ProductVariant
-from store.services.catalog import MAX_PRICE_KOPECKS
+from store.models import Category, Product, ProductImage, ProductStatus, ProductVariant
+from store.services.catalog import MAX_BULK, MAX_PRICE_KOPECKS
 from store.services.storefront import Sort
 
 
@@ -57,8 +57,18 @@ class CatalogVariantSerializer(serializers.ModelSerializer):
         return obj.stock > 0
 
 
+class ProductStatusSerializer(serializers.ModelSerializer):
+    """Метка товара для покупателя («Под заказ»…). tone — цвет: success, warning, info, neutral."""
+
+    class Meta:
+        model = ProductStatus
+        fields = ["id", "name", "hint", "tone"]
+        read_only_fields = fields
+
+
 class CatalogProductSerializer(serializers.ModelSerializer):
     category = CatalogCategoryShortSerializer(read_only=True)
+    status = ProductStatusSerializer(read_only=True, allow_null=True)
     in_stock = serializers.BooleanField(read_only=True)
     cover_url = serializers.SerializerMethodField()
     price_kopecks = serializers.IntegerField(
@@ -81,6 +91,7 @@ class CatalogProductSerializer(serializers.ModelSerializer):
             "in_stock",
             "cover_url",
             "category",
+            "status",
         ]
         read_only_fields = fields
 
@@ -226,6 +237,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "category_name",
             "price_kopecks",
             "compare_at_kopecks",
+            "status",
             "is_active",
             "deleted_at",
             "total_stock",
@@ -274,6 +286,12 @@ class AdminProductUpdateSerializer(serializers.Serializer):
     compare_at_kopecks = serializers.IntegerField(
         min_value=1, max_value=MAX_PRICE_KOPECKS, allow_null=True, required=False
     )
+    status = serializers.PrimaryKeyRelatedField(
+        queryset=ProductStatus.objects.all(),
+        allow_null=True,
+        required=False,
+        help_text="id статуса; null — без метки",
+    )
     is_active = serializers.BooleanField(required=False)
 
 
@@ -283,3 +301,42 @@ class AdminProductCreateSerializer(AdminProductUpdateSerializer):
         required=False,
         help_text="Варианты (размеры). Не передано — один вариант «Без размера».",
     )
+
+
+class AdminProductStatusSerializer(serializers.ModelSerializer):
+    products_count = serializers.IntegerField(read_only=True, help_text="Товаров с этим статусом")
+
+    class Meta:
+        model = ProductStatus
+        fields = ["id", "name", "hint", "tone", "position", "products_count"]
+        read_only_fields = ["id", "products_count"]
+        # Уникальность названия (без учёта регистра) проверяет сервис.
+        validators = []
+        extra_kwargs = {
+            "name": {"validators": []},
+            "hint": {"required": False},
+            "tone": {"required": False},
+            "position": {"required": False},
+        }
+
+
+class AdminProductBulkSerializer(serializers.Serializer):
+    """Массовое изменение: передаются только меняемые поля."""
+
+    ids = serializers.ListField(
+        child=serializers.IntegerField(), max_length=MAX_BULK, help_text="id товаров"
+    )
+    status = serializers.PrimaryKeyRelatedField(
+        queryset=ProductStatus.objects.all(),
+        allow_null=True,
+        required=False,
+        help_text="Новый статус; null — снять метку",
+    )
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), required=False, help_text="Перенести в категорию"
+    )
+    is_active = serializers.BooleanField(required=False, help_text="Показывать на витрине")
+
+
+class AdminProductBulkResultSerializer(serializers.Serializer):
+    updated = serializers.IntegerField(help_text="Сколько товаров изменено")

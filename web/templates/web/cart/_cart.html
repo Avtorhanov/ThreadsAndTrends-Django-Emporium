@@ -24,6 +24,7 @@
           {% if product and line.status != 'unavailable' %}<a href="{% url 'web:product' product.slug %}">{{ product.name }}</a>{% elif product %}{{ product.name }}{% else %}Товар снят с продажи{% endif %}
         </p>
         {% if line.size %}<p class="line__meta">Размер {{ line.size }}</p>{% endif %}
+        {% if product.status and line.status != 'unavailable' %}<p class="status status--{{ product.status.tone }}">{{ product.status.name }}</p>{% endif %}
         {% include "web/cart/_line_parts.html" %}
       </div>
       {% endwith %}

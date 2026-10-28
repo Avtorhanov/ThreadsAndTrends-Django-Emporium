@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../../src/auth/AuthProvider";
 import { useCart } from "../../../src/cart/CartProvider";
 import { AskPanel } from "../../../src/catalog/AskPanel";
-import { InCartBadge, Price, ProductImage, SizePicker } from "../../../src/catalog/components";
+import { InCartBadge, Price, ProductImage, SizePicker, StatusPill } from "../../../src/catalog/components";
 import { useProduct } from "../../../src/catalog/hooks";
 import { FillButton } from "../../../src/components/FillButton";
 import { useContentWidth } from "../../../src/components/layout";
@@ -212,6 +212,7 @@ export default function ProductScreen() {
                 <Text style={s.title} accessibilityRole="header">
                   {product.name}
                 </Text>
+                {product.status ? <StatusPill status={product.status} /> : null}
                 <Price price={product.price_kopecks} compareAt={product.compare_at_kopecks} size="detail" />
                 {inCart > 0 ? <InCartBadge label={`В корзине · ${inCart} шт.`} /> : null}
                 {product.in_stock ? null : <Text style={s.outOfStock}>Нет в наличии</Text>}

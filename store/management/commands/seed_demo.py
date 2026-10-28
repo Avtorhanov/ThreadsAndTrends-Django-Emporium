@@ -8,12 +8,19 @@ from django.core.management.base import BaseCommand, CommandError
 
 from content import services as content
 from content.models import Article
-from store.models import Product
+from store.models import Product, ProductStatus
 from store.services import catalog
 
 FIXTURE = Path(settings.BASE_DIR) / "fixtures/catalog.json"
 IMAGES = Path(settings.BASE_DIR) / "fixtures/demo_images"
 ARTICLES = Path(settings.BASE_DIR) / "fixtures/demo_articles.json"
+
+# Демо-статусы: какие товары витрина помечает. Префикс slug → название статуса из миграции.
+DEMO_STATUSES = {
+    "gucci-": "Под заказ",
+    "kinder-advent-": "Ожидается поставка",
+    "stanley-": "В наличии",
+}
 
 
 def demo_slugs() -> set[str]:
@@ -59,12 +66,23 @@ class Command(BaseCommand):
                     catalog.add_product_image(product, File(fh, name=path.name))
                 added += 1
         articles = self._seed_articles()
+        self._seed_statuses()
         total = Product.objects.count()
         self.stdout.write(
             self.style.SUCCESS(
                 f"Демо-каталог: товаров {total}, новых фото {added}, новых статей {articles}"
             )
         )
+
+    def _seed_statuses(self) -> None:
+        # Фикстура не знает о статусах; ставим только товарам без статуса — ручной выбор не трогаем.
+        for prefix, name in DEMO_STATUSES.items():
+            status = ProductStatus.objects.filter(name=name).first()
+            if status is None:
+                continue
+            Product.all_objects.filter(slug__startswith=prefix, status__isnull=True).update(
+                status=status
+            )
 
     def _seed_articles(self) -> int:
         # Статьи пишет владелец: демо-статьи — только в пустой раздел (свои не трогаем).

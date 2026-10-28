@@ -554,6 +554,14 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .status--tag { background: var(--tag); color: var(--tag-ink); }
 .status--info { background: var(--info-bg); color: var(--info); }
 .status--success { background: var(--success-bg); color: var(--success); }
+/* Статус товара на карточке ленты — тихо: точка и подпись, без плашки на фото. */
+.mark { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font: 600 12px/1.2 var(--font-secondary); }
+.mark::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 3px; background: var(--neutral); }
+.mark--success::before { background: var(--success); }
+.mark--warning::before { background: var(--warning); }
+.mark--info::before { background: var(--info); }
+.pd__status { margin-top: 8px; }
+.pd__status-hint { margin-top: 4px; font-size: 13px; }
 .stepper { display: inline-flex; align-items: center; border-radius: 12px; background: var(--surface); box-shadow: var(--shadow-control); }
 .stepper form { display: flex; }
 .stepper__btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); }

@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from store.services.cart import LineInput, LineStatus, MergeNoticeReason
 
-from .serializers import absolute_url
+from .serializers import ProductStatusSerializer, absolute_url
 
 # Защита от нелепых чисел во входных данных; реальный предел — остаток и CART_MAX_QUANTITY.
 MAX_INPUT_QUANTITY = 1000
@@ -18,6 +18,7 @@ class CartProductSerializer(serializers.Serializer):
     slug = serializers.CharField()
     name = serializers.CharField()
     cover_url = serializers.SerializerMethodField()
+    status = ProductStatusSerializer(allow_null=True, help_text="Метка товара: «Под заказ»…")
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_cover_url(self, product):

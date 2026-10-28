@@ -1,10 +1,13 @@
 from django.db import transaction
 from django.db.models.signals import post_delete, post_save
-from django.dispatch import receiver
+from django.dispatch import Signal, receiver
 
 from accounts.signals import account_deleted
 from store.models import Cart, Category
 from store.services.storefront import invalidate_category_tree
+
+# Массовое изменение товаров (bulk_update не шлёт post_save): витрина сбрасывает кэш сеток.
+products_bulk_updated = Signal()
 
 
 @receiver(account_deleted)
