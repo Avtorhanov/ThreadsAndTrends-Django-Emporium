@@ -5,6 +5,7 @@ import { type Article, articleImagesService, articlesService, MAX_ARTICLE_IMAGES
 import { ApiError, type FieldErrors } from "../api/errors";
 import { ImagesEditor } from "../components/catalog/ImagesEditor";
 import { useArticle } from "../hooks/useContent";
+import { storeUrl } from "../lib/site";
 
 function FieldError({ errors, name }: { errors: FieldErrors; name: string }) {
   const message = errors[name]?.[0];
@@ -125,7 +126,7 @@ export function ArticleEditPage() {
         <h1>{articleId === null ? "Новая статья" : (current?.title ?? "Статья")}</h1>
         {current?.deleted_at ? <span className="badge badge-deleted">Удалена</span> : null}
         {current && current.is_published && !current.deleted_at ? (
-          <a className="button button-ghost" href={`/articles/${current.slug}/`} target="_blank" rel="noreferrer">
+          <a className="button button-ghost" href={storeUrl(`articles/${current.slug}/`)} target="_blank" rel="noreferrer">
             Открыть на сайте
           </a>
         ) : null}

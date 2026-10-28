@@ -31,7 +31,9 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 TEMPLATES[0]["DIRS"] = [BASE_DIR / "deploy/preview/templates"]
 
 SITE_URL = os.environ.get("PREVIEW_SITE_URL", "")
-ANDROID_APK_URL = "https://example.invalid/didi-shop.apk"
+# Ссылки на APK в демо нет (релиза ещё нет) — пункт «Приложение для Android» не показывается,
+# а не ведёт в никуда.
+ANDROID_APK_URL = ""
 
 SELLER_NAME = "ИП Пример Продавец (демо)"
 SELLER_INN = "000000000000"

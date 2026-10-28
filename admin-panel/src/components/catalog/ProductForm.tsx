@@ -204,7 +204,11 @@ export function ProductForm({ product, categories, labels, photos, stock, extraD
           <span className="saved" role="status">
             {product ? "Сохранено" : "Товар создан"}
           </span>
-        ) : null}
+        ) : (
+          <span className="muted small">
+            {product ? "Изменений нет" : "Заполните группы 1–4 и опубликуйте товар или сохраните скрытым"}
+          </span>
+        )}
         <span className="pf-bar-gap" />
         {product ? (
           <button type="submit" className="button" disabled={saving}>

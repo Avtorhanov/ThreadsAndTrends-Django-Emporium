@@ -105,22 +105,25 @@ export function OrdersPage() {
             </option>
           ))}
         </select>
-        <label className="date-filter">
-          с
-          <input
-            type="date"
-            value={createdFrom}
-            onChange={(event) => filter(setCreatedFrom)(event.target.value)}
-          />
-        </label>
-        <label className="date-filter">
-          по
-          <input
-            type="date"
-            value={createdTo}
-            onChange={(event) => filter(setCreatedTo)(event.target.value)}
-          />
-        </label>
+        {/* Период — одним блоком: «с» и «по» не разъезжаются по строкам. */}
+        <span className="date-range">
+          <label className="date-filter">
+            с
+            <input
+              type="date"
+              value={createdFrom}
+              onChange={(event) => filter(setCreatedFrom)(event.target.value)}
+            />
+          </label>
+          <label className="date-filter">
+            по
+            <input
+              type="date"
+              value={createdTo}
+              onChange={(event) => filter(setCreatedTo)(event.target.value)}
+            />
+          </label>
+        </span>
       </div>
 
       {error ? <p className="alert">{error}</p> : null}

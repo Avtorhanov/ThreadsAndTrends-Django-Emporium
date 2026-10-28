@@ -8,6 +8,7 @@ import { MAX_PRODUCT_IMAGES, PendingPhotos } from "../components/catalog/Pending
 import { ProductForm, type ProductFormValues } from "../components/catalog/ProductForm";
 import { VariantsEditor } from "../components/catalog/VariantsEditor";
 import { useCategories, useLabels, useProduct } from "../hooks/useCatalog";
+import { storeUrl } from "../lib/site";
 
 type CreatedState = { photosFailed?: string[] } | null;
 
@@ -79,7 +80,7 @@ export function ProductEditPage() {
         <h1>{productId === null ? "Новый товар" : (product.data?.name ?? "Товар")}</h1>
         {product.data?.deleted_at ? <span className="badge badge-deleted">Удалён</span> : null}
         {product.data && !product.data.deleted_at && product.data.is_active ? (
-          <a className="button button-ghost" href={`/product/${product.data.slug}/`} target="_blank" rel="noreferrer">
+          <a className="button button-ghost" href={storeUrl(`product/${product.data.slug}/`)} target="_blank" rel="noreferrer">
             Открыть на сайте
           </a>
         ) : null}

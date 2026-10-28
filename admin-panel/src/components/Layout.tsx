@@ -3,6 +3,7 @@ import { Navigate, NavLink, Outlet, useLocation } from "react-router";
 
 import type { StaffUser } from "../auth/authService";
 import { useAuth } from "../auth/AuthProvider";
+import { STORE_URL } from "../lib/site";
 import { THEME_LABELS, type ThemeChoice, useTheme } from "../theme/theme";
 import { Icon, type IconName } from "./Icon";
 
@@ -30,8 +31,6 @@ function sectionFor(pathname: string) {
 
 const THEME_ICONS: Record<ThemeChoice, IconName> = { system: "system", light: "sun", dark: "moon" };
 
-/** Витрина — корень сайта: панель живёт в /panel/ (на превью — /<репозиторий>/panel/). */
-const STORE_URL = import.meta.env.BASE_URL.replace(/panel\/?$/, "");
 
 /** Открыть магазин из любого раздела — посмотреть изменения глазами покупателя. */
 function StoreLink() {
