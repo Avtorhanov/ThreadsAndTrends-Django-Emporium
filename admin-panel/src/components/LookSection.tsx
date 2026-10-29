@@ -18,7 +18,7 @@ export function LookSection() {
   const tabs = TABS.filter((tab) => !tab.shop || shopLevel !== "none");
   const current = TABS.find((tab) => pathname === tab.to || pathname.startsWith(`${tab.to}/`));
 
-  if (!current) return <Navigate to={tabs[0].to} replace />;
+  if (!current) return <Navigate to={tabs[0]?.to ?? "/look/panel"} replace />;
   if (current.shop && shopLevel === "none") return <Navigate to="/look/panel" replace />;
 
   return (
