@@ -34,6 +34,8 @@ SHOTS = [  # (имя, адрес без BASE)
     ("contacts", "/contacts/"),
     ("profile-guest", "/profile/"),
     ("profile-me", "/me/profile/"),
+    ("profile-data-me", "/me/profile/data/"),
+    ("profile-look", "/profile/look/"),
     ("orders-me", "/me/orders/"),
     ("rooms", "/rooms/"),
 ]
@@ -215,6 +217,9 @@ def panel_shots(site: Path) -> list[tuple[str, str]]:
         ("categories", "/panel/catalog/categories/"),
         ("articles", "/panel/content/articles/"),
         ("customers", "/panel/customers/"),
+        ("look-home", "/panel/look/home/"),
+        ("look-panel", "/panel/look/panel/"),
+        ("settings", "/panel/settings/"),
         ("login", "/panel/login/"),
     ]
 

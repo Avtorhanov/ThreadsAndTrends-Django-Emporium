@@ -6,7 +6,7 @@
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ request.path }}">
   <fieldset>
-    <legend class="panel__title">Оформление</legend>
+    <legend class="panel__title">Тема</legend>
     <div class="segments" role="radiogroup" aria-label="Тема">
       {% for value, label in theme_choices %}
       <label class="segment">

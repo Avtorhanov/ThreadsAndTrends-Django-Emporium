@@ -658,4 +658,12 @@
       setTimeout(function () { button.disabled = true; }, 0);
     });
   }
+
+  // Фото профиля: выбранный файл отправляется сразу (без JS — кнопка «Отправить» в noscript).
+  document.addEventListener("change", function (event) {
+    var input = event.target;
+    if (!input.matches || !input.matches("[data-autosubmit]") || !input.files || !input.files.length) return;
+    if (input.form.requestSubmit) input.form.requestSubmit();
+    else input.form.submit();
+  });
 })();

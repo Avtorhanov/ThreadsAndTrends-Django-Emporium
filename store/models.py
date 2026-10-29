@@ -322,3 +322,30 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} × {self.variant}"
+
+
+class ProductView(models.Model):
+    """Журнал просмотров покупателя: товар и когда его открывали последний раз.
+    Хранятся последние store.services.history.HISTORY_LIMIT записей на покупателя."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="product_views",
+        verbose_name="Покупатель",
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="+", verbose_name="Товар"
+    )
+    viewed_at = models.DateTimeField(default=timezone.now, verbose_name="Просмотрен")
+
+    class Meta:
+        verbose_name = "Просмотр товара"
+        verbose_name_plural = "Просмотры товаров"
+        constraints = [
+            models.UniqueConstraint(fields=["user", "product"], name="product_view_unique"),
+        ]
+        indexes = [models.Index(fields=["user", "-viewed_at"], name="product_view_recent_idx")]
+
+    def __str__(self):
+        return f"{self.user_id} → {self.product_id}"

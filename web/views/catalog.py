@@ -19,12 +19,14 @@ from django.utils.safestring import mark_safe
 from content import home as home_page
 from content.contacts import ask_links
 from store.models import Category, Product, ProductImage, ProductVariant
+from store.services import history
 from store.services.cart import max_quantity
 from store.services.storefront import (
     ProductFilters,
     Sort,
     active_categories,
     filter_products,
+    similar_products,
 )
 
 from .. import cart as web_cart
@@ -227,6 +229,21 @@ def category(request, slug: str):
     return _listing(request, category=found, search=False)
 
 
+def _similar_rail(product: Product) -> str:
+    """«Похожие товары» — горизонтальная лента под карточкой (HTML из кэша сеток)."""
+
+    def render_rail() -> str:
+        items = similar_products(product)
+        if not items:
+            return ""
+        return render_to_string(
+            "web/catalog/_similar.html", {"products": items, "product": product}
+        ).strip()
+
+    cache_key = catalog_cache.key("similar", product.pk)
+    return mark_safe(catalog_cache.get_or_render(cache_key, render_rail))
+
+
 def product(request, slug: str):
     queryset = Product.objects.live().select_related("category", "category__parent", "status")
     found = get_object_or_404(
@@ -236,6 +253,7 @@ def product(request, slug: str):
         ),
         slug=slug,
     )
+    history.record_view(request.user, found)
     variants = list(found.variants.all())
     sizes = [{"variant": variant, "available": max_quantity(variant) > 0} for variant in variants]
     in_stock = any(size["available"] for size in sizes)
@@ -275,6 +293,7 @@ def product(request, slug: str):
             "single_variant": single,
             "in_stock": in_stock,
             "json_ld": product_json_ld(request, found, images, in_stock),
+            "similar": _similar_rail(found),
             "tab": "catalog",
         },
     )

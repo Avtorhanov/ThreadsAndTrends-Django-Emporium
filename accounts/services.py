@@ -8,15 +8,18 @@
 import logging
 import secrets
 from datetime import timedelta
+from io import BytesIO
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.files.base import ContentFile
 from django.db import IntegrityError, transaction
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare, salted_hmac
+from PIL import Image, ImageOps, UnidentifiedImageError
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -27,6 +30,9 @@ from .models import PasswordResetCode, User, normalize_email
 from .signals import account_deleted, account_deleting
 
 logger = logging.getLogger(__name__)
+
+AVATAR_SIZE = 320  # px, квадрат: в профиле — до 96 px, запас на экраны 3x
+AVATAR_QUALITY = 82
 
 RESET_CODE_TTL = timedelta(minutes=15)
 RESET_CODE_MAX_ATTEMPTS = 5
@@ -99,6 +105,58 @@ def update_profile(user: User, **fields) -> User:
         setattr(user, name, fields[name])
     if changed:
         user.save(update_fields=changed)
+    return user
+
+
+# --- Фото профиля ---
+
+
+def _avatar_webp(uploaded) -> ContentFile:
+    """Квадрат AVATAR_SIZE по центру, WebP. Перекодирование убирает EXIF (геометку с телефона)."""
+    try:
+        with Image.open(uploaded) as source:
+            picture = ImageOps.exif_transpose(source)
+            picture = picture.convert("RGBA" if picture.mode in ("RGBA", "LA", "P") else "RGB")
+            picture = ImageOps.fit(picture, (AVATAR_SIZE, AVATAR_SIZE), Image.Resampling.LANCZOS)
+            buffer = BytesIO()
+            picture.save(buffer, "WEBP", quality=AVATAR_QUALITY, method=4)
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ValidationError({"avatar": "Файл не является изображением."}) from exc
+    return ContentFile(buffer.getvalue(), name="avatar.webp")
+
+
+def _delete_file_after_commit(storage, name: str) -> None:
+    if name:
+        transaction.on_commit(lambda: storage.delete(name))
+
+
+def set_avatar(user: User, uploaded) -> User:
+    """Новое фото профиля (JPEG/PNG/WebP до 5 МБ — та же проверка, что у фото товаров).
+    Прежний файл удаляется после commit."""
+    from store.services.catalog import inspect_image  # общая проверка изображений
+
+    try:
+        inspect_image(uploaded)
+    except ValidationError as exc:
+        raise ValidationError({"avatar": exc.message_dict.get("image", exc.messages)}) from exc
+    content = _avatar_webp(uploaded)
+    with transaction.atomic():
+        user = User.objects.select_for_update().get(pk=user.pk)
+        old = user.avatar.name
+        user.avatar.save(content.name, content, save=False)
+        user.save(update_fields=["avatar"])
+        _delete_file_after_commit(user.avatar.storage, old)
+    return user
+
+
+def remove_avatar(user: User) -> User:
+    with transaction.atomic():
+        user = User.objects.select_for_update().get(pk=user.pk)
+        old = user.avatar.name
+        if old:
+            user.avatar = ""
+            user.save(update_fields=["avatar"])
+            _delete_file_after_commit(user.avatar.storage, old)
     return user
 
 
@@ -224,6 +282,8 @@ def soft_delete_user(user: User) -> User:
         user.email = f"deleted-{user.pk}@deleted.invalid"
         user.first_name = ""
         user.last_name = ""
+        avatar = user.avatar.name
+        user.avatar = ""
         user.set_unusable_password()
         user.save(
             update_fields=[
@@ -232,9 +292,11 @@ def soft_delete_user(user: User) -> User:
                 "email",
                 "first_name",
                 "last_name",
+                "avatar",
                 "password",
             ]
         )
+        _delete_file_after_commit(user.avatar.storage, avatar)
         PasswordResetCode.objects.filter(user=user).delete()
         revoke_all_refresh_tokens(user)
         account_deleted.send(sender=User, user=user)

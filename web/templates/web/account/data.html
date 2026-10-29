@@ -1,0 +1,48 @@
+{% extends "web/base.html" %}
+{% block title %}Личные данные — DiDi-shop{% endblock %}
+{% block content %}
+<section class="page page--narrow">
+  <a class="back-link" href="{% url 'web:profile' %}"><svg class="ic flip" width="16" height="16"><use href="#i-chevron"/></svg>Профиль</a>
+  <header class="section-head">
+    <p class="overline">Профиль</p>
+    <h1 class="h1">Личные данные</h1>
+  </header>
+
+  <div class="panel photo" data-photo>
+    {% include "web/account/_avatar.html" with big=True %}
+    <div class="photo__body">
+      <p class="panel__title photo__title">Фото профиля</p>
+      <p class="muted photo__hint">JPEG, PNG или WebP до 5 МБ. Видите его только вы.</p>
+      <div class="photo__actions">
+        <form method="post" action="{% url 'web:avatar' %}" enctype="multipart/form-data" data-avatar-upload>
+          {% csrf_token %}
+          <label class="btn btn--dark btn--sm photo__pick">
+            <svg class="ic" width="16" height="16"><use href="#i-camera"/></svg><span data-pick-label>{% if user.avatar %}Заменить{% else %}Загрузить{% endif %}</span>
+            <input class="sr" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" data-autosubmit>
+          </label>
+          <noscript><button class="btn btn--line btn--sm" type="submit">Отправить</button></noscript>
+        </form>
+        <form method="post" action="{% url 'web:avatar' %}" data-avatar-remove{% if not user.avatar %} hidden{% endif %}>
+          {% csrf_token %}
+          <input type="hidden" name="remove" value="1">
+          <button class="btn btn--line btn--sm" type="submit">Удалить</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <form class="panel form" method="post" action="{% url 'web:profile_data' %}" novalidate>
+    {% csrf_token %}
+    <p class="panel__title">Имя</p>
+    {% include "web/partials/form_errors.html" %}
+    {% include "web/partials/field.html" with field=form.first_name %}
+    {% include "web/partials/field.html" with field=form.last_name %}
+    <div class="field">
+      <span class="field__label">Email</span>
+      <p class="readonly">{{ user.email }}</p>
+      <p class="field__hint">Email — логин аккаунта, его не меняем.</p>
+    </div>
+    <button class="btn btn--dark btn--block" type="submit">Сохранить</button>
+  </form>
+</section>
+{% endblock %}

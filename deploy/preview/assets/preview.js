@@ -599,6 +599,8 @@
     document.title = p.price_on_request ? p.name + " — цена по запросу в DiDi-shop" : p.name + " — купить за " + rub(p.price_kopecks) + " ₽ в DiDi-shop";
     bindGallery(pd);
     bindBack(pd);
+    if (TREE === "me") sim.recordView(slug);
+    renderSimilar(slug);
   }
 
   function bindGallery(scope) {
@@ -926,30 +928,108 @@
 
   // --- Профиль ---
 
+  function avatarHTML(c, big) {
+    var letter = String((c.first_name || c.email || "?").trim().charAt(0)).toUpperCase();
+    return '<span class="avatar' + (big ? " avatar--big" : "") + '" data-avatar>' +
+      (c.avatar ? '<img class="avatar__img" src="' + c.avatar + '" width="320" height="320" alt="">' : '<span class="avatar__letter" aria-hidden="true">' + esc(letter) + "</span>") + "</span>";
+  }
+
+  function railHTML(list) {
+    var inCart = cartSlugs();
+    return list.map(function (p) { return '<div class="hblock-rail__cell">' + cardHTML(p, false, inCart) + "</div>"; }).join("");
+  }
+
   function renderProfile() {
     var me = sim.currentCustomer();
     if (!me) return;
-    var head = document.querySelector(".section-head");
-    if (head) {
-      head.querySelector(".h1").textContent = me.first_name || "Мой аккаунт";
-      var email = head.querySelector(".muted");
-      if (email) email.textContent = me.email;
-    }
     var page = document.querySelector("#main .page");
+    var avatar = page.querySelector("[data-avatar]");
+    if (avatar) avatar.outerHTML = avatarHTML(me, false);
+    var name = page.querySelector(".me__name");
+    if (name) name.textContent = me.first_name || "Мой аккаунт";
+    var email = page.querySelector(".me__email");
+    if (email) email.textContent = me.email;
+
+    var orders = sim.myOrders();
     var current = page.querySelector(".order-card--current");
-    var open = sim.myOrders().filter(function (o) { return o.status !== "delivered" && o.status !== "cancelled"; })[0];
+    var open = orders.filter(function (o) { return o.status !== "delivered" && o.status !== "cancelled"; })[0];
     if (open) {
       var holder = document.createElement("div");
       holder.innerHTML = orderCard(open, true);
       if (current) current.replaceWith(holder.firstChild);
-      else page.insertBefore(holder.firstChild, page.querySelector(".menu"));
+      else page.insertBefore(holder.firstChild, page.querySelector("[data-me-purchases]"));
     } else if (current) current.remove();
-    var form = page.querySelector('form[action$="/profile/"]');
+
+    var box = page.querySelector("[data-me-purchases]");
+    if (box) {
+      var done = orders.filter(function (o) { return o.status === "delivered"; });
+      box.querySelectorAll(".buys, .box__empty, .box__more").forEach(function (el) { el.remove(); });
+      var html = done.length ? '<ul class="buys">' + done.slice(0, 3).map(function (o) {
+        return '<li><a class="buy-row" href="' + ME + "/orders/" + o.number + '/"><span class="buy-row__main"><span class="buy-row__num">' + esc(o.number) + '</span><span class="buy-row__meta">' +
+          date(o.created_at, true, false) + " · " + plural(o.items.length, "позиция,позиции,позиций") + '</span></span><span class="buy-row__total">' + money(o.total_kopecks) + "</span></a></li>";
+      }).join("") + "</ul>" + (done.length > 3 ? '<p class="muted box__more">Всего получено заказов: ' + done.length + "</p>" : "") :
+        '<p class="muted box__empty">Здесь появятся полученные заказы.</p>';
+      box.insertAdjacentHTML("beforeend", html);
+    }
+
+    var cartBox = page.querySelector("[data-me-cart]");
+    if (cartBox) {
+      var cart = sim.cart();
+      cartBox.querySelectorAll(".cart-peek, .box__empty, .box__all").forEach(function (el) { el.remove(); });
+      if (cart.lines.length) {
+        cartBox.querySelector(".box__head").insertAdjacentHTML("beforeend", '<a class="box__all" href="' + link("/cart/") + '">Открыть' + icon("chevron", 16) + "</a>");
+        var count = cart.lines.reduce(function (n, l) { return n + l.quantity; }, 0);
+        cartBox.insertAdjacentHTML("beforeend", '<a class="cart-peek" href="' + link("/cart/") + '"><span class="cart-peek__thumbs" aria-hidden="true">' +
+          cart.lines.slice(0, 4).map(function (l) {
+            return '<span class="cart-peek__thumb tone-' + tone(l.product ? l.product.slug : "") + '">' + (l.product ? img(l.product.cover_url, "56px", "card__photo", false, "") : "") + "</span>";
+          }).join("") + '</span><span class="cart-peek__text"><b>' + count + ' шт.</b><span class="muted">на ' + money(cart.total_kopecks) + "</span></span></a>");
+      } else {
+        cartBox.insertAdjacentHTML("beforeend", '<p class="muted box__empty">Корзина пуста. <a href="' + link("/") + '">В каталог</a></p>');
+      }
+    }
+
+    var viewedBox = page.querySelector("[data-me-viewed]");
+    if (viewedBox) {
+      var seen = sim.viewed(12);
+      viewedBox.hidden = !seen.length;
+      viewedBox.querySelector("[data-rail]").innerHTML = railHTML(seen);
+    }
+  }
+
+  function renderProfileData() {
+    var me = sim.currentCustomer();
+    if (!me) return;
+    var photo = document.querySelector("[data-photo]");
+    if (photo) {
+      photo.querySelector("[data-avatar]").outerHTML = avatarHTML(me, true);
+      var pick = photo.querySelector("[data-pick-label]");
+      if (pick) pick.textContent = me.avatar ? "Заменить" : "Загрузить";
+      var remove = photo.querySelector("[data-avatar-remove]");
+      if (remove) remove.hidden = !me.avatar;
+    }
+    var form = document.querySelector('form[action$="/profile/data/"]');
     if (form) {
-      form.setAttribute("data-profile", "");
       form.querySelector('[name="first_name"]').value = me.first_name || "";
       form.querySelector('[name="last_name"]').value = me.last_name || "";
+      var mail = form.querySelector(".readonly");
+      if (mail) mail.textContent = me.email;
     }
+  }
+
+  function renderSimilar(slug) {
+    var list = sim.similar(slug, 12);
+    var holder = document.querySelector(".pd-more");
+    if (!list.length) { if (holder) holder.remove(); return; }
+    var p = sim.product(slug);
+    var cat = p && sim.category(p.category);
+    if (!holder) {
+      holder = document.createElement("div");
+      holder.className = "pd-more";
+      document.querySelector(".pd").insertAdjacentElement("afterend", holder);
+    }
+    holder.innerHTML = '<section class="similar" aria-labelledby="similar-title"><div class="hblock-head"><h2 class="hblock-head__title" id="similar-title">Похожие товары</h2>' +
+      (cat ? '<a class="hblock-head__all" href="' + link("/category/" + cat.slug + "/") + '">Все' + icon("chevron", 16) + "</a>" : "") +
+      '</div><div class="hblock-rail__track" data-rail>' + railHTML(list) + "</div></section>";
   }
 
   // --- Контакты и статьи ---
@@ -1093,9 +1173,30 @@
       }
       return showErrors(form, { code: "Неверный или устаревший код." });
     }
-    if (action === "/profile/") {
+    if (action === "/profile/data/") {
       sim.updateCustomer({ first_name: value("first_name"), last_name: value("last_name") });
       flash("Данные сохранены.");
+      return location.reload();
+    }
+    if (action === "/profile/avatar/") {
+      if (value("remove")) {
+        sim.removeAvatar();
+        flash("Фото удалено.");
+        return location.reload();
+      }
+      var file = form.querySelector('[name="avatar"]').files[0];
+      if (!file) return toast("Выберите файл с фото.");
+      sim.setAvatar(file).then(function (saved) {
+        flash(saved ? "Фото обновлено." : "Фото не поместилось в хранилище браузера.", saved ? "success" : "danger");
+        location.reload();
+      }, function (err) {
+        toast(err && err.message === "size" ? "Файл больше 5 МБ." : "Допустимые форматы: JPEG, PNG, WebP.");
+      });
+      return;
+    }
+    if (action === "/profile/viewed/clear/") {
+      sim.clearViewed();
+      flash("История просмотров очищена.");
       return location.reload();
     }
     if (action === "/profile/password/") {
@@ -1196,6 +1297,7 @@
     else if (HERE === "/orders/" && TREE === "me") renderOrders();
     else if ((m = HERE.match(/^\/orders\/([^/]+)\/$/)) && TREE === "me") renderOrder();
     else if (HERE === "/profile/" && TREE === "me") renderProfile();
+    else if (HERE === "/profile/data/" && TREE === "me") renderProfileData();
     else if (HERE === "/contacts/") renderContacts();
     else if (/^\/articles\/[^/]+\/$/.test(HERE)) renderArticle();
     if (HERE === "/password-reset/confirm/") {

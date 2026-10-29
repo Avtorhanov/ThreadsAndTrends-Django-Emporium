@@ -3,10 +3,13 @@
 {% block title %}Профиль — DiDi-shop{% endblock %}
 {% block content %}
 <section class="page page--narrow">
-  <header class="section-head">
-    <p class="overline">Профиль</p>
-    <h1 class="h1">{% if user.first_name %}{{ user.first_name }}{% else %}Мой аккаунт{% endif %}</h1>
-    <p class="muted">{{ user.email }}</p>
+  <header class="me">
+    <a class="me__photo" href="{% url 'web:profile_data' %}" aria-label="Фото и личные данные">{% include "web/account/_avatar.html" %}</a>
+    <div class="me__text">
+      <p class="overline">Профиль</p>
+      <h1 class="h1 me__name">{% if user.first_name %}{{ user.first_name }}{% else %}Мой аккаунт{% endif %}</h1>
+      <p class="muted me__email">{{ user.email }}</p>
+    </div>
   </header>
 
   {% if current_order %}
@@ -21,28 +24,64 @@
   </a>
   {% endif %}
 
+  <section class="panel box" aria-labelledby="me-purchases" data-me-purchases>
+    <div class="box__head">
+      <h2 class="panel__title box__title" id="me-purchases">Покупки</h2>
+      <a class="box__all" href="{% url 'web:orders' %}">Все заказы<svg class="ic" width="16" height="16"><use href="#i-chevron"/></svg></a>
+    </div>
+    {% if purchases %}
+    <ul class="buys">
+      {% for order in purchases %}
+      <li><a class="buy-row" href="{% url 'web:order' order.number %}">
+        <span class="buy-row__main"><span class="buy-row__num">{{ order.number }}</span><span class="buy-row__meta">{{ order.created_at|date:"j E Y" }} · {{ order.items.all|length }} {% if order.items.all|length == 1 %}позиция{% elif order.items.all|length < 5 %}позиции{% else %}позиций{% endif %}</span></span>
+        <span class="buy-row__total">{{ order.total_kopecks|rub }}&nbsp;₽</span>
+      </a></li>
+      {% endfor %}
+    </ul>
+    {% if purchases_count > purchases|length %}<p class="muted box__more">Всего получено заказов: {{ purchases_count }}</p>{% endif %}
+    {% else %}
+    <p class="muted box__empty">Здесь появятся полученные заказы.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel box" aria-labelledby="me-cart" data-me-cart>
+    <div class="box__head">
+      <h2 class="panel__title box__title" id="me-cart">Корзина</h2>
+      {% if cart_summary.lines %}<a class="box__all" href="{% url 'web:cart' %}">Открыть<svg class="ic" width="16" height="16"><use href="#i-chevron"/></svg></a>{% endif %}
+    </div>
+    {% if cart_summary.lines %}
+    <a class="cart-peek" href="{% url 'web:cart' %}">
+      <span class="cart-peek__thumbs" aria-hidden="true">{% for line in cart_summary.lines|slice:":4" %}{% with p=line.product %}<span class="cart-peek__thumb tone-{{ p.slug|tone }}">{% with cover=p.cover %}{% if cover %}{% product_img cover "56px" css="card__photo" %}{% endif %}{% endwith %}</span>{% endwith %}{% endfor %}</span>
+      <span class="cart-peek__text"><b>{{ cart_summary.items_count }} шт.</b><span class="muted">на {{ cart_summary.total_kopecks|rub }}&nbsp;₽</span></span>
+    </a>
+    {% else %}
+    <p class="muted box__empty">Корзина пуста. <a href="{% url 'web:home' %}">В каталог</a></p>
+    {% endif %}
+  </section>
+
+  <section class="box box--rail" aria-labelledby="me-viewed" data-me-viewed{% if not viewed %} hidden{% endif %}>
+    <div class="hblock-head">
+      <h2 class="hblock-head__title" id="me-viewed">Вы смотрели</h2>
+      <form method="post" action="{% url 'web:viewed_clear' %}" data-viewed-clear>{% csrf_token %}<button class="hblock-head__all link-btn" type="submit">Очистить</button></form>
+    </div>
+    <div class="hblock-rail__track" data-rail>
+      {% for p in viewed %}<div class="hblock-rail__cell">{% include "web/catalog/_card.html" with p=p eager=False %}</div>{% endfor %}
+    </div>
+  </section>
+
   <nav class="menu" aria-label="Аккаунт">
+    <a class="menu__item" href="{% url 'web:profile_data' %}"><svg class="ic" width="20" height="20"><use href="#i-user"/></svg>Личные данные и фото<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
     <a class="menu__item" href="{% url 'web:orders' %}"><svg class="ic" width="20" height="20"><use href="#i-box"/></svg>Мои заказы<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
-    <a class="menu__item" href="{% url 'web:password_change' %}"><svg class="ic" width="20" height="20"><use href="#i-user"/></svg>Сменить пароль<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
+    <a class="menu__item" href="{% url 'web:profile_look' %}"><svg class="ic" width="20" height="20"><use href="#i-palette"/></svg>Оформление<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
+    <a class="menu__item" href="{% url 'web:password_change' %}"><svg class="ic" width="20" height="20"><use href="#i-lock"/></svg>Сменить пароль<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
   </nav>
-
-  <form class="panel form" method="post" action="{% url 'web:profile' %}" novalidate>
-    {% csrf_token %}
-    <p class="panel__title">Личные данные</p>
-    {% include "web/partials/form_errors.html" %}
-    {% include "web/partials/field.html" with field=form.first_name %}
-    {% include "web/partials/field.html" with field=form.last_name %}
-    <button class="btn btn--dark" type="submit">Сохранить</button>
-  </form>
-
-  {% include "web/account/_theme.html" %}
 
   {% include "web/partials/help.html" %}
 
   <div class="panel form">
     <form method="post" action="{% url 'web:logout' %}">
       {% csrf_token %}
-      <button class="btn btn--ghost btn--block" type="submit">Выйти</button>
+      <button class="btn btn--line btn--block" type="submit">Выйти</button>
     </form>
     <a class="danger-link" href="{% url 'web:delete_account' %}">Удалить аккаунт</a>
   </div>

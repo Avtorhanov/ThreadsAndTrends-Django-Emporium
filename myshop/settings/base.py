@@ -166,6 +166,8 @@ REST_FRAMEWORK = {
         # Оплата: получение ссылки и сверка после возврата из браузера (на пользователя).
         "payment_start": env_str("THROTTLE_PAYMENT_START", "30/hour"),
         "payment_refresh": env_str("THROTTLE_PAYMENT_REFRESH", "120/hour"),
+        # Загрузка и удаление фото профиля (на пользователя).
+        "avatar_upload": env_str("THROTTLE_AVATAR_UPLOAD", "20/hour"),
     },
 }
 

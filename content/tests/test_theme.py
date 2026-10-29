@@ -144,7 +144,7 @@ def test_profile_shows_only_enabled_palettes(client):
         default_mode="system",
         default_radius="normal",
     )
-    html = client.get(reverse("web:profile")).content.decode()
+    html = client.get(reverse("web:profile_look")).content.decode()
     assert 'name="palette" value="steel"' in html
     assert 'name="palette" value="olive"' not in html
     assert 'name="accent"' not in html  # «Своя» выключена

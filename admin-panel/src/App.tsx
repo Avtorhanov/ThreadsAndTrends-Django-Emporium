@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { Layout } from "./components/Layout";
+import { LookSection } from "./components/LookSection";
 import { ArticleEditPage } from "./pages/ArticleEditPage";
 import { ArticlesPage } from "./pages/ArticlesPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
@@ -13,6 +14,7 @@ import { OrdersPage } from "./pages/OrdersPage";
 import { ProductEditPage } from "./pages/ProductEditPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { HomeEditorPage } from "./pages/HomeEditorPage";
+import { PanelLookPage } from "./pages/PanelLookPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { StaffPage } from "./pages/StaffPage";
 import { ThemePage } from "./pages/ThemePage";
@@ -69,8 +71,15 @@ export function App() {
               <Route path="/content/articles" element={<ArticlesPage />} />
               <Route path="/content/articles/new" element={<ArticleEditPage />} />
               <Route path="/content/articles/:id" element={<ArticleEditPage />} />
-              <Route path="/home" element={<HomeEditorPage />} />
-              <Route path="/theme" element={<ThemePage />} />
+              <Route path="/look" element={<LookSection />}>
+                <Route index element={null} />
+                <Route path="home" element={<HomeEditorPage />} />
+                <Route path="theme" element={<ThemePage />} />
+                <Route path="panel" element={<PanelLookPage />} />
+              </Route>
+              {/* Прежние адреса разделов — в «Внешний вид». */}
+              <Route path="/home" element={<Navigate to="/look/home" replace />} />
+              <Route path="/theme" element={<Navigate to="/look/theme" replace />} />
               <Route path="/staff" element={<StaffPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>

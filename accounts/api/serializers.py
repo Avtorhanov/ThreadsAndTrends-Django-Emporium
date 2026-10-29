@@ -13,11 +13,24 @@ class TokenPairSerializer(serializers.Serializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField(help_text="Фото профиля (WebP 320×320) или null")
+
     class Meta:
         model = User
         # is_staff — в приложении у сотрудника есть вход в панель управления.
-        fields = ["id", "email", "first_name", "last_name", "date_joined", "is_staff"]
-        read_only_fields = ["id", "email", "date_joined", "is_staff"]
+        fields = ["id", "email", "first_name", "last_name", "date_joined", "is_staff", "avatar_url"]
+        read_only_fields = ["id", "email", "date_joined", "is_staff", "avatar_url"]
+
+    def get_avatar_url(self, user) -> str | None:
+        if not user.avatar:
+            return None
+        request = self.context.get("request")
+        url = user.avatar.url
+        return request.build_absolute_uri(url) if request else url
+
+
+class AvatarUploadSerializer(serializers.Serializer):
+    avatar = serializers.FileField(help_text="JPEG, PNG или WebP до 5 МБ")
 
 
 class RegisterSerializer(serializers.Serializer):

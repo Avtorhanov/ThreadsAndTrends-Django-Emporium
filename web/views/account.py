@@ -15,12 +15,14 @@ from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 
 from accounts import services as accounts
-from orders.models import Order
+from orders.models import Order, OrderStatus
+from store.services import history
 from store.services.cart import MergeNoticeReason
 
 from .. import cart as web_cart
 from .. import ratelimit, theme
 from ..forms import (
+    AvatarForm,
     DeleteAccountForm,
     LoginForm,
     PasswordChangeForm,
@@ -185,16 +187,42 @@ def password_reset_confirm(request):
     )
 
 
+PURCHASES_ON_PROFILE = 3
+VIEWED_ON_PROFILE = 12
+
+
 def profile(request):
+    """Профиль: фото и имя, текущий заказ, полученные покупки, корзина, «Вы смотрели»."""
     if request.user.is_authenticated and request.user.is_staff:
         return redirect(PANEL_URL)
     if not request.user.is_authenticated:
         # Профиль гостя — «Войти» и «Зарегистрироваться», как в приложении.
-        return render(
-            request,
-            "web/account/guest.html",
-            {**theme.options(request), "tab": "profile", "noindex": True},
-        )
+        return render(request, "web/account/guest.html", {"tab": "profile", "noindex": True})
+    user = request.user
+    orders = Order.objects.filter(owner=user)
+    current = orders.unfinished().order_by("-created_at", "-id").first()
+    delivered = orders.filter(status=OrderStatus.DELIVERED)
+    purchases = list(
+        delivered.order_by("-created_at", "-id").prefetch_related("items")[:PURCHASES_ON_PROFILE]
+    )
+    return render(
+        request,
+        "web/account/profile.html",
+        {
+            "current_order": current,
+            "purchases": purchases,
+            "purchases_count": delivered.count() if purchases else 0,
+            "cart_summary": web_cart.summary(request),
+            "viewed": history.recent_products(user, limit=VIEWED_ON_PROFILE),
+            "tab": "profile",
+            "noindex": True,
+        },
+    )
+
+
+@customer_required
+def profile_data(request):
+    """Личные данные: фото профиля, имя и фамилия."""
     user = request.user
     form = ProfileForm(
         request.POST or None,
@@ -206,20 +234,55 @@ def profile(request):
             first_name=form.cleaned_data["first_name"].strip(),
             last_name=form.cleaned_data["last_name"].strip(),
         )
-        messages.success(request, "Профиль сохранён.")
-        return redirect("web:profile")
-    current = Order.objects.filter(owner=user).unfinished().order_by("-created_at", "-id").first()
+        messages.success(request, "Данные сохранены.")
+        return redirect("web:profile_data")
     return render(
         request,
-        "web/account/profile.html",
-        {
-            "form": form,
-            "current_order": current,
-            **theme.options(request),
-            "tab": "profile",
-            "noindex": True,
-        },
+        "web/account/data.html",
+        {"form": form, "avatar_form": AvatarForm(), "tab": "profile", "noindex": True},
     )
+
+
+@require_POST
+@customer_required
+def avatar(request):
+    """Загрузить (поле avatar) или удалить (remove=1) фото профиля."""
+    if not ratelimit.allow(request, "avatar_upload", user=request.user):
+        messages.error(request, ratelimit.TOO_MANY)
+    elif request.POST.get("remove"):
+        accounts.remove_avatar(request.user)
+        messages.success(request, "Фото удалено.")
+    else:
+        form = AvatarForm(request.POST, request.FILES)
+        if not form.is_valid():
+            messages.error(request, "Выберите файл с фото.")
+        else:
+            try:
+                accounts.set_avatar(request.user, form.cleaned_data["avatar"])
+            except ValidationError as exc:
+                messages.error(request, " ".join(exc.messages))
+            else:
+                messages.success(request, "Фото обновлено.")
+    return redirect("web:profile_data")
+
+
+def profile_look(request):
+    """Оформление витрины: тема, палитра, углы, размер текста (и гостю — выбор в cookie)."""
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect(PANEL_URL)
+    return render(
+        request,
+        "web/account/look.html",
+        {**theme.options(request), "tab": "profile", "noindex": True},
+    )
+
+
+@require_POST
+@customer_required
+def viewed_clear(request):
+    history.clear(request.user)
+    messages.success(request, "История просмотров очищена.")
+    return redirect("web:profile")
 
 
 @customer_required

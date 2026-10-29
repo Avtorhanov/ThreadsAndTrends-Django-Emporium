@@ -1,6 +1,9 @@
+import uuid
+
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 def normalize_email(value: str) -> str:
@@ -43,6 +46,11 @@ class UserManager(BaseUserManager.from_queryset(UserQuerySet)):
         return self.get(email=normalize_email(email))
 
 
+def avatar_path(instance, filename):
+    # Фото профиля всегда перекодируется в WebP (accounts.services.set_avatar): имя — UUID.
+    return f"avatars/{timezone.now():%Y/%m}/{uuid.uuid4().hex}.webp"
+
+
 class User(AbstractUser):
     """Клиент (is_staff=False) или Администратор (is_staff=True, единственный продавец).
 
@@ -52,6 +60,7 @@ class User(AbstractUser):
     username = None
     email = models.EmailField("Email", unique=True)
     deleted_at = models.DateTimeField("Удалён", null=True, blank=True, db_index=True)
+    avatar = models.ImageField("Фото профиля", upload_to=avatar_path, blank=True)
 
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"

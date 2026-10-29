@@ -1,0 +1,13 @@
+{% extends "web/base.html" %}
+{% block title %}Оформление — DiDi-shop{% endblock %}
+{% block content %}
+<section class="page page--narrow">
+  <a class="back-link" href="{% url 'web:profile' %}"><svg class="ic flip" width="16" height="16"><use href="#i-chevron"/></svg>Профиль</a>
+  <header class="section-head">
+    <p class="overline">Профиль</p>
+    <h1 class="h1">Оформление</h1>
+    <p class="muted section-head__lead">Тема, цвет, углы и размер текста — только на этом устройстве.</p>
+  </header>
+  {% include "web/account/_theme.html" %}
+</section>
+{% endblock %}

@@ -251,7 +251,7 @@ export function ProductsPage() {
                 onChange={() => setSelected(allChecked ? new Set() : new Set(rows.map((row) => row.id)))}
               />
             </th>
-            <th aria-label="Фото" />
+            <th className="thumb-cell" aria-label="Фото" />
             <th>Название</th>
             <th>Цена</th>
             <th>Остаток</th>
@@ -272,7 +272,7 @@ export function ProductsPage() {
                     onChange={() => toggle(product.id)}
                   />
                 </td>
-                <td>
+                <td className="thumb-cell">
                   {product.cover_url ? (
                     <img className="thumb" src={product.cover_url} alt="" />
                   ) : (

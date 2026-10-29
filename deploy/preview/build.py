@@ -341,7 +341,7 @@ def build(out: Path) -> None:
         site.save(guest, BASE, path, tree="guest")
     site.save(guest, BASE, f"/search/?q={query}", tree="guest")
     site.save(guest, BASE, "/cart/", tree="guest")
-    for path in ("/login/", "/register/", "/password-reset/", "/profile/"):
+    for path in ("/login/", "/register/", "/password-reset/", "/profile/", "/profile/look/"):
         site.save(guest, BASE, path, tree="guest")
     site.save(guest, BASE, f"/password-reset/confirm/?email={CUSTOMER_EMAIL}", tree="guest")
     # Оформление и заказы гостю недоступны — там страница входа, как на сайте.
@@ -354,7 +354,14 @@ def build(out: Path) -> None:
         site.save(me, ME, path, tree="me")
     site.save(me, ME, f"/search/?q={query}", tree="me")
     site.save(me, ME, "/cart/", tree="me")
-    for path in ("/profile/", "/profile/password/", "/profile/delete/", "/orders/"):
+    for path in (
+        "/profile/",
+        "/profile/data/",
+        "/profile/look/",
+        "/profile/password/",
+        "/profile/delete/",
+        "/orders/",
+    ):
         site.save(me, ME, path, tree="me")
     for order in orders:
         site.save(me, ME, f"/orders/{order.number}/", tree="me")
@@ -584,6 +591,8 @@ def write_rooms(out: Path, orders: list[Order], rooms: dict, query: str) -> None
             [
                 ("Профиль гостя", f"{g}/profile/"),
                 ("Профиль покупателя", f"{m}/profile/"),
+                ("Личные данные и фото", f"{m}/profile/data/"),
+                ("Оформление (тема, палитра)", f"{m}/profile/look/"),
                 ("Смена пароля", f"{m}/profile/password/"),
                 ("Удаление аккаунта", f"{m}/profile/delete/"),
                 ("Вход", f"{g}/login/"),
@@ -645,6 +654,10 @@ PANEL_ROUTES = (
     "settings",
     "home",
     "theme",
+    "look",
+    "look/home",
+    "look/theme",
+    "look/panel",
     "staff",
 )
 
@@ -758,8 +771,9 @@ def panel_section(orders: list[Order]) -> tuple[str, list[tuple[str, str]]]:
         ("Категории", f"{panel}/catalog/categories/"),
         ("Статьи", f"{panel}/content/articles/"),
         ("Клиенты", f"{panel}/customers/"),
-        ("Главная из блоков", f"{panel}/home/"),
-        ("Тема для покупателей", f"{panel}/theme/"),
+        ("Внешний вид: главная из блоков", f"{panel}/look/home/"),
+        ("Внешний вид: тема витрины", f"{panel}/look/theme/"),
+        ("Внешний вид: оформление панели", f"{panel}/look/panel/"),
         ("Сотрудники и права", f"{panel}/staff/"),
         ("Настройки магазина", f"{panel}/settings/"),
         ("Вход в панель", f"{panel}/login/"),

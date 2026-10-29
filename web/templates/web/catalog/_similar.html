@@ -1,0 +1,10 @@
+{# «Похожие товары» под карточкой: та же категория, затем соседние (store.services.storefront.similar_products). #}
+<section class="similar" aria-labelledby="similar-title">
+  <div class="hblock-head">
+    <h2 class="hblock-head__title" id="similar-title">Похожие товары</h2>
+    <a class="hblock-head__all" href="{% url 'web:category' product.category.slug %}">Все<svg class="ic" width="16" height="16" aria-hidden="true"><use href="#i-chevron"/></svg></a>
+  </div>
+  <div class="hblock-rail__track" data-rail>
+    {% for p in products %}<div class="hblock-rail__cell">{% include "web/catalog/_card.html" with p=p eager=False %}</div>{% endfor %}
+  </div>
+</section>

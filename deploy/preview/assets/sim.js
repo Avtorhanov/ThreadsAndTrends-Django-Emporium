@@ -1421,6 +1421,84 @@
     return { ok: true };
   }
 
+  // Фото профиля (accounts.services.set_avatar): квадрат 320 по центру, как на сервере.
+  function readAvatar(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type || "")) return reject(new Error("type"));
+      if (file.size > 5 * 1024 * 1024) return reject(new Error("size"));
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var side = Math.min(img.naturalWidth, img.naturalHeight);
+        var canvas = document.createElement("canvas");
+        canvas.width = canvas.height = 320;
+        canvas.getContext("2d").drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 320, 320);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error("decode")); };
+      img.src = url;
+    });
+  }
+  function setAvatar(file) {
+    return readAvatar(file).then(function (dataUrl) {
+      var db = load();
+      var c = db.session && customerByEmail(db, db.session.email);
+      if (!c) return false;
+      c.avatar = dataUrl;
+      return save(db);
+    });
+  }
+  function removeAvatar() {
+    var db = load();
+    var c = db.session && customerByEmail(db, db.session.email);
+    if (c) { delete c.avatar; save(db); }
+  }
+
+  // Журнал просмотров (store.services.history): последние 30 товаров, свежие — первыми.
+  function recordView(slug) {
+    var db = load();
+    var c = db.session && customerByEmail(db, db.session.email);
+    var p = db.products.filter(function (x) { return x.slug === slug; })[0];
+    if (!c || !p) return;
+    c.viewed = [p.id].concat((c.viewed || []).filter(function (id) { return id !== p.id; })).slice(0, 30);
+    save(db);
+  }
+  function viewed(limit) {
+    var db = load();
+    var c = db.session && customerByEmail(db, db.session.email);
+    if (!c) return [];
+    return (c.viewed || []).map(function (id) { return byId(db.products, id); })
+      .filter(function (p) { return p && isLive(db, p); })
+      .slice(0, limit || 12)
+      .map(function (p) { return publicProduct(db, p); });
+  }
+  function clearViewed() {
+    var db = load();
+    var c = db.session && customerByEmail(db, db.session.email);
+    if (c) { c.viewed = []; save(db); }
+  }
+
+  // «Похожие» (store.services.storefront.similar_products): та же категория, затем соседние
+  // подкатегории того же корня; в наличии — первыми, затем новые.
+  function similar(slug, limit) {
+    var db = load();
+    var p = db.products.filter(function (x) { return x.slug === slug; })[0];
+    var cat = p && category(db, p.category);
+    if (!cat) return [];
+    var root = cat.parent || cat.id;
+    var list = liveProducts(db).filter(function (x) {
+      if (x.id === p.id) return false;
+      var c = category(db, x.category);
+      return c && (c.id === root || c.parent === root);
+    });
+    var rank = function (x) { return (x.category === cat.id ? 0 : 2) + (totalStock(x) > 0 ? 0 : 1); };
+    return list.map(function (x, i) { return { x: x, i: i }; })
+      .sort(function (a, b) { return rank(a.x) - rank(b.x) || a.i - b.i; })
+      .slice(0, limit || 12)
+      .map(function (e) { return publicProduct(db, e.x); });
+  }
+
   function myOrders() {
     var db = load();
     if (!db.session) return [];
@@ -1592,6 +1670,12 @@
     cancelOrder: cancelOrder,
     canCancel: canCancel,
     lastRecipient: lastRecipient,
+    setAvatar: setAvatar,
+    removeAvatar: removeAvatar,
+    recordView: recordView,
+    viewed: viewed,
+    clearViewed: clearViewed,
+    similar: similar,
     adminSignedIn: signedIn
   };
 })();

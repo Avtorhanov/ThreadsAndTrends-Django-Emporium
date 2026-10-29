@@ -8,7 +8,8 @@
 - mobile/src/theme/tokens.ts — типизированные токены для приложения (React Native);
 - web/static/web/css/tokens.css — CSS-переменные обеих тем для веб-витрины (статика Django);
 - admin-panel/src/tokens.css — те же переменные для панели администратора (React + Vite);
-- content/palettes.json — список палитр и акцентов для сервера (белый список, цвета образцов).
+- content/palettes.json — список палитр и акцентов для сервера (белый список, цвета образцов);
+- admin-panel/src/theme/palettes.ts — палитры для оформления самой панели (без «Своей»).
 
 Палитры покупателя (tokens.json → palettes): переопределения цветов базовой «Лайм-тек»;
 «Своя» (custom) — нейтральная основа + один из проверенных акцентов (accents). Тени палитр
@@ -31,6 +32,7 @@ TS_OUT = ROOT / "mobile/src/theme/tokens.ts"
 WEB_CSS_OUT = ROOT / "web/static/web/css/tokens.css"
 ADMIN_CSS_OUT = ROOT / "admin-panel/src/tokens.css"
 PY_JSON_OUT = ROOT / "content/palettes.json"
+PANEL_PALETTES_OUT = ROOT / "admin-panel/src/theme/palettes.ts"
 HEADER = (
     "Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать."
 )
@@ -459,6 +461,39 @@ def render_palettes_json(tokens: dict) -> str:
     return json.dumps(data, ensure_ascii=False, indent=2) + "\n"
 
 
+def render_panel_palettes_ts(tokens: dict) -> str:
+    """Палитры интерфейса панели: те же, что у покупателей, кроме «Своей» (нужен выбор акцента)."""
+    items = []
+    for key, value in entries(tokens["palettes"]).items():
+        if key == "custom":
+            continue
+        light, dark = resolve(tokens, "light", key), resolve(tokens, "dark", key)
+        items.append(
+            {
+                "key": key,
+                "name": value["name"],
+                "accent": light["accent"],
+                "brand": light["brand"],
+                "bg": {"light": light["bg"], "dark": dark["bg"]},
+            }
+        )
+    keys = " | ".join(json.dumps(item["key"]) for item in items)
+    return (
+        f"// {HEADER}\n\n"
+        f"export type PanelPalette = {keys};\n\n"
+        "export type PanelPaletteInfo = {\n"
+        "  key: PanelPalette;\n"
+        "  name: string;\n"
+        "  accent: string;\n"
+        "  brand: string;\n"
+        "  bg: { light: string; dark: string };\n"
+        "};\n\n"
+        "export const PANEL_PALETTES: readonly PanelPaletteInfo[] = "
+        + json.dumps(items, ensure_ascii=False, indent=2)
+        + ";\n"
+    )
+
+
 def main() -> int:
     check = "--check" in sys.argv[1:]
     tokens = json.loads(SOURCE.read_text(encoding="utf-8"))
@@ -469,6 +504,7 @@ def main() -> int:
         WEB_CSS_OUT: css,
         ADMIN_CSS_OUT: css,
         PY_JSON_OUT: render_palettes_json(tokens),
+        PANEL_PALETTES_OUT: render_panel_palettes_ts(tokens),
     }
 
     if check:

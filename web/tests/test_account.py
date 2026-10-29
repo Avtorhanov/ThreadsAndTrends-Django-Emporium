@@ -126,7 +126,7 @@ def test_password_reset_wrong_code(client, customer):
 
 
 def test_profile_update(customer_client, customer):
-    customer_client.post(reverse("web:profile"), {"first_name": " Пётр ", "last_name": "Ив"})
+    customer_client.post(reverse("web:profile_data"), {"first_name": " Пётр ", "last_name": "Ив"})
     customer.refresh_from_db()
     assert (customer.first_name, customer.last_name) == ("Пётр", "Ив")
 

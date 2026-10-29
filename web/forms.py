@@ -134,6 +134,11 @@ class ProfileForm(forms.Form):
     last_name = forms.CharField(label="Фамилия", max_length=150, required=False)
 
 
+class AvatarForm(forms.Form):
+    # Проверка формата и размера — в accounts.services.set_avatar (как у фото товаров).
+    avatar = forms.FileField(label="Фото профиля")
+
+
 class PasswordChangeForm(forms.Form):
     old_password = forms.CharField(
         label="Текущий пароль",

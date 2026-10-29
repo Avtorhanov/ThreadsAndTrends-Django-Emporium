@@ -9,15 +9,16 @@ import { Icon, type IconName } from "./Icon";
 
 type Access = keyof StaffUser["permissions"];
 
-const SECTIONS: { to: string; label: string; icon: IconName; access: Access; end?: boolean }[] = [
+// access не задан — раздел виден всем (во «Внешнем виде» есть личное «Оформление панели»;
+// права на подразделы витрины проверяет LookSection).
+const SECTIONS: { to: string; label: string; icon: IconName; access?: Access; end?: boolean }[] = [
   { to: "/", label: "Сводка", icon: "summary", access: "summary", end: true },
   { to: "/orders", label: "Заказы", icon: "orders", access: "orders" },
   { to: "/catalog/products", label: "Товары", icon: "products", access: "products" },
   { to: "/catalog/categories", label: "Категории", icon: "categories", access: "categories" },
   { to: "/content/articles", label: "Статьи", icon: "articles", access: "articles" },
   { to: "/customers", label: "Клиенты", icon: "customers", access: "customers" },
-  { to: "/home", label: "Главная", icon: "home", access: "storefront" },
-  { to: "/theme", label: "Тема", icon: "palette", access: "storefront" },
+  { to: "/look", label: "Внешний вид", icon: "palette" },
   { to: "/settings", label: "Настройки", icon: "settings", access: "settings" },
   { to: "/staff", label: "Сотрудники", icon: "customers", access: "staff" },
 ];
@@ -94,9 +95,11 @@ export function Layout() {
 
   // Права сотрудника: недоступные разделы скрыты, только чтение — с плашкой. Проверяет сервер.
   const permissions = user?.permissions;
-  const visible = SECTIONS.filter((item) => !permissions || permissions[item.access] !== "none");
+  const visible = SECTIONS.filter(
+    (item) => !permissions || !item.access || permissions[item.access] !== "none",
+  );
   const current = sectionFor(location.pathname);
-  const level = current && permissions ? permissions[current.access] : "edit";
+  const level = current?.access && permissions ? permissions[current.access] : "edit";
 
   useEffect(() => {
     if (!menuOpen) return;

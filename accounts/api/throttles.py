@@ -1,6 +1,6 @@
 import hashlib
 
-from rest_framework.throttling import SimpleRateThrottle
+from rest_framework.throttling import SimpleRateThrottle, UserRateThrottle
 
 from accounts.models import normalize_email
 from core.api.throttles import IPRateThrottle
@@ -46,3 +46,9 @@ class SensitiveActionThrottle(IPRateThrottle):
     """Действия с проверкой пароля (смена пароля, удаление аккаунта)."""
 
     scope = "auth_sensitive"
+
+
+class AvatarThrottle(UserRateThrottle):
+    """Фото профиля: перекодирование на сервере — не чаще 20 раз в час на пользователя."""
+
+    scope = "avatar_upload"

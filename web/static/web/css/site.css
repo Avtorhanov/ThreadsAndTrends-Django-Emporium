@@ -403,10 +403,15 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .btn--accent { background: var(--accent); color: var(--on-accent); }
 .btn--ghost { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-control); }
 .btn--danger { background: var(--danger-bg); color: var(--danger); }
+/* Контурная — вторая кнопка рядом с тёмной («Зарегистрироваться», «Выйти»): видна на белой карточке
+   в любой палитре, без тени — не сливается с соседней. */
+.btn--line { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--input-line); }
+.btn--lg { height: 54px; border-radius: var(--radius-cta); font-size: 16px; }
 .btn--sm { height: 38px; padding: 0 14px; border-radius: var(--radius-seg); font-size: 14px; }
 .btn--block { width: 100%; }
 .icon-btn { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 44px; height: 44px; border: 0; border-radius: calc(11px * var(--radius-scale)); background: transparent; color: var(--muted); }
 .icon-btn:hover { color: var(--danger); }
+.link-btn { padding: 0; border: 0; background: none; cursor: pointer; }
 .danger-link { display: block; margin-top: 14px; text-align: center; color: var(--danger); font: 700 14px var(--font-text); }
 
 /* «В корзину»: лаймовая заливка слева направо за 550 мс. */
@@ -466,7 +471,10 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
   background: var(--card); box-shadow: var(--shadow-card);
 }
 .pd__frame .hero { border-radius: calc(var(--radius-hero) - var(--space-card-pad)); }
+/* position: relative — блок текста рисуется поверх тени фото (галерея позиционирована,
+   без этого её тень ложилась на блок и казалось, что фото наезжает на текст). */
 .pd__info {
+  position: relative;
   display: grid; gap: 18px; margin-top: 16px; padding: 18px 18px 20px;
   border-radius: var(--radius-hero); background: var(--card); box-shadow: var(--shadow-card);
 }
@@ -719,6 +727,65 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .order-card--current { margin-bottom: 14px; border: 1.5px solid var(--brand); }
 .order-card--current .overline { margin: 0; }
 
+/* --- Профиль: фото, покупки, корзина, «Вы смотрели»; «Похожие» на карточке товара --- */
+.auth { display: grid; gap: 16px; }
+.auth__actions { display: grid; gap: 12px; }
+.section-head__lead { margin-top: 8px; }
+.me { display: flex; align-items: center; gap: 16px; padding: 4px 0 18px; }
+.me__photo { flex: none; border-radius: calc(20px * var(--radius-scale)); text-decoration: none; }
+.me__text { min-width: 0; }
+.me__text .overline { margin-bottom: 4px; }
+.me__name { font-size: 24px; }
+.me__email { margin-top: 2px; font-size: 14px; overflow-wrap: anywhere; }
+.avatar {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; overflow: hidden;
+  width: 64px; height: 64px; border-radius: calc(20px * var(--radius-scale));
+  background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-accent-glow);
+}
+.avatar--big { width: 88px; height: 88px; border-radius: calc(26px * var(--radius-scale)); }
+.avatar__img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.avatar__letter { font: 700 26px/1 var(--font-display); }
+.avatar--big .avatar__letter { font-size: 34px; }
+.box { display: grid; gap: 10px; }
+.box[hidden] { display: none; }
+.box__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.box__title { width: auto; margin: 0; }
+.box__all { display: inline-flex; align-items: center; gap: 2px; min-height: 36px; color: var(--muted); font: 800 13px var(--font-text); text-decoration: none; }
+.box__empty, .box__more { font-size: 14px; }
+.box__empty a { color: var(--brand); font-weight: 800; }
+.box--rail { margin-bottom: 14px; }
+.buys { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.buys li + li { border-top: 1px solid var(--border); }
+.buy-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 6px 0; color: var(--ink); text-decoration: none; }
+.buy-row__main { display: grid; gap: 2px; min-width: 0; }
+.buy-row__num { font: 700 15px var(--font-display); }
+.buy-row__meta { color: var(--muted); font: 500 13px var(--font-secondary); }
+.buy-row__total { font: 700 15px var(--font-display); white-space: nowrap; }
+.cart-peek { display: flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; }
+.cart-peek__thumbs { display: flex; flex: none; }
+.cart-peek__thumb {
+  position: relative; display: block; width: 44px; height: 54px; overflow: hidden;
+  border-radius: calc(10px * var(--radius-scale)); background-color: var(--tone); box-shadow: 0 0 0 2px var(--card, #fff);
+}
+.cart-peek__thumb + .cart-peek__thumb { margin-left: -12px; }
+.cart-peek__text { display: grid; gap: 2px; font-size: 14px; }
+.cart-peek__text b { font: 700 16px var(--font-display); }
+.photo { display: flex; align-items: center; gap: 16px; }
+.photo__body { display: grid; gap: 6px; min-width: 0; }
+.photo__title { margin: 0; }
+.photo__hint { font-size: 13px; }
+.photo__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.photo__actions form { display: flex; }
+.photo__actions form[hidden] { display: none; }
+.photo__pick { cursor: pointer; }
+.photo__pick:focus-within { outline: 2px solid var(--brand); outline-offset: 2px; }
+.readonly { display: flex; align-items: center; min-height: 50px; padding: 0 14px; border-radius: calc(12px * var(--radius-scale)); background: var(--neutral-bg); color: var(--muted); font: 600 15px var(--font-text); overflow-wrap: anywhere; }
+.pd-more { max-width: var(--page-max); margin: 28px auto 0; padding: 0 var(--gutter); }
+@media (min-width: 600px) {
+  /* Узкая колонка профиля: три карточки в ряд вместо 3,2. */
+  .page--narrow .hblock-rail__track { grid-auto-columns: calc((100% - 2 * 14px) / 2.6); }
+}
+
 /* --- Подвал, нижняя панель, баннер приложения --- */
 .foot { padding: 28px var(--gutter) calc(var(--size-nav-height) + 28px + var(--safe-bottom)); color: var(--muted); font: 600 13px/1.5 var(--font-text); }
 .foot__inner { display: grid; gap: 14px; max-width: var(--page-max); margin-inline: auto; padding-top: 22px; border-top: 1px solid var(--border); }
@@ -756,11 +823,14 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 
 /* Плавающее меню (панель → «Тема»): тёмная капсула над страницей с отступом от краёв. */
 :root[data-nav="floating"] .tabbar {
+  --nav-pad: 6px;
   left: 12px; right: 12px; bottom: calc(10px + var(--safe-bottom));
   max-width: 480px; margin-inline: auto;
-  height: calc(var(--size-nav-height) + 12px); padding: 6px;
+  height: calc(var(--size-nav-height) + 2 * var(--nav-pad)); padding: var(--nav-pad);
   border-top: 0; border-radius: calc(var(--radius-nav) * var(--radius-scale)); box-shadow: var(--shadow-nav);
 }
+/* Вкладка повторяет контур капсулы при любых углах: радиус панели минус внутренний отступ. */
+:root[data-nav="floating"] .tab { border-radius: max(4px, calc(var(--radius-nav) * var(--radius-scale) - var(--nav-pad))); }
 /* Нижняя панель: в цвет темы (стекло, как шапка), значок и подпись у каждой вкладки. */
 :root[data-nav="bar"] .tabbar {
   height: calc(var(--size-nav-height) + 8px + var(--tab-bottom)); padding-top: 6px;
@@ -1032,6 +1102,12 @@ a.hblock-photo__frame:active { transform: scale(.985); }
   background: var(--bg); color: var(--ink); font: 600 15px var(--font-text);
 }
 .bx-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* iOS увеличивает страницу при фокусе на поле с текстом меньше 16 px и не возвращает масштаб.
+   На сенсорных экранах поля — 16 px: ввод без приближения. */
+@media (pointer: coarse) {
+  .input, .search input, .quick input, .bx-field input, .bx-field select { font-size: 16px; }
+}
 
 /* Размер текста покупателя (data-text=m|l на <html>, --text-scale из tokens.css):
    телефон — увеличивается только текст (text-size-adjust), компьютер — масштаб страницы. */

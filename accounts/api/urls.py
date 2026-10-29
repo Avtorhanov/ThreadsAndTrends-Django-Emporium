@@ -9,6 +9,7 @@ auth_urlpatterns = [
     path("refresh/", views.RefreshView.as_view(), name="auth-refresh"),
     path("logout/", views.LogoutView.as_view(), name="auth-logout"),
     path("me/", views.MeView.as_view(), name="auth-me"),
+    path("me/avatar/", views.AvatarView.as_view(), name="auth-avatar"),
     path("me/delete/", views.DeleteAccountView.as_view(), name="auth-delete-account"),
     path("password/change/", views.ChangePasswordView.as_view(), name="auth-password-change"),
     path("password/reset/", views.PasswordResetRequestView.as_view(), name="auth-password-reset"),

@@ -3551,3 +3551,211 @@ a.stat:hover {
 .he-links-reset {
   justify-self: start;
 }
+
+/* --- Внешний вид: подразделы и оформление панели --- */
+
+.subnav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-radius: var(--radius-ctl);
+  background: var(--neutral-bg);
+}
+
+.subnav::-webkit-scrollbar {
+  display: none;
+}
+
+.subnav a {
+  display: inline-flex;
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: calc(var(--radius-ctl) - 4px);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.subnav a.active {
+  background: var(--seg-on-bg);
+  color: var(--seg-on-ink);
+  box-shadow: var(--shadow-control);
+}
+
+.look-section .view-only {
+  margin-bottom: 16px;
+}
+
+.panel-palettes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.panel-palette {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  min-height: 74px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: var(--radius-ctl);
+  background: var(--surface);
+  box-shadow: var(--shadow-control);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.panel-palette.is-on {
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.panel-palette:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+.panel-palette-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.panel-palette-dots i {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* --- Заголовки страниц: заголовок, статус и действия не наезжают друг на друга --- */
+
+.page-header > h1 {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.settings > .page-header {
+  margin-bottom: 12px;
+}
+
+.settings-lead {
+  margin: 0 0 16px;
+}
+
+.he-list-head {
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.he-list-head h2 {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.he-list-head .button {
+  flex: none;
+}
+
+@media (max-width: 720px) {
+  .page-header > h1 {
+    flex-basis: 100%;
+  }
+
+  /* Карточки вместо таблицы — плотнее: отметка в углу, фото рядом с названием. */
+  .table tbody {
+    gap: 8px;
+  }
+
+  .table tbody tr {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 2px 12px;
+  }
+
+  .table td {
+    padding: 7px 0;
+    font-size: 14px;
+  }
+
+  .table td[data-label]::before {
+    margin-right: 10px;
+    line-height: 20px;
+    font-size: 11px;
+  }
+
+  .table td.check-cell {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 1;
+    width: auto;
+    padding: 6px;
+    border: 0;
+  }
+
+  .table td.check-cell + td {
+    padding-right: 36px;
+  }
+
+  .table tr:has(> td.thumb-cell) {
+    grid-template-columns: 44px minmax(0, 1fr);
+    column-gap: 12px;
+  }
+
+  .table tr:has(> td.thumb-cell) > td:not(.thumb-cell):not(.check-cell) {
+    grid-column: 1 / -1;
+  }
+
+  .table td.thumb-cell {
+    grid-column: 1;
+    padding: 8px 0;
+  }
+
+  .table td.check-cell + td.thumb-cell {
+    padding-right: 0;
+  }
+
+  .table td.thumb-cell + td {
+    grid-column: 2 !important;
+    align-self: center;
+    padding-right: 36px;
+    text-align: left;
+  }
+
+  .table td.thumb-cell + td::before {
+    content: none;
+  }
+
+  .table td.thumb-cell .thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+  }
+}
+
+/* iOS приближает страницу при фокусе на поле с текстом меньше 16 px и не возвращает масштаб.
+   На сенсорных экранах поля ввода — 16 px. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
