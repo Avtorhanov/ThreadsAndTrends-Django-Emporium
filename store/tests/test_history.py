@@ -73,7 +73,9 @@ def test_viewed_api(customer, catalog):
     assert client.get("/api/v1/catalog/viewed/").status_code == 401
     client.force_authenticate(customer)
     assert client.post("/api/v1/catalog/viewed/", {"slug": "tee"}, format="json").status_code == 204
-    assert client.post("/api/v1/catalog/viewed/", {"slug": "hidden"}).status_code == 404
+    assert (
+        client.post("/api/v1/catalog/viewed/", {"slug": "hidden"}, format="json").status_code == 404
+    )
     assert [p["slug"] for p in client.get("/api/v1/catalog/viewed/").json()] == ["tee"]
     assert client.delete("/api/v1/catalog/viewed/").status_code == 204
     assert client.get("/api/v1/catalog/viewed/").json() == []

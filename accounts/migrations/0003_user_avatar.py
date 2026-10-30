@@ -13,7 +13,11 @@ class Migration(migrations.Migration):
             model_name="user",
             name="avatar",
             field=models.ImageField(
-                blank=True, upload_to=accounts.models.avatar_path, verbose_name="Фото профиля"
+                blank=True,
+                db_default="",
+                default="",
+                upload_to=accounts.models.avatar_path,
+                verbose_name="Фото профиля",
             ),
         ),
     ]

@@ -60,7 +60,11 @@ class User(AbstractUser):
     username = None
     email = models.EmailField("Email", unique=True)
     deleted_at = models.DateTimeField("Удалён", null=True, blank=True, db_index=True)
-    avatar = models.ImageField("Фото профиля", upload_to=avatar_path, blank=True)
+    # db_default: строки, вставленные в обход модели (миграции данных, старые версии кода),
+    # получают пустое значение, а не NULL.
+    avatar = models.ImageField(
+        "Фото профиля", upload_to=avatar_path, blank=True, default="", db_default=""
+    )
 
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"

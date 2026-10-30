@@ -6,9 +6,9 @@ import { useAuth } from "../auth/AuthProvider";
  * «Главная витрины» и «Тема витрины» — по праву «Главная и тема»; «Оформление панели» —
  * личный выбор каждого сотрудника, доступен всем. */
 const TABS = [
-  { to: "/look/home", label: "Главная витрины", shop: true },
-  { to: "/look/theme", label: "Тема витрины", shop: true },
-  { to: "/look/panel", label: "Оформление панели", shop: false },
+  { to: "/look/home", label: "Главная", shop: true },
+  { to: "/look/theme", label: "Тема магазина", shop: true },
+  { to: "/look/panel", label: "Панель", shop: false },
 ] as const;
 
 export function LookSection() {
