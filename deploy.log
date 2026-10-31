@@ -1,0 +1,607 @@
+SECRET_KEY сгенерирован.
+DB_PASSWORD сгенерирован.
+
+[1;32m==> Сборка и запуск (первый раз — 5–15 минут)[0m
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.82kB done
+#1 DONE 0.0s
+
+#2 [caddy internal] load build definition from edge.Dockerfile
+#2 transferring dockerfile: 950B done
+#2 DONE 0.0s
+
+#3 [scheduler internal] load build definition from Dockerfile
+#3 transferring dockerfile: 883B done
+#3 DONE 0.0s
+
+#4 [app internal] load metadata for docker.io/library/python:3.12-slim
+#4 ...
+
+#5 [auth] library/python:pull token for registry-1.docker.io
+#5 DONE 0.0s
+
+#6 [auth] library/node:pull token for registry-1.docker.io
+#6 DONE 0.0s
+
+#7 [auth] library/caddy:pull token for registry-1.docker.io
+#7 DONE 0.0s
+
+#8 [caddy internal] load metadata for docker.io/library/caddy:2-alpine
+#8 DONE 0.9s
+
+#4 [worker internal] load metadata for docker.io/library/python:3.12-slim
+#4 DONE 0.9s
+
+#9 [caddy internal] load metadata for docker.io/library/node:22-slim
+#9 DONE 0.9s
+
+#10 [worker internal] load .dockerignore
+#10 transferring context: 211B done
+#10 DONE 0.0s
+
+#11 [caddy internal] load build context
+#11 transferring context: 741.25kB 0.0s done
+#11 DONE 0.0s
+
+#12 [scheduler 1/7] FROM docker.io/library/python:3.12-slim@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159
+#12 resolve docker.io/library/python:3.12-slim@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159 0.0s done
+#12 ...
+
+#13 [worker internal] load build context
+#13 transferring context: 6.38MB 0.1s done
+#13 DONE 0.1s
+
+#12 [scheduler 1/7] FROM docker.io/library/python:3.12-slim@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159
+#12 sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159 10.37kB / 10.37kB done
+#12 sha256:1148dbb014615300fa7e713b2f94f550c0d1c69780c0805f84f093ceee34dd0b 1.75kB / 1.75kB done
+#12 sha256:ae4e8b7c575fabea88a029b6cae757f342ca2525e07f7c22272d5105c346b35e 5.66kB / 5.66kB done
+#12 sha256:6fc242d221a673263eabd14a9ad9584d3177c96e5cb504c891497338e2f912f5 0B / 29.86MB 0.5s
+#12 sha256:6fc242d221a673263eabd14a9ad9584d3177c96e5cb504c891497338e2f912f5 25.17MB / 29.86MB 0.6s
+#12 sha256:3eb77115150676568f88e2957181b8f7e3014e797f1ce8cd640086dfbed45e35 0B / 1.29MB 0.6s
+#12 sha256:f574edac59d9f092df596f54e5b52656c803fd3ae30825b8ee5a189ed05f63d3 0B / 12.12MB 0.6s
+#12 sha256:6fc242d221a673263eabd14a9ad9584d3177c96e5cb504c891497338e2f912f5 29.86MB / 29.86MB 0.6s done
+#12 sha256:3eb77115150676568f88e2957181b8f7e3014e797f1ce8cd640086dfbed45e35 1.29MB / 1.29MB 0.6s done
+#12 sha256:f574edac59d9f092df596f54e5b52656c803fd3ae30825b8ee5a189ed05f63d3 7.34MB / 12.12MB 0.7s
+#12 extracting sha256:6fc242d221a673263eabd14a9ad9584d3177c96e5cb504c891497338e2f912f5 0.1s
+#12 sha256:acca7542dfc736e9ce20cbefc58b2d09822276d15d4a0c531531a6f1b057928e 0B / 251B 0.7s
+#12 sha256:f574edac59d9f092df596f54e5b52656c803fd3ae30825b8ee5a189ed05f63d3 12.12MB / 12.12MB 0.7s done
+#12 sha256:acca7542dfc736e9ce20cbefc58b2d09822276d15d4a0c531531a6f1b057928e 251B / 251B 0.8s done
+#12 ...
+
+#14 [caddy stage-1 1/3] FROM docker.io/library/caddy:2-alpine@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5
+#14 resolve docker.io/library/caddy:2-alpine@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5 0.0s done
+#14 sha256:3067cc4e02c091399edbd5d65f85a3ff4d511574aecadb47f280c3761e68852e 6.96kB / 6.96kB done
+#14 sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5 8.99kB / 8.99kB done
+#14 sha256:04913b1da43339a40ad1ea87827d70a576ac5aa6cf674c6e24fdca675887533a 1.92kB / 1.92kB done
+#14 sha256:5e9b4a97f6395abf54a5c584be133078deb2295e280dd0b9e77638874d07b637 3.85MB / 3.85MB 0.3s done
+#14 extracting sha256:5e9b4a97f6395abf54a5c584be133078deb2295e280dd0b9e77638874d07b637 0.1s done
+#14 sha256:7c06d09d8244ac3f2b828928ae98e963b8aa14f589c241dfb3dda22f4b561f7f 2.78MB / 2.78MB 0.4s done
+#14 sha256:eae0290468fa31ca7860f0f322daa31dbb7a20e958e8fb52d421f803ce600284 7.50kB / 7.50kB 0.5s done
+#14 sha256:45f0829a46db8dfb4f966e36792d8d95c7d26b4226af572a4992b9ec42a14e82 18.23MB / 18.23MB 0.6s done
+#14 extracting sha256:7c06d09d8244ac3f2b828928ae98e963b8aa14f589c241dfb3dda22f4b561f7f 0.1s done
+#14 sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 32B / 32B 0.5s done
+#14 extracting sha256:eae0290468fa31ca7860f0f322daa31dbb7a20e958e8fb52d421f803ce600284 done
+#14 extracting sha256:45f0829a46db8dfb4f966e36792d8d95c7d26b4226af572a4992b9ec42a14e82 0.3s done
+#14 extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 done
+#14 DONE 1.3s
+
+#15 [caddy stage-1 2/3] COPY deploy/Caddyfile /etc/caddy/Caddyfile
+#15 DONE 0.0s
+
+#12 [scheduler 1/7] FROM docker.io/library/python:3.12-slim@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159
+#12 extracting sha256:6fc242d221a673263eabd14a9ad9584d3177c96e5cb504c891497338e2f912f5 1.3s done
+#12 extracting sha256:3eb77115150676568f88e2957181b8f7e3014e797f1ce8cd640086dfbed45e35
+#12 extracting sha256:3eb77115150676568f88e2957181b8f7e3014e797f1ce8cd640086dfbed45e35 0.1s done
+#12 extracting sha256:f574edac59d9f092df596f54e5b52656c803fd3ae30825b8ee5a189ed05f63d3
+#12 extracting sha256:f574edac59d9f092df596f54e5b52656c803fd3ae30825b8ee5a189ed05f63d3 0.7s done
+#12 extracting sha256:acca7542dfc736e9ce20cbefc58b2d09822276d15d4a0c531531a6f1b057928e done
+#12 DONE 3.1s
+
+#16 [scheduler 2/7] WORKDIR /app
+#16 DONE 0.0s
+
+#17 [worker 3/7] COPY requirements/ requirements/
+#17 DONE 0.0s
+
+#18 [scheduler 4/7] RUN pip install -r requirements/prod.txt
+#18 ...
+
+#19 [caddy panel 1/7] FROM docker.io/library/node:22-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da
+#19 resolve docker.io/library/node:22-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da 0.0s done
+#19 sha256:df736340692d217b57cd447c94f978f9a91ce3e8805b225e78374eae3aff864c 49.89MB / 49.89MB 0.3s done
+#19 sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da 5.22kB / 5.22kB done
+#19 sha256:9f0dde62d10e7ff7a310ecaebd66225f6b46c17e6cb778449a77b05d3541bea2 1.93kB / 1.93kB done
+#19 sha256:c469fbffcbb0086ddfb92598192d3e09eab25f2d81b9750a00f77f0910fed744 6.77kB / 6.77kB done
+#19 sha256:3c5439d0ae62993af4cc4e21b8c777297e81bc40e200d4633c85a3e0f977a3bc 28.25MB / 28.25MB 0.2s done
+#19 sha256:709e8267cebf108d59c4e6e386882a5c79c10bbe11ecd02c6ed9ed4efa5b905d 3.31kB / 3.31kB 0.2s done
+#19 extracting sha256:3c5439d0ae62993af4cc4e21b8c777297e81bc40e200d4633c85a3e0f977a3bc 1.6s done
+#19 sha256:d22dd8aef5082b9de7fb037db9c398ee2822c5c81cc5cbb63bb32a46a5decdb1 1.71MB / 1.71MB 0.2s done
+#19 sha256:0bee45faaffff77eee1e3d151cc650b854df28523ea01e5a2dcc0327da8793a9 448B / 448B 0.3s done
+#19 extracting sha256:709e8267cebf108d59c4e6e386882a5c79c10bbe11ecd02c6ed9ed4efa5b905d done
+#19 extracting sha256:df736340692d217b57cd447c94f978f9a91ce3e8805b225e78374eae3aff864c 1.6s done
+#19 extracting sha256:d22dd8aef5082b9de7fb037db9c398ee2822c5c81cc5cbb63bb32a46a5decdb1 0.0s done
+#19 extracting sha256:0bee45faaffff77eee1e3d151cc650b854df28523ea01e5a2dcc0327da8793a9 done
+#19 DONE 3.7s
+
+#20 [caddy panel 2/7] WORKDIR /src
+#20 DONE 0.0s
+
+#21 [caddy panel 3/7] COPY openapi/ openapi/
+#21 DONE 0.0s
+
+#22 [caddy panel 4/7] COPY admin-panel/package.json admin-panel/package-lock.json admin-panel/.npmrc admin-panel/
+#22 DONE 0.0s
+
+#23 [caddy panel 5/7] RUN cd admin-panel && npm ci --no-audit --no-fund
+#23 2.670 
+#23 2.670 added 61 packages in 2s
+#23 2.671 npm notice
+#23 2.671 npm notice New major version of npm available! 10.9.9 -> 12.2.1
+#23 2.671 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.1
+#23 2.671 npm notice To update run: npm install -g npm@12.2.1
+#23 2.671 npm notice
+#23 DONE 2.9s
+
+#24 [caddy panel 6/7] COPY admin-panel/ admin-panel/
+#24 DONE 0.0s
+
+#25 [caddy panel 7/7] RUN cd admin-panel && npm run build
+#25 0.223 
+#25 0.223 > didi-shop-admin-panel@1.0.0 prebuild
+#25 0.223 > npm run gen:api
+#25 0.223 
+#25 0.327 
+#25 0.327 > didi-shop-admin-panel@1.0.0 gen:api
+#25 0.327 > openapi-typescript ../openapi/schema.yml -o src/api/schema.d.ts
+#25 0.327 
+#25 0.940 ✨ openapi-typescript 7.13.0
+#25 1.211 🚀 ../openapi/schema.yml → src/api/schema.d.ts [272.4ms]
+#25 1.236 
+#25 1.236 > didi-shop-admin-panel@1.0.0 build
+#25 1.236 > tsc --noEmit && vite build
+#25 1.236 
+#25 ...
+
+#18 [scheduler 4/7] RUN pip install -r requirements/prod.txt
+#18 1.740 Collecting Django==5.2.18 (from -r /app/requirements/base.txt (line 2))
+#18 1.825   Downloading django-5.2.18-py3-none-any.whl.metadata (4.1 kB)
+#18 1.880 Collecting djangorestframework==3.18.3 (from -r /app/requirements/base.txt (line 3))
+#18 1.901   Downloading djangorestframework-3.18.3-py3-none-any.whl.metadata (7.8 kB)
+#18 1.946 Collecting drf-spectacular==0.30.0 (from -r /app/requirements/base.txt (line 4))
+#18 1.972   Downloading drf_spectacular-0.30.0-py3-none-any.whl.metadata (14 kB)
+#18 2.015 Collecting djangorestframework-simplejwt==5.5.1 (from -r /app/requirements/base.txt (line 5))
+#18 2.038   Downloading djangorestframework_simplejwt-5.5.1-py3-none-any.whl.metadata (4.6 kB)
+#18 2.140 Collecting django-tasks==0.12.0 (from -r /app/requirements/base.txt (line 7))
+#18 2.162   Downloading django_tasks-0.12.0-py3-none-any.whl.metadata (8.9 kB)
+#18 2.263 Collecting django-tasks-db==0.13.0 (from django-tasks-db[compat]==0.13.0->-r /app/requirements/base.txt (line 8))
+#18 2.283   Downloading django_tasks_db-0.13.0-py3-none-any.whl.metadata (4.3 kB)
+#18 2.320 Collecting psycopg==3.3.6 (from psycopg[binary]==3.3.6->-r /app/requirements/base.txt (line 9))
+#18 2.341   Downloading psycopg-3.3.6-py3-none-any.whl.metadata (4.4 kB)
+#18 2.412 Collecting redis==8.1.0 (from -r /app/requirements/base.txt (line 10))
+#18 2.434   Downloading redis-8.1.0-py3-none-any.whl.metadata (16 kB)
+#18 2.702 Collecting pillow==12.3.0 (from -r /app/requirements/base.txt (line 11))
+#18 2.722   Downloading pillow-12.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.1 kB)
+#18 2.766 Collecting python-dotenv==1.2.4 (from -r /app/requirements/base.txt (line 12))
+#18 2.786   Downloading python_dotenv-1.2.4-py3-none-any.whl.metadata (29 kB)
+#18 2.832 Collecting gunicorn==26.2.0 (from -r requirements/prod.txt (line 2))
+#18 2.852   Downloading gunicorn-26.2.0-py3-none-any.whl.metadata (5.5 kB)
+#18 2.964 Collecting sentry-sdk==2.72.0 (from -r requirements/prod.txt (line 4))
+#18 2.988   Downloading sentry_sdk-2.72.0-py3-none-any.whl.metadata (11 kB)
+#18 3.064 Collecting asgiref>=3.8.1 (from Django==5.2.18->-r /app/requirements/base.txt (line 2))
+#18 3.086   Downloading asgiref-3.13.0-py3-none-any.whl.metadata (12 kB)
+#18 3.117 Collecting sqlparse>=0.3.1 (from Django==5.2.18->-r /app/requirements/base.txt (line 2))
+#18 3.137   Downloading sqlparse-0.6.0-py3-none-any.whl.metadata (6.0 kB)
+#18 3.264 Collecting uritemplate>=2.0.0 (from drf-spectacular==0.30.0->-r /app/requirements/base.txt (line 4))
+#18 3.285   Downloading uritemplate-4.2.0-py3-none-any.whl.metadata (2.6 kB)
+#18 3.340 Collecting PyYAML>=5.1 (from drf-spectacular==0.30.0->-r /app/requirements/base.txt (line 4))
+#18 3.357   Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+#18 3.406 Collecting jsonschema>=2.6.0 (from drf-spectacular==0.30.0->-r /app/requirements/base.txt (line 4))
+#18 3.428   Downloading jsonschema-4.26.0-py3-none-any.whl.metadata (7.6 kB)
+#18 3.457 Collecting inflection>=0.3.1 (from drf-spectacular==0.30.0->-r /app/requirements/base.txt (line 4))
+#18 3.477   Downloading inflection-0.5.1-py2.py3-none-any.whl.metadata (1.7 kB)
+#18 3.551 Collecting pyjwt>=1.7.1 (from djangorestframework-simplejwt==5.5.1->-r /app/requirements/base.txt (line 5))
+#18 3.573   Downloading pyjwt-2.15.1-py3-none-any.whl.metadata (3.5 kB)
+#18 3.607 Collecting typing_extensions (from django-tasks==0.12.0->-r /app/requirements/base.txt (line 7))
+#18 3.628   Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+#18 3.661 Collecting django-stubs-ext (from django-tasks==0.12.0->-r /app/requirements/base.txt (line 7))
+#18 3.682   Downloading django_stubs_ext-6.1.2-py3-none-any.whl.metadata (3.6 kB)
+#18 3.733 Collecting urllib3>=1.26.11 (from sentry-sdk==2.72.0->-r requirements/prod.txt (line 4))
+#18 3.754   Downloading urllib3-2.8.0-py3-none-any.whl.metadata (7.4 kB)
+#18 3.796 Collecting certifi (from sentry-sdk==2.72.0->-r requirements/prod.txt (line 4))
+#18 3.817   Downloading certifi-2026.10.23-py3-none-any.whl.metadata (2.5 kB)
+#18 4.006 Collecting psycopg-binary==3.3.6 (from psycopg[binary]==3.3.6->-r /app/requirements/base.txt (line 9))
+#18 4.027   Downloading psycopg_binary-3.3.6-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.7 kB)
+#18 4.059 Collecting attrs>=22.2.0 (from jsonschema>=2.6.0->drf-spectacular==0.30.0->-r /app/requirements/base.txt (line 4))
+#18 4.080   Downloading attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+#18 4.111 Collecting jsonschema-specifications>=2023.03.6 (from jsonschema>=2.6.0->drf-spectacular==0.30.0->-r /app/requirements/base.txt (line 4))
+#18 4.131   Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl.metadata (2.9 kB)
+#18 4.173 Collecting referencing>=0.28.4 (from jsonschema>=2.6.0->drf-spectacular==0.30.0->-r /app/requirements/base.txt (line 4))
+#18 4.194   Downloading referencing-0.37.0-py3-none-any.whl.metadata (2.8 kB)
+#18 4.525 Collecting rpds-py>=0.25.0 (from jsonschema>=2.6.0->drf-spectacular==0.30.0->-r /app/requirements/base.txt (line 4))
+#18 4.546   Downloading rpds_py-2026.9.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.1 kB)
+#18 4.609 Downloading django-5.2.18-py3-none-any.whl (8.3 MB)
+#18 4.738    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.3/8.3 MB 93.8 MB/s eta 0:00:00
+#18 4.761 Downloading djangorestframework-3.18.3-py3-none-any.whl (903 kB)
+#18 4.764    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 904.0/904.0 kB 784.5 MB/s eta 0:00:00
+#18 4.785 Downloading drf_spectacular-0.30.0-py3-none-any.whl (111 kB)
+#18 4.807 Downloading djangorestframework_simplejwt-5.5.1-py3-none-any.whl (107 kB)
+#18 4.831 Downloading django_tasks-0.12.0-py3-none-any.whl (15 kB)
+#18 4.852 Downloading django_tasks_db-0.13.0-py3-none-any.whl (31 kB)
+#18 4.873 Downloading psycopg-3.3.6-py3-none-any.whl (215 kB)
+#18 4.895 Downloading redis-8.1.0-py3-none-any.whl (560 kB)
+#18 4.898    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 560.6/560.6 kB 545.6 MB/s eta 0:00:00
+#18 4.924 Downloading pillow-12.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (6.9 MB)
+#18 4.948    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.9/6.9 MB 331.1 MB/s eta 0:00:00
+#18 4.969 Downloading python_dotenv-1.2.4-py3-none-any.whl (23 kB)
+#18 4.991 Downloading gunicorn-26.2.0-py3-none-any.whl (228 kB)
+#18 5.015 Downloading sentry_sdk-2.72.0-py3-none-any.whl (544 kB)
+#18 5.019    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 544.8/544.8 kB 491.0 MB/s eta 0:00:00
+#18 5.046 Downloading psycopg_binary-3.3.6-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (5.2 MB)
+#18 5.062    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.2/5.2 MB 438.3 MB/s eta 0:00:00
+#18 5.085 Downloading asgiref-3.13.0-py3-none-any.whl (27 kB)
+#18 5.107 Downloading inflection-0.5.1-py2.py3-none-any.whl (9.5 kB)
+#18 5.128 Downloading jsonschema-4.26.0-py3-none-any.whl (90 kB)
+#18 5.150 Downloading pyjwt-2.15.1-py3-none-any.whl (33 kB)
+#18 5.174 Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (807 kB)
+#18 5.178    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 807.9/807.9 kB 759.8 MB/s eta 0:00:00
+#18 5.199 Downloading sqlparse-0.6.0-py3-none-any.whl (50 kB)
+#18 5.221 Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+#18 5.244 Downloading uritemplate-4.2.0-py3-none-any.whl (11 kB)
+#18 5.265 Downloading urllib3-2.8.0-py3-none-any.whl (135 kB)
+#18 5.286 Downloading certifi-2026.10.23-py3-none-any.whl (135 kB)
+#18 5.309 Downloading django_stubs_ext-6.1.2-py3-none-any.whl (10 kB)
+#18 5.329 Downloading attrs-26.1.0-py3-none-any.whl (67 kB)
+#18 5.351 Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl (18 kB)
+#18 5.373 Downloading referencing-0.37.0-py3-none-any.whl (26 kB)
+#18 5.395 Downloading rpds_py-2026.9.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (371 kB)
+#18 5.555 Installing collected packages: urllib3, uritemplate, typing_extensions, sqlparse, rpds-py, redis, PyYAML, python-dotenv, pyjwt, psycopg-binary, pillow, inflection, gunicorn, certifi, attrs, asgiref, sentry-sdk, referencing, psycopg, Django, jsonschema-specifications, djangorestframework, django-stubs-ext, jsonschema, djangorestframework-simplejwt, django-tasks-db, django-tasks, drf-spectacular
+#18 ...
+
+#25 [caddy panel 7/7] RUN cd admin-panel && npm run build
+#25 6.611 vite v8.3.4 building client environment for production...
+#25 6.629 transforming...
+#25 6.656 <script src="/panel/theme-init.js"> in "/index.html" can't be bundled without type="module" attribute
+#25 6.777 ✓ 143 modules transformed.
+#25 6.846 rendering chunks...
+#25 6.911 computing gzip size...
+#25 6.917 dist/index.html                                              0.59 kB │ gzip:  0.36 kB
+#25 6.917 dist/assets/manrope-cyrillic-wght-normal-Dvxsihut.woff2     14.50 kB
+#25 6.917 dist/assets/manrope-latin-wght-normal-DHIcAJRg.woff2        24.83 kB
+#25 6.917 dist/assets/unbounded-cyrillic-wght-normal-C627f1f8.woff2   31.42 kB
+#25 6.917 dist/assets/unbounded-latin-wght-normal-D5afBTBx.woff2      50.90 kB
+#25 6.917 dist/assets/index-8wWUeBf4.css                             105.16 kB │ gzip: 13.02 kB
+#25 6.917 dist/assets/App-BlRSyQju.js                                175.97 kB │ gzip: 47.99 kB
+#25 6.917 dist/assets/index-8OCCT7le.js                              221.78 kB │ gzip: 69.56 kB
+#25 6.917 
+#25 6.918 ✓ built in 304ms
+#25 DONE 7.0s
+
+#18 [scheduler 4/7] RUN pip install -r requirements/prod.txt
+#18 ...
+
+#26 [caddy stage-1 3/3] COPY --from=panel /src/admin-panel/dist /srv/panel
+#26 DONE 0.0s
+
+#27 [caddy] exporting to image
+#27 exporting layers 0.1s done
+#27 writing image sha256:1dd83d48939e1583d37b889db41acb5723267a5c36463dd2db238b9302c40444 done
+#27 naming to docker.io/library/didi-shop-edge:latest done
+#27 DONE 0.1s
+
+#28 [caddy] resolving provenance for metadata file
+#28 DONE 0.0s
+
+#18 [app 4/7] RUN pip install -r requirements/prod.txt
+#18 10.89 Successfully installed Django-5.2.18 PyYAML-6.0.3 asgiref-3.13.0 attrs-26.1.0 certifi-2026.10.23 django-stubs-ext-6.1.2 django-tasks-0.12.0 django-tasks-db-0.13.0 djangorestframework-3.18.3 djangorestframework-simplejwt-5.5.1 drf-spectacular-0.30.0 gunicorn-26.2.0 inflection-0.5.1 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 pillow-12.3.0 psycopg-3.3.6 psycopg-binary-3.3.6 pyjwt-2.15.1 python-dotenv-1.2.4 redis-8.1.0 referencing-0.37.0 rpds-py-2026.9.1 sentry-sdk-2.72.0 sqlparse-0.6.0 typing_extensions-4.16.0 uritemplate-4.2.0 urllib3-2.8.0
+#18 10.89 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#18 DONE 11.0s
+
+#29 [worker 5/7] RUN useradd --create-home --uid 1000 app     && mkdir -p /data/media /app/staticfiles /srv/static     && chown -R app:app /data /app /srv/static
+#29 DONE 0.1s
+
+#30 [scheduler 6/7] COPY --chown=app:app . .
+#30 DONE 0.1s
+
+#31 [worker 7/7] RUN chmod +x docker/entrypoint.sh     && SECRET_KEY=build-only DB_NAME=x DB_USER=x DB_PASSWORD=x        python manage.py collectstatic --noinput -v0
+#31 DONE 1.5s
+
+#32 [app] exporting to image
+#32 exporting layers 1.8s done
+#32 writing image sha256:f71aa93742b13534dc6a8b9ec087d561b3eb3fc4a1dbbf6877962642c07e6a81 done
+#32 naming to docker.io/library/didi-shop-app:latest done
+#32 DONE 1.8s
+
+#33 [scheduler] exporting to image
+#33 exporting layers 1.8s done
+#33 writing image sha256:f71aa93742b13534dc6a8b9ec087d561b3eb3fc4a1dbbf6877962642c07e6a81 done
+#33 naming to docker.io/library/didi-shop-app:latest done
+#33 DONE 1.8s
+
+#34 [worker] exporting to image
+#34 exporting layers 1.8s done
+#34 writing image sha256:f71aa93742b13534dc6a8b9ec087d561b3eb3fc4a1dbbf6877962642c07e6a81 done
+#34 naming to docker.io/library/didi-shop-app:latest done
+#34 DONE 1.8s
+
+#35 [app] resolving provenance for metadata file
+#35 DONE 0.0s
+
+#36 [scheduler] resolving provenance for metadata file
+#36 DONE 0.0s
+
+#37 [worker] resolving provenance for metadata file
+#37 DONE 0.0s
+ caddy  Built
+ app  Built
+ worker  Built
+ scheduler  Built
+ db Pulling 
+ backup Pulling 
+ 7b229517ed22 Pulling fs layer 
+ 768bbab50810 Pulling fs layer 
+ d982e6c592c4 Pulling fs layer 
+ a735dce41235 Pulling fs layer 
+ 42065dcfea93 Pulling fs layer 
+ f121f7f3dec1 Pulling fs layer 
+ 7ea8819886f9 Pulling fs layer 
+ d3f6cab92edc Pulling fs layer 
+ 911527e7800c Pulling fs layer 
+ 22df74fd5323 Pulling fs layer 
+ 9f477227db48 Pulling fs layer 
+ 7ea8819886f9 Waiting 
+ d3f6cab92edc Waiting 
+ f121f7f3dec1 Waiting 
+ a735dce41235 Waiting 
+ 911527e7800c Waiting 
+ 42065dcfea93 Waiting 
+ 22df74fd5323 Waiting 
+ 9f477227db48 Waiting 
+ 7b229517ed22 Pulling fs layer 
+ 768bbab50810 Pulling fs layer 
+ d982e6c592c4 Pulling fs layer 
+ a735dce41235 Pulling fs layer 
+ 42065dcfea93 Pulling fs layer 
+ f121f7f3dec1 Pulling fs layer 
+ 7ea8819886f9 Pulling fs layer 
+ d3f6cab92edc Pulling fs layer 
+ 42065dcfea93 Waiting 
+ a735dce41235 Waiting 
+ 911527e7800c Pulling fs layer 
+ f121f7f3dec1 Waiting 
+ 7ea8819886f9 Waiting 
+ d3f6cab92edc Waiting 
+ 22df74fd5323 Pulling fs layer 
+ 9f477227db48 Pulling fs layer 
+ 9f477227db48 Waiting 
+ 911527e7800c Waiting 
+ 22df74fd5323 Waiting 
+ 768bbab50810 Verifying Checksum 
+ 768bbab50810 Downloading [==================================================>]     968B/968B
+ 768bbab50810 Verifying Checksum 
+ 768bbab50810 Download complete 
+ 768bbab50810 Download complete 
+ 7b229517ed22 Downloading [>                                                  ]  48.55kB/3.853MB
+ 7b229517ed22 Downloading [>                                                  ]  48.55kB/3.853MB
+ d982e6c592c4 Downloading [>                                                  ]  15.79kB/900kB
+ d982e6c592c4 Downloading [>                                                  ]  15.79kB/900kB
+ d982e6c592c4 Download complete 
+ d982e6c592c4 Download complete 
+ 7b229517ed22 Verifying Checksum 
+ 7b229517ed22 Download complete 
+ 7b229517ed22 Download complete 
+ 7b229517ed22 Extracting [>                                                  ]  65.54kB/3.853MB
+ 7b229517ed22 Extracting [>                                                  ]  65.54kB/3.853MB
+ 7b229517ed22 Extracting [==================================================>]  3.853MB/3.853MB
+ 7b229517ed22 Extracting [==================================================>]  3.853MB/3.853MB
+ 7b229517ed22 Extracting [==================================================>]  3.853MB/3.853MB
+ 7b229517ed22 Extracting [==================================================>]  3.853MB/3.853MB
+ 7b229517ed22 Pull complete 
+ 7b229517ed22 Pull complete 
+ 768bbab50810 Extracting [==================================================>]     968B/968B
+ 768bbab50810 Extracting [==================================================>]     968B/968B
+ 768bbab50810 Extracting [==================================================>]     968B/968B
+ 768bbab50810 Extracting [==================================================>]     968B/968B
+ 768bbab50810 Pull complete 
+ 768bbab50810 Pull complete 
+ d982e6c592c4 Extracting [=>                                                 ]  32.77kB/900kB
+ d982e6c592c4 Extracting [=>                                                 ]  32.77kB/900kB
+ d982e6c592c4 Extracting [==================================================>]    900kB/900kB
+ d982e6c592c4 Extracting [==================================================>]    900kB/900kB
+ d982e6c592c4 Extracting [==================================================>]    900kB/900kB
+ d982e6c592c4 Extracting [==================================================>]    900kB/900kB
+ d982e6c592c4 Pull complete 
+ d982e6c592c4 Pull complete 
+ 42065dcfea93 Downloading [==================================================>]     116B/116B
+ 42065dcfea93 Downloading [==================================================>]     116B/116B
+ 42065dcfea93 Verifying Checksum 
+ 42065dcfea93 Download complete 
+ 42065dcfea93 Verifying Checksum 
+ 42065dcfea93 Download complete 
+ a735dce41235 Downloading [==================================================>]     173B/173B
+ a735dce41235 Downloading [==================================================>]     173B/173B
+ a735dce41235 Verifying Checksum 
+ a735dce41235 Verifying Checksum 
+ a735dce41235 Extracting [==================================================>]     173B/173B
+ a735dce41235 Extracting [==================================================>]     173B/173B
+ a735dce41235 Extracting [==================================================>]     173B/173B
+ a735dce41235 Extracting [==================================================>]     173B/173B
+ a735dce41235 Pull complete 
+ a735dce41235 Pull complete 
+ 42065dcfea93 Extracting [==================================================>]     116B/116B
+ 42065dcfea93 Extracting [==================================================>]     116B/116B
+ 42065dcfea93 Extracting [==================================================>]     116B/116B
+ 42065dcfea93 Extracting [==================================================>]     116B/116B
+ f121f7f3dec1 Downloading [>                                                  ]  537.8kB/111.3MB
+ f121f7f3dec1 Downloading [>                                                  ]  537.8kB/111.3MB
+ 42065dcfea93 Pull complete 
+ 42065dcfea93 Pull complete 
+ f121f7f3dec1 Downloading [===========>                                       ]  26.22MB/111.3MB
+ f121f7f3dec1 Downloading [===========>                                       ]  26.22MB/111.3MB
+ 7ea8819886f9 Download complete 
+ 7ea8819886f9 Downloading [==================>                                ]  3.501kB/9.671kB
+ 7ea8819886f9 Download complete 
+ d3f6cab92edc Download complete 
+ d3f6cab92edc Download complete 
+ f121f7f3dec1 Downloading [========================>                          ]  53.51MB/111.3MB
+ f121f7f3dec1 Downloading [========================>                          ]  53.51MB/111.3MB
+ f121f7f3dec1 Downloading [======================================>            ]  86.04MB/111.3MB
+ f121f7f3dec1 Downloading [======================================>            ]  86.04MB/111.3MB
+ f121f7f3dec1 Verifying Checksum 
+ f121f7f3dec1 Download complete 
+ f121f7f3dec1 Verifying Checksum 
+ f121f7f3dec1 Download complete 
+ 22df74fd5323 Downloading [============================>                      ]  3.501kB/6.108kB
+ 22df74fd5323 Downloading [==================================================>]  6.108kB/6.108kB
+ 22df74fd5323 Verifying Checksum 
+ 22df74fd5323 Download complete 
+ f121f7f3dec1 Extracting [>                                                  ]  557.1kB/111.3MB
+ 22df74fd5323 Downloading [============================>                      ]  3.501kB/6.108kB
+ 22df74fd5323 Verifying Checksum 
+ 22df74fd5323 Download complete 
+ f121f7f3dec1 Extracting [>                                                  ]  557.1kB/111.3MB
+ 911527e7800c Downloading [==================================================>]     169B/169B
+ 911527e7800c Download complete 
+ 911527e7800c Downloading [==================================================>]     169B/169B
+ 911527e7800c Downloading [==================================================>]     169B/169B
+ 911527e7800c Download complete 
+ f121f7f3dec1 Extracting [==>                                                ]  5.014MB/111.3MB
+ f121f7f3dec1 Extracting [==>                                                ]  5.014MB/111.3MB
+ 9f477227db48 Download complete 
+ 9f477227db48 Downloading [==================================================>]     183B/183B
+ 9f477227db48 Download complete 
+ f121f7f3dec1 Extracting [======>                                            ]  14.48MB/111.3MB
+ f121f7f3dec1 Extracting [======>                                            ]  14.48MB/111.3MB
+ f121f7f3dec1 Extracting [==========>                                        ]  23.95MB/111.3MB
+ f121f7f3dec1 Extracting [==========>                                        ]  23.95MB/111.3MB
+ f121f7f3dec1 Extracting [===============>                                   ]  33.42MB/111.3MB
+ f121f7f3dec1 Extracting [===============>                                   ]  33.42MB/111.3MB
+ f121f7f3dec1 Extracting [===================>                               ]  42.34MB/111.3MB
+ f121f7f3dec1 Extracting [===================>                               ]  42.34MB/111.3MB
+ f121f7f3dec1 Extracting [=======================>                           ]  51.25MB/111.3MB
+ f121f7f3dec1 Extracting [=======================>                           ]  51.25MB/111.3MB
+ f121f7f3dec1 Extracting [=========================>                         ]  56.82MB/111.3MB
+ f121f7f3dec1 Extracting [=========================>                         ]  56.82MB/111.3MB
+ f121f7f3dec1 Extracting [============================>                      ]  62.95MB/111.3MB
+ f121f7f3dec1 Extracting [============================>                      ]  62.95MB/111.3MB
+ f121f7f3dec1 Extracting [================================>                  ]  71.86MB/111.3MB
+ f121f7f3dec1 Extracting [================================>                  ]  71.86MB/111.3MB
+ f121f7f3dec1 Extracting [====================================>              ]  80.77MB/111.3MB
+ f121f7f3dec1 Extracting [====================================>              ]  80.77MB/111.3MB
+ f121f7f3dec1 Extracting [====================================>              ]  81.33MB/111.3MB
+ f121f7f3dec1 Extracting [====================================>              ]  81.33MB/111.3MB
+ f121f7f3dec1 Extracting [=====================================>             ]  82.44MB/111.3MB
+ f121f7f3dec1 Extracting [=====================================>             ]  82.44MB/111.3MB
+ f121f7f3dec1 Extracting [======================================>            ]  85.23MB/111.3MB
+ f121f7f3dec1 Extracting [======================================>            ]  85.23MB/111.3MB
+ f121f7f3dec1 Extracting [========================================>          ]  89.69MB/111.3MB
+ f121f7f3dec1 Extracting [========================================>          ]  89.69MB/111.3MB
+ f121f7f3dec1 Extracting [==========================================>        ]  93.59MB/111.3MB
+ f121f7f3dec1 Extracting [==========================================>        ]  93.59MB/111.3MB
+ f121f7f3dec1 Extracting [============================================>      ]  98.04MB/111.3MB
+ f121f7f3dec1 Extracting [============================================>      ]  98.04MB/111.3MB
+ f121f7f3dec1 Extracting [================================================>  ]  108.6MB/111.3MB
+ f121f7f3dec1 Extracting [================================================>  ]  108.6MB/111.3MB
+ f121f7f3dec1 Extracting [==================================================>]  111.3MB/111.3MB
+ f121f7f3dec1 Extracting [==================================================>]  111.3MB/111.3MB
+ f121f7f3dec1 Pull complete 
+ f121f7f3dec1 Pull complete 
+ 7ea8819886f9 Extracting [==================================================>]  9.671kB/9.671kB
+ 7ea8819886f9 Extracting [==================================================>]  9.671kB/9.671kB
+ 7ea8819886f9 Extracting [==================================================>]  9.671kB/9.671kB
+ 7ea8819886f9 Extracting [==================================================>]  9.671kB/9.671kB
+ 7ea8819886f9 Pull complete 
+ 7ea8819886f9 Pull complete 
+ d3f6cab92edc Extracting [==================================================>]     130B/130B
+ d3f6cab92edc Extracting [==================================================>]     130B/130B
+ d3f6cab92edc Extracting [==================================================>]     130B/130B
+ d3f6cab92edc Extracting [==================================================>]     130B/130B
+ d3f6cab92edc Pull complete 
+ d3f6cab92edc Pull complete 
+ 911527e7800c Extracting [==================================================>]     169B/169B
+ 911527e7800c Extracting [==================================================>]     169B/169B
+ 911527e7800c Extracting [==================================================>]     169B/169B
+ 911527e7800c Extracting [==================================================>]     169B/169B
+ 911527e7800c Pull complete 
+ 911527e7800c Pull complete 
+ 22df74fd5323 Extracting [==================================================>]  6.108kB/6.108kB
+ 22df74fd5323 Extracting [==================================================>]  6.108kB/6.108kB
+ 22df74fd5323 Extracting [==================================================>]  6.108kB/6.108kB
+ 22df74fd5323 Extracting [==================================================>]  6.108kB/6.108kB
+ 22df74fd5323 Pull complete 
+ 22df74fd5323 Pull complete 
+ 9f477227db48 Extracting [==================================================>]     183B/183B
+ 9f477227db48 Extracting [==================================================>]     183B/183B
+ 9f477227db48 Extracting [==================================================>]     183B/183B
+ 9f477227db48 Extracting [==================================================>]     183B/183B
+ 9f477227db48 Pull complete 
+ 9f477227db48 Pull complete 
+ backup Pulled 
+ db Pulled 
+ Network didi-shop_default  Creating
+ Network didi-shop_default  Created
+ Volume "didi-shop_pgdata"  Creating
+ Volume "didi-shop_pgdata"  Created
+ Volume "didi-shop_media"  Creating
+ Volume "didi-shop_media"  Created
+ Volume "didi-shop_static"  Creating
+ Volume "didi-shop_static"  Created
+ Volume "didi-shop_caddy_data"  Creating
+ Volume "didi-shop_caddy_data"  Created
+ Volume "didi-shop_caddy_config"  Creating
+ Volume "didi-shop_caddy_config"  Created
+ Container didi-shop-db-1  Creating
+ Container didi-shop-db-1  Created
+ Container didi-shop-app-1  Creating
+ Container didi-shop-app-1  Created
+ Container didi-shop-scheduler-1  Creating
+ Container didi-shop-backup-1  Creating
+ Container didi-shop-caddy-1  Creating
+ Container didi-shop-worker-1  Creating
+ Container didi-shop-scheduler-1  Created
+ Container didi-shop-worker-1  Created
+ Container didi-shop-backup-1  Created
+ Container didi-shop-caddy-1  Created
+ Container didi-shop-db-1  Starting
+ Container didi-shop-db-1  Started
+ Container didi-shop-db-1  Waiting
+ Container didi-shop-db-1  Healthy
+ Container didi-shop-app-1  Starting
+ Container didi-shop-app-1  Started
+ Container didi-shop-app-1  Waiting
+ Container didi-shop-app-1  Waiting
+ Container didi-shop-app-1  Waiting
+ Container didi-shop-app-1  Waiting
+ Container didi-shop-app-1  Healthy
+ Container didi-shop-backup-1  Starting
+ Container didi-shop-app-1  Healthy
+ Container didi-shop-caddy-1  Starting
+ Container didi-shop-app-1  Healthy
+ Container didi-shop-worker-1  Starting
+ Container didi-shop-app-1  Healthy
+ Container didi-shop-scheduler-1  Starting
+ Container didi-shop-worker-1  Started
+ Container didi-shop-scheduler-1  Started
+ Container didi-shop-backup-1  Started
+ Container didi-shop-caddy-1  Started
+ Container didi-shop-scheduler-1  Waiting
+ Container didi-shop-caddy-1  Waiting
+ Container didi-shop-backup-1  Waiting
+ Container didi-shop-db-1  Waiting
+ Container didi-shop-app-1  Waiting
+ Container didi-shop-worker-1  Waiting
+ Container didi-shop-scheduler-1  Healthy
+ Container didi-shop-worker-1  Healthy
+ Container didi-shop-caddy-1  Healthy
+ Container didi-shop-db-1  Healthy
+ Container didi-shop-backup-1  Healthy
+ Container didi-shop-app-1  Healthy
+
+[1;32m==> Проверка[0m
+HTTPS работает.
+
+Готово.
+  Магазин:                         https://localhost/
+  Панель администратора:           https://localhost/panel/   (вход: admin@example.com)
+  Резервная админка Django:        https://localhost/admin/
+  Webhook для ЮKassa:              https://localhost/api/v1/payments/webhook/yookassa/
+  Бэкапы:                          /home/runner/work/ThreadsAndTrends-Django-Emporium/ThreadsAndTrends-Django-Emporium/backups (ежедневно)
