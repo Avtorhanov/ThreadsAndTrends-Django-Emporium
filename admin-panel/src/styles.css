@@ -3759,3 +3759,290 @@ a.stat:hover {
     font-size: 16px !important;
   }
 }
+
+/* --- Вход: ссылка в магазин (вышел из панели — можно смотреть магазин гостем) --- */
+.login-store {
+  justify-self: center;
+  color: var(--muted);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* --- Телефон: шапка не отрывается, «потяните, чтобы обновить» --- */
+.ptr {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  :root {
+    --mobilebar-h: 60px;
+  }
+
+  /* Встроенная «резинка» iOS тянула всю страницу вместе с шапкой, и над ней открывалась
+     полоса фона. Резинку выключаем (обновление — свой жест, PullToRefresh), а фон над
+     шапкой — цвета шапки на случай браузеров без overscroll-behavior. */
+  html {
+    overscroll-behavior-y: none;
+    background: var(--nav);
+  }
+
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  .mobilebar {
+    min-height: var(--mobilebar-h);
+  }
+
+  /* Мини-панель массовых действий прилипает под шапкой, а не уезжает под неё. */
+  .bulk-bar {
+    top: calc(var(--mobilebar-h) + 8px);
+    z-index: 15;
+  }
+
+  .ptr {
+    position: fixed;
+    top: var(--mobilebar-h);
+    left: 50%;
+    z-index: 19;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--accent);
+    box-shadow: var(--shadow-control);
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+
+  .ptr:not(.is-spinning) {
+    transition:
+      opacity 0.15s ease,
+      transform 0.2s var(--ease-soft);
+  }
+
+  .ptr svg {
+    display: block;
+  }
+
+  .ptr-track {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 3;
+  }
+
+  .ptr-arc {
+    fill: none;
+    stroke: var(--brand);
+    stroke-width: 3;
+    stroke-linecap: round;
+    transform-origin: 18px 18px;
+  }
+
+  .ptr.is-ready .ptr-arc {
+    stroke: var(--brand);
+    stroke-width: 3.5;
+  }
+
+  .ptr.is-spinning svg {
+    animation: ptr-spin 0.8s linear infinite;
+  }
+
+  .ptr.is-spinning .ptr-arc {
+    transform: rotate(-90deg);
+  }
+}
+
+@keyframes ptr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ptr.is-spinning svg {
+    animation-duration: 1.6s;
+  }
+}
+
+/* --- Клиенты: заказы клиента раскрываются под строкой --- */
+.orders-toggle {
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.orders-toggle-chevron {
+  display: inline-block;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.2s var(--ease-soft);
+}
+
+.orders-toggle[aria-expanded="true"] .orders-toggle-chevron {
+  transform: rotate(90deg);
+}
+
+.customer-orders-row td {
+  padding-top: 0;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.customer-orders {
+  display: grid;
+  gap: 8px;
+  padding: 10px 4px;
+  text-align: left;
+}
+
+.customer-orders-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.customer-order {
+  display: grid;
+  grid-template-columns: minmax(90px, auto) auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-ctl);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.customer-order:hover {
+  border-color: var(--input-line);
+}
+
+.customer-order-num {
+  font-weight: 700;
+}
+
+.customer-order-sum {
+  justify-self: end;
+  font-weight: 700;
+}
+
+.customer-orders-all {
+  justify-self: start;
+  color: var(--brand);
+  font-weight: 700;
+}
+
+/* --- Заказы: плашка «Заказы клиента» (переход из «Клиентов») --- */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 4px 4px 4px 12px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.filter-chip-clear {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  /* Раскрытые заказы — продолжение карточки клиента. */
+  .table tbody tr.customer-orders-row {
+    margin-top: -14px;
+    padding-top: 4px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .customer-orders-row td {
+    background: transparent;
+    text-align: left;
+  }
+
+  .customer-order {
+    grid-template-columns: 1fr auto;
+    row-gap: 4px;
+  }
+}
+
+/* --- Настройки: контакты магазина --- */
+.contacts-settings {
+  max-width: 100%;
+}
+
+.contact-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contact-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ctl);
+  background: var(--surface);
+}
+
+.contact-main {
+  display: grid;
+  flex: 1 1 220px;
+  min-width: 0;
+  gap: 2px;
+}
+
+.contact-kind {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.contact-value {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.contact-form {
+  display: grid;
+  flex: 1 1 100%;
+  gap: 12px;
+}
+
+.contact-form .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

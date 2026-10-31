@@ -192,6 +192,10 @@ def test_admin_list_filters_and_search(admin_client, customer, other_customer):
     assert numbers("?status=assembled") == {pickup.number}
     assert numbers("?delivery_method=pickup") == {pickup.number}
     assert numbers("?unfinished=true") == {courier.number, pickup.number}
+    # Заказы одного клиента — кнопка «Все заказы клиента» в «Клиентах».
+    assert numbers(f"?customer={customer.pk}") == {courier.number, done.number}
+    assert numbers(f"?customer={other_customer.pk}") == {pickup.number}
+    assert numbers("?customer=abc") == {courier.number, pickup.number, done.number}
     assert numbers("?search=other@") == {pickup.number}
     assert numbers("?search=8 916 111-22-33") == {courier.number}
     assert numbers(f"?search={done.number}") == {done.number}

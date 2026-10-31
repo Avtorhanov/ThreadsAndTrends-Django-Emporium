@@ -722,6 +722,7 @@ def panel_snapshot() -> dict:
         grab(f"{ADMIN_API}/content/articles/{pk}/")
     grab(f"{ADMIN_API}/customers/")
     grab(f"{ADMIN_API}/content/settings/")
+    grab(f"{ADMIN_API}/content/blocks/", {"area": "contacts"})
     grab(f"{ADMIN_API}/content/home/")
     grab(f"{ADMIN_API}/content/theme/")
     grab(f"{ADMIN_API}/staff/")

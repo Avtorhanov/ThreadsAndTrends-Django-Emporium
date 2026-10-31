@@ -6,7 +6,7 @@ JWT мобильного клиента сюда не принимается: у
 """
 
 from django.contrib.auth import login, logout
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -96,7 +96,12 @@ class CustomerViewSet(
     serializer_class = CustomerSerializer
 
     def get_queryset(self):
-        queryset = User.objects.customers().order_by("-date_joined", "-id")
+        # Число заказов — одним запросом для всей страницы (кнопка «Заказы · N» в панели).
+        queryset = (
+            User.objects.customers()
+            .annotate(orders_count=Count("orders"))
+            .order_by("-date_joined", "-id")
+        )
         if self.action != "list":
             return queryset
 

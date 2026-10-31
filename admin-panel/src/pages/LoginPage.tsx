@@ -3,6 +3,7 @@ import { Navigate } from "react-router";
 
 import { ApiError } from "../api/errors";
 import { useAuth } from "../auth/AuthProvider";
+import { STORE_URL } from "../lib/site";
 
 export function LoginPage() {
   const { status, login } = useAuth();
@@ -62,6 +63,9 @@ export function LoginPage() {
         <button type="submit" className="button" disabled={loading}>
           {loading ? "Вход…" : "Войти"}
         </button>
+        <a className="login-store" href={STORE_URL}>
+          Перейти в магазин
+        </a>
       </form>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 import {
   type Customer,
@@ -10,6 +10,8 @@ import { ApiError } from "../api/errors";
 import { useCustomers } from "../hooks/useCustomers";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { Table } from "../components/Table";
+import { useAuth } from "../auth/AuthProvider";
+import { CustomerOrders } from "../components/customers/CustomerOrders";
 
 const STATUS_LABELS: Record<CustomerStatus, string> = {
   active: "Активен",
@@ -42,6 +44,10 @@ export function CustomersPage() {
     page,
   });
   const [busyId, setBusyId] = useState<number | null>(null);
+  // Раскрытые заказы клиента. Видны тем, кому открыт раздел «Заказы» (сервер проверяет сам).
+  const [openOrders, setOpenOrders] = useState<number | null>(null);
+  const { user } = useAuth();
+  const canSeeOrders = !user?.permissions || user.permissions.orders !== "none";
   const [actionError, setActionError] = useState<string | null>(null);
 
   const pages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1;
@@ -104,12 +110,14 @@ export function CustomersPage() {
             <th>Статус</th>
             <th>Регистрация</th>
             <th>Последний вход</th>
+            <th>Заказы</th>
             <th aria-label="Действия" />
           </tr>
         </thead>
         <tbody>
           {data?.results.map((customer) => (
-            <tr key={customer.id}>
+            <Fragment key={customer.id}>
+            <tr>
               <td>{customer.email}</td>
               <td>{[customer.first_name, customer.last_name].filter(Boolean).join(" ") || "—"}</td>
               <td>
@@ -119,6 +127,24 @@ export function CustomersPage() {
               </td>
               <td>{formatDate(customer.date_joined)}</td>
               <td>{formatDate(customer.last_login)}</td>
+              <td>
+                {customer.orders_count && canSeeOrders ? (
+                  <button
+                    type="button"
+                    className="button button-ghost orders-toggle"
+                    aria-expanded={openOrders === customer.id}
+                    aria-controls={`customer-orders-${customer.id}`}
+                    onClick={() => setOpenOrders((id) => (id === customer.id ? null : customer.id))}
+                  >
+                    Заказы · {customer.orders_count}
+                    <span className="orders-toggle-chevron" aria-hidden="true">
+                      ›
+                    </span>
+                  </button>
+                ) : (
+                  customer.orders_count || "—"
+                )}
+              </td>
               <td className="actions">
                 {customer.status === "active" ? (
                   <button
@@ -152,10 +178,18 @@ export function CustomersPage() {
                 ) : null}
               </td>
             </tr>
+            {openOrders === customer.id ? (
+              <tr className="customer-orders-row" id={`customer-orders-${customer.id}`}>
+                <td colSpan={7}>
+                  <CustomerOrders customerId={customer.id} email={customer.email} />
+                </td>
+              </tr>
+            ) : null}
+            </Fragment>
           ))}
           {data && data.results.length === 0 ? (
             <tr>
-              <td colSpan={6} className="empty">
+              <td colSpan={7} className="empty">
                 Ничего не найдено
               </td>
             </tr>

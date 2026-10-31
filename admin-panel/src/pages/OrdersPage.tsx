@@ -22,7 +22,10 @@ import { Table } from "../components/Table";
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
 export function OrdersPage() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  // ?customer=<id>&email=… — «Все заказы клиента» из «Клиентов»: все статусы, плашка с email.
+  const customerId = Number(params.get("customer")) || null;
+  const customerEmail = params.get("email") ?? "";
   const [search, setSearch] = useState("");
   // По умолчанию — заказы в работе: администратору важны незавершённые.
   // ?status=… задаёт начальный фильтр (ссылки со сводки).
@@ -31,7 +34,7 @@ export function OrdersPage() {
     if (value && Object.prototype.hasOwnProperty.call(STATUS_LABELS, value)) {
       return value as OrderStatus;
     }
-    return "unfinished";
+    return params.get("customer") ? "" : "unfinished";
   });
   const [payment, setPayment] = useState<PaymentMethod | "">("");
   const [delivery, setDelivery] = useState<DeliveryMethod | "">("");
@@ -48,6 +51,7 @@ export function OrdersPage() {
     delivery,
     createdFrom,
     createdTo,
+    customer: customerId,
     page,
   };
   const orders = useOrders(query);
@@ -115,6 +119,23 @@ export function OrdersPage() {
         <h1>Заказы</h1>
         {data ? <span className="muted">Найдено: {data.count}</span> : null}
       </div>
+
+      {customerId ? (
+        <p className="filter-chip">
+          Заказы клиента: <strong>{customerEmail || `№ ${customerId}`}</strong>
+          <button
+            type="button"
+            className="filter-chip-clear"
+            aria-label="Показать заказы всех клиентов"
+            onClick={() => {
+              setParams({}, { replace: true });
+              setPage(1);
+            }}
+          >
+            ×
+          </button>
+        </p>
+      ) : null}
 
       <div className="filters">
         <input

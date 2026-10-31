@@ -47,6 +47,7 @@ export function useOrders(query: OrderQuery) {
     query.delivery,
     query.createdFrom,
     query.createdTo,
+    query.customer,
     query.page,
     version,
   ]);

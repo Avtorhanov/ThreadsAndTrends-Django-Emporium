@@ -169,6 +169,7 @@ class CustomerStatus:
 
 class CustomerSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
+    orders_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -181,8 +182,14 @@ class CustomerSerializer(serializers.ModelSerializer):
             "date_joined",
             "last_login",
             "deleted_at",
+            "orders_count",
         ]
         read_only_fields = fields
+
+    def get_orders_count(self, obj: User) -> int:
+        # В списке и карточке — аннотация queryset; после блокировки/удаления — один запрос.
+        count = getattr(obj, "orders_count", None)
+        return obj.orders.count() if count is None else count
 
     @extend_schema_field(serializers.ChoiceField(choices=CustomerStatus.CHOICES))
     def get_status(self, obj: User) -> str:

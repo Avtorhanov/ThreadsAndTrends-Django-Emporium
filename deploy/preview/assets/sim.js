@@ -114,8 +114,20 @@
   }
 
   var readyPromise = null;
+  var CONTACTS_KEY = A + "/content/blocks/?area=contacts";
   function ready() {
-    if (load()) return Promise.resolve(cache);
+    if (load()) {
+      if (cache.contacts) return Promise.resolve(cache);
+      // «База» из прошлой версии демо без контактов — берём их из снимка.
+      return fetch(BASE + "/panel/preview-api.json").then(function (r) { return r.json(); }).then(function (snap) {
+        var db = load();
+        if (!db.contacts) {
+          db.contacts = clone(snap[CONTACTS_KEY] || []);
+          save(db);
+        }
+        return db;
+      });
+    }
     if (readyPromise) return readyPromise;
     readyPromise = Promise.all([
       fetch(BASE + "/panel/preview-api.json").then(function (r) { return r.json(); }),
@@ -191,6 +203,8 @@
       customers: customers,
       staff: staff,
       settings: clone(snap[A + "/content/settings/"]),
+      // Каналы связи («Контакты»): из .env без id, пока раздел не меняли (как content.site).
+      contacts: clone(snap[CONTACTS_KEY] || []),
       theme: theme,
       home: { blocks: home.blocks, published: clone(home.blocks), has_changes: false, published_at: home.published_at },
       me: clone(snap[A + "/auth/me/"]),
@@ -590,6 +604,8 @@
   function customerRow(c) {
     var row = clone(c);
     delete row.password;
+    var db = load();
+    row.orders_count = db ? db.orders.filter(function (o) { return o.customer.id === c.id; }).length : 0;
     return row;
   }
 
@@ -627,6 +643,7 @@
       });
     }
     if (q.get("status")) list = list.filter(function (o) { return o.status === q.get("status"); });
+    if (q.get("customer")) list = list.filter(function (o) { return o.customer.id === Number(q.get("customer")); });
     if (q.get("unfinished") === "true") list = list.filter(function (o) { return UNFINISHED.indexOf(o.status) >= 0; });
     if (q.get("payment_method")) list = list.filter(function (o) { return o.payment_method === q.get("payment_method"); });
     if (q.get("delivery_method")) list = list.filter(function (o) { return o.delivery_method === q.get("delivery_method"); });
@@ -686,6 +703,98 @@
   route("POST", "/orders/(\\d+)/payment-sync/", function (db, m) {
     var o = byId(db.orders, m[1]);
     return o ? ok(orderDetail(o)) : fail(404, { detail: "Не найдено." });
+  });
+
+  // Контакты магазина — блоки раздела «Контакты» (content.site, content.contacts)
+  var CONTACT_TITLES = { whatsapp: "WhatsApp", telegram: "Telegram", vk: "ВКонтакте", phone: "Телефон", email: "Почта" };
+  var CONTACT_NOTES = {
+    whatsapp: "Ответим на вопросы о заказе и размерах", telegram: "Новинки, скидки и быстрые ответы",
+    vk: "Сообщество магазина", phone: "Позвонить в магазин", email: "Для писем и документов"
+  };
+  function phoneDigits(value) {
+    var d = String(value || "").replace(/\D/g, "");
+    if (d.length === 11 && d[0] === "8") d = "7" + d.slice(1);
+    if (d.length === 10) d = "7" + d;
+    return d.length >= 11 && d.length <= 15 ? d : null;
+  }
+  function formatPhone(d) {
+    return d.length === 11 && d[0] === "7" ? "+7 " + d.slice(1, 4) + " " + d.slice(4, 7) + "-" + d.slice(7, 9) + "-" + d.slice(9) : "+" + d;
+  }
+  /** Канал → [ссылка, как показать] или null (неверное значение), как content.contacts.PARSERS. */
+  function parseContact(kind, value) {
+    value = String(value || "").trim();
+    var d, name;
+    if (kind === "whatsapp") return (d = phoneDigits(value)) ? ["https://wa.me/" + d, formatPhone(d)] : null;
+    if (kind === "phone") return (d = phoneDigits(value)) ? ["tel:+" + d, formatPhone(d)] : null;
+    if (kind === "telegram") {
+      name = value.replace(/^(https?:\/\/)?(t\.me|telegram\.me)\//, "").replace(/^@+/, "").replace(/^\/+|\/+$/g, "");
+      return /^[A-Za-z][A-Za-z0-9_]{3,31}$/.test(name) ? ["https://t.me/" + name, "@" + name] : null;
+    }
+    if (kind === "vk") {
+      name = value.replace(/^(https?:\/\/)?(m\.)?vk\.(com|ru)\//, "").replace(/^\/+|\/+$/g, "");
+      return /^[A-Za-z0-9_.]{2,64}$/.test(name) ? ["https://vk.com/" + name, "vk.com/" + name] : null;
+    }
+    if (kind === "email") return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value) ? ["mailto:" + value, value] : null;
+    return null;
+  }
+  function contactErrors(kind, value) {
+    if (!CONTACT_TITLES[kind]) return { kind: ["Выберите канал: WhatsApp, Telegram, ВКонтакте, телефон или почта."] };
+    if (!parseContact(kind, value)) return { value: ["Не похоже на номер, имя или адрес для этого канала."] };
+    return null;
+  }
+  function customizeContacts(db) {
+    db.contacts.forEach(function (b, i) {
+      if (b.id == null) b.id = next(db, "contact");
+      b.position = i;
+    });
+  }
+  function contactRow(b) { return clone(b); }
+  route("GET", "/content/blocks/", function (db, m, q) {
+    return ok(q.get("area") === "contacts" ? db.contacts.map(contactRow) : []);
+  });
+  route("POST", "/content/blocks/customize/", function (db) {
+    customizeContacts(db);
+    return { status: 200, body: db.contacts.map(contactRow), save: true };
+  });
+  route("POST", "/content/blocks/", function (db, m, q, body) {
+    if (body.area !== "contacts") return bad("В демо меняются только контакты.");
+    var errors = contactErrors(body.kind, body.value);
+    if (errors) return fields(errors);
+    if (db.contacts.length >= 20) return bad("Не больше 20 блоков в разделе.");
+    customizeContacts(db);
+    var b = {
+      id: next(db, "contact"), area: "contacts", kind: body.kind, title: String(body.title || ""),
+      value: String(body.value).trim(), note: String(body.note || "").trim(), icon: "", position: db.contacts.length
+    };
+    db.contacts.push(b);
+    return { status: 201, body: contactRow(b), save: true };
+  });
+  route("PATCH", "/content/blocks/(\\d+)/", function (db, m, q, body) {
+    var b = byId(db.contacts, m[1]);
+    if (!b) return fail(404, { detail: "Не найдено." });
+    var kind = body.kind || b.kind;
+    var value = body.value !== undefined ? body.value : b.value;
+    var errors = contactErrors(kind, value);
+    if (errors) return fields(errors);
+    b.kind = kind;
+    b.value = String(value).trim();
+    if (body.note !== undefined) b.note = String(body.note).trim();
+    if (body.title !== undefined) b.title = String(body.title);
+    return { status: 200, body: contactRow(b), save: true };
+  });
+  route("DELETE", "/content/blocks/(\\d+)/", function (db, m) {
+    var b = byId(db.contacts, m[1]);
+    if (!b) return fail(404, { detail: "Не найдено." });
+    db.contacts.splice(db.contacts.indexOf(b), 1);
+    db.contacts.forEach(function (x, i) { x.position = i; });
+    return { status: 204, body: null, save: true };
+  });
+  route("POST", "/content/blocks/reorder/", function (db, m, q, body) {
+    var ids = (body.ids || []).map(Number);
+    if (ids.length !== db.contacts.length) return bad("Нужны все блоки раздела.");
+    db.contacts.sort(function (a, b) { return ids.indexOf(a.id) - ids.indexOf(b.id); });
+    db.contacts.forEach(function (x, i) { x.position = i; });
+    return { status: 200, body: db.contacts.map(contactRow), save: true };
   });
 
   // Клиенты
@@ -1686,6 +1795,17 @@
     viewed: viewed,
     clearViewed: clearViewed,
     similar: similar,
-    adminSignedIn: signedIn
+    adminSignedIn: signedIn,
+    /** Каналы связи для вкладки «Контакты» магазина (как content.contacts.get_contacts). */
+    contacts: function () {
+      var db = load();
+      return (db && db.contacts ? db.contacts : []).map(function (b) {
+        var parsed = parseContact(b.kind, b.value);
+        return parsed ? {
+          kind: b.kind, title: b.title || CONTACT_TITLES[b.kind], url: parsed[0], handle: parsed[1],
+          note: b.note || CONTACT_NOTES[b.kind]
+        } : null;
+      }).filter(Boolean);
+    }
   };
 })();

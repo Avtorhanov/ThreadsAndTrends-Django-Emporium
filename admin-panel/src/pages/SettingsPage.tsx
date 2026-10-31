@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 
 import { ApiError, type FieldErrors } from "../api/errors";
 import { type ShopSettings, sellerParts, shopSettingsService } from "../api/settings";
+import { ContactsSettings } from "../components/settings/ContactsSettings";
 import { useShopSettings } from "../hooks/useContent";
 import { formatKopecks, kopecksToInput, parseRublesToKopecks } from "../lib/money";
 
@@ -391,6 +392,8 @@ export function SettingsPage() {
           onSaved={settings.set}
         />
       ) : null}
+      {/* Контакты сохраняются сразу, отдельно от формы настроек (свой API блоков сайта). */}
+      <ContactsSettings />
       {import.meta.env.VITE_PREVIEW === "1" ? <DemoReset /> : null}
     </section>
   );

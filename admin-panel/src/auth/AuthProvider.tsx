@@ -10,6 +10,7 @@ import {
 
 import { onUnauthorized } from "../api/client";
 import { authService, type StaffUser } from "./authService";
+import { STORE_URL } from "../lib/site";
 
 type Status = "loading" | "error" | "signedIn" | "signedOut";
 
@@ -62,7 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       logout: async () => {
         await authService.logout().catch(() => undefined);
-        signOut();
+        // Вышел из панели — остаётся в магазине гостем (сессия Django уже закрыта).
+        window.location.assign(STORE_URL);
       },
     }),
     [status, user, bootstrap, signOut],

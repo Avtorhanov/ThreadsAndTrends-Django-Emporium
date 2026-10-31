@@ -23,6 +23,8 @@ export type OrderQuery = {
   createdFrom: string;
   createdTo: string;
   page: number;
+  /** Заказы одного клиента (переход из «Клиентов»). */
+  customer?: number | null;
 };
 
 export const PAGE_SIZE = 20;
@@ -61,6 +63,7 @@ export const ordersService = {
             delivery_method: query.delivery || undefined,
             created_from: query.createdFrom || undefined,
             created_to: query.createdTo || undefined,
+            customer: query.customer || undefined,
             page: query.page,
           },
         },

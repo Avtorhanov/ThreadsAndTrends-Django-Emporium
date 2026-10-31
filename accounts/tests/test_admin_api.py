@@ -161,3 +161,30 @@ def test_django_admin_only_for_superuser(staff, superuser):
     client.force_login(superuser)
     assert client.get("/admin/").status_code == 200
     assert client.get("/admin/accounts/user/").status_code == 200
+
+
+def test_customers_have_orders_count(admin_client, customer, other_customer):
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    from orders.tests.factories import make_order
+
+    make_order(customer)
+    make_order(customer)
+
+    def list_queries() -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            assert admin_client.get(CUSTOMERS).status_code == 200
+        return len(ctx.captured_queries)
+
+    # Число заказов приходит аннотацией: запросов столько же, сколько бы ни было клиентов.
+    before = list_queries()
+    for n in range(3):
+        User.objects.create_user(email=f"extra{n}@example.com", password=PASSWORD)
+    assert list_queries() == before
+    rows = admin_client.get(CUSTOMERS, {"search": "example"}).json()["results"]
+    counts = {row["id"]: row["orders_count"] for row in rows}
+    assert counts[customer.pk] == 2 and counts[other_customer.pk] == 0
+    assert admin_client.get(f"{CUSTOMERS}{customer.pk}/").json()["orders_count"] == 2
+    blocked = admin_client.post(f"{CUSTOMERS}{customer.pk}/block/").json()
+    assert blocked["orders_count"] == 2

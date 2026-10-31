@@ -1034,9 +1034,29 @@
 
   // --- Контакты и статьи ---
 
+  var CHANNEL_ICONS = { whatsapp: "chat", telegram: "send", vk: "people", phone: "phone", email: "mail" };
+
+  /** Каналы связи из «базы» демо (панель → «Настройки» → «Контакты»), как web/content/contacts.html. */
+  function renderChannels(page) {
+    var list = sim.contacts();
+    var current = page.querySelector(".channels") || page.querySelector(".section-head + .note");
+    var html = list.length ? '<ul class="channels">' + list.map(function (c) {
+      var external = c.kind !== "phone" && c.kind !== "email";
+      return '<li><a class="channel" href="' + esc(c.url) + '"' + (external ? ' target="_blank" rel="noopener noreferrer"' : "") + ">" +
+        '<span class="channel__icon" aria-hidden="true">' + icon(CHANNEL_ICONS[c.kind], 24) + "</span>" +
+        '<span class="channel__body"><span class="channel__title">' + esc(c.title) + '</span><span class="channel__handle">' + esc(c.handle) +
+        '</span><span class="channel__note">' + esc(c.note) + "</span></span>" + icon("chevron", 18, "channel__go") + "</a></li>";
+    }).join("") + "</ul>" : '<p class="note note--info">Контакты скоро появятся.</p>';
+    var holder = document.createElement("div");
+    holder.innerHTML = html;
+    if (current) current.replaceWith(holder.firstChild);
+    else page.querySelector(".section-head").after(holder.firstChild);
+  }
+
   function renderContacts() {
     var page = document.querySelector("#main .page");
     if (!page) return;
+    renderChannels(page);
     var articles = sim.articles();
     var box = page.querySelector(".articles");
     var head = box ? box.previousElementSibling : null;

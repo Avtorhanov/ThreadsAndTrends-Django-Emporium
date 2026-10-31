@@ -60,6 +60,9 @@ class AdminOrderViewSet(
             value = params.get(name)
             if value:
                 queryset = queryset.filter(**{name: value})
+        customer = params.get("customer", "")
+        if customer.isdigit():
+            queryset = queryset.filter(owner_id=int(customer))
         if params.get("unfinished") in ("1", "true"):
             queryset = queryset.unfinished()
         created_from = _date_param(params, "created_from")
@@ -89,6 +92,7 @@ class AdminOrderViewSet(
             OpenApiParameter("payment_method", str, enum=PaymentMethod.values),
             OpenApiParameter("delivery_method", str, enum=DeliveryMethod.values),
             OpenApiParameter("unfinished", bool, description="Только незавершённые заказы"),
+            OpenApiParameter("customer", int, description="Заказы одного клиента (id)"),
             OpenApiParameter("created_from", str, description="Дата оформления от (ГГГГ-ММ-ДД)"),
             OpenApiParameter("created_to", str, description="Дата оформления до (ГГГГ-ММ-ДД)"),
             OpenApiParameter(

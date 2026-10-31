@@ -6,6 +6,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { STORE_URL } from "../lib/site";
 import { THEME_LABELS, type ThemeChoice, useTheme } from "../theme/theme";
 import { Icon, type IconName } from "./Icon";
+import { PullToRefresh } from "./PullToRefresh";
 
 type Access = keyof StaffUser["permissions"];
 
@@ -29,6 +30,9 @@ function sectionFor(pathname: string) {
     item.to === "/" ? pathname === "/" : pathname === item.to || pathname.startsWith(`${item.to}/`),
   ).sort((a, b) => b.to.length - a.to.length)[0];
 }
+
+// Экраны с формами: жест «потянуть, чтобы обновить» сбросил бы несохранённые правки.
+const FORM_SCREEN = /^\/(catalog\/products|content\/articles)\/[^/]+$|^\/(settings|look)(\/|$)/;
 
 const THEME_ICONS: Record<ThemeChoice, IconName> = { system: "system", light: "sun", dark: "moon" };
 
@@ -88,6 +92,8 @@ function ThemeSwitch() {
 export function Layout() {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  // Смена ключа пересоздаёт экран — его хуки заново запрашивают данные.
+  const [refreshKey, setRefreshKey] = useState(0);
   const location = useLocation();
 
   // Переход по разделу закрывает шторку на телефоне.
@@ -126,6 +132,11 @@ export function Layout() {
         <Brand />
         <StoreLink />
       </header>
+
+      <PullToRefresh
+        disabled={menuOpen || FORM_SCREEN.test(location.pathname)}
+        onRefresh={() => setRefreshKey((key) => key + 1)}
+      />
 
       <div className="scrim" aria-hidden="true" onClick={() => setMenuOpen(false)} />
 
@@ -185,7 +196,9 @@ export function Layout() {
             {level === "view" ? (
               <p className="note note-info view-only">Только просмотр: изменения в этом разделе вам недоступны.</p>
             ) : null}
-            <Outlet />
+            <div key={refreshKey} className="screen">
+              <Outlet />
+            </div>
           </>
         )}
       </main>

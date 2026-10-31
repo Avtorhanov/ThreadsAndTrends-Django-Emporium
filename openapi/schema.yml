@@ -1393,6 +1393,11 @@ paths:
           type: string
         description: Дата оформления до (ГГГГ-ММ-ДД)
       - in: query
+        name: customer
+        schema:
+          type: integer
+        description: Заказы одного клиента (id)
+      - in: query
         name: delivery_method
         schema:
           type: string
@@ -4970,6 +4975,9 @@ components:
           readOnly: true
           nullable: true
           title: Удалён
+        orders_count:
+          type: integer
+          readOnly: true
       required:
       - date_joined
       - deleted_at
@@ -4978,6 +4986,7 @@ components:
       - id
       - last_login
       - last_name
+      - orders_count
       - status
     CustomerStatusEnum:
       enum:
