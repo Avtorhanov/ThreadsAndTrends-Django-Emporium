@@ -19,9 +19,13 @@
   var shop = {};
   try { shop = JSON.parse(localStorage.getItem("didi-sim-look") || "{}") || {}; } catch (e) { shop = {}; }
 
+  // Вошедший администратор смотрит магазин как гость (сессия одна, как в Django).
+  var admin = false;
+  try { admin = localStorage.getItem("didi-preview-admin") === "1"; } catch (e) { admin = false; }
+
   if (!ROOM) {
     var path = location.pathname;
-    if (TREE === "guest" && shop.user && path.indexOf(ME + "/") !== 0) {
+    if (TREE === "guest" && shop.user && !admin && path.indexOf(ME + "/") !== 0) {
       var local = path.indexOf(BASE + "/") === 0 ? path.slice(BASE.length) : path;
       // Вход, регистрация и сброс пароля есть только у гостя.
       if (!/^\/(login|register|password-reset)\//.test(local)) {

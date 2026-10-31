@@ -1302,8 +1302,12 @@
     if (sim.adminSignedIn()) {
       // Как на сервере (web/views/account.py): вошедший администратор смотрит магазин как
       // покупатель, а вход, регистрация и кабинет ведут в панель — второй вход не нужен.
-      if (TREE === "me" || /^\/(login|register|profile)\//.test(HERE)) {
+      if (/^\/(login|register|profile|orders|checkout)\//.test(HERE)) {
         location.replace(BASE + "/panel/");
+        return;
+      }
+      if (TREE === "me") { // страница магазина из дерева покупателя — та же страница гостя
+        location.replace(BASE + HERE + location.search + location.hash);
         return;
       }
       showPanelLinks();
