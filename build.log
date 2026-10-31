@@ -1,0 +1,4 @@
+2026-10-31 12:34:37,262 WARNING django.request Not Found: /ThreadsAndTrends-Django-Emporium/no-such-page/
+Демо-каталог: товаров 31, новых фото 43, новых статей 3
+Панель: 68 ответов API, 62 страниц → /home/runner/work/ThreadsAndTrends-Django-Emporium/ThreadsAndTrends-Django-Emporium/_site/panel
+Превью: 131 страниц → /home/runner/work/ThreadsAndTrends-Django-Emporium/ThreadsAndTrends-Django-Emporium/_site
