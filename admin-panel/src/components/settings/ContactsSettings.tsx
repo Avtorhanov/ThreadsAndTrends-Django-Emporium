@@ -100,19 +100,19 @@ export function ContactsSettings() {
     if (editing === null) return;
     const index = editing;
     const body = { kind: draft.kind, value: draft.value.trim(), note: draft.note.trim(), title: "" };
-    const done = await run((list) =>
-      index < 0
-        ? blocksService.create({ area: "contacts", ...body })
-        : blocksService.update(list[index].id, body),
-    );
+    const done = await run((list) => {
+      const block = list[index];
+      if (index < 0 || !block) return blocksService.create({ area: "contacts", ...body });
+      return blocksService.update(block.id, body);
+    });
     if (done) setEditing(null);
   }
 
   function move(index: number, step: -1 | 1) {
     void run((list) => {
       const ids = list.map((block) => block.id);
-      const target = index + step;
-      [ids[index], ids[target]] = [ids[target], ids[index]];
+      const [moved] = ids.splice(index, 1);
+      if (moved !== undefined) ids.splice(index + step, 0, moved);
       return blocksService.reorder("contacts", ids);
     });
   }
@@ -120,10 +120,18 @@ export function ContactsSettings() {
   function remove(index: number) {
     const block = blocks?.[index];
     if (!block || !window.confirm(`Убрать канал «${LABELS[block.kind ?? ""] ?? ""}: ${block.value}»?`)) return;
-    void run((list) => blocksService.remove(list[index].id));
+    void run(async (list) => {
+      const target = list[index];
+      if (target) await blocksService.remove(target.id);
+    });
   }
 
-  const kindInfo = KINDS.find((item) => item.kind === draft.kind) ?? KINDS[0];
+  const kindInfo = KINDS.find((item) => item.kind === draft.kind) ?? {
+    kind: draft.kind,
+    label: "",
+    placeholder: "",
+    hint: "Значение",
+  };
   const form = (
     <form className="contact-form" onSubmit={(event) => void submit(event)} noValidate>
       <label className="field">

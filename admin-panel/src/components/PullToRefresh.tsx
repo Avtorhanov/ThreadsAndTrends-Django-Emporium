@@ -35,11 +35,13 @@ export function PullToRefresh({ disabled, onRefresh }: Props) {
       setPull(0);
     };
     const onStart = (event: TouchEvent) => {
-      start.current = window.scrollY <= 0 && event.touches.length === 1 ? event.touches[0].clientY : null;
+      const touch = event.touches[0];
+      start.current = window.scrollY <= 0 && event.touches.length === 1 && touch ? touch.clientY : null;
     };
     const onMove = (event: TouchEvent) => {
-      if (start.current === null) return;
-      const dy = event.touches[0].clientY - start.current;
+      const touch = event.touches[0];
+      if (start.current === null || !touch) return;
+      const dy = touch.clientY - start.current;
       if (dy <= 0 || window.scrollY > 0) {
         if (pullRef.current) reset();
         return;
