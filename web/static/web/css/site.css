@@ -64,8 +64,11 @@
 
 /* --- Основа --- */
 *, *::before, *::after { box-sizing: border-box; }
-/* Фон html — тот же, что у страницы: полоса под статус-баром и «оттяжка» прокрутки в цвет темы. */
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--bg); transition: background-color .45s ease; }
+/* Фон html — тот же, что у страницы: полоса под статус-баром и «оттяжка» прокрутки в цвет темы.
+   Без перехода: Safari на iPhone берёт цвет строки состояния в момент смены темы и, пока фон
+   html плавно перетекал, запоминал прежний — полоса над шапкой оставалась светлой. Плавное
+   растворение темы остаётся у body. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--bg); }
 /* Без задержки двойного касания: нажатия срабатывают сразу. */
 a, button, summary, label, input, select { touch-action: manipulation; }
 body {

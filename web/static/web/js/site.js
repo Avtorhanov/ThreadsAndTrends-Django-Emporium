@@ -306,13 +306,24 @@
   }
 
   // Цвет строки состояния — фон текущей палитры и темы (после смены атрибутов <html>).
+  // Safari замечает новый тег надёжнее, чем смену content у прежнего: старые теги заменяются
+  // одним новым (без media — выбор темы явный). Повтор после растворения темы — на случай,
+  // если браузер перечитал цвет, пока страница ещё менялась.
   function syncThemeColor() {
     var color = getComputedStyle(root).getPropertyValue("--bg").trim();
     if (!color) return;
-    document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
-      meta.content = color;
-      meta.removeAttribute("media");
-    });
+    var metas = document.querySelectorAll('meta[name="theme-color"]');
+    var fresh = document.createElement("meta");
+    fresh.name = "theme-color";
+    fresh.content = color;
+    if (metas.length) metas[0].parentNode.insertBefore(fresh, metas[0]);
+    else document.head.appendChild(fresh);
+    metas.forEach(function (meta) { meta.remove(); });
+  }
+  function syncThemeColorSoon() {
+    syncThemeColor();
+    clearTimeout(syncThemeColorSoon.timer);
+    syncThemeColorSoon.timer = setTimeout(syncThemeColor, 500);
   }
 
   function applyTheme(value) {
@@ -322,7 +333,7 @@
     setCookie("theme", value === "light" || value === "dark" ? value : "system", YEAR);
     var scheme = document.querySelector('meta[name="color-scheme"]');
     if (scheme) scheme.content = value === "system" ? "light dark" : value;
-    syncThemeColor();
+    syncThemeColorSoon();
     var hidden = document.querySelectorAll('[data-theme-form] input[name="theme"]');
     hidden.forEach(function (input) { input.value = effectiveTheme() === "dark" ? "light" : "dark"; });
     document.querySelectorAll('[data-theme-select] input[name="theme"]').forEach(function (input) {
@@ -361,7 +372,7 @@
     if (name === "accent" && root.getAttribute("data-palette") !== "custom") return;
     if (value === spec.plain) root.removeAttribute(spec.attr);
     else root.setAttribute(spec.attr, value);
-    syncThemeColor();
+    syncThemeColorSoon();
   }
 
   document.querySelectorAll("[data-theme-select]").forEach(function (form) {
