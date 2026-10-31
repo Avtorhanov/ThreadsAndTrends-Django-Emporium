@@ -44,9 +44,9 @@ body {
   font-size: 15px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
-  transition:
-    background-color 0.45s var(--ease-soft),
-    color 0.45s var(--ease-soft);
+  /* Фон — без перехода: Safari 26 красит полосы браузера в цвет фона и при плавной смене
+     темы оставлял прежний. */
+  transition: color 0.45s var(--ease-soft);
 }
 
 h1,
@@ -3791,8 +3791,18 @@ a.stat:hover {
     overscroll-behavior-y: none;
   }
 
+  /* Шапка — fixed, а не sticky: Safari 26 красит полосу статус-бара в цвет фиксированного
+     элемента у верхнего края (иначе — в цвет фона страницы, и над тёмной шапкой была
+     светлая полоса). Место под шапку — отступ у каркаса панели. */
   .mobilebar {
+    position: fixed;
+    left: 0;
+    right: 0;
     min-height: var(--mobilebar-h);
+  }
+
+  .shell {
+    padding-top: var(--mobilebar-h);
   }
 
   /* Мини-панель массовых действий прилипает под шапкой, а не уезжает под неё. */

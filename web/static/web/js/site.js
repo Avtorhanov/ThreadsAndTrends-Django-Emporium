@@ -323,7 +323,14 @@
   function syncThemeColorSoon() {
     syncThemeColor();
     clearTimeout(syncThemeColorSoon.timer);
-    syncThemeColorSoon.timer = setTimeout(syncThemeColor, 500);
+    syncThemeColorSoon.timer = setTimeout(function () {
+      syncThemeColor();
+      // Safari перечитывает цвет полос браузера при прокрутке: сдвиг на 1 px и обратно.
+      if (document.documentElement.scrollHeight > window.innerHeight + 1) {
+        window.scrollBy(0, 1);
+        requestAnimationFrame(function () { window.scrollBy(0, -1); });
+      }
+    }, 500);
   }
 
   function applyTheme(value) {

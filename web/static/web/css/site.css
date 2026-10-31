@@ -65,9 +65,8 @@
 /* --- Основа --- */
 *, *::before, *::after { box-sizing: border-box; }
 /* Фон html — тот же, что у страницы: полоса под статус-баром и «оттяжка» прокрутки в цвет темы.
-   Без перехода: Safari на iPhone берёт цвет строки состояния в момент смены темы и, пока фон
-   html плавно перетекал, запоминал прежний — полоса над шапкой оставалась светлой. Плавное
-   растворение темы остаётся у body. */
+   Без перехода (как и у body): Safari на iPhone берёт цвет полосы браузера в момент смены
+   темы и, пока фон плавно перетекал, запоминал прежний — полоса над шапкой оставалась светлой. */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--bg); }
 /* Без задержки двойного касания: нажатия срабатывают сразу. */
 a, button, summary, label, input, select { touch-action: manipulation; }
@@ -79,7 +78,9 @@ body {
   font: 500 15px/1.45 var(--font-text);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color .45s ease, color .45s ease;
+  /* Фон — без перехода: Safari 26 красит полосы браузера (адрес, статус-бар) в цвет фона body
+     и при плавной смене темы оставлял цвет прежней темы. */
+  transition: color .45s ease;
 }
 h1, h2, h3, p, ul, ol, figure, fieldset { margin: 0; }
 fieldset { border: 0; padding: 0; min-width: 0; }
