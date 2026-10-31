@@ -1259,6 +1259,27 @@
     return false;
   }
 
+  /** Шапка и нижняя панель администратора — «Панель» вместо «Войти»/«Профиль»
+      (на сервере так рисуют web/partials/header.html и tabbar.html для is_staff). */
+  function showPanelLinks() {
+    var panel = BASE + "/panel/";
+    document.querySelectorAll('.topnav a[href$="/login/"], .topnav a[href$="/profile/"]').forEach(function (a) {
+      a.href = panel;
+      a.textContent = "Панель";
+      a.removeAttribute("aria-current");
+      a.setAttribute("data-panel-link", "");
+    });
+    document.querySelectorAll('.topnav a[href$="/orders/"]').forEach(function (a) { a.remove(); });
+    document.querySelectorAll('.tabbar .tab[href$="/profile/"]').forEach(function (a) {
+      a.href = panel;
+      a.classList.remove("is-on");
+      a.removeAttribute("aria-current");
+      a.setAttribute("data-panel-link", "");
+      var label = a.querySelector("span:last-child");
+      if (label) label.textContent = "Панель";
+    });
+  }
+
   // --- Старт ---
 
   if (!window.__didiPreviewBound) {
@@ -1278,6 +1299,15 @@
     var data = res[1];
     if (ROOM === "404" && dynamicRoute(data)) return;
     if (ROOM && ROOM !== "404") return; // отдельные состояния (ошибки форм и т. п.) — как есть
+    if (sim.adminSignedIn()) {
+      // Как на сервере (web/views/account.py): вошедший администратор смотрит магазин как
+      // покупатель, а вход, регистрация и кабинет ведут в панель — второй вход не нужен.
+      if (TREE === "me" || /^\/(login|register|profile)\//.test(HERE)) {
+        location.replace(BASE + "/panel/");
+        return;
+      }
+      showPanelLinks();
+    }
     if (TREE === "me" && !sim.ensureCustomer()) {
       location.replace(BASE + "/login/?next=" + encodeURIComponent(HERE));
       return;

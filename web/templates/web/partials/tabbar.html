@@ -14,7 +14,13 @@
       {% include "web/partials/cart_badge.html" with badge_id="cart-badge-tab" count=cart_count %}
     </span><span>Корзина</span>
   </a>
+  {% if user.is_staff %}
+  <a class="tab" href="/panel/" data-panel-link>
+    <span class="tab__icon"><svg class="ic" width="22" height="22"><use href="#i-user"/></svg></span><span>Панель</span>
+  </a>
+  {% else %}
   <a class="tab{% if tab == 'profile' %} is-on{% endif %}" href="{% url 'web:profile' %}"{% if tab == "profile" %} aria-current="page"{% endif %}>
     <span class="tab__icon"><svg class="ic" width="22" height="22"><use href="#i-user"/></svg></span><span>Профиль</span>
   </a>
+  {% endif %}
 </nav>

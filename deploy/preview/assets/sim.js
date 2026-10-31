@@ -605,8 +605,8 @@
   });
   route("POST", "/auth/login/", function (db, m, q, body) {
     if (lower(body.email) === db.login.email && body.password === db.login.password) {
-      setSignedIn(true);
-      return ok(db.me);
+      signInAdmin(db);
+      return { status: 200, body: clone(db.me), save: true };
     }
     return bad("Неверный email или пароль.");
   });
@@ -1204,6 +1204,13 @@
   function signedIn() {
     try { return localStorage.getItem(ADMIN_SESSION) === "1"; } catch (e) { return false; }
   }
+  /** Вход администратора: как в Django, сессия одна — покупатель на этом устройстве выходит,
+      магазин администратор смотрит как гость с «Панелью» в шапке (preview.js). */
+  function signInAdmin(db) {
+    setSignedIn(true);
+    db.session = null;
+    db.loggedOut = true;
+  }
   function setSignedIn(value) {
     try {
       if (value) localStorage.setItem(ADMIN_SESSION, "1");
@@ -1338,7 +1345,8 @@
     email = lower(email);
     if (db.login && email === db.login.email) {
       if (password !== db.login.password) return { error: "Неверный email или пароль." };
-      setSignedIn(true);
+      signInAdmin(db);
+      save(db);
       return { admin: true };
     }
     var c = customerByEmail(db, email);
@@ -1347,6 +1355,7 @@
     if (!c.password && !password) return { error: "Введите пароль." };
     if (c.status === "blocked") return { error: "Аккаунт заблокирован. Напишите в поддержку магазина." };
     c.last_login = now();
+    setSignedIn(false); // одна сессия на сайт, как в Django: вход покупателя выводит администратора
     db.session = { id: c.id, email: c.email };
     db.loggedOut = false;
     mergeCart(db, "guest", cartKey(db));
@@ -1366,6 +1375,7 @@
       date_joined: now(), last_login: now(), deleted_at: null, password: password
     };
     db.customers.push(c);
+    setSignedIn(false);
     db.session = { id: c.id, email: c.email };
     db.loggedOut = false;
     mergeCart(db, "guest", cartKey(db));

@@ -50,6 +50,16 @@ def test_staff_login_opens_panel(client, staff):
     assert client.get(reverse("web:profile"))["Location"] == "/panel/"
 
 
+def test_staff_sees_shop_with_panel_link(client, staff):
+    """Администратор заглянул в магазин: витрина как у покупателя, вход сохранён — в шапке
+    и нижней панели «Панель» вместо «Войти»/«Профиль», режим правки на месте включён."""
+    login(client, email="staff@example.com")
+    html = client.get(reverse("web:home")).content.decode()
+    assert html.count('href="/panel/" data-panel-link') == 2
+    assert ">Войти<" not in html and ">Профиль<" not in html
+    assert "web/js/edit" in html
+
+
 def test_staff_wrong_password_stays_on_login(client, staff):
     response = login(client, email="staff@example.com", password="nope")
     assert response.status_code == 200

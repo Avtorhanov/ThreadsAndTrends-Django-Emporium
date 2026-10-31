@@ -471,6 +471,33 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
   background: var(--card); box-shadow: var(--shadow-card);
 }
 .pd__frame .hero { border-radius: calc(var(--radius-hero) - var(--space-card-pad)); }
+
+/* --- Стрелки листания (site.js): только мышь; на сенсорных экранах — свайп ---
+   Ленты оборачиваются в .scroller по колонке страницы, фото товара — кнопки внутри .hero. */
+.scroller { position: relative; min-width: 0; }
+.scroll-btn { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .scroll-btn {
+    position: absolute; top: 50%; z-index: 2; display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; margin-top: -22px; padding: 0; border: 0; border-radius: 99px; cursor: pointer;
+    background: var(--btn-glass); color: var(--ink); box-shadow: var(--shadow-control);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    opacity: .9; transition: opacity .2s ease, transform .15s ease;
+  }
+  .scroll-btn[hidden] { display: none; }
+  .scroll-btn:hover { opacity: 1; }
+  .scroll-btn:active { transform: scale(.94); }
+  .scroll-btn:focus-visible { opacity: 1; outline: 2px solid var(--brand); outline-offset: 2px; }
+  .scroll-btn--prev { left: 10px; }
+  .scroll-btn--prev .ic { transform: rotate(180deg); }
+  .scroll-btn--next { right: 10px; }
+  /* Подборки: середина фото карточки, а не всей карточки с подписью. */
+  .scroller:has(> .hblock-rail__track) .scroll-btn { top: 38%; }
+  /* Лента категорий — кнопки меньше, по высоте плашек. */
+  .scroller:has(> .hblock-cats__list) .scroll-btn { width: 36px; height: 36px; margin-top: -18px; }
+  .scroller:has(> .hblock-cats__list) .scroll-btn--prev { left: -4px; }
+  .scroller:has(> .hblock-cats__list) .scroll-btn--next { right: -4px; }
+}
 /* position: relative — блок текста рисуется поверх тени фото (галерея позиционирована,
    без этого её тень ложилась на блок и казалось, что фото наезжает на текст). */
 .pd__info {

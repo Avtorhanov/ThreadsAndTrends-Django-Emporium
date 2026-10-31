@@ -493,6 +493,100 @@
   initHomeMotion(document);
   window.didiHomeMotion = initHomeMotion; // демо на Pages перерисовывает главную
 
+  // --- Стрелки листания на компьютере (мышь): галерея товара, карусель, подборки, ленты ---
+  // На сенсорных экранах — свайп, кнопок нет. Шаг — видимая ширина ленты (одно фото, один
+  // баннер, ряд карточек); scroll-snap доводит до ближайшей карточки. У края кнопка скрыта.
+  var finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+  var SCROLLERS = [
+    ["[data-gallery]", "Предыдущее фото", "Следующее фото"],
+    ["[data-carousel-track]", "Предыдущий баннер", "Следующий баннер"],
+    [".hblock-rail__track", "Предыдущие товары", "Следующие товары"],
+    [".hblock-cats__list", "Предыдущие категории", "Следующие категории"]
+  ];
+  function scrollButton(dir, label) {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "scroll-btn scroll-btn--" + dir;
+    button.setAttribute("aria-label", label);
+    button.hidden = true;
+    var ns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("class", "ic");
+    svg.setAttribute("width", "20");
+    svg.setAttribute("height", "20");
+    svg.setAttribute("aria-hidden", "true");
+    var use = document.createElementNS(ns, "use");
+    use.setAttribute("href", "#i-chevron");
+    svg.appendChild(use);
+    button.appendChild(svg);
+    return button;
+  }
+  function scrollPage(track) {
+    var style = getComputedStyle(track);
+    var page = track.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    return page + (parseFloat(style.columnGap) || 0);
+  }
+  function syncScroller(track) {
+    var max = track.scrollWidth - track.clientWidth;
+    track._prev.hidden = track.scrollLeft <= 2;
+    track._next.hidden = track.scrollLeft >= max - 2;
+  }
+  function bindScroller(track, labels) {
+    if (track._prev) return syncScroller(track);
+    // Фото товара — кнопки внутри рамки фото; ленты — в обёртке по контуру ленты
+    // (у лент отрицательные поля под тень, кнопки должны стоять по колонке страницы).
+    var host = track.closest(".hero");
+    if (!host) {
+      host = document.createElement("div");
+      host.className = "scroller";
+      track.parentNode.insertBefore(host, track);
+      host.appendChild(track);
+    }
+    host.classList.add("has-scroll-btns");
+    track._prev = scrollButton("prev", labels[0]);
+    track._next = scrollButton("next", labels[1]);
+    host.appendChild(track._prev);
+    host.appendChild(track._next);
+    [[track._prev, -1], [track._next, 1]].forEach(function (pair) {
+      pair[0].addEventListener("click", function () {
+        track.scrollBy({ left: pair[1] * scrollPage(track), behavior: reduced.matches ? "auto" : "smooth" });
+      });
+    });
+    var ticking = false;
+    track.addEventListener("scroll", function () {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () { ticking = false; syncScroller(track); });
+    }, { passive: true });
+    if ("ResizeObserver" in window) new ResizeObserver(function () { syncScroller(track); }).observe(track);
+    syncScroller(track);
+  }
+  function initScrollers(scope) {
+    SCROLLERS.forEach(function (spec) {
+      scope.querySelectorAll(spec[0]).forEach(function (track) { bindScroller(track, spec.slice(1)); });
+    });
+  }
+  // Ленты появляются и после загрузки (htmx, «Вы смотрели», демо на Pages перерисовывает
+  // страницы): новые подхватываются, у прежних пересчитывается край.
+  function startScrollers() {
+    initScrollers(document);
+    if (!("MutationObserver" in window)) return;
+    var queued = false;
+    new MutationObserver(function () {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(function () { queued = false; initScrollers(document); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (finePointer.matches) startScrollers();
+  else if (finePointer.addEventListener) {
+    finePointer.addEventListener("change", function onChange(event) {
+      if (!event.matches) return;
+      finePointer.removeEventListener("change", onChange);
+      startScrollers();
+    });
+  }
+
   // --- Карточка товара: «В корзину» / «Добавить ещё», сколько уже в корзине и «−/+» ---
   // Обработчики делегированы документу: форму могут перерисовать (демо на Pages).
   function setCartBadges(count) {
