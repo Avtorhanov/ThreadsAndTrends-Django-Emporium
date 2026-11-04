@@ -156,6 +156,44 @@ def main(site: Path, shots: Path) -> None:
         page.screenshot(path=shots / "sim-order-iphone.png", full_page=True)
         print(f"Имитация: корзина и оформление — заказ {number}")
 
+        # 2б. B13: фото на весь экран и «Поделиться»; смена email кодом; точка «есть новости».
+        page.goto(origin + BASE + check["path"], wait_until="load")
+        page.wait_for_selector(".pd__share")
+        page.click("[data-zoom]")
+        page.wait_for_selector(".pswp--open", timeout=10_000)
+        page.keyboard.press("Escape")
+        page.wait_for_selector(".pswp--open", state="detached")
+        page.goto(origin + f"{BASE}/me/profile/data/", wait_until="load")
+        assert page.locator("text=логин аккаунта").count() == 0, "осталась подпись про логин"
+        new_email = "new-" + data["customer"]["email"]
+        page.fill('#email [name="new_email"]', new_email)
+        page.fill('#email [name="password"]', data["customer"]["password"])
+        page.click('#email button[type="submit"]')
+        page.wait_for_selector('#email [name="code"]')
+        page.fill('#email [name="code"]', "123456")
+        page.click('#email form button[type="submit"]')
+        page.wait_for_selector(f"#email .readonly:has-text('{new_email}')")
+        page.screenshot(path=shots / "sim-email-iphone.png", full_page=True)
+        order_id = page.evaluate(f"window.DidiSim.myOrder('{number}').id")
+        page.evaluate(
+            """async (id) => {
+              localStorage.setItem('didi-preview-admin', '1');
+              await window.DidiSim.api("POST", `/api/v1/admin/orders/${id}/transition/`,
+                { status: "cancelled", comment: "", notify: false });
+              localStorage.removeItem('didi-preview-admin');
+            }""",
+            order_id,
+        )
+        page.goto(origin + f"{BASE}/me/profile/", wait_until="load")
+        page.wait_for_selector(".tabbar .tab__icon .news-dot")
+        page.goto(origin + f"{BASE}/me/orders/{number}/", wait_until="load")
+        page.wait_for_selector(".page .h1")
+        page.goto(origin + f"{BASE}/me/profile/", wait_until="load")
+        page.wait_for_timeout(300)
+        dots = page.locator(".tabbar .news-dot").count()
+        assert dots == 0, "точка не погасла после открытия заказа"
+        print("B13: фото на весь экран, «Поделиться», смена email кодом, точка «есть новости»: ок")
+
         # 3. Тот же заказ — в панели; товар, созданный в панели, — в магазине.
         page.evaluate("localStorage.setItem('didi-preview-admin', '1')")
         page.goto(origin + f"{BASE}/panel/orders/", wait_until="load")
@@ -257,10 +295,11 @@ def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[s
     changed = admin["password"] + "-2"
     page.goto(origin + BASE + "/panel/account/", wait_until="load")
     page.wait_for_selector("main h1:has-text('Аккаунт')")
-    page.fill("input[autocomplete='current-password']", admin["password"])
-    page.locator("input[autocomplete='new-password']").nth(0).fill(changed)
-    page.locator("input[autocomplete='new-password']").nth(1).fill(changed)
-    page.click("main form button[type='submit']")
+    form = page.locator("main form:has(input[autocomplete='new-password'])")
+    form.locator("input[autocomplete='current-password']").fill(admin["password"])
+    form.locator("input[autocomplete='new-password']").nth(0).fill(changed)
+    form.locator("input[autocomplete='new-password']").nth(1).fill(changed)
+    form.locator("button[type='submit']").click()
     try:
         page.wait_for_selector(".note-success:has-text('Пароль изменён')", timeout=10_000)
     except Exception as exc:
