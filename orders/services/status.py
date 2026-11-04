@@ -108,7 +108,9 @@ def transition(
 
     from_status = locked.status
     locked.status = to_status
-    locked.save(update_fields=["status", "updated_at"])
+    # Смену, сделанную самим покупателем (отмена), отмечать новостью не нужно.
+    locked.status_unseen = by != ChangedBy.CUSTOMER
+    locked.save(update_fields=["status", "status_unseen", "updated_at"])
     sent = notify and notifications.notify_status(locked, comment=comment)
     OrderStatusChange.objects.create(
         order=locked,
@@ -123,6 +125,20 @@ def transition(
         _return_stock(locked)
         order_cancelled.send(sender=Order, order=locked, was_paid=_was_paid(locked))
     return locked
+
+
+def mark_seen(order: Order) -> None:
+    """Покупатель открыл заказ — значок «есть новости» гаснет. Один UPDATE и только если надо."""
+    if order.status_unseen:
+        Order.objects.filter(pk=order.pk, status_unseen=True).update(status_unseen=False)
+        order.status_unseen = False
+
+
+def has_unseen(user) -> bool:
+    """Есть ли у покупателя заказ со сменой статуса, которую он ещё не видел."""
+    if not getattr(user, "is_authenticated", False) or user.is_staff:
+        return False
+    return Order.objects.filter(owner=user, status_unseen=True).exists()
 
 
 def bulk_transition(

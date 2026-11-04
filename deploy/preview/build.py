@@ -44,6 +44,7 @@ from django.test import Client, RequestFactory  # noqa: E402
 from django.urls import set_script_prefix  # noqa: E402
 from django.utils import timezone  # noqa: E402
 
+from accounts.models import EmailChangeCode  # noqa: E402
 from content.contacts import ask_links  # noqa: E402
 from content.models import Article, ArticleImage, HomeImage  # noqa: E402
 from orders.models import ChangedBy, DeliveryMethod, Order, OrderStatus, PaymentMethod  # noqa: E402
@@ -358,11 +359,19 @@ def build(out: Path) -> None:
         "/profile/",
         "/profile/data/",
         "/profile/look/",
-        "/profile/password/",
         "/profile/delete/",
         "/orders/",
     ):
         site.save(me, ME, path, tree="me")
+    # «Личные данные» в состоянии «код отправлен» — образец формы кода для preview.js.
+    pending = EmailChangeCode.objects.create(
+        user=customer,
+        new_email="new-" + CUSTOMER_EMAIL,
+        code_hash="0" * 64,
+        expires_at=timezone.now() + timedelta(minutes=15),
+    )
+    site.save(me, ME, "/profile/data/", "/me/profile/data/email-code/", tree="me")
+    pending.delete()
     for order in orders:
         site.save(me, ME, f"/orders/{order.number}/", tree="me")
     for variant, quantity in ((variants[0], 1), (variants[7], 2)):
@@ -593,7 +602,7 @@ def write_rooms(out: Path, orders: list[Order], rooms: dict, query: str) -> None
                 ("Профиль покупателя", f"{m}/profile/"),
                 ("Личные данные и фото", f"{m}/profile/data/"),
                 ("Оформление (тема, палитра)", f"{m}/profile/look/"),
-                ("Смена пароля", f"{m}/profile/password/"),
+                ("Личные данные: смена email — ввод кода", f"{m}/profile/data/email-code/"),
                 ("Удаление аккаунта", f"{m}/profile/delete/"),
                 ("Вход", f"{g}/login/"),
                 rooms.pop("login-error"),

@@ -19,6 +19,7 @@ import { useOrders } from "../hooks/useOrders";
 import { formatKopecks } from "../lib/money";
 import { ADMIN_TARGETS, TARGET_LABELS } from "../lib/orderFlow";
 import { Table } from "../components/Table";
+import { BackLink } from "../components/BackLink";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
@@ -118,6 +119,7 @@ export function OrdersPage() {
   return (
     <section>
       <div className="page-header">
+        <BackLink to="/" label="Сводка" />
         <h1>Заказы</h1>
         {data ? <span className="muted">Найдено: {data.count}</span> : null}
       </div>
@@ -217,6 +219,15 @@ export function OrdersPage() {
       {selected.size > 0 ? (
         <div className="bulk-bar" role="region" aria-label="Обработка отмеченных заказов">
           <strong>Выбрано: {selected.size}</strong>
+          {allChecked ? null : (
+            <button
+              type="button"
+              className="bulk-link"
+              onClick={() => setSelected(new Set(rows.map((row) => row.id)))}
+            >
+              Выбрать все
+            </button>
+          )}
           <button type="button" className="bulk-link" onClick={() => setSelected(new Set())}>
             Снять выбор
           </button>

@@ -20,6 +20,8 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   retry: () => void;
+  /** Данные сотрудника изменились (имя, email) — шапка и меню показывают новые. */
+  updateUser: (user: StaffUser) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -56,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status,
       user,
       retry: () => void bootstrap(),
+      updateUser: setUser,
       login: async (email, password) => {
         const staff = await authService.login(email, password);
         setUser(staff);

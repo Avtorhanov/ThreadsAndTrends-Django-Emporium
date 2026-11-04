@@ -17,6 +17,9 @@ from .serializers import (
     AvatarUploadSerializer,
     ChangePasswordSerializer,
     DeleteAccountSerializer,
+    EmailChangeConfirmSerializer,
+    EmailChangePendingSerializer,
+    EmailChangeRequestSerializer,
     LoginSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetEmailSerializer,
@@ -176,6 +179,46 @@ class ChangePasswordView(APIView):
         serializer.is_valid(raise_exception=True)
         tokens = services.change_password(request.user, **serializer.validated_data)
         return Response(TokenPairSerializer(tokens).data)
+
+
+@extend_schema(tags=[TAG])
+class EmailChangeView(APIView):
+    """Смена email, шаг 1: текущий пароль + новый адрес → код на новый адрес."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [SensitiveActionThrottle]
+
+    @extend_schema(
+        request=EmailChangeRequestSerializer,
+        responses={202: EmailChangePendingSerializer},
+        operation_id="email_change_request",
+        description="Код из 6 цифр уходит на новый адрес и действует 15 минут; действует "
+        "последний запрос. Повторно — не чаще раза в минуту и не больше 5 раз в час.",
+    )
+    def post(self, request):
+        serializer = EmailChangeRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        record = services.request_email_change(request.user, **serializer.validated_data)
+        return Response(EmailChangePendingSerializer(record).data, status=status.HTTP_202_ACCEPTED)
+
+
+@extend_schema(tags=[TAG])
+class EmailChangeConfirmView(APIView):
+    """Смена email, шаг 2: код с нового адреса. На прежний уходит уведомление."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [SensitiveActionThrottle]
+
+    @extend_schema(
+        request=EmailChangeConfirmSerializer,
+        responses={200: ProfileSerializer},
+        operation_id="email_change_confirm",
+    )
+    def post(self, request):
+        serializer = EmailChangeConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = services.confirm_email_change(request.user, **serializer.validated_data)
+        return Response(ProfileSerializer(user, context={"request": request}).data)
 
 
 @extend_schema(tags=[TAG])

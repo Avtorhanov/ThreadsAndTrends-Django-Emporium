@@ -134,6 +134,31 @@ class ProfileForm(forms.Form):
     last_name = forms.CharField(label="Фамилия", max_length=150, required=False)
 
 
+class EmailChangeForm(forms.Form):
+    new_email = forms.EmailField(
+        label="Новый email",
+        max_length=254,
+        widget=forms.EmailInput(attrs={"autocomplete": "email"}),
+    )
+    password = forms.CharField(
+        label="Текущий пароль",
+        max_length=128,
+        strip=False,
+        widget=forms.PasswordInput(attrs=PASSWORD),
+    )
+
+
+class EmailCodeForm(forms.Form):
+    code = forms.RegexField(
+        label="Код из письма",
+        regex=r"^\d{6}$",
+        error_messages={"invalid": "Код — 6 цифр из письма."},
+        widget=forms.TextInput(
+            attrs={"inputmode": "numeric", "autocomplete": "one-time-code", "maxlength": 6}
+        ),
+    )
+
+
 class AvatarForm(forms.Form):
     # Проверка формата и размера — в accounts.services.set_avatar (как у фото товаров).
     avatar = forms.FileField(label="Фото профиля")

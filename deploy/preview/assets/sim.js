@@ -199,6 +199,9 @@
     orders.forEach(function (o) {
       payments = payments.concat(o.payments);
       o.payments.forEach(function (p) { refunds = refunds.concat(p.refunds); });
+      // Последнюю смену статуса сделал магазин — у покупателя точка «есть новости» (как в БД).
+      var last = o.status_history[o.status_history.length - 1];
+      o.status_unseen = !!last && last.changed_by !== "customer";
     });
     var staff = clone(snap[A + "/staff/"]);
     var db = {
@@ -362,6 +365,9 @@
     o.status = to;
     o.status_display = STATUS_LABELS[to];
     o.updated_at = now();
+    // Значок «есть новости» на «Профиле» (orders.services.status.transition): смену, сделанную
+    // самим покупателем (отмена), новостью не считаем.
+    o.status_unseen = by !== "customer";
     if (to === "cancelled") {
       // Остатки возвращаются на склад, оплаченный онлайн-заказ — возврат денег.
       o.items.forEach(function (item) {
@@ -623,6 +629,22 @@
   function themeState(db) { return clone(db.theme); }
 
   var routes = [];
+  /** Занят ли email другим аккаунтом (покупатели и администратор превью). */
+  function emailTaken(db, email, own) {
+    if (email === own) return false;
+    if (db.login && db.login.email === email) return true;
+    return db.customers.some(function (c) { return lower(c.email) === email && c.status !== "deleted"; });
+  }
+  /** Проверки шага 1 смены email — как accounts.services.request_email_change. */
+  function emailChangeErrors(db, newEmail, password, realPassword, own) {
+    var email = lower(newEmail);
+    if (realPassword ? password !== realPassword : !password) return { errors: { password: ["Неверный пароль."] } };
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { errors: { new_email: ["Введите корректный email."] } };
+    if (email === own) return { errors: { new_email: ["Это ваш текущий email."] } };
+    if (emailTaken(db, email, own)) return { errors: { new_email: ["Этот email уже занят другим аккаунтом."] } };
+    return { email: email };
+  }
+
   function route(method, pattern, handler) { routes.push({ method: method, re: new RegExp("^" + A + pattern + "$"), handler: handler }); }
 
   route("GET", "/auth/me/", function (db) {
@@ -645,6 +667,39 @@
     return { status: 204, body: null, save: true };
   });
   route("GET", "/auth/csrf/", function () { return ok(null, 204); });
+  // Своё имя и фамилия (PATCH admin/auth/me/).
+  route("PATCH", "/auth/me/", function (db, m, q, body) {
+    if (body.first_name !== undefined) db.me.first_name = String(body.first_name).trim().slice(0, 150);
+    if (body.last_name !== undefined) db.me.last_name = String(body.last_name).trim().slice(0, 150);
+    return { status: 200, body: clone(db.me), save: true };
+  });
+  // Смена своего email (accounts.services.request_email_change / confirm_email_change):
+  // пароль + новый адрес → код на новый адрес (в демо подходит любой из 6 цифр).
+  route("GET", "/auth/email/change/", function (db) {
+    var p = db.adminEmailChange;
+    return p && new Date(p.expires_at) > new Date() ? ok(clone(p)) : ok(null, 204);
+  });
+  route("POST", "/auth/email/change/", function (db, m, q, body) {
+    var check = emailChangeErrors(db, body.new_email, body.password, db.login.password, db.login.email);
+    if (check.errors) return fields(check.errors);
+    db.adminEmailChange = { new_email: check.email, expires_at: new Date(Date.now() + 15 * 60000).toISOString() };
+    return { status: 202, body: clone(db.adminEmailChange), save: true };
+  });
+  route("DELETE", "/auth/email/change/", function (db) {
+    db.adminEmailChange = null;
+    return { status: 204, body: null, save: true };
+  });
+  route("POST", "/auth/email/change/confirm/", function (db, m, q, body) {
+    var p = db.adminEmailChange;
+    if (!p || new Date(p.expires_at) <= new Date() || !/^\d{6}$/.test(String(body.code || ""))) {
+      return fields({ code: ["Неверный или просроченный код."] });
+    }
+    if (emailTaken(db, p.new_email, db.login.email)) return fields({ code: ["Этот email уже занят другим аккаунтом."] });
+    db.login.email = p.new_email;
+    db.me.email = p.new_email;
+    db.adminEmailChange = null;
+    return { status: 200, body: clone(db.me), save: true };
+  });
 
   route("GET", "/summary/", function (db) { return ok(summary(db)); });
 
@@ -1559,6 +1614,64 @@
     if (changes.password) c.password = changes.password;
     save(db);
   }
+  /** Смена email покупателя, шаг 1. → {pending} | {errors} */
+  function requestEmailChange(newEmail, password) {
+    var db = load();
+    var me = currentCustomer();
+    if (!me) return { errors: {} };
+    var c = customerByEmail(db, me.email);
+    var check = emailChangeErrors(db, newEmail, password, c.password, c.email);
+    if (check.errors) return check;
+    c.pending_email = { new_email: check.email, expires_at: new Date(Date.now() + 15 * 60000).toISOString() };
+    save(db);
+    return { pending: clone(c.pending_email) };
+  }
+  function pendingEmail() {
+    var c = currentCustomer();
+    var p = c && c.pending_email;
+    return p && new Date(p.expires_at) > new Date() ? p : null;
+  }
+  function cancelEmailChange() {
+    var db = load();
+    var me = currentCustomer();
+    if (!me) return;
+    customerByEmail(db, me.email).pending_email = null;
+    save(db);
+  }
+  /** Шаг 2: код (в демо — любые 6 цифр) → email аккаунта меняется; корзина и заказы — за ним. */
+  function confirmEmailChange(code) {
+    var db = load();
+    var me = currentCustomer();
+    if (!me) return { errors: {} };
+    var c = customerByEmail(db, me.email);
+    var p = c.pending_email;
+    if (!p || new Date(p.expires_at) <= new Date() || !/^\d{6}$/.test(String(code || "").trim())) {
+      return { errors: { code: "Неверный или просроченный код." } };
+    }
+    if (emailTaken(db, p.new_email, c.email)) {
+      c.pending_email = null;
+      save(db);
+      return { errors: { code: "Этот email уже занят другим аккаунтом." } };
+    }
+    var oldKey = cartKey(db);
+    c.email = p.new_email;
+    c.pending_email = null;
+    db.session.email = c.email;
+    if (db.carts[oldKey]) { db.carts[cartKey(db)] = db.carts[oldKey]; delete db.carts[oldKey]; }
+    db.orders.forEach(function (o) { if (o.customer.id === c.id) o.customer.email = c.email; });
+    save(db);
+    return { email: c.email };
+  }
+  /** Покупатель открыл заказ — значок «есть новости» гаснет (orders.services.status.mark_seen). */
+  function markSeen(number) {
+    var db = load();
+    if (!db.session) return;
+    var o = db.orders.filter(function (x) { return x.number === number && x.customer.id === db.session.id; })[0];
+    if (o && o.status_unseen) { o.status_unseen = false; save(db); }
+  }
+  function hasOrderNews() {
+    return myOrders().some(function (o) { return o.status_unseen; });
+  }
   function deleteAccount() {
     var db = load();
     var c = db.session && customerByEmail(db, db.session.email);
@@ -1818,6 +1931,12 @@
     ensureCustomer: ensureCustomer,
     currentCustomer: currentCustomer,
     updateCustomer: updateCustomer,
+    requestEmailChange: requestEmailChange,
+    pendingEmail: pendingEmail,
+    cancelEmailChange: cancelEmailChange,
+    confirmEmailChange: confirmEmailChange,
+    markSeen: markSeen,
+    hasOrderNews: hasOrderNews,
     deleteAccount: deleteAccount,
     myOrders: myOrders,
     myOrder: myOrder,

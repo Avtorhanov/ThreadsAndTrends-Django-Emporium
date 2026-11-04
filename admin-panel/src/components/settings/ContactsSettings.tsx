@@ -201,34 +201,38 @@ export function ContactsSettings() {
                     {block.note ? <span className="muted small">{block.note}</span> : null}
                   </span>
                   {readOnly ? null : (
-                    <span className="contact-actions">
-                      <button
-                        type="button"
-                        className="icon-button"
-                        aria-label="Выше"
-                        title="Выше"
-                        disabled={busy || index === 0}
-                        onClick={() => move(index, -1)}
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        className="icon-button"
-                        aria-label="Ниже"
-                        title="Ниже"
-                        disabled={busy || index === blocks.length - 1}
-                        onClick={() => move(index, 1)}
-                      >
-                        ↓
-                      </button>
-                      <button type="button" className="button button-ghost" disabled={busy} onClick={() => open(index)}>
-                        Изменить
-                      </button>
-                      <button type="button" className="button button-ghost" disabled={busy} onClick={() => remove(index)}>
-                        Убрать
-                      </button>
-                    </span>
+                    <>
+                      <span className="contact-actions">
+                        <button type="button" className="button button-ghost" disabled={busy} onClick={() => open(index)}>
+                          Изменить
+                        </button>
+                        <button type="button" className="button button-ghost" disabled={busy} onClick={() => remove(index)}>
+                          Убрать
+                        </button>
+                      </span>
+                      <span className="contact-order">
+                        <button
+                          type="button"
+                          className="icon-button"
+                          aria-label="Выше"
+                          title="Выше"
+                          disabled={busy || index === 0}
+                          onClick={() => move(index, -1)}
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-button"
+                          aria-label="Ниже"
+                          title="Ниже"
+                          disabled={busy || index === blocks.length - 1}
+                          onClick={() => move(index, 1)}
+                        >
+                          ↓
+                        </button>
+                      </span>
+                    </>
                   )}
                 </>
               )}

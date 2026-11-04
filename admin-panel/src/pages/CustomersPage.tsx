@@ -12,6 +12,7 @@ import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { Table } from "../components/Table";
 import { useAuth } from "../auth/AuthProvider";
 import { CustomerOrders } from "../components/customers/CustomerOrders";
+import { BackLink } from "../components/BackLink";
 
 const STATUS_LABELS: Record<CustomerStatus, string> = {
   active: "Активен",
@@ -69,6 +70,7 @@ export function CustomersPage() {
   return (
     <section>
       <div className="page-header">
+        <BackLink to="/" label="Сводка" />
         <h1>Клиенты</h1>
         {data ? <span className="muted">Всего: {data.count}</span> : null}
       </div>

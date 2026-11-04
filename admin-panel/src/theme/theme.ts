@@ -1,16 +1,30 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { PANEL_PALETTES, type PanelPalette } from "./palettes";
+import {
+  PANEL_ACCENTS,
+  PANEL_PALETTES,
+  type PanelAccent,
+  type PanelPalette,
+  type PanelRadius,
+  type PanelText,
+} from "./palettes";
 
-/** Оформление панели — личный выбор сотрудника в этом браузере:
- * тема «как в системе» (без data-theme) или явная светлая/тёмная и палитра интерфейса
- * (те же, что у покупателей, кроме «Своей»; «Лайм-тек» — без data-palette).
- * До загрузки React выбор применяет public/theme-init.js — без вспышки. */
+/** Оформление панели — личный выбор сотрудника в этом браузере: тема, палитра (те же, что у
+ * покупателей, включая «Свою» с акцентом), углы и размер текста. Значение по умолчанию не
+ * хранится и атрибута на <html> не ставит. До загрузки React выбор применяет
+ * public/theme-init.js — без вспышки (белые списки там те же). */
 export type ThemeChoice = "system" | "light" | "dark";
 
 export const THEME_KEY = "didi-panel-theme";
 export const PALETTE_KEY = "didi-panel-palette";
+export const ACCENT_KEY = "didi-panel-accent";
+export const RADIUS_KEY = "didi-panel-radius";
+export const TEXT_KEY = "didi-panel-text";
+
 export const DEFAULT_PALETTE: PanelPalette = "lime";
+export const DEFAULT_ACCENT: PanelAccent = "lime";
+export const DEFAULT_RADIUS: PanelRadius = "normal";
+export const DEFAULT_TEXT: PanelText = "s";
 
 export const THEME_LABELS: Record<ThemeChoice, string> = {
   system: "Как в системе",
@@ -18,34 +32,61 @@ export const THEME_LABELS: Record<ThemeChoice, string> = {
   dark: "Тёмная",
 };
 
-function readChoice(): ThemeChoice {
+export const RADIUS_LABELS: Record<PanelRadius, string> = {
+  sharp: "Острые",
+  normal: "Средние",
+  soft: "Мягкие",
+};
+
+export const TEXT_LABELS: Record<PanelText, string> = {
+  s: "Обычный",
+  m: "Крупнее",
+  l: "Крупный",
+};
+
+type Look = {
+  choice: ThemeChoice;
+  palette: PanelPalette;
+  accent: PanelAccent;
+  radius: PanelRadius;
+  text: PanelText;
+};
+
+function read(key: string): string | null {
   try {
-    const value = window.localStorage.getItem(THEME_KEY);
-    return value === "light" || value === "dark" ? value : "system";
+    return window.localStorage.getItem(key);
   } catch {
-    return "system";
+    return null;
   }
 }
 
-function readPalette(): PanelPalette {
-  try {
-    const value = window.localStorage.getItem(PALETTE_KEY);
-    return PANEL_PALETTES.find((item) => item.key === value)?.key ?? DEFAULT_PALETTE;
-  } catch {
-    return DEFAULT_PALETTE;
-  }
+function pick<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T {
+  return allowed.find((item) => item === value) ?? fallback;
 }
 
-export function applyTheme(choice: ThemeChoice) {
-  const root = document.documentElement;
-  if (choice === "system") root.removeAttribute("data-theme");
-  else root.setAttribute("data-theme", choice);
+function readLook(): Look {
+  return {
+    choice: pick(read(THEME_KEY), ["light", "dark"] as const, "system" as ThemeChoice),
+    palette: pick(read(PALETTE_KEY), PANEL_PALETTES.map((item) => item.key), DEFAULT_PALETTE),
+    accent: pick(read(ACCENT_KEY), PANEL_ACCENTS.map((item) => item.key), DEFAULT_ACCENT),
+    radius: pick(read(RADIUS_KEY), Object.keys(RADIUS_LABELS) as PanelRadius[], DEFAULT_RADIUS),
+    text: pick(read(TEXT_KEY), Object.keys(TEXT_LABELS) as PanelText[], DEFAULT_TEXT),
+  };
 }
 
-export function applyPalette(palette: PanelPalette) {
+function setAttr(name: string, value: string | null) {
   const root = document.documentElement;
-  if (palette === DEFAULT_PALETTE) root.removeAttribute("data-palette");
-  else root.setAttribute("data-palette", palette);
+  if (value === null) root.removeAttribute(name);
+  else root.setAttribute(name, value);
+}
+
+/** Атрибуты <html> по выбору: значения по умолчанию — без атрибута (как в tokens.css). */
+export function applyLook(look: Look) {
+  setAttr("data-theme", look.choice === "system" ? null : look.choice);
+  setAttr("data-palette", look.palette === DEFAULT_PALETTE ? null : look.palette);
+  setAttr("data-accent", look.palette === "custom" ? look.accent : null);
+  setAttr("data-radius", look.radius === DEFAULT_RADIUS ? null : look.radius);
+  setAttr("data-text", look.text === DEFAULT_TEXT ? null : look.text);
 }
 
 function store(key: string, value: string | null) {
@@ -59,10 +100,12 @@ function store(key: string, value: string | null) {
 
 // Одно состояние на все компоненты: переключатель в меню и страница «Оформление панели».
 const listeners = new Set<() => void>();
-let current = { choice: readChoice(), palette: readPalette() };
+let current = readLook();
+if (typeof document !== "undefined") applyLook(current);
 
-function publish(next: Partial<typeof current>) {
+function publish(next: Partial<Look>) {
   current = { ...current, ...next };
+  applyLook(current);
   listeners.forEach((listener) => listener());
 }
 
@@ -77,9 +120,6 @@ export function useTheme() {
     };
   }, []);
 
-  useEffect(() => applyTheme(state.choice), [state.choice]);
-  useEffect(() => applyPalette(state.palette), [state.palette]);
-
   const change = useCallback((next: ThemeChoice) => {
     store(THEME_KEY, next === "system" ? null : next);
     publish({ choice: next });
@@ -90,5 +130,40 @@ export function useTheme() {
     publish({ palette: next });
   }, []);
 
-  return { choice: state.choice, palette: state.palette, change, changePalette };
+  const changeAccent = useCallback((next: PanelAccent) => {
+    store(ACCENT_KEY, next === DEFAULT_ACCENT ? null : next);
+    store(PALETTE_KEY, "custom");
+    publish({ palette: "custom", accent: next });
+  }, []);
+
+  const changeRadius = useCallback((next: PanelRadius) => {
+    store(RADIUS_KEY, next === DEFAULT_RADIUS ? null : next);
+    publish({ radius: next });
+  }, []);
+
+  const changeText = useCallback((next: PanelText) => {
+    store(TEXT_KEY, next === DEFAULT_TEXT ? null : next);
+    publish({ text: next });
+  }, []);
+
+  const reset = useCallback(() => {
+    [THEME_KEY, PALETTE_KEY, ACCENT_KEY, RADIUS_KEY, TEXT_KEY].forEach((key) => store(key, null));
+    publish({
+      choice: "system",
+      palette: DEFAULT_PALETTE,
+      accent: DEFAULT_ACCENT,
+      radius: DEFAULT_RADIUS,
+      text: DEFAULT_TEXT,
+    });
+  }, []);
+
+  return {
+    ...state,
+    change,
+    changePalette,
+    changeAccent,
+    changeRadius,
+    changeText,
+    reset,
+  };
 }

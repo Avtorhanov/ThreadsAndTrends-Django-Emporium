@@ -118,6 +118,32 @@ class PasswordResetCode(models.Model):
         return f"Код сброса для {self.user_id} от {self.created_at:%Y-%m-%d %H:%M}"
 
 
+class EmailChangeCode(models.Model):
+    """Смена email: одноразовый код отправлен на новый адрес. Хранится только HMAC кода
+    (вместе с новым адресом — код подтверждает именно его). Действует последний выданный."""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="email_change_codes",
+        verbose_name="Пользователь",
+    )
+    new_email = models.EmailField("Новый email")
+    code_hash = models.CharField("HMAC кода", max_length=64)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+    expires_at = models.DateTimeField("Действует до", db_index=True)
+    attempts = models.PositiveSmallIntegerField("Неудачных попыток", default=0)
+    used_at = models.DateTimeField("Использован/аннулирован", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Код смены email"
+        verbose_name_plural = "Коды смены email"
+        indexes = [models.Index(fields=["user", "-created_at"], name="email_code_user_created_idx")]
+
+    def __str__(self):
+        return f"Смена email для {self.user_id} от {self.created_at:%Y-%m-%d %H:%M}"
+
+
 class StaffAccess(models.Model):
     """Права сотрудника панели по разделам: {раздел: none | view | edit}.
 

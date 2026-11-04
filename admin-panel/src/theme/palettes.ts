@@ -1,6 +1,12 @@
 // Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать.
 
-export type PanelPalette = "lime" | "mint" | "sun" | "steel" | "olive";
+export type PanelPalette = "lime" | "mint" | "sun" | "steel" | "olive" | "custom";
+
+export type PanelAccent = "lime" | "mint" | "sun" | "sky" | "pink" | "lilac" | "steel" | "orange" | "olive" | "sand" | "navy" | "wine" | "graphite" | "forest";
+
+export type PanelRadius = "sharp" | "normal" | "soft";
+
+export type PanelText = "s" | "m" | "l";
 
 export type PanelPaletteInfo = {
   key: PanelPalette;
@@ -8,6 +14,13 @@ export type PanelPaletteInfo = {
   accent: string;
   brand: string;
   bg: { light: string; dark: string };
+};
+
+export type PanelAccentInfo = {
+  key: PanelAccent;
+  name: string;
+  color: string;
+  on: string;
 };
 
 export const PANEL_PALETTES: readonly PanelPaletteInfo[] = [
@@ -60,5 +73,102 @@ export const PANEL_PALETTES: readonly PanelPaletteInfo[] = [
       "light": "#ECEEE2",
       "dark": "#0B0D07"
     }
+  },
+  {
+    "key": "custom",
+    "name": "Своя",
+    "accent": "#7FA7CF",
+    "brand": "#2A3038",
+    "bg": {
+      "light": "#E8EBEE",
+      "dark": "#0A0C0F"
+    }
+  }
+];
+
+export const PANEL_ACCENTS: readonly PanelAccentInfo[] = [
+  {
+    "key": "lime",
+    "name": "Лайм",
+    "color": "#C6F432",
+    "on": "#16191D"
+  },
+  {
+    "key": "mint",
+    "name": "Мята",
+    "color": "#5EE6A8",
+    "on": "#16191D"
+  },
+  {
+    "key": "sun",
+    "name": "Солнце",
+    "color": "#FFD23F",
+    "on": "#16191D"
+  },
+  {
+    "key": "sky",
+    "name": "Небо",
+    "color": "#9CCBFF",
+    "on": "#16191D"
+  },
+  {
+    "key": "pink",
+    "name": "Розовый",
+    "color": "#FF9EC4",
+    "on": "#16191D"
+  },
+  {
+    "key": "lilac",
+    "name": "Сирень",
+    "color": "#B9A6FF",
+    "on": "#16191D"
+  },
+  {
+    "key": "steel",
+    "name": "Сталь",
+    "color": "#7FA7CF",
+    "on": "#16191D"
+  },
+  {
+    "key": "orange",
+    "name": "Оранжевый",
+    "color": "#FF8A3D",
+    "on": "#16191D"
+  },
+  {
+    "key": "olive",
+    "name": "Олива",
+    "color": "#B5C267",
+    "on": "#16191D"
+  },
+  {
+    "key": "sand",
+    "name": "Песок",
+    "color": "#C8B98A",
+    "on": "#16191D"
+  },
+  {
+    "key": "navy",
+    "name": "Синий",
+    "color": "#2F5D8A",
+    "on": "#FFFFFF"
+  },
+  {
+    "key": "wine",
+    "name": "Вино",
+    "color": "#8E2C3E",
+    "on": "#FFFFFF"
+  },
+  {
+    "key": "graphite",
+    "name": "Графит",
+    "color": "#3A4049",
+    "on": "#FFFFFF"
+  },
+  {
+    "key": "forest",
+    "name": "Изумруд",
+    "color": "#1F7A5C",
+    "on": "#FFFFFF"
   }
 ];

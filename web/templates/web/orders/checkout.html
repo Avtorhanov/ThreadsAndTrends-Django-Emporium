@@ -3,6 +3,7 @@
 {% block title %}Оформление заказа — DiDi-shop{% endblock %}
 {% block content %}
 <section class="page">
+  {% if buy_now %}<a class="back-link" href="{% url 'web:home' %}" data-back><svg class="ic flip" width="16" height="16"><use href="#i-chevron"/></svg>Назад</a>{% else %}<a class="back-link" href="{% url 'web:cart' %}"><svg class="ic flip" width="16" height="16"><use href="#i-chevron"/></svg>Корзина</a>{% endif %}
   <header class="section-head">
     <p class="overline">{% if buy_now %}Купить сейчас{% else %}Корзина{% endif %}</p>
     <h1 class="h1">Оформление</h1>

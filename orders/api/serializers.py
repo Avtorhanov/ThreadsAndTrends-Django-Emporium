@@ -131,9 +131,13 @@ class OrderListSerializer(serializers.ModelSerializer):
             "delivery_method",
             "total_kopecks",
             "items_count",
+            "status_unseen",
             "created_at",
         ]
         read_only_fields = fields
+        extra_kwargs = {
+            "status_unseen": {"help_text": "Магазин сменил статус, заказ ещё не открыт"}
+        }
 
 
 class OrderDetailSerializer(serializers.ModelSerializer):

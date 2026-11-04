@@ -25,9 +25,13 @@ from .serializers import (
     ChangePasswordSerializer,
     CustomerSerializer,
     CustomerStatus,
+    EmailChangeConfirmSerializer,
+    EmailChangePendingSerializer,
+    EmailChangeRequestSerializer,
     LoginSerializer,
     StaffInviteSerializer,
     StaffMemberSerializer,
+    StaffProfileUpdateSerializer,
     StaffUpdateSerializer,
     StaffUserSerializer,
 )
@@ -84,6 +88,73 @@ class AdminMeView(AdminAPIMixin, APIView):
     @extend_schema(responses={200: StaffUserSerializer}, operation_id="admin_me")
     def get(self, request):
         return Response(StaffUserSerializer(request.user).data)
+
+    @extend_schema(
+        request=StaffProfileUpdateSerializer,
+        responses={200: StaffUserSerializer},
+        operation_id="admin_me_update",
+        description="Своё имя и фамилия — любому сотруднику.",
+    )
+    def patch(self, request):
+        serializer = StaffProfileUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        fields = {name: value.strip() for name, value in serializer.validated_data.items()}
+        user = services.update_profile(request.user, **fields)
+        return Response(StaffUserSerializer(user).data)
+
+
+@extend_schema(tags=[TAG])
+class AdminEmailChangeView(AdminAPIMixin, APIView):
+    """Смена своего email в панели, шаг 1 (как у покупателя: пароль + код на новый адрес)."""
+
+    throttle_classes = [SensitiveActionThrottle]
+
+    def get_throttles(self):
+        # Лимит — только на отправку кода; просмотр и отмена запроса его не тратят.
+        return super().get_throttles() if self.request.method == "POST" else []
+
+    @extend_schema(
+        responses={200: EmailChangePendingSerializer, 204: None},
+        operation_id="admin_email_change_pending",
+        description="Действующий запрос смены email или 204, если его нет.",
+    )
+    def get(self, request):
+        record = services.pending_email_change(request.user)
+        if record is None:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(EmailChangePendingSerializer(record).data)
+
+    @extend_schema(
+        request=EmailChangeRequestSerializer,
+        responses={202: EmailChangePendingSerializer},
+        operation_id="admin_email_change_request",
+    )
+    def post(self, request):
+        serializer = EmailChangeRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        record = services.request_email_change(request.user, **serializer.validated_data)
+        return Response(EmailChangePendingSerializer(record).data, status=status.HTTP_202_ACCEPTED)
+
+    @extend_schema(request=None, responses={204: None}, operation_id="admin_email_change_cancel")
+    def delete(self, request):
+        services.cancel_email_change(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(tags=[TAG])
+class AdminEmailChangeConfirmView(AdminAPIMixin, APIView):
+    throttle_classes = [SensitiveActionThrottle]
+
+    @extend_schema(
+        request=EmailChangeConfirmSerializer,
+        responses={200: StaffUserSerializer},
+        operation_id="admin_email_change_confirm",
+    )
+    def post(self, request):
+        serializer = EmailChangeConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = services.confirm_email_change(request.user, **serializer.validated_data)
+        return Response(StaffUserSerializer(user).data)
 
 
 @extend_schema(tags=[TAG])

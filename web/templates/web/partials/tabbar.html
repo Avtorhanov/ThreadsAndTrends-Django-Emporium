@@ -21,7 +21,7 @@
   </a>
   {% else %}
   <a class="tab{% if tab == 'profile' %} is-on{% endif %}" href="{% url 'web:profile' %}"{% if tab == "profile" %} aria-current="page"{% endif %}>
-    <span class="tab__icon"><svg class="ic" width="22" height="22"><use href="#i-user"/></svg></span><span>Профиль</span>
+    <span class="tab__icon"><svg class="ic" width="22" height="22"><use href="#i-user"/></svg>{% if orders_news %}<span class="news-dot" aria-hidden="true"></span>{% endif %}</span><span>Профиль{% if orders_news %}<span class="sr"> — есть новости по заказу</span>{% endif %}</span>
   </a>
   {% endif %}
 </nav>

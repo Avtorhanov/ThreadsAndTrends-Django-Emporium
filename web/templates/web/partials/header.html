@@ -14,7 +14,7 @@
       {% if user.is_staff %}{# Администратор смотрит магазин глазами покупателя; кабинет — его панель #}
       <a href="/panel/" data-panel-link>Панель</a>
       {% elif user.is_authenticated %}
-      <a href="{% url 'web:orders' %}">Заказы</a>
+      <a class="topnav__news" href="{% url 'web:orders' %}">Заказы{% if orders_news %}<span class="news-dot" aria-hidden="true"></span><span class="sr"> — есть новости</span>{% endif %}</a>
       <a href="{% url 'web:profile' %}"{% if tab == "profile" %} aria-current="page"{% endif %}>Профиль</a>
       {% else %}
       <a href="{% url 'web:login' %}"{% if tab == "profile" %} aria-current="page"{% endif %}>Войти</a>

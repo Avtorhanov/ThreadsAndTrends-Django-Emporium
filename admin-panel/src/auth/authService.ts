@@ -3,6 +3,7 @@ import { ApiError } from "../api/errors";
 import type { components } from "../api/schema";
 
 export type StaffUser = components["schemas"]["StaffUser"];
+export type EmailPending = components["schemas"]["EmailChangePending"];
 
 export const authService = {
   /** Cookie csrftoken до первого POST (вход). */
@@ -31,6 +32,36 @@ export const authService = {
         body: { old_password: oldPassword, new_password: newPassword },
       }),
     );
+  },
+
+  /** Своё имя и фамилия. */
+  updateProfile(firstName: string, lastName: string): Promise<StaffUser> {
+    return unwrap(
+      api.PATCH("/api/v1/admin/auth/me/", { body: { first_name: firstName, last_name: lastName } }),
+    );
+  },
+
+  /** Действующий запрос смены email или null. */
+  async pendingEmail(): Promise<EmailPending | null> {
+    const { data, response } = await api.GET("/api/v1/admin/auth/email/change/");
+    if (response.status === 204 || !data) return null;
+    return data;
+  },
+
+  /** Смена email, шаг 1: пароль + новый адрес → код на новый адрес. */
+  requestEmailChange(newEmail: string, password: string): Promise<EmailPending> {
+    return unwrap(
+      api.POST("/api/v1/admin/auth/email/change/", { body: { new_email: newEmail, password } }),
+    );
+  },
+
+  /** Смена email, шаг 2: код из письма. Сессия панели остаётся. */
+  confirmEmailChange(code: string): Promise<StaffUser> {
+    return unwrap(api.POST("/api/v1/admin/auth/email/change/confirm/", { body: { code } }));
+  },
+
+  async cancelEmailChange(): Promise<void> {
+    await unwrap(api.DELETE("/api/v1/admin/auth/email/change/"));
   },
 
   async logout(): Promise<void> {

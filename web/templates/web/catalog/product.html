@@ -1,5 +1,5 @@
 {% extends "web/base.html" %}
-{% load money storefront %}
+{% load static money storefront %}
 {% block title %}{% if product.price_on_request %}{{ product.name }} — цена по запросу в DiDi-shop{% else %}{{ product.name }} — купить за {{ product.price_kopecks|rub }} ₽ в DiDi-shop{% endif %}{% endblock %}
 {% block description %}{% if product.description %}{{ product.description|truncatechars:155 }}{% elif product.price_on_request %}{{ product.name }} — цена по запросу. {{ product.category.name }} в DiDi-shop.{% else %}{{ product.name }} — {{ product.price_kopecks|rub }} ₽. {{ product.category.name }} в DiDi-shop с доставкой курьером.{% endif %}{% endblock %}
 {% block canonical %}<link rel="canonical" href="{% absolute request.path %}">{% endblock %}
@@ -20,14 +20,21 @@
     <a class="glass-btn pd__back" href="{% url 'web:category' product.category.slug %}" data-back aria-label="Назад к категории {{ product.category.name }}">
       <svg class="ic" width="22" height="22"><use href="#i-back"/></svg>
     </a>
+    {# Без JS — просто ссылка на эту страницу; с JS — системное «Поделиться» или копирование ссылки. #}
+    <a class="glass-btn pd__share" href="{% absolute request.path %}" data-share data-share-title="{{ product.name }}" aria-label="Поделиться ссылкой на товар">
+      <svg class="ic" width="22" height="22"><use href="#i-share"/></svg>
+    </a>
     {# Фото — на объёмной карточке, как в ленте: рамка-подложка с тенью, фото внутри. #}
     <div class="pd__frame">
     <div class="hero tone-{{ product.slug|tone }}">
       {% if images %}
-      <div class="hero__track" data-gallery tabindex="0" aria-label="Фото товара, {{ images|length }} шт.">
+      {# Нажатие на фото — просмотр на весь экран (PhotoSwipe грузится только тогда); без JS — оригинал. #}
+      <div class="hero__track" data-gallery data-zoom-gallery data-pswp-js="{% static 'web/vendor/photoswipe-5.4.4.umd.min.js' %}" data-pswp-css="{% static 'web/vendor/photoswipe-5.4.4.css' %}" tabindex="0" aria-label="Фото товара, {{ images|length }} шт.">
         {% for image in images %}
         <figure class="hero__slide" id="photo-{{ forloop.counter }}">
+          <a class="hero__zoom" href="{{ image.image.url }}" data-zoom{% if image.width and image.height %} data-w="{{ image.width }}" data-h="{{ image.height }}"{% endif %} aria-label="Открыть фото {{ forloop.counter }} на весь экран">
           {% if forloop.first %}{% product_img image "(min-width: 900px) 560px, 100vw" css="hero__photo" eager=True alt=product.name %}{% else %}{% product_img image "(min-width: 900px) 560px, 100vw" css="hero__photo" alt=product.name %}{% endif %}
+          </a>
         </figure>
         {% endfor %}
       </div>

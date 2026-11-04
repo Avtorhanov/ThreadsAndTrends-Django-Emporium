@@ -15,6 +15,7 @@ from django.contrib.auth.models import update_last_login
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.base import ContentFile
+from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -26,7 +27,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from core.tasks import send_email
 
-from .models import PasswordResetCode, User, normalize_email
+from .models import EmailChangeCode, PasswordResetCode, User, normalize_email
 from .signals import account_deleted, account_deleting
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,12 @@ RESET_CODE_MAX_ATTEMPTS = 5
 RESET_CODE_RESEND_COOLDOWN = timedelta(seconds=60)
 RESET_CODES_PER_HOUR = 5
 INVALID_RESET_CODE = "Неверный или просроченный код."
+
+EMAIL_CODE_TTL = timedelta(minutes=15)
+EMAIL_CODE_MAX_ATTEMPTS = 5
+EMAIL_CODE_RESEND_COOLDOWN = timedelta(seconds=60)
+EMAIL_CODES_PER_HOUR = 5
+EMAIL_TAKEN = "Этот email уже занят другим аккаунтом."
 
 
 # --- Токены ---
@@ -263,6 +270,141 @@ def confirm_password_reset(*, email: str, code: str, new_password: str) -> dict[
         raise ValidationError({"code": INVALID_RESET_CODE})
     logger.info("Пароль сброшен по коду для пользователя %s", user.pk)
     return issue_tokens(user)
+
+
+# --- Смена email: код на новый адрес, уведомление на прежний ---
+
+
+def _hash_email_code(user_id: int, new_email: str, code: str) -> str:
+    # Новый адрес входит в HMAC: код подтверждает именно его.
+    return salted_hmac("accounts.email_change", f"{user_id}:{new_email}:{code}").hexdigest()
+
+
+def _email_taken(email: str, user: User) -> bool:
+    return User.objects.filter(email=email).exclude(pk=user.pk).exists()
+
+
+def mask_email(email: str) -> str:
+    """ivan.petrov@mail.ru → i***v@mail.ru: в письме на прежний адрес новый не виден целиком."""
+    local, _, domain = email.partition("@")
+    if len(local) <= 2:
+        return f"{local[:1]}***@{domain}"
+    return f"{local[0]}***{local[-1]}@{domain}"
+
+
+def pending_email_change(user: User) -> EmailChangeCode | None:
+    """Действующий запрос смены email (для формы ввода кода)."""
+    return (
+        EmailChangeCode.objects.filter(
+            user=user, used_at__isnull=True, expires_at__gt=timezone.now()
+        )
+        .order_by("-created_at")
+        .first()
+    )
+
+
+def request_email_change(user: User, *, new_email: str, password: str) -> EmailChangeCode:
+    """Шаг 1: проверить пароль и новый адрес, отправить на него код из 6 цифр.
+
+    Пароль обязателен: открытая на чужом устройстве сессия не позволяет увести аккаунт."""
+    if not user.check_password(password):
+        raise ValidationError({"password": "Неверный пароль."})
+    email = normalize_email(new_email)
+    try:
+        validate_email(email)
+    except ValidationError as exc:
+        raise ValidationError({"new_email": "Введите корректный email."}) from exc
+    if email == user.email:
+        raise ValidationError({"new_email": "Это ваш текущий email."})
+    if _email_taken(email, user):
+        raise ValidationError({"new_email": EMAIL_TAKEN})
+
+    now = timezone.now()
+    recent = EmailChangeCode.objects.filter(user=user, created_at__gte=now - timedelta(hours=1))
+    if recent.count() >= EMAIL_CODES_PER_HOUR:
+        raise ValidationError("Слишком много запросов. Попробуйте через час.", code="throttled")
+    if recent.filter(created_at__gte=now - EMAIL_CODE_RESEND_COOLDOWN).exists():
+        raise ValidationError(
+            "Код уже отправлен. Повторно — не раньше чем через минуту.", code="throttled"
+        )
+
+    code = f"{secrets.randbelow(10**6):06d}"
+    with transaction.atomic():
+        # Действует только последний запрос.
+        EmailChangeCode.objects.filter(user=user, used_at__isnull=True).update(used_at=now)
+        record = EmailChangeCode.objects.create(
+            user=user,
+            new_email=email,
+            code_hash=_hash_email_code(user.pk, email, code),
+            expires_at=now + EMAIL_CODE_TTL,
+        )
+        body = render_to_string(
+            "accounts/email/email_change_code.txt",
+            {"user": user, "code": code, "ttl_minutes": int(EMAIL_CODE_TTL.total_seconds() // 60)},
+        )
+        transaction.on_commit(
+            lambda: send_email.enqueue("DiDi-shop: код для смены email", body, [email])
+        )
+    return record
+
+
+def cancel_email_change(user: User) -> None:
+    EmailChangeCode.objects.filter(user=user, used_at__isnull=True).update(used_at=timezone.now())
+
+
+def confirm_email_change(user: User, *, code: str) -> User:
+    """Шаг 2: код с нового адреса → email аккаунта меняется, на прежний уходит уведомление.
+    Сессии и токены остаются: пароль не менялся."""
+    now = timezone.now()
+    old_email = user.email
+    with transaction.atomic():
+        locked = User.objects.select_for_update().get(pk=user.pk)
+        record = (
+            EmailChangeCode.objects.select_for_update()
+            .filter(user=locked, used_at__isnull=True, expires_at__gt=now)
+            .order_by("-created_at")
+            .first()
+        )
+        if record is None or record.attempts >= EMAIL_CODE_MAX_ATTEMPTS:
+            status = "invalid"
+        elif not constant_time_compare(
+            _hash_email_code(locked.pk, record.new_email, code.strip()), record.code_hash
+        ):
+            # Счётчик сохраняется: исключение бросаем после выхода из транзакции.
+            status = "invalid"
+            record.attempts += 1
+            record.save(update_fields=["attempts"])
+        elif _email_taken(record.new_email, locked):
+            # Адрес заняли, пока шёл код.
+            status = "taken"
+            record.used_at = now
+            record.save(update_fields=["used_at"])
+        else:
+            status = "ok"
+            record.used_at = now
+            record.save(update_fields=["used_at"])
+            locked.email = record.new_email
+            try:
+                with transaction.atomic():
+                    locked.save(update_fields=["email"])
+            except IntegrityError:
+                status = "taken"
+            else:
+                body = render_to_string(
+                    "accounts/email/email_changed.txt",
+                    {"user": locked, "masked_email": mask_email(locked.email)},
+                )
+                transaction.on_commit(
+                    lambda: send_email.enqueue("DiDi-shop: email изменён", body, [old_email])
+                )
+
+    if status == "invalid":
+        raise ValidationError({"code": INVALID_RESET_CODE})
+    if status == "taken":
+        raise ValidationError({"code": EMAIL_TAKEN})
+    logger.info("Email изменён по коду для пользователя %s", locked.pk)
+    user.email = locked.email
+    return locked
 
 
 # --- Удаление и блокировка ---

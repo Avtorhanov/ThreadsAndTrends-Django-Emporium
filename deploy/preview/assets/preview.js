@@ -539,11 +539,20 @@
     var t = tone(p.slug);
 
     var gallery = '<div class="pd__gallery"><a class="glass-btn pd__back" href="' + link("/category/" + cat.slug + "/") + '" data-back aria-label="Назад к категории ' + esc(cat.name) + '">' +
-      icon("back", 22) + '</a><div class="pd__frame"><div class="hero tone-' + t + '">';
+      icon("back", 22) + '</a>' +
+      // «Поделиться» и просмотр фото на весь экран — как web/catalog/product.html.
+      '<a class="glass-btn pd__share" href="' + esc(location.origin + location.pathname) + '" data-share data-share-title="' + esc(p.name) +
+      '" aria-label="Поделиться ссылкой на товар">' + icon("share", 22) + "</a>" +
+      '<div class="pd__frame"><div class="hero tone-' + t + '">';
     if (images.length) {
-      gallery += '<div class="hero__track" data-gallery tabindex="0" aria-label="Фото товара, ' + images.length + ' шт.">' +
+      var vendor = BASE + "/static/web/vendor/photoswipe-5.4.4";
+      gallery += '<div class="hero__track" data-gallery data-zoom-gallery data-pswp-js="' + vendor + '.umd.min.js" data-pswp-css="' + vendor +
+        '.css" tabindex="0" aria-label="Фото товара, ' + images.length + ' шт.">' +
         images.map(function (im, i) {
-          return '<figure class="hero__slide" id="photo-' + (i + 1) + '">' + img(im.url, "(min-width: 900px) 560px, 100vw", "hero__photo", i === 0, p.name) + "</figure>";
+          var src = sim.imageSources(im.url);
+          return '<figure class="hero__slide" id="photo-' + (i + 1) + '"><a class="hero__zoom" href="' + esc(im.url) + '" data-zoom' +
+            (src && src.w && src.h ? ' data-w="' + src.w + '" data-h="' + src.h + '"' : "") + ' aria-label="Открыть фото ' + (i + 1) + ' на весь экран">' +
+            img(im.url, "(min-width: 900px) 560px, 100vw", "hero__photo", i === 0, p.name) + "</a></figure>";
         }).join("") + "</div>";
       if (images.length > 1) {
         gallery += '<div class="hero__dots" aria-hidden="true">' + images.map(function (im, i) {
@@ -809,6 +818,11 @@
     form.querySelectorAll(".has-error").forEach(function (el) { el.classList.remove("has-error"); });
     form.querySelectorAll('[aria-invalid="true"]').forEach(function (el) { el.removeAttribute("aria-invalid"); });
   }
+  function flat(errors) {
+    var out = {};
+    Object.keys(errors || {}).forEach(function (k) { out[k] = Array.isArray(errors[k]) ? errors[k][0] : errors[k]; });
+    return out;
+  }
   function showErrors(form, errors, general) {
     clearErrors(form);
     var first = null;
@@ -857,7 +871,9 @@
   function orderCard(o, current) {
     return '<a class="order-card' + (current ? " order-card--current" : "") + '" href="' + ME + "/orders/" + o.number + '/">' +
       (current ? '<span class="overline">Текущий заказ</span>' : "") +
-      '<span class="order-card__head"><span class="order-card__num">' + esc(o.number) + '</span><span class="status status--' + STATUS_TONES[o.status] + '">' +
+      '<span class="order-card__head"><span class="order-card__num">' + esc(o.number) +
+      (o.status_unseen ? '<span class="news-dot" aria-hidden="true"></span><span class="sr"> — статус обновлён</span>' : "") +
+      '</span><span class="status status--' + STATUS_TONES[o.status] + '">' +
       esc(sim.statusLabel(o.status)) + "</span></span>" +
       '<span class="order-card__meta">' + (current ? date(o.created_at, false, true) + " · " + esc(sim.deliveryLabel(o.delivery_method)) :
         date(o.created_at, true, true) + " · " + plural(o.items.reduce(function (n, i) { return n + i.quantity; }, 0), "товар,товара,товаров")) + "</span>" +
@@ -877,6 +893,7 @@
 
   function renderOrder() {
     var number = HERE.split("/")[2];
+    sim.markSeen(number); // покупатель открыл заказ — значок «есть новости» гаснет
     var o = sim.myOrder(number);
     var page = document.querySelector("#main .page");
     if (!page) return;
@@ -1001,9 +1018,59 @@
     }
   }
 
+  // --- Значок «есть новости по заказу» (web/partials/tabbar.html, header.html, profile.html):
+  // страницы собраны с состоянием сервера, а заказы живут в имитации — точки ставим заново. ---
+  function setNewsDot(el, on, srText, dotHost) {
+    if (!el) return;
+    el.querySelectorAll(".news-dot, .sr[data-news]").forEach(function (x) { x.remove(); });
+    Array.prototype.forEach.call(el.querySelectorAll(".sr"), function (x) { if (/новост/.test(x.textContent)) x.remove(); });
+    if (!on) return;
+    (dotHost || el).insertAdjacentHTML("beforeend", '<span class="news-dot" aria-hidden="true"></span>');
+    var label = el.querySelector(":scope > span:last-child:not(.news-dot):not(.tab__icon)") || el;
+    label.insertAdjacentHTML("beforeend", '<span class="sr" data-news> — ' + srText + "</span>");
+  }
+  function renderNews() {
+    var on = TREE === "me" && !sim.adminSignedIn() && sim.hasOrderNews();
+    var tab = document.querySelector('.tabbar a.tab[href$="/profile/"]');
+    if (tab) setNewsDot(tab, on, "есть новости по заказу", tab.querySelector(".tab__icon"));
+    document.querySelectorAll('.topnav a[href$="/orders/"], .menu__item[href$="/orders/"]').forEach(function (a) {
+      if (a.closest(".topnav")) a.classList.add("topnav__news");
+      var go = a.querySelector(".menu__go");
+      a.querySelectorAll(".news-dot, .sr").forEach(function (x) { x.remove(); });
+      if (!on) return;
+      var dot = '<span class="news-dot" aria-hidden="true"></span><span class="sr"> — есть новости</span>';
+      if (go) go.insertAdjacentHTML("beforebegin", dot);
+      else a.insertAdjacentHTML("beforeend", dot);
+    });
+  }
+
+  // --- Смена email на «Личных данных»: форма с кодом — разметка шаблона в состоянии
+  // «код отправлен» (build.py сохраняет её отдельной страницей), данные — из имитации. ---
+  function renderEmailBox(me) {
+    var box = document.getElementById("email");
+    if (!box) return;
+    var current = box.querySelector(".readonly");
+    if (current) current.textContent = me.email;
+    var pending = sim.pendingEmail();
+    if (!pending) return;
+    fetch(ME + "/profile/data/email-code/").then(function (r) { return r.text(); }).then(function (html) {
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      var fresh = doc.getElementById("email");
+      if (!fresh) return;
+      fresh.querySelector(".readonly").textContent = me.email;
+      var note = fresh.querySelector(".muted");
+      if (note) {
+        note.innerHTML = "Код отправлен на <strong>" + esc(pending.new_email) + "</strong>. Он действует до " + time(pending.expires_at) +
+          ". Демо: подойдут любые 6 цифр.";
+      }
+      box.replaceWith(fresh);
+    });
+  }
+
   function renderProfileData() {
     var me = sim.currentCustomer();
     if (!me) return;
+    renderEmailBox(me);
     var photo = document.querySelector("[data-photo]");
     if (photo) {
       photo.querySelector("[data-avatar]").outerHTML = avatarHTML(me, true);
@@ -1016,8 +1083,6 @@
     if (form) {
       form.querySelector('[name="first_name"]').value = me.first_name || "";
       form.querySelector('[name="last_name"]').value = me.last_name || "";
-      var mail = form.querySelector(".readonly");
-      if (mail) mail.textContent = me.email;
     }
   }
 
@@ -1231,7 +1296,29 @@
       if (Object.keys(pe).length) return showErrors(form, pe);
       sim.updateCustomer({ password: value("new_password") });
       flash("Пароль изменён.");
-      return go(ME + "/profile/");
+      return go(ME + "/profile/data/#password");
+    }
+    if (action === "/profile/email/") {
+      if (value("cancel")) {
+        sim.cancelEmailChange();
+        flash("Смена email отменена.");
+        return go(ME + "/profile/data/#email");
+      }
+      var ee = {};
+      if (!value("new_email").trim()) ee.new_email = "Введите новый email.";
+      if (!value("password")) ee.password = "Введите текущий пароль.";
+      if (Object.keys(ee).length) return showErrors(form, ee);
+      var asked = sim.requestEmailChange(value("new_email"), value("password"));
+      if (asked.errors) return showErrors(form, flat(asked.errors));
+      flash("Код отправлен на " + asked.pending.new_email + ".");
+      return go(ME + "/profile/data/#email");
+    }
+    if (action === "/profile/email/confirm/") {
+      if (!/^\d{6}$/.test(value("code").trim())) return showErrors(form, { code: "Код — 6 цифр из письма (в демо подойдут любые)." });
+      var changed = sim.confirmEmailChange(value("code"));
+      if (changed.errors) return showErrors(form, changed.errors);
+      flash("Email изменён: теперь входите с " + changed.email + ".");
+      return go(ME + "/profile/data/#email");
     }
     if (action === "/profile/delete/") {
       if (!value("password")) return showErrors(form, { password: "Введите пароль." });
@@ -1359,6 +1446,7 @@
     else if (HERE === "/profile/data/" && TREE === "me") renderProfileData();
     else if (HERE === "/contacts/") renderContacts();
     else if (/^\/articles\/[^/]+\/$/.test(HERE)) renderArticle();
+    renderNews();
     // Email из адреса: «Забыли пароль?» на входе панели и шаг «код» сброса.
     if (HERE === "/password-reset/confirm/" || HERE === "/password-reset/") {
       var email = document.querySelector('[name="email"]');

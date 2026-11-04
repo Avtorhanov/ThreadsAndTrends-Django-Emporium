@@ -5,6 +5,7 @@ import { type ShopSettings, sellerParts, shopSettingsService } from "../api/sett
 import { ContactsSettings } from "../components/settings/ContactsSettings";
 import { useShopSettings } from "../hooks/useContent";
 import { formatKopecks, kopecksToInput, parseRublesToKopecks } from "../lib/money";
+import { BackLink } from "../components/BackLink";
 
 function FieldError({ errors, name }: { errors: FieldErrors; name: string }) {
   const message = errors[name]?.[0];
@@ -141,6 +142,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
   return (
     <form className="settings" onSubmit={submit} noValidate>
       <div className="page-header">
+        <BackLink to="/" label="Сводка" />
         <h1>Настройки магазина</h1>
         <div className="header-action pf-actions">
           {saved ? <span className="saved">Сохранено</span> : null}

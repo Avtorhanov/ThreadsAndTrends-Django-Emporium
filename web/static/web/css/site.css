@@ -217,6 +217,17 @@ a { color: var(--brand); }
   font: 800 11px/20px var(--font-text); text-align: center;
 }
 .cbadge[hidden] { display: none; }
+/* Новости по заказу (магазин сменил статус, покупатель ещё не открыл заказ) — точка у «Профиля». */
+.news-dot {
+  position: absolute; top: -3px; right: -4px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--danger); box-shadow: 0 0 0 2px var(--nav);
+  animation: news-pop .35s var(--ease-out) both;
+}
+.topnav__news { position: relative; }
+.topnav__news .news-dot { top: 2px; right: -9px; box-shadow: 0 0 0 2px var(--bg); }
+.order-card .news-dot, .menu__item .news-dot { position: static; display: inline-block; margin-left: 6px; vertical-align: middle; box-shadow: none; }
+@keyframes news-pop { from { transform: scale(0); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .news-dot { animation: none; } }
 
 /* Быстрый поиск: поле растёт из лаймовой кнопки на всю строку шапки. */
 .quick {
@@ -476,6 +487,18 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
   -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
 }
 .pd__back { position: absolute; top: 14px; left: 14px; z-index: 2; }
+.pd__share { position: absolute; top: 14px; right: 14px; z-index: 2; }
+.hero__zoom { display: block; height: 100%; cursor: zoom-in; -webkit-tap-highlight-color: transparent; }
+/* Уведомление «Ссылка скопирована» (site.js) — над нижним меню. */
+.toast {
+  position: fixed; left: 50%; bottom: calc(var(--tabbar-top, 0px) + 16px); z-index: 60; max-width: calc(100vw - 32px);
+  padding: 12px 18px; border-radius: calc(14px * var(--radius-scale)); background: var(--nav); color: var(--nav-ink, #fff);
+  font: 700 14px var(--font-text); box-shadow: var(--shadow-nav); transform: translate(-50%, 12px); opacity: 0;
+  transition: opacity .2s ease, transform .25s var(--ease-out); pointer-events: none;
+}
+.toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+/* PhotoSwipe: фон и кнопки в цветах темы. */
+.pswp { --pswp-bg: #000; --pswp-icon-color: #fff; --pswp-icon-color-secondary: rgba(0,0,0,.5); }
 .pd__frame {
   padding: var(--space-card-pad); border-radius: var(--radius-hero);
   background: var(--card); box-shadow: var(--shadow-card);
@@ -904,7 +927,11 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
   transition: transform .32s var(--ease-soft), opacity .32s ease;
 }
 /* Прокрутка вниз — меню уезжает (site.js ставит data-bars="hidden" на <html>), вверх — возвращается. */
-:root[data-bars="hidden"] .tabbar { transform: translateY(calc(100% + 24px)); opacity: 0; pointer-events: none; }
+:root[data-bars="hidden"] .tabbar {
+  transform: translateY(calc(100% + 24px)); opacity: 0; pointer-events: none;
+  /* Уезжает быстрым плавным движением вниз; возвращается — мягче (transition у .tabbar). */
+  transition: transform .26s cubic-bezier(.4, 0, .9, .6), opacity .18s ease .08s;
+}
 .tab {
   display: flex; flex: 1 1 0; align-items: center; justify-content: center; gap: 7px; min-width: 0;
   border-radius: calc(12px * var(--radius-scale)); color: var(--nav-ink); font: 800 13px var(--font-text); text-decoration: none;

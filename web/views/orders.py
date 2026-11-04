@@ -232,6 +232,8 @@ def order_detail(request, number: str):
     if order.payment_method == PaymentMethod.ONLINE and pending.exists():
         _sync_payment(request, order)
     order = get_object_or_404(_detail_queryset(request.user), pk=order.pk)
+    # Покупатель увидел заказ — точка «есть новости» на «Профиле» гаснет (до отрисовки шапки).
+    status_service.mark_seen(order)
     payment = payments.summary(order)
     return render(
         request,

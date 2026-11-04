@@ -72,6 +72,11 @@ class Order(models.Model):
     comment = models.CharField(max_length=500, blank=True, verbose_name="Комментарий")
     # Ключ повторного сабмита от клиента: повтор с тем же ключом возвращает тот же заказ.
     idempotency_key = models.CharField(max_length=64, verbose_name="Ключ идемпотентности")
+    # Статус сменил магазин (администратор или система), а покупатель заказ ещё не открывал —
+    # значок на «Профиле». Сбрасывается при открытии заказа покупателем.
+    status_unseen = models.BooleanField(
+        default=False, db_default=False, verbose_name="Смена статуса не просмотрена"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Оформлен")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменён")
 
@@ -85,6 +90,10 @@ class Order(models.Model):
             models.Index(fields=["owner", "-created_at"], name="order_owner_created_idx"),
             models.Index(fields=["status", "-created_at"], name="order_status_created_idx"),
             models.Index(fields=["-created_at"], name="order_created_idx"),
+            # Значок «есть новости по заказу»: EXISTS по владельцу среди немногих отмеченных.
+            models.Index(
+                fields=["owner"], condition=Q(status_unseen=True), name="order_owner_unseen_idx"
+            ),
         ]
         constraints = [
             models.UniqueConstraint(

@@ -147,9 +147,14 @@ class OrderDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         return order_detail_queryset(customer_orders(self.request.user))
 
-    @extend_schema(operation_id="orders_retrieve")
+    @extend_schema(
+        operation_id="orders_retrieve",
+        description="Открытие заказа покупателем гасит отметку «есть новости» (status_unseen).",
+    )
     def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
+        order = self.get_object()
+        status_service.mark_seen(order)
+        return Response(self.get_serializer(order).data)
 
 
 @extend_schema(tags=[TAG])

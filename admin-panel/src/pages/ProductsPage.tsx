@@ -16,6 +16,7 @@ import { Table } from "../components/Table";
 import { isLeaf, sortCategoryTree, useCategories, useLabels, useProducts } from "../hooks/useCatalog";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { formatKopecks } from "../lib/money";
+import { BackLink } from "../components/BackLink";
 
 const VISIBILITY_LABELS: Record<ProductStatus, string> = {
   active: "Активные",
@@ -96,6 +97,7 @@ export function ProductsPage() {
   return (
     <section>
       <div className="page-header">
+        <BackLink to="/" label="Сводка" />
         <h1>Товары</h1>
         {data ? <span className="muted">Всего: {data.count}</span> : null}
         <Link to="/catalog/products/new" className="button header-action">
@@ -188,6 +190,15 @@ export function ProductsPage() {
       {selected.size > 0 ? (
         <div className="bulk-bar" role="region" aria-label="Действия с отмеченными товарами">
           <strong>Выбрано: {selected.size}</strong>
+          {allChecked ? null : (
+            <button
+              type="button"
+              className="bulk-link"
+              onClick={() => setSelected(new Set(rows.map((row) => row.id)))}
+            >
+              Выбрать все
+            </button>
+          )}
           <button type="button" className="bulk-link" onClick={() => setSelected(new Set())}>
             Снять выбор
           </button>
@@ -250,7 +261,7 @@ export function ProductsPage() {
         </div>
       ) : null}
 
-      <Table loading={loading}>
+      <Table loading={loading} className="table-products">
         <thead>
           <tr>
             <th className="check-cell">

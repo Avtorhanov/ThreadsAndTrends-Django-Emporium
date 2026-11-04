@@ -203,15 +203,35 @@
     if (quickOpenBtn && drop) quickOpenBtn.setAttribute("aria-controls", compact ? "quick-search" : "drop-search");
   }
 
-  // --- Прокрутка: вниз — нижнее меню уезжает, шапка каталога сворачивается до строки;
-  // вверх в любом месте ленты — оба меню возвращаются (шапка каталога — с категориями, на
-  // стекле). Направление — по пути в одну сторону (BARS_DELTA), а не по каждому событию:
-  // мелкие рывки пальца и «резинка» iOS у краёв страницы меню не дёргают. ---
+  // --- Прокрутка: вниз — шапка каталога сворачивается до строки; вверх в любом месте ленты —
+  // оба меню возвращаются (шапка каталога — с категориями, на стекле). Направление — по пути в
+  // одну сторону (BARS_DELTA), а не по каждому событию: мелкие рывки пальца и «резинка» iOS у
+  // краёв страницы меню не дёргают.
+  // Нижнее меню уезжает не сразу: при медленной прокрутке пальцем оно остаётся, уезжает после
+  // быстрого взмаха (скорость за последние ~120 мс) или когда лента ушла далеко. ---
   var BARS_DELTA = 16;
   var NEAR_END = 48;
+  var HIDE_SPEED = 0.9; // px/мс — быстрый взмах
+  var HIDE_FLICK_TRAVEL = 60; // и при этом лента ушла хотя бы на столько
+  var HIDE_TRAVEL = 360; // без пальца на экране (колесо, клавиши) — уехать далеко
   var lastY = Math.max(0, window.scrollY);
   var travel = 0;
+  var samples = [];
+  var touching = false;
+  var freeTravel = 0; // путь вниз без пальца на экране (колесо, клавиши, инерция после взмаха)
   var tabbar = document.querySelector(".tabbar");
+
+  function speed(y, now) {
+    // Средняя скорость вниз за последние ~120 мс (px/мс).
+    samples.push([now, y]);
+    while (samples.length > 2 && now - samples[0][0] > 120) samples.shift();
+    var first = samples[0];
+    var dt = now - first[0];
+    return dt > 16 ? (y - first[1]) / dt : 0;
+  }
+  window.addEventListener("touchstart", function () { touching = true; freeTravel = 0; samples = []; }, { passive: true });
+  window.addEventListener("touchend", function () { touching = false; }, { passive: true });
+  window.addEventListener("touchcancel", function () { touching = false; }, { passive: true });
 
   function setBars(hidden) {
     if ((root.getAttribute("data-bars") === "hidden") === hidden) return;
@@ -237,7 +257,9 @@
       var max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
       var y = Math.min(Math.max(0, window.scrollY), max); // без «резинки» у краёв
       var dy = y - lastY;
+      var v = speed(y, performance.now());
       lastY = y;
+      freeTravel = touching || dy <= 0 ? 0 : freeTravel + dy;
       if (y < EXPAND_BELOW) {
         travel = 0;
         setCompact(false);
@@ -251,7 +273,9 @@
       if (travel > BARS_DELTA && y > COLLAPSE_AT) {
         setCompact(true);
         // Короткая страница и конец страницы — меню остаётся: листать дальше почти некуда.
-        if (max > 240 && y < max - NEAR_END) setBars(true);
+        var flick = v > HIDE_SPEED && travel > HIDE_FLICK_TRAVEL;
+        var far = freeTravel > HIDE_TRAVEL;
+        if ((flick || far) && max > 240 && y < max - NEAR_END) setBars(true);
       } else if (travel < -BARS_DELTA) {
         setCompact(false);
         setBars(false);
@@ -461,11 +485,13 @@
   });
 
   // --- Карточка товара: «Назад» ведёт туда, откуда пришли (если с этого сайта) ---
-  var back = document.querySelector("[data-back]");
-  if (back && document.referrer && document.referrer.indexOf(location.origin + "/") === 0 && history.length > 1) {
-    back.addEventListener("click", function (event) {
-      event.preventDefault();
-      history.back();
+  // «Назад» со своего сайта — шаг по истории (сохраняет прокрутку ленты), иначе — ссылка.
+  if (document.referrer && document.referrer.indexOf(location.origin + "/") === 0 && history.length > 1) {
+    document.querySelectorAll("[data-back]").forEach(function (back) {
+      back.addEventListener("click", function (event) {
+        event.preventDefault();
+        history.back();
+      });
     });
   }
 
@@ -480,6 +506,108 @@
       }, { passive: true });
     }
   }
+
+  // --- Фото товара на весь экран: PhotoSwipe (свайп между фото, щипок и двойной тап —
+  // увеличение, свайп вниз или Esc — закрыть). Скрипт и стили грузятся при первом нажатии. ---
+  // Обработчик делегирован: галерея и список фото берутся в момент нажатия (разметку могут
+  // перерисовать после загрузки страницы).
+  var pswpLoading = null;
+  function loadPhotoSwipe(gallery) {
+    if (window.PhotoSwipe) return Promise.resolve(window.PhotoSwipe);
+    if (pswpLoading) return pswpLoading;
+    pswpLoading = new Promise(function (resolve, reject) {
+      var css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = gallery.getAttribute("data-pswp-css");
+      document.head.appendChild(css);
+      var js = document.createElement("script");
+      js.src = gallery.getAttribute("data-pswp-js");
+      js.onload = function () { resolve(window.PhotoSwipe); };
+      js.onerror = function () { pswpLoading = null; css.remove(); js.remove(); reject(new Error("photoswipe")); };
+      document.head.appendChild(js);
+    });
+    return pswpLoading;
+  }
+  document.addEventListener("click", function (event) {
+    var link = event.target.closest && event.target.closest("[data-zoom]");
+    var gallery = link && link.closest("[data-zoom-gallery]");
+    if (!gallery || event.metaKey || event.ctrlKey || event.shiftKey || event.button) return;
+    event.preventDefault();
+    var links = Array.prototype.slice.call(gallery.querySelectorAll("[data-zoom]"));
+    loadPhotoSwipe(gallery).then(function (PhotoSwipe) {
+      var items = links.map(function (a) {
+        var img = a.querySelector("img");
+        // Размеры оригинала — из модели; если их нет — по загруженному превью.
+        var w = parseInt(a.getAttribute("data-w"), 10) || (img && img.naturalWidth) || 1200;
+        var h = parseInt(a.getAttribute("data-h"), 10) || (img && img.naturalHeight) || 1500;
+        return { src: a.href, width: w, height: h, msrc: img ? img.currentSrc || img.src : undefined, alt: img ? img.alt : "", element: a };
+      });
+      var pswp = new PhotoSwipe({
+        dataSource: items,
+        index: Math.max(0, links.indexOf(link)),
+        bgOpacity: 1,
+        showHideAnimationType: reduced.matches ? "none" : "zoom",
+        initialZoomLevel: "fit",
+        secondaryZoomLevel: 2,
+        maxZoomLevel: 4,
+        wheelToZoom: true,
+        closeTitle: "Закрыть",
+        zoomTitle: "Увеличить",
+        arrowPrevTitle: "Предыдущее фото",
+        arrowNextTitle: "Следующее фото",
+        errorMsg: "Фото не загрузилось",
+        indexIndicatorSep: " из ",
+      });
+      // Миниатюра для анимации открытия/закрытия — фото в галерее страницы.
+      pswp.addFilter("thumbEl", function (thumbEl, data) {
+        var img = data.element && data.element.querySelector("img");
+        return img || thumbEl;
+      });
+      // Закрыли на другом фото — галерея страницы встаёт на него же.
+      pswp.on("close", function () {
+        var target = links[pswp.currIndex];
+        if (target) gallery.scrollTo({ left: target.parentElement.offsetLeft, behavior: "auto" });
+      });
+      pswp.init();
+    }, function () { window.location.href = link.href; });
+  });
+
+  // --- «Поделиться»: системное меню (телефон), иначе — ссылка копируется в буфер ---
+  var toastTimer = null;
+  function toast(text) {
+    var el = document.querySelector(".toast");
+    if (!el) {
+      el = document.createElement("div");
+      el.className = "toast";
+      el.setAttribute("role", "status");
+      el.setAttribute("aria-live", "polite");
+      document.body.appendChild(el);
+    }
+    el.textContent = text;
+    void el.offsetWidth;
+    el.classList.add("is-on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove("is-on"); }, 2200);
+  }
+  document.addEventListener("click", function (event) {
+    var button = event.target.closest && event.target.closest("[data-share]");
+    if (!button) return;
+    event.preventDefault();
+    var url = button.href || location.href;
+    var title = button.getAttribute("data-share-title") || document.title;
+    if (navigator.share) {
+      navigator.share({ title: title, url: url }).catch(function () {}); // отмена — не ошибка
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(
+        function () { toast("Ссылка скопирована"); },
+        function () { window.prompt("Ссылка на товар", url); }
+      );
+    } else {
+      window.prompt("Ссылка на товар", url);
+    }
+  });
 
   // --- Главная: картинки фото-баннера сменяют друг друга, баннеры подряд — карусель ---
   // Только пока блок на экране и вкладка открыта; «уменьшить движение» — без автолистания

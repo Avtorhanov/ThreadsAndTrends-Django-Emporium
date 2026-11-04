@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 
 import { ApiError } from "../api/errors";
 import { type AdminOrderDetail, type OrderStatus, ordersService } from "../api/orders";
@@ -8,6 +8,7 @@ import { PaymentsCard } from "../components/orders/PaymentsCard";
 import { StatusChanger } from "../components/orders/StatusChanger";
 import { useOrder } from "../hooks/useOrders";
 import { formatKopecks } from "../lib/money";
+import { BackLink } from "../components/BackLink";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
@@ -54,9 +55,7 @@ export function OrderDetailPage() {
   return (
     <section className="stack">
       <div className="page-header">
-        <Link to="/orders" className="muted">
-          ← Заказы
-        </Link>
+        <BackLink to="/orders" label="Заказы" />
         <h1>{data ? `Заказ ${data.number}` : "Заказ"}</h1>
         {data ? <OrderStatusBadge status={data.status} label={data.status_display} /> : null}
       </div>

@@ -4,6 +4,7 @@ import { type Category, categoriesService } from "../api/catalog";
 import { ApiError } from "../api/errors";
 import { sortCategoryTree, useCategories } from "../hooks/useCatalog";
 import { Table } from "../components/Table";
+import { BackLink } from "../components/BackLink";
 
 function message(error: unknown): string {
   if (!(error instanceof ApiError)) return "Действие не выполнено.";
@@ -62,6 +63,7 @@ export function CategoriesPage() {
   return (
     <section>
       <div className="page-header">
+        <BackLink to="/" label="Сводка" />
         <h1>Категории</h1>
         <span className="muted">Два уровня; товары — только в категориях без подкатегорий</span>
       </div>
