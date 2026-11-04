@@ -156,7 +156,34 @@ def main(site: Path, shots: Path) -> None:
         page.screenshot(path=shots / "sim-order-iphone.png", full_page=True)
         print(f"Имитация: корзина и оформление — заказ {number}")
 
-        # 2б. B13: фото на весь экран и «Поделиться»; смена email кодом; точка «есть новости».
+        # 3. Тот же заказ — в панели; товар, созданный в панели, — в магазине.
+        page.evaluate("localStorage.setItem('didi-preview-admin', '1')")
+        page.goto(origin + f"{BASE}/panel/orders/", wait_until="load")
+        page.wait_for_selector(f"text={number}")
+        created = page.evaluate(
+            """async () => {
+              const result = await window.DidiSim.api("POST", "/api/v1/admin/catalog/products/", {
+                name: "Демо-товар проверки", category: window.DidiSim.categories()[0].id,
+                price_kopecks: 123400, variants: [{ size: "M" }],
+              });
+              const variant = result.body.variants[0].id;
+              const url = `/api/v1/admin/catalog/variants/${variant}/`;
+              await window.DidiSim.api("PATCH", url, { stock: 5 });
+              return result.body;
+            }"""
+        )
+        page.goto(origin + f"{BASE}/product/{created['slug']}/", wait_until="load")
+        page.wait_for_selector(".pd__title:has-text('Демо-товар проверки')")
+        page.goto(origin + f"{BASE}/panel/catalog/products/{created['id']}/", wait_until="load")
+        page.wait_for_function(
+            "[...document.querySelectorAll('main input')]"
+            ".some((input) => input.value === 'Демо-товар проверки')"
+        )
+        print("Имитация: заказ виден в панели, новый товар открывается в магазине и в панели")
+
+        page.evaluate("localStorage.removeItem('didi-preview-admin')")
+        # 3б. B13 (после панели — заказ здесь отменяется): фото на весь экран и «Поделиться»;
+        # смена email кодом; точка «есть новости».
         page.goto(origin + BASE + check["path"], wait_until="load")
         page.wait_for_selector(".pd__share")
         page.click("[data-zoom]")
@@ -195,31 +222,6 @@ def main(site: Path, shots: Path) -> None:
         card.wait_for()
         assert card.locator(".news-dot").count() == 0, "точка не погасла после открытия заказа"
         print("B13: фото на весь экран, «Поделиться», смена email кодом, точка «есть новости»: ок")
-
-        # 3. Тот же заказ — в панели; товар, созданный в панели, — в магазине.
-        page.evaluate("localStorage.setItem('didi-preview-admin', '1')")
-        page.goto(origin + f"{BASE}/panel/orders/", wait_until="load")
-        page.wait_for_selector(f"text={number}")
-        created = page.evaluate(
-            """async () => {
-              const result = await window.DidiSim.api("POST", "/api/v1/admin/catalog/products/", {
-                name: "Демо-товар проверки", category: window.DidiSim.categories()[0].id,
-                price_kopecks: 123400, variants: [{ size: "M" }],
-              });
-              const variant = result.body.variants[0].id;
-              const url = `/api/v1/admin/catalog/variants/${variant}/`;
-              await window.DidiSim.api("PATCH", url, { stock: 5 });
-              return result.body;
-            }"""
-        )
-        page.goto(origin + f"{BASE}/product/{created['slug']}/", wait_until="load")
-        page.wait_for_selector(".pd__title:has-text('Демо-товар проверки')")
-        page.goto(origin + f"{BASE}/panel/catalog/products/{created['id']}/", wait_until="load")
-        page.wait_for_function(
-            "[...document.querySelectorAll('main input')]"
-            ".some((input) => input.value === 'Демо-товар проверки')"
-        )
-        print("Имитация: заказ виден в панели, новый товар открывается в магазине и в панели")
 
         # 4. Скриншоты комнат.
         first_product = BASE + check["path"]
