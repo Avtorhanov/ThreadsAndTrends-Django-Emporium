@@ -66,12 +66,13 @@
   function fail(status, body) { return { status: status, body: body }; }
   function bad(detail) { return fail(400, { detail: detail }); }
   function fields(errors) { return fail(400, errors); }
-  // Основные проверки AUTH_PASSWORD_VALIDATORS: длина, только цифры, похож на email.
+  // Основные проверки AUTH_PASSWORD_VALIDATORS: длина, только цифры, совпадает с email
+  // (сходство на сервере считается мягче — по доле совпадения, здесь только явный случай).
   function weakPassword(password, email) {
     password = String(password || "");
     if (password.length < 8) return "Пароль слишком короткий. Он должен содержать как минимум 8 символов.";
     if (/^\d+$/.test(password)) return "Пароль не может состоять только из цифр.";
-    if (email && password.toLowerCase().indexOf(String(email).split("@")[0].toLowerCase()) >= 0) return "Пароль слишком похож на email.";
+    if (email && password.toLowerCase() === String(email).toLowerCase()) return "Пароль слишком похож на email.";
     return "";
   }
   function ok(body, status) { return { status: status || 200, body: body }; }

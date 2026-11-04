@@ -261,7 +261,11 @@ def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[s
     page.locator("input[autocomplete='new-password']").nth(0).fill(changed)
     page.locator("input[autocomplete='new-password']").nth(1).fill(changed)
     page.click("main form button[type='submit']")
-    page.wait_for_selector(".note-success:has-text('Пароль изменён')")
+    try:
+        page.wait_for_selector(".note-success:has-text('Пароль изменён')", timeout=10_000)
+    except Exception as exc:
+        errors = " | ".join(page.locator("main .alert, main .field-error").all_text_contents())
+        raise AssertionError(f"Смена пароля в панели не прошла: {errors}") from exc
     page.screenshot(path=shots / "panel-account-iphone.png")
     page.evaluate("localStorage.removeItem('didi-preview-admin')")
     page.goto(origin + BASE + "/panel/login/", wait_until="load")
@@ -277,6 +281,7 @@ def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[s
     page.fill(".login-card input[type='email']", admin["email"])
     page.click(".login-links a:has-text('Забыли пароль?')")
     page.wait_for_url(f"**{BASE}/password-reset/**")
+    page.wait_for_selector('main input[name="email"]:visible')  # имитация отрисовала страницу
     assert page.input_value('main input[name="email"]') == admin["email"]
     page.click('main form[method="post"] button[type="submit"]')
     page.wait_for_url(f"**{BASE}/password-reset/confirm/**")
