@@ -124,18 +124,26 @@
 
   var readyPromise = null;
   var CONTACTS_KEY = A + "/content/blocks/?area=contacts";
+  // Метка сборки демо (build.py подставляет вместо __BUILD__): новая сборка — один раз
+  // сверить «базу» со свежим снимком (фото, контакты прошлых версий).
+  var BUILD = "__BUILD__";
   function ready() {
     if (load()) {
-      if (cache.contacts) return Promise.resolve(cache);
-      // «База» из прошлой версии демо без контактов — берём их из снимка.
-      return fetch(BASE + "/panel/preview-api.json").then(function (r) { return r.json(); }).then(function (snap) {
+      if (cache.contacts && cache.build === BUILD) return Promise.resolve(cache);
+      if (readyPromise) return readyPromise;
+      readyPromise = Promise.all([
+        fetch(BASE + "/panel/preview-api.json").then(function (r) { return r.json(); }),
+        fetch(BASE + "/static/preview/data.json").then(function (r) { return r.json(); })
+      ]).then(function (res) {
         var db = load();
-        if (!db.contacts) {
-          db.contacts = clone(snap[CONTACTS_KEY] || []);
-          save(db);
-        }
+        // «База» из прошлой версии демо без контактов — берём их из снимка.
+        if (!db.contacts) db.contacts = clone(res[0][CONTACTS_KEY] || []);
+        if (db.build !== BUILD) refreshMedia(db, res[0], res[1]);
+        db.build = BUILD;
+        save(db);
         return db;
-      });
+      }, function () { return load(); });
+      return readyPromise;
     }
     if (readyPromise) return readyPromise;
     readyPromise = Promise.all([
@@ -148,6 +156,54 @@
       return db;
     });
     return readyPromise;
+  }
+
+  /** Новая сборка демо — у фото каталога и статей могли смениться адреса файлов. Сверяем по id
+   * фото (они одинаковы в каждой сборке): старая основа имени → новая, затем заменяем её везде
+   * в «базе» (обложки и их копии, заказы, главная, корзины). Фото, загруженные в демо (data:URL), не трогаем. */
+  function refreshMedia(db, snap, data) {
+    var map = {};
+    function stem(url) { return url.replace(/\.[a-z0-9]+$/i, ""); }
+    function swap(v) {
+      if (v.indexOf("/media/") < 0) return v;
+      for (var old in map) if (v.indexOf(old + ".") >= 0) v = v.split(old + ".").join(map[old] + ".");
+      return v;
+    }
+    function collect(listRe, dbList) {
+      var byId = {};
+      Object.keys(snap).forEach(function (k) {
+        if (!listRe.test(k)) return;
+        (snap[k].images || []).forEach(function (im) { byId[im.id] = im.url; });
+      });
+      (dbList || []).forEach(function (item) {
+        (item.images || []).forEach(function (im) {
+          var fresh = byId[im.id];
+          // Основа имени без расширения: вместе с оригиналом меняются и копии (….w480.webp).
+          if (fresh && im.url !== fresh && /\/media\//.test(im.url)) map[stem(im.url)] = stem(fresh);
+        });
+      });
+    }
+    collect(/\/admin\/catalog\/products\/\d+\/$/, db.products);
+    collect(/\/admin\/content\/articles\/\d+\/$/, db.articles);
+    var sources = {};
+    Object.keys(db.imageSources || {}).forEach(function (url) {
+      if (!/\/media\//.test(url)) sources[url] = db.imageSources[url]; // загруженные в демо
+    });
+    Object.keys(data.images || {}).forEach(function (url) { sources[url] = data.images[url]; });
+    db.imageSources = sources;
+    if (!Object.keys(map).length) return;
+    (function walk(o) {
+      if (Array.isArray(o)) {
+        for (var i = 0; i < o.length; i++) {
+          if (typeof o[i] === "string") o[i] = swap(o[i]); else if (o[i] && typeof o[i] === "object") walk(o[i]);
+        }
+        return;
+      }
+      Object.keys(o).forEach(function (k) {
+        var v = o[k];
+        if (typeof v === "string") o[k] = swap(v); else if (v && typeof v === "object") walk(v);
+      });
+    })(db);
   }
 
   function reset() {
@@ -206,6 +262,7 @@
     var staff = clone(snap[A + "/staff/"]);
     var db = {
       v: 2,
+      build: BUILD,
       seededAt: now(),
       products: products,
       categories: clone(snap[A + "/catalog/categories/"]),

@@ -22,8 +22,8 @@ import os
 import re
 import shutil
 import sys
-from datetime import timedelta
-from pathlib import Path
+from datetime import datetime, timedelta
+from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -287,6 +287,39 @@ def templates(orders: list[Order]) -> dict[str, str]:
     }
 
 
+def stable_media_names():
+    """Фото демо — по порядку загрузки (products/demo/0001.jpg), без даты и UUID.
+
+    Сид идёт в одном порядке, поэтому имена одинаковы в каждой сборке: «база» демо в браузере
+    покупателя (sim.js) не ссылается на файлы, которых в новой сборке уже нет. На боевом сайте —
+    UUID (store.models.product_image_path и др.).
+    """
+    from content.models import ArticleImage, HomeImage
+    from store.models import ProductImage
+
+    counters: dict[str, int] = {}
+
+    def make(prefix):
+        def upload_to(instance, filename):
+            counters[prefix] = counters.get(prefix, 0) + 1
+            ext = PurePosixPath(filename).suffix.lower() or ".jpg"
+            return f"{prefix}/demo/{counters[prefix]:04d}{ext}"
+
+        return upload_to
+
+    models = ((ProductImage, "products"), (ArticleImage, "articles"), (HomeImage, "home"))
+    for model, prefix in models:
+        model._meta.get_field("image").upload_to = make(prefix)
+
+
+def stamp_build(sim_js: Path):
+    """Метка сборки в sim.js: новая сборка — «база» один раз сверяет фото со снимком."""
+    build = (os.environ.get("GITHUB_SHA") or datetime.now().strftime("%Y%m%d%H%M%S"))[:12]
+    text = sim_js.read_text(encoding="utf-8")
+    assert '"__BUILD__"' in text, "sim.js без метки сборки"
+    sim_js.write_text(text.replace('"__BUILD__"', f'"{build}"', 1), encoding="utf-8")
+
+
 def check_product(variants: list[ProductVariant]) -> dict:
     """Товар с размерами и остатком больше одного — для сценария корзины в check.py."""
     variant = next(v for v in variants if v.size and v.stock > 1)
@@ -323,6 +356,7 @@ def build(out: Path) -> None:
         shutil.rmtree(media)
 
     call_command("migrate", verbosity=0)
+    stable_media_names()
     call_command("seed_demo", verbosity=0)
 
     fake = FakeProvider()
@@ -402,6 +436,7 @@ def build(out: Path) -> None:
 
     shutil.copytree(ROOT / "web/static", out / "static", dirs_exist_ok=True)
     shutil.copytree(ROOT / "deploy/preview/assets", out / "static/preview", dirs_exist_ok=True)
+    stamp_build(out / "static/preview/sim.js")
     (out / "static/preview/data.json").write_text(
         json.dumps(data, ensure_ascii=False), encoding="utf-8"
     )
