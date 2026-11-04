@@ -74,8 +74,8 @@ paths:
   /api/v1/admin/auth/password/change/:
     post:
       operationId: admin_password_change
-      description: Нужен текущий пароль. Эта сессия остаётся, остальные браузеры
-        и приложение выходят.
+      description: Нужен текущий пароль. Эта сессия остаётся, остальные браузеры и
+        приложение выходят.
       tags:
       - admin
       requestBody:
