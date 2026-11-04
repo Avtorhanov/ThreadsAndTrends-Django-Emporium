@@ -189,10 +189,11 @@ def main(site: Path, shots: Path) -> None:
         page.wait_for_selector(".tabbar .tab__icon .news-dot")
         page.goto(origin + f"{BASE}/me/orders/{number}/", wait_until="load")
         page.wait_for_selector(".page .h1")
-        page.goto(origin + f"{BASE}/me/profile/", wait_until="load")
-        page.wait_for_timeout(300)
-        dots = page.locator(".tabbar .news-dot").count()
-        assert dots == 0, "точка не погасла после открытия заказа"
+        # Другие демо-заказы могут оставаться с отметкой — проверяем именно этот.
+        page.goto(origin + f"{BASE}/me/orders/", wait_until="load")
+        card = page.locator(f".order-card[href$='/orders/{number}/']")
+        card.wait_for()
+        assert card.locator(".news-dot").count() == 0, "точка не погасла после открытия заказа"
         print("B13: фото на весь экран, «Поделиться», смена email кодом, точка «есть новости»: ок")
 
         # 3. Тот же заказ — в панели; товар, созданный в панели, — в магазине.
