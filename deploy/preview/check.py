@@ -275,7 +275,8 @@ def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[s
     page.wait_for_selector(".login-card .alert")  # старый пароль больше не подходит
     page.fill(".login-card input[type='password']", changed)
     page.click(".login-card button[type='submit']")
-    page.wait_for_url(f"**{BASE}/panel/")
+    # Переход внутри панели: адрес /panel без «/» — ждём экран, а не адрес.
+    page.wait_for_selector("main h1:has-text('Сводка')")
     page.evaluate("localStorage.removeItem('didi-preview-admin')")
     page.goto(origin + BASE + "/panel/login/", wait_until="load")
     page.fill(".login-card input[type='email']", admin["email"])
