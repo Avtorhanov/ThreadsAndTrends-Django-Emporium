@@ -79,7 +79,12 @@
     return '<svg class="ic' + (css ? " " + css : "") + '" width="' + size + '" height="' + size + '"><use href="#i-' + name + '"/></svg>';
   }
   function link(p) { return PREFIX + p; }
-  function go(url) { location.href = url; }
+  function go(url) {
+    var next = new URL(url, location.href);
+    location.href = next.href;
+    // Тот же адрес с другим #якорем — браузер не перезагружает страницу, а данные поменялись.
+    if (next.pathname === location.pathname && next.search === location.search) location.reload();
+  }
   function img(url, sizes, css, eager, alt) {
     if (!url) return "";
     var src = sim.imageSources(url);
