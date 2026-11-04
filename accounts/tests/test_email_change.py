@@ -153,6 +153,39 @@ def test_app_endpoints_require_auth():
     assert client.post(APP_CONFIRM, {"code": "123456"}).status_code == 401
 
 
+def test_staff_cannot_change_email_via_app(staff):
+    # Email сотрудника — логин панели: только там (сессия + CSRF).
+    client = APIClient()
+    access = login(client, staff.email).json()["access"]
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+    assert client.post(APP_REQUEST, {"new_email": NEW, "password": PASSWORD}).status_code == 403
+    assert client.post(APP_CONFIRM, {"code": "123456"}).status_code == 403
+    assert not EmailChangeCode.objects.exists()
+
+
+def test_code_mail_has_no_user_text(customer, django_capture_on_commit_callbacks):
+    # Письмо уходит на ещё не подтверждённый адрес: имени владельца аккаунта в нём нет.
+    customer.first_name = "Оплатите на evil.example"
+    customer.save(update_fields=["first_name"])
+    with django_capture_on_commit_callbacks(execute=True):
+        services.request_email_change(customer, new_email=NEW, password=PASSWORD)
+    assert "evil.example" not in mail.outbox[-1].body
+
+
+def test_email_change_voids_password_reset_codes(customer, django_capture_on_commit_callbacks):
+    # Код сброса ушёл на прежний ящик — после смены email он не действует.
+    with django_capture_on_commit_callbacks(execute=True):
+        services.request_password_reset(customer.email)
+    reset_code = code_from_mail()
+    with django_capture_on_commit_callbacks(execute=True):
+        services.request_email_change(customer, new_email=NEW, password=PASSWORD)
+    services.confirm_email_change(customer, code=code_from_mail())
+    with pytest.raises(ValidationError):
+        services.confirm_password_reset(email=NEW, code=reset_code, new_password="N3w-Str0ng-Pass!")
+    customer.refresh_from_db()
+    assert customer.check_password(PASSWORD)
+
+
 # --- Панель ---
 
 

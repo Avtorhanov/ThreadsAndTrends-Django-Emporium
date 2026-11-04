@@ -174,9 +174,11 @@ def update_password(user: User, *, old_password: str, new_password: str) -> None
     if not user.check_password(old_password):
         raise ValidationError({"old_password": "Неверный текущий пароль."})
     _validate_new_password(new_password, user, field="new_password")
-    user.set_password(new_password)
-    user.save(update_fields=["password"])
-    revoke_all_refresh_tokens(user)
+    with transaction.atomic():
+        # Пароль и отзыв refresh-токенов — вместе: без живых токенов со старым паролем.
+        user.set_password(new_password)
+        user.save(update_fields=["password"])
+        revoke_all_refresh_tokens(user)
 
 
 def change_password(user: User, *, old_password: str, new_password: str) -> dict[str, str]:
@@ -316,20 +318,22 @@ def request_email_change(user: User, *, new_email: str, password: str) -> EmailC
         raise ValidationError({"new_email": "Введите корректный email."}) from exc
     if email == user.email:
         raise ValidationError({"new_email": "Это ваш текущий email."})
-    if _email_taken(email, user):
-        raise ValidationError({"new_email": EMAIL_TAKEN})
-
-    now = timezone.now()
-    recent = EmailChangeCode.objects.filter(user=user, created_at__gte=now - timedelta(hours=1))
-    if recent.count() >= EMAIL_CODES_PER_HOUR:
-        raise ValidationError("Слишком много запросов. Попробуйте через час.", code="throttled")
-    if recent.filter(created_at__gte=now - EMAIL_CODE_RESEND_COOLDOWN).exists():
-        raise ValidationError(
-            "Код уже отправлен. Повторно — не раньше чем через минуту.", code="throttled"
-        )
 
     code = f"{secrets.randbelow(10**6):06d}"
     with transaction.atomic():
+        # Блокировка пользователя: параллельные запросы не проходят лимиты одновременно.
+        User.objects.select_for_update().only("pk").get(pk=user.pk)
+        now = timezone.now()
+        recent = EmailChangeCode.objects.filter(user=user, created_at__gte=now - timedelta(hours=1))
+        if recent.count() >= EMAIL_CODES_PER_HOUR:
+            raise ValidationError("Слишком много запросов. Попробуйте через час.", code="throttled")
+        if recent.filter(created_at__gte=now - EMAIL_CODE_RESEND_COOLDOWN).exists():
+            raise ValidationError(
+                "Код уже отправлен. Повторно — не раньше чем через минуту.", code="throttled"
+            )
+        # После лимитов: проверка «адрес занят» не быстрее, чем 5 запросов в час.
+        if _email_taken(email, user):
+            raise ValidationError({"new_email": EMAIL_TAKEN})
         # Действует только последний запрос.
         EmailChangeCode.objects.filter(user=user, used_at__isnull=True).update(used_at=now)
         record = EmailChangeCode.objects.create(
@@ -390,6 +394,10 @@ def confirm_email_change(user: User, *, code: str) -> User:
             except IntegrityError:
                 status = "taken"
             else:
+                # Коды сброса пароля ушли на прежний адрес — после смены email они не действуют.
+                PasswordResetCode.objects.filter(user=locked, used_at__isnull=True).update(
+                    used_at=now
+                )
                 body = render_to_string(
                     "accounts/email/email_changed.txt",
                     {"user": locked, "masked_email": mask_email(locked.email)},

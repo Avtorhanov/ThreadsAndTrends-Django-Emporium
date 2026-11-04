@@ -1,4 +1,4 @@
-{% autoescape off %}Здравствуйте{% if user.first_name %}, {{ user.first_name }}{% endif %}!
+{# Адрес ещё не подтверждён: никакого текста от владельца аккаунта (имени) в письме. #}{% autoescape off %}Здравствуйте!
 
 Код для подтверждения нового email в DiDi-shop: {{ code }}
 

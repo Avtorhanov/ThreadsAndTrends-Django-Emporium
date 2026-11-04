@@ -2,7 +2,7 @@
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -195,6 +195,12 @@ class EmailChangeView(APIView):
         description="Код из 6 цифр уходит на новый адрес и действует 15 минут; действует "
         "последний запрос. Повторно — не чаще раза в минуту и не больше 5 раз в час.",
     )
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        # Email сотрудника — логин панели: меняется только там (сессия + CSRF).
+        if request.user.is_staff:
+            raise PermissionDenied("Email сотрудника меняется в панели → «Аккаунт».")
+
     def post(self, request):
         serializer = EmailChangeRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -214,6 +220,12 @@ class EmailChangeConfirmView(APIView):
         responses={200: ProfileSerializer},
         operation_id="email_change_confirm",
     )
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        # Email сотрудника — логин панели: меняется только там (сессия + CSRF).
+        if request.user.is_staff:
+            raise PermissionDenied("Email сотрудника меняется в панели → «Аккаунт».")
+
     def post(self, request):
         serializer = EmailChangeConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

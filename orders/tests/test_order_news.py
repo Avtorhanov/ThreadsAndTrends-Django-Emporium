@@ -22,10 +22,18 @@ def test_admin_and_system_changes_mark_unseen(customer, staff):
     assert Order.objects.get(pk=order.pk).status_unseen
     assert status_service.has_unseen(customer)
 
+    # Система: автоотмена неоплаченного — новость.
+    unpaid = make_order(customer, status=S.AWAITING_PAYMENT)
+    status_service.cancel(unpaid, by=ChangedBy.SYSTEM)
+    assert Order.objects.get(pk=unpaid.pk).status_unseen
+
+
+def test_own_payment_is_not_news(customer):
+    # Оплату покупатель сделал сам — точки на «Профиле» нет.
     paid = make_order(customer, status=S.AWAITING_PAYMENT)
-    status_service.mark_seen(Order.objects.get(pk=order.pk))
     status_service.mark_paid(paid)
-    assert Order.objects.get(pk=paid.pk).status_unseen
+    assert not Order.objects.get(pk=paid.pk).status_unseen
+    assert not status_service.has_unseen(customer)
 
 
 def test_customer_cancel_is_not_news(customer):

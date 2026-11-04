@@ -84,13 +84,21 @@ COMMENT_MAX = 500
 
 @transaction.atomic
 def transition(
-    order: Order, to_status: str, *, by: str, actor=None, comment: str = "", notify: bool = True
+    order: Order,
+    to_status: str,
+    *,
+    by: str,
+    actor=None,
+    comment: str = "",
+    notify: bool = True,
+    news: bool | None = None,
 ) -> Order:
     """Перевести заказ в статус. Повтор того же статуса — без изменений (повторный клик,
     повторный webhook). Недопустимый переход — ValidationError.
 
     comment — пояснение для клиента (история заказа и письмо); notify=False — без письма
-    (администратор меняет статус «для себя», например исправляет ошибку)."""
+    (администратор меняет статус «для себя», например исправляет ошибку).
+    news — отметка «есть новости» на «Профиле»; по умолчанию — если статус сменил не покупатель."""
     comment = " ".join(comment.split())
     if len(comment) > COMMENT_MAX:
         raise ValidationError(
@@ -109,7 +117,7 @@ def transition(
     from_status = locked.status
     locked.status = to_status
     # Смену, сделанную самим покупателем (отмена), отмечать новостью не нужно.
-    locked.status_unseen = by != ChangedBy.CUSTOMER
+    locked.status_unseen = by != ChangedBy.CUSTOMER if news is None else news
     locked.save(update_fields=["status", "status_unseen", "updated_at"])
     sent = notify and notifications.notify_status(locked, comment=comment)
     OrderStatusChange.objects.create(
@@ -169,7 +177,8 @@ def cancel(order: Order, *, by: str, actor=None, comment: str = "") -> Order:
 
 def mark_paid(order: Order) -> Order:
     """Оплата подтверждена провайдером (вызывают платежи, сессия 6)."""
-    return transition(order, S.PAID, by=ChangedBy.SYSTEM)
+    # Оплату покупатель сделал сам — это не новость для него (автоотмена — новость).
+    return transition(order, S.PAID, by=ChangedBy.SYSTEM, news=False)
 
 
 def _was_paid(order: Order) -> bool:

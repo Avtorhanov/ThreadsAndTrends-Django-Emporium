@@ -16,6 +16,78 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/admin/auth/email/change/:
+    get:
+      operationId: admin_email_change_pending
+      description: Действующий запрос смены email или 204, если его нет.
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailChangePending'
+          description: ''
+        '204':
+          description: No response body
+    post:
+      operationId: admin_email_change_request
+      description: 'Смена своего email в панели, шаг 1 (как у покупателя: пароль +
+        код на новый адрес).'
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailChangePending'
+          description: ''
+    delete:
+      operationId: admin_email_change_cancel
+      description: 'Смена своего email в панели, шаг 1 (как у покупателя: пароль +
+        код на новый адрес).'
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/auth/email/change/confirm/:
+    post:
+      operationId: admin_email_change_confirm
+      description: |-
+        API панели администратора: только сессия Django (+ CSRF) и роль администратора.
+        JWT мобильного клиента не принимается.
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeConfirmRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffUser'
+          description: ''
   /api/v1/admin/auth/login/:
     post:
       operationId: admin_login
@@ -62,6 +134,25 @@ paths:
         JWT мобильного клиента не принимается.
       tags:
       - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffUser'
+          description: ''
+    patch:
+      operationId: admin_me_update
+      description: Своё имя и фамилия — любому сотруднику.
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffProfileUpdateRequest'
       security:
       - cookieAuth: []
       responses:
@@ -1691,6 +1782,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminSummary'
+          description: ''
+  /api/v1/auth/email/change/:
+    post:
+      operationId: email_change_request
+      description: Код из 6 цифр уходит на новый адрес и действует 15 минут; действует
+        последний запрос. Повторно — не чаще раза в минуту и не больше 5 раз в час.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailChangePending'
+          description: ''
+  /api/v1/auth/email/change/confirm/:
+    post:
+      operationId: email_change_confirm
+      description: 'Смена email, шаг 2: код с нового адреса. На прежний уходит уведомление.'
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeConfirmRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
           description: ''
   /api/v1/auth/login/:
     post:
@@ -5053,6 +5189,45 @@ components:
       - cost_kopecks
       - method
       - title
+    EmailChangeConfirmRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          pattern: ^\d{6}$
+      required:
+      - code
+    EmailChangePending:
+      type: object
+      properties:
+        new_email:
+          type: string
+          format: email
+          description: Адрес, на который отправлен код
+        expires_at:
+          type: string
+          format: date-time
+          description: До какого времени действует код
+      required:
+      - expires_at
+      - new_email
+    EmailChangeRequestRequest:
+      type: object
+      properties:
+        new_email:
+          type: string
+          minLength: 1
+          description: Новый email — на него придёт код
+          maxLength: 254
+        password:
+          type: string
+          minLength: 1
+          description: Текущий пароль
+          maxLength: 128
+      required:
+      - new_email
+      - password
     Health:
       type: object
       properties:
@@ -5432,6 +5607,11 @@ components:
         items_count:
           type: integer
           description: Всего единиц товара
+        status_unseen:
+          type: boolean
+          readOnly: true
+          title: Смена статуса не просмотрена
+          description: Магазин сменил статус, заказ ещё не открыт
         created_at:
           type: string
           format: date-time
@@ -5445,6 +5625,7 @@ components:
       - payment_method
       - status
       - status_display
+      - status_unseen
       - total_kopecks
     OrderStatusChange:
       type: object
@@ -5895,6 +6076,15 @@ components:
           type: string
           title: Фамилия
           maxLength: 150
+    PatchedStaffProfileUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
     PatchedStaffUpdateRequest:
       type: object
       properties:
@@ -6007,10 +6197,16 @@ components:
           nullable: true
           readOnly: true
           description: Фото профиля (WebP 320×320) или null
+        has_order_news:
+          type: boolean
+          readOnly: true
+          description: Магазин сменил статус заказа, покупатель его ещё не открывал
+            (значок «Профиля»)
       required:
       - avatar_url
       - date_joined
       - email
+      - has_order_news
       - id
       - is_staff
     RecipientDefaults:
