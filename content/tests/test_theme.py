@@ -194,6 +194,22 @@ def test_nav_style_saved_and_rendered(admin_api, client):
     assert "data-nav" not in client.get("/").content.decode()
 
 
+def test_customer_nav_overrides_shop_default(client, db):
+    look.update(
+        palettes=list(look.PALETTES),
+        default_palette="lime",
+        default_mode="system",
+        default_radius="normal",
+        nav_style="glass",
+    )
+    assert look.resolve_look().attrs == {"data-nav": "glass"}
+    # Свой выбор покупателя важнее вида магазина; «Сплошное» — без атрибута.
+    assert look.resolve_look(nav="solid").attrs == {}
+    assert look.resolve_look(nav="floating").nav == "floating"
+    assert look.resolve_look(nav="side").nav == "glass"
+    assert "nav" in look.VISITOR_COOKIES
+
+
 def test_graphite_palette_removed():
     assert "graphite" not in look.PALETTES
     assert look.resolve_look(palette="graphite").palette == "lime"

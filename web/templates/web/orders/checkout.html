@@ -29,9 +29,9 @@
             <input type="radio" name="delivery_method" value="{{ option.method }}" data-cost="{{ option.cost_kopecks }}"{% if form.delivery_method.value == option.method %} checked{% endif %} required>
             <span class="choice__body">
               <span class="choice__title">{{ option.title }}</span>
-              {% if option.address %}<span class="choice__hint">{{ option.address }}</span>{% elif option.cost_kopecks == 0 %}<span class="choice__hint">Бесплатно — заказ от {{ free_from|rub }}&nbsp;₽</span>{% else %}<span class="choice__hint">Бесплатно от {{ free_from|rub }}&nbsp;₽</span>{% endif %}
+              {% if option.address %}<span class="choice__hint">{{ option.address }}</span>{% elif option.cost_kopecks == 0 %}<span class="choice__hint">Заказ от {{ free_from|rub }}&nbsp;₽</span>{% else %}<span class="choice__hint">Бесплатно от {{ free_from|rub }}&nbsp;₽</span>{% endif %}
             </span>
-            <span class="choice__price">{% if option.cost_kopecks %}{{ option.cost_kopecks|rub }}&nbsp;₽{% else %}0&nbsp;₽{% endif %}</span>
+            <span class="choice__price">{% if option.cost_kopecks %}{{ option.cost_kopecks|rub }}&nbsp;₽{% else %}Бесплатно{% endif %}</span>
           </label>
           {% endfor %}
         </div>

@@ -5,7 +5,6 @@ from functools import cache
 
 from django.conf import settings
 
-from content import look
 from content import shop as shop_settings
 from store.services.storefront import category_tree
 
@@ -64,8 +63,6 @@ def storefront(request):
     return {
         "theme": theme.get_theme(request),
         "look": theme.get_look(request),
-        # Вид нижнего меню (панель → «Тема»); «Сплошное» — без атрибута на <html>.
-        "nav_style": look.shop_theme().nav_style,
         "cart_count": cart_count,
         "nav_categories": nav_categories,
         "app_banner": banner,

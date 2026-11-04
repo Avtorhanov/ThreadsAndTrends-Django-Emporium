@@ -38,12 +38,14 @@ export const RADIUS_SCALE: Record<ThemeRadius, number> = { sharp: 0.6, normal: 1
 export const NAV_LABELS: Record<ThemeNav, string> = {
   solid: "Сплошное",
   floating: "Плавающее",
+  glass: "Стекло",
   bar: "Нижняя панель",
 };
 
 export const NAV_HINTS: Record<ThemeNav, string> = {
   solid: "Тёмная полоса от края до края, у активной вкладки — подпись",
-  floating: "Тёмная капсула над страницей с отступом от краёв",
+  floating: "Полупрозрачная тёмная капсула у нижнего края",
+  glass: "Прозрачная капсула в цвет темы у нижнего края",
   bar: "Панель в цвет темы, подписи у всех вкладок",
 };
 

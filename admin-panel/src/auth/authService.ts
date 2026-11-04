@@ -24,6 +24,15 @@ export const authService = {
     return unwrap(api.POST("/api/v1/admin/auth/login/", { body: { email, password } }));
   },
 
+  /** Смена своего пароля: эта сессия остаётся, другие браузеры и приложение выходят. */
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    await unwrap(
+      api.POST("/api/v1/admin/auth/password/change/", {
+        body: { old_password: oldPassword, new_password: newPassword },
+      }),
+    );
+  },
+
   async logout(): Promise<void> {
     await unwrap(api.POST("/api/v1/admin/auth/logout/"));
   },

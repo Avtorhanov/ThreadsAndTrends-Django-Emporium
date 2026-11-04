@@ -33,9 +33,21 @@ PALETTE_GROUPS = {"bright": "Яркие", "calm": "Сдержанные", "custo
 RADIUS_LABELS = {"sharp": "Острые", "normal": "Средние", "soft": "Мягкие"}
 TEXT_LABELS = {"s": "Обычный", "m": "Крупнее", "l": "Крупный"}
 MODE_LABELS = {"system": "Как в системе", "light": "Светлая", "dark": "Тёмная"}
-# Нижнее меню витрины на телефоне: сплошная полоса-футер, плавающая капсула, нижняя панель
-# с подписями у всех вкладок.
-NAV_LABELS = {"solid": "Сплошное", "floating": "Плавающее", "bar": "Нижняя панель"}
+# Нижнее меню витрины на телефоне: сплошная полоса-футер, плавающая тёмная капсула, капсула
+# из стекла в цвет темы, нижняя панель с подписями у всех вкладок. Администратор задаёт вид
+# для нового посетителя, покупатель может выбрать свой (cookie «nav»).
+NAV_LABELS = {
+    "solid": "Сплошное",
+    "floating": "Плавающее",
+    "glass": "Стекло",
+    "bar": "Нижняя панель",
+}
+NAV_HINTS = {
+    "solid": "Тёмная полоса от края до края",
+    "floating": "Тёмная капсула над страницей",
+    "glass": "Прозрачная капсула в цвет темы",
+    "bar": "Подписи у всех вкладок",
+}
 NAV: tuple[str, ...] = tuple(NAV_LABELS)
 DEFAULT_NAV = "solid"
 
@@ -51,7 +63,7 @@ CACHE_KEY = "content:theme-settings:v3"
 
 # Cookie личного выбора покупателя (пишут web/theme.py и site.js). Сохранение темы в панели
 # удаляет их в браузере администратора — он сразу видит витрину как новый посетитель.
-VISITOR_COOKIES = ("theme", "palette", "accent", "radius", "text_size")
+VISITOR_COOKIES = ("theme", "palette", "accent", "radius", "text_size", "nav")
 
 
 @dataclass(frozen=True)
@@ -141,6 +153,7 @@ class Look:
     accent: str
     radius: str
     text: str
+    nav: str = DEFAULT_NAV
 
     @property
     def attrs(self) -> dict[str, str]:
@@ -154,6 +167,8 @@ class Look:
             attrs["data-radius"] = self.radius
         if self.text != DEFAULT_TEXT:
             attrs["data-text"] = self.text
+        if self.nav != DEFAULT_NAV:
+            attrs["data-nav"] = self.nav
         return attrs
 
     @property
@@ -161,7 +176,9 @@ class Look:
         return PALETTES[self.palette]["bg"]
 
 
-def resolve_look(*, palette: str = "", accent: str = "", radius: str = "", text: str = "") -> Look:
+def resolve_look(
+    *, palette: str = "", accent: str = "", radius: str = "", text: str = "", nav: str = ""
+) -> Look:
     """Выбор покупателя → допустимые значения: недоступная палитра — палитра по умолчанию."""
     shop = shop_theme()
     return Look(
@@ -169,4 +186,5 @@ def resolve_look(*, palette: str = "", accent: str = "", radius: str = "", text:
         accent=accent if accent in ACCENTS else DEFAULT_ACCENT,
         radius=radius if radius in RADIUS else shop.default_radius,
         text=text if text in TEXT else shop.default_text,
+        nav=nav if nav in NAV else shop.nav_style,
     )

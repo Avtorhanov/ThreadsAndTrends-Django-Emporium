@@ -66,6 +66,14 @@
   function fail(status, body) { return { status: status, body: body }; }
   function bad(detail) { return fail(400, { detail: detail }); }
   function fields(errors) { return fail(400, errors); }
+  // Основные проверки AUTH_PASSWORD_VALIDATORS: длина, только цифры, похож на email.
+  function weakPassword(password, email) {
+    password = String(password || "");
+    if (password.length < 8) return "Пароль слишком короткий. Он должен содержать как минимум 8 символов.";
+    if (/^\d+$/.test(password)) return "Пароль не может состоять только из цифр.";
+    if (email && password.toLowerCase().indexOf(String(email).split("@")[0].toLowerCase()) >= 0) return "Пароль слишком похож на email.";
+    return "";
+  }
   function ok(body, status) { return { status: status || 200, body: body }; }
 
   // Цвет текста на фоне баннера — как content.home.ink_for (яркость по WCAG).
@@ -627,6 +635,14 @@
     return bad("Неверный email или пароль.");
   });
   route("POST", "/auth/logout/", function () { setSignedIn(false); return ok(null, 204); });
+  // Смена своего пароля (accounts.services.update_password): текущий пароль, новый — как валидаторы Django.
+  route("POST", "/auth/password/change/", function (db, m, q, body) {
+    if (body.old_password !== db.login.password) return fields({ old_password: ["Неверный текущий пароль."] });
+    var problem = weakPassword(body.new_password, db.login.email);
+    if (problem) return fields({ new_password: [problem] });
+    db.login.password = body.new_password;
+    return { status: 204, body: null, save: true };
+  });
   route("GET", "/auth/csrf/", function () { return ok(null, 204); });
 
   route("GET", "/summary/", function (db) { return ok(summary(db)); });
@@ -1471,6 +1487,25 @@
     save(db);
     return { ok: true };
   }
+  /** Сброс пароля по коду (в демо подходит любой код): администратор входит и идёт в панель,
+   *  покупатель — в кабинет. → {admin} | {customer} | {error} */
+  function resetPassword(email, password) {
+    var db = load();
+    email = lower(email);
+    var problem = weakPassword(password, email);
+    if (problem) return { errors: { new_password: problem } };
+    if (db.login && email === db.login.email) {
+      db.login.password = password;
+      signInAdmin(db);
+      save(db);
+      return { admin: true };
+    }
+    var c = customerByEmail(db, email);
+    if (!c || c.status !== "active") return { errors: { code: "Неверный или устаревший код." } };
+    c.password = password;
+    save(db);
+    return { customer: true };
+  }
   function register(email, password, firstName) {
     var db = load();
     email = lower(email);
@@ -1740,6 +1775,7 @@
     BASE: BASE,
     ready: ready,
     reset: reset,
+    resetPassword: resetPassword,
     api: api,
     db: load,
     inkFor: inkFor,

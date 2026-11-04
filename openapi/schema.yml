@@ -71,6 +71,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/StaffUser'
           description: ''
+  /api/v1/admin/auth/password/change/:
+    post:
+      operationId: admin_password_change
+      description: Нужен текущий пароль. Эта сессия остаётся, остальные браузеры
+        и приложение выходят.
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/admin/catalog/categories/:
     get:
       operationId: admin_catalog_categories_list
@@ -4109,6 +4127,7 @@ components:
 
             * `solid` - Сплошное
             * `floating` - Плавающее
+            * `glass` - Стекло
             * `bar` - Нижняя панель
         enabled:
           type: array
@@ -4155,6 +4174,7 @@ components:
 
             * `solid` - Сплошное
             * `floating` - Плавающее
+            * `glass` - Стекло
             * `bar` - Нижняя панель
       required:
       - default_mode
@@ -6087,6 +6107,7 @@ components:
 
             * `solid` - Сплошное
             * `floating` - Плавающее
+            * `glass` - Стекло
             * `bar` - Нижняя панель
       required:
       - accents
@@ -6319,11 +6340,13 @@ components:
       enum:
       - solid
       - floating
+      - glass
       - bar
       type: string
       description: |-
         * `solid` - Сплошное
         * `floating` - Плавающее
+        * `glass` - Стекло
         * `bar` - Нижняя панель
     ThemePalette:
       type: object

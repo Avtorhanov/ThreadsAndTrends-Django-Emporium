@@ -659,6 +659,7 @@ PANEL_ROUTES = (
     "look/theme",
     "look/panel",
     "staff",
+    "account",
 )
 
 
@@ -777,6 +778,7 @@ def panel_section(orders: list[Order]) -> tuple[str, list[tuple[str, str]]]:
         ("Внешний вид: оформление панели", f"{panel}/look/panel/"),
         ("Сотрудники и права", f"{panel}/staff/"),
         ("Настройки магазина", f"{panel}/settings/"),
+        ("Аккаунт и смена пароля", f"{panel}/account/"),
         ("Вход в панель", f"{panel}/login/"),
     ]
     if first_product:

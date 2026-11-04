@@ -500,10 +500,38 @@ textarea {
   color: var(--nav-ink);
 }
 
+/* Свой аккаунт (email → «Аккаунт»: смена пароля): ссылка в подвале меню. */
 .user-email {
   flex: 1;
   min-width: 0;
+  display: grid;
+  gap: 1px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  color: var(--nav-ink);
+  text-decoration: none;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.user-email:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.user-email.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.user-email-label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.user-email-value {
   overflow: hidden;
+  font-size: 12px;
+  opacity: 0.8;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -548,6 +576,36 @@ textarea {
 
 .filters input[type="search"] {
   flex: 1 1 260px;
+}
+
+/* «Ещё фильтры» — только на телефоне (ниже, @media 720px). */
+.filters-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--control-h);
+  padding: 0 14px;
+  border: 1px solid var(--input-line);
+  border-radius: var(--radius-ctl);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filters-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
 }
 
 .date-range {
@@ -1061,6 +1119,21 @@ a.stat:hover {
     flex: 1 1 100%;
   }
 
+  /* Поиск — во всю ширину, основной фильтр и «Ещё фильтры» — одной строкой. */
+  .filters > select:not(.filters-extra) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .filters-toggle {
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+
+  .filters:not(.is-open) > .filters-extra {
+    display: none;
+  }
+
   .date-filter {
     flex: 1 1 calc(50% - 5px);
   }
@@ -1291,17 +1364,19 @@ a.stat:hover {
 
 .seg-switch {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
   border-radius: var(--radius-ctl);
   background: var(--neutral-bg);
 }
 
+/* Подписи переносятся, а не раздвигают переключатель за край узкого экрана. */
 .seg-switch button {
   min-height: 36px;
-  padding: 0 10px;
-  white-space: nowrap;
+  padding: 4px 6px;
+  line-height: 1.15;
+  text-wrap: balance;
   border: 0;
   border-radius: calc(var(--radius-ctl) - 4px);
   background: transparent;
@@ -1704,6 +1779,16 @@ a.stat:hover {
   accent-color: var(--brand);
 }
 
+/* Отметка строки нажимается по всей площадке 40×40, а не только по квадрату 20 px. */
+.check-hit {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin: -10px;
+  cursor: pointer;
+}
+
 .table tbody tr.is-selected {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
@@ -1851,13 +1936,6 @@ a.stat:hover {
 }
 
 /* Галерея и остатки внутри группы — без своей карточки и заголовка. */
-/* У сохранённого товара «Цена и наличие» (с таблицей вариантов) и «Описание» — во всю ширину:
-   таблице нужно место. Если колонка всё же узкая, таблица прокручивается внутри группы. */
-.pf-groups:has(.pf-embed .table-wrap) > .pf-group:nth-child(n + 3) {
-  grid-column: 1 / -1;
-}
-
-/* Таблица вариантов шире колонки — прокручивается внутри группы, а не вылезает на соседнюю. */
 .pf-group > *,
 .pf-embed {
   min-width: 0;
@@ -1872,6 +1950,181 @@ a.stat:hover {
 
 .pf-embed > .card > h2 {
   display: none;
+}
+
+.pf-embed > .card > p.muted {
+  margin: 0 0 10px;
+}
+
+/* --- Варианты и остатки: одна строка на вариант (размер · артикул · остаток · действие) ---
+   Заголовки колонок — один раз сверху; на узкой карточке артикул уходит второй строкой. */
+.variants {
+  container-type: inline-size;
+  display: grid;
+  gap: 6px;
+}
+
+.variant-head,
+.variant-row {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) 118px 40px;
+  grid-template-areas: "size sku stock act";
+  align-items: center;
+  gap: 6px;
+}
+
+.variant-head {
+  padding: 0 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.variant-head span:nth-child(3) {
+  grid-area: stock;
+  text-align: center;
+}
+
+.variant-row {
+  padding: 6px;
+  border-radius: var(--radius-ctl);
+  background: var(--bg);
+  transition: box-shadow 0.15s;
+}
+
+.variant-row.is-dirty {
+  box-shadow: inset 0 0 0 1.5px var(--brand);
+}
+
+.variant-row input {
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 15px;
+}
+
+.variant-size {
+  grid-area: size;
+  font-weight: 700;
+}
+
+.variant-sku {
+  grid-area: sku;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Новый вариант — пустая строка того же вида, с пунктирной рамкой. */
+.variant-new {
+  background: none;
+  outline: 1.5px dashed var(--input-line);
+  outline-offset: -1.5px;
+}
+
+.stock-input {
+  grid-area: stock;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 34px;
+  align-items: center;
+  height: 40px;
+  border: 1px solid var(--input-line);
+  border-radius: var(--radius-ctl);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.stock-input:focus-within {
+  border-color: var(--brand);
+}
+
+.stock-input input {
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.stock-input input::-webkit-inner-spin-button,
+.stock-input input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.stock-input input:focus-visible {
+  box-shadow: none;
+}
+
+.stock-input button {
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.stock-input button:disabled {
+  color: var(--muted);
+  opacity: 0.45;
+  cursor: default;
+}
+
+.variant-action {
+  grid-area: act;
+  width: 40px;
+  height: 40px;
+}
+
+.variant-action.is-delete {
+  color: var(--muted);
+}
+
+.variant-action.is-delete:hover {
+  color: var(--danger);
+}
+
+.variant-action.is-save,
+.variant-action.is-add {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.variant-action.is-add {
+  background: var(--seg-on-bg);
+  color: var(--seg-on-ink);
+}
+
+@container (max-width: 360px) {
+  .variant-row {
+    grid-template-columns: 64px minmax(0, 1fr) 40px;
+    grid-template-areas:
+      "size stock act"
+      "sku sku sku";
+  }
+
+  .variant-head {
+    display: none;
+  }
+
+  .variant-sku {
+    min-height: 34px;
+    font-size: 14px;
+  }
+
+  .variant-sku::placeholder {
+    font-size: 13px;
+  }
 }
 
 .drop-zone {
@@ -2763,16 +3016,17 @@ a.stat:hover {
   font-size: 13px;
 }
 
-/* Подписи не переносятся: колонки по содержимому, остаток делится поровну. */
+/* Три варианта поровну; длинная подпись («Как в системе») переносится на узком экране. */
 .seg-switch-3 {
-  grid-template-columns: repeat(3, minmax(max-content, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .seg-switch button {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 2px 6px;
 }
 
 .corner-mark {
@@ -2884,9 +3138,14 @@ a.stat:hover {
   padding: 6px 12px;
 }
 
-.theme-preview-nav-floating {
-  margin: 2px 0 0;
+.theme-preview-nav-floating,
+.theme-preview-nav-glass {
+  margin: 2px -4px -6px;
   padding: 6px;
+}
+
+.theme-preview-nav-glass {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5), 0 6px 14px -6px rgba(0, 0, 0, 0.35);
 }
 
 .theme-preview-nav i {
@@ -2901,7 +3160,7 @@ a.stat:hover {
   flex: 1;
 }
 
-/* Нижнее меню витрины: три варианта со схемой. */
+/* Нижнее меню витрины: четыре варианта со схемой. */
 .nav-options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
@@ -2964,9 +3223,24 @@ a.stat:hover {
   background: var(--accent);
 }
 
-.nav-sketch.is-floating .nav-sketch-track {
-  margin: 0 8px 8px;
+/* Плавающее и «Стекло» — капсула у самого нижнего края, полупрозрачная. */
+.nav-sketch.is-floating .nav-sketch-track,
+.nav-sketch.is-glass .nav-sketch-track {
+  margin: 0 8px 4px;
   border-radius: 9px;
+}
+
+.nav-sketch.is-floating .nav-sketch-track {
+  background: rgba(19, 38, 28, 0.78);
+}
+
+.nav-sketch.is-glass .nav-sketch-track {
+  background: color-mix(in srgb, var(--card) 55%, transparent);
+  box-shadow: inset 0 0 0 1px var(--border), 0 4px 10px -4px rgba(0, 0, 0, 0.3);
+}
+
+.nav-sketch.is-glass .nav-sketch-track i {
+  background: var(--neutral-bg);
 }
 
 /* «Нижняя панель»: в цвет темы, все вкладки одинаковые (подписи под значками). */
@@ -3702,16 +3976,83 @@ a.stat:hover {
 
   .table td.check-cell {
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: 2px;
+    right: 2px;
     z-index: 1;
     width: auto;
-    padding: 6px;
+    padding: 0;
     border: 0;
+  }
+
+  .table td.check-cell .check-hit {
+    width: 44px;
+    height: 44px;
+    margin: 0;
   }
 
   .table td.check-cell + td {
     padding-right: 36px;
+  }
+
+  /* Заказы — плотная карточка без подписей: номер; статус и сумма; дата и доставка; получатель. */
+  .table-orders tbody tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 12px;
+    row-gap: 4px;
+    padding: 12px 14px;
+  }
+
+  .table.table-orders td {
+    padding: 0;
+    border: 0;
+    text-align: left;
+  }
+
+  .table.table-orders td[data-label]::before {
+    content: none;
+  }
+
+  .table.table-orders td:nth-child(2) {
+    grid-column: 1 / -1;
+    padding-right: 44px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .table.table-orders td:nth-child(4) {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: center;
+  }
+
+  .table.table-orders td:nth-child(7) {
+    grid-column: 2;
+    grid-row: 2;
+    text-align: right;
+    font-weight: 700;
+  }
+
+  .table.table-orders td:nth-child(3) {
+    grid-column: 1;
+    grid-row: 3;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .table.table-orders td:nth-child(5) {
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  .table.table-orders td:nth-child(6) {
+    grid-column: 2;
+    grid-row: 3 / 5;
+    align-self: start;
+    text-align: right;
+  }
+
+  .table.table-orders td.empty {
+    grid-column: 1 / -1;
   }
 
   .table tr:has(> td.thumb-cell) {
@@ -3761,12 +4102,78 @@ a.stat:hover {
 }
 
 /* --- Вход: ссылка в магазин (вышел из панели — можно смотреть магазин гостем) --- */
-.login-store {
-  justify-self: center;
+.login-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.login-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
   color: var(--muted);
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.login-links a:first-child {
+  color: var(--brand);
+}
+
+/* --- Аккаунт сотрудника --- */
+.account-page {
+  max-width: 560px;
+}
+
+.account-facts {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.account-facts div {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.account-facts dt {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.account-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+/* Пароль с кнопкой «показать» внутри поля. */
+.password-input {
+  position: relative;
+  display: grid;
+}
+
+.password-input input {
+  padding-right: calc(var(--control-h) + 4px);
+}
+
+.password-input .icon-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: var(--muted);
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
 }
 
 /* --- Телефон: шапка не отрывается, «потяните, чтобы обновить» --- */
@@ -3805,8 +4212,10 @@ a.stat:hover {
     padding-top: var(--mobilebar-h);
   }
 
-  /* Мини-панель массовых действий прилипает под шапкой, а не уезжает под неё. */
-  .bulk-bar {
+  /* Мини-панель массовых действий и строка «Сохранить» формы товара прилипают под шапкой,
+     а не уезжают под неё. */
+  .bulk-bar,
+  .pf-bar {
     top: calc(var(--mobilebar-h) + 8px);
     z-index: 15;
   }

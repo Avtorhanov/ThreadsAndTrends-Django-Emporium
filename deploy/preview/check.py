@@ -114,6 +114,19 @@ def main(site: Path, shots: Path) -> None:
             page.goto(origin + path, wait_until="load")
         print(f"Страниц проверено: {len(data['pages']) + 1}")
 
+        # 1а. Прокрутка: вниз — нижнее меню уезжает и шапка сворачивается, вверх посреди ленты —
+        # оба меню возвращаются (шапка — с категориями); у начала страницы шапка без стекла.
+        page = page_for(IPHONE)
+        page.goto(origin + BASE + "/", wait_until="load")
+        page.mouse.wheel(0, 900)
+        page.wait_for_function("document.documentElement.dataset.bars === 'hidden'")
+        assert page.locator("[data-header].is-compact").count() == 1
+        page.mouse.wheel(0, -200)
+        page.wait_for_function("!document.documentElement.dataset.bars")
+        assert page.locator("[data-header].is-revealed:not(.is-compact)").count() == 1
+        page.screenshot(path=shots / "scroll-up-bars-iphone.png")
+        print("Меню при прокрутке: прячутся вниз, возвращаются вверх: ок")
+
         # 2. Покупатель: товар → корзина (+1) → вход → оформление → страница заказа.
         page = page_for(IPHONE, pages_404=True)
         check = data["check"]
@@ -220,6 +233,7 @@ def panel_shots(site: Path) -> list[tuple[str, str]]:
         ("look-home", "/panel/look/home/"),
         ("look-panel", "/panel/look/panel/"),
         ("settings", "/panel/settings/"),
+        ("account", "/panel/account/"),
         ("login", "/panel/login/"),
     ]
 
@@ -236,6 +250,42 @@ def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[s
     page.wait_for_selector("main h1:has-text('Сводка')")
     page.screenshot(path=shots / "panel-from-site-login-iphone.png")
     print("Вход администратора с витрины → панель: ок")
+
+    # Пароль сотрудника: смена в «Аккаунте» → выход → вход с новым; «Забыли пароль?» на входе
+    # панели → сброс кодом на сайте → снова в панели. В конце пароль демо возвращается.
+    admin = data["admin"]
+    changed = admin["password"] + "-2"
+    page.goto(origin + BASE + "/panel/account/", wait_until="load")
+    page.wait_for_selector("main h1:has-text('Аккаунт')")
+    page.fill("input[autocomplete='current-password']", admin["password"])
+    page.locator("input[autocomplete='new-password']").nth(0).fill(changed)
+    page.locator("input[autocomplete='new-password']").nth(1).fill(changed)
+    page.click("main form button[type='submit']")
+    page.wait_for_selector(".note-success:has-text('Пароль изменён')")
+    page.screenshot(path=shots / "panel-account-iphone.png")
+    page.evaluate("localStorage.removeItem('didi-preview-admin')")
+    page.goto(origin + BASE + "/panel/login/", wait_until="load")
+    page.fill(".login-card input[type='email']", admin["email"])
+    page.fill(".login-card input[type='password']", admin["password"])
+    page.click(".login-card button[type='submit']")
+    page.wait_for_selector(".login-card .alert")  # старый пароль больше не подходит
+    page.fill(".login-card input[type='password']", changed)
+    page.click(".login-card button[type='submit']")
+    page.wait_for_url(f"**{BASE}/panel/")
+    page.evaluate("localStorage.removeItem('didi-preview-admin')")
+    page.goto(origin + BASE + "/panel/login/", wait_until="load")
+    page.fill(".login-card input[type='email']", admin["email"])
+    page.click(".login-links a:has-text('Забыли пароль?')")
+    page.wait_for_url(f"**{BASE}/password-reset/**")
+    assert page.input_value('main input[name="email"]') == admin["email"]
+    page.click('main form[method="post"] button[type="submit"]')
+    page.wait_for_url(f"**{BASE}/password-reset/confirm/**")
+    page.fill('main input[name="code"]', "123456")
+    page.fill('main input[name="new_password"]', admin["password"])
+    page.click('main form[method="post"] button[type="submit"]')
+    page.wait_for_url(f"**{BASE}/panel/")
+    page.wait_for_selector("main h1:has-text('Сводка')")
+    print("Пароль сотрудника: смена в панели и сброс кодом: ок")
 
     screens = panel_shots(site)
     for theme in ("light", "dark"):

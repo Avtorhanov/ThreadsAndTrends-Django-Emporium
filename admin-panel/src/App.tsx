@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { Layout } from "./components/Layout";
 import { LookSection } from "./components/LookSection";
+import { AccountPage } from "./pages/AccountPage";
 import { ArticleEditPage } from "./pages/ArticleEditPage";
 import { ArticlesPage } from "./pages/ArticlesPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
@@ -82,6 +83,7 @@ export function App() {
               <Route path="/theme" element={<Navigate to="/look/theme" replace />} />
               <Route path="/staff" element={<StaffPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/account" element={<AccountPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

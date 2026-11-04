@@ -64,9 +64,11 @@
   var text = cookie("text_size") || shop.text || "";
   if (text === "m" || text === "l") root.setAttribute("data-text", text);
   else if (text === "s") root.removeAttribute("data-text");
-  // Нижнее меню: «Сплошное» (по умолчанию) — без атрибута.
-  if (shop.nav && shop.nav !== "solid") root.setAttribute("data-nav", shop.nav);
-  else if (shop.nav) root.removeAttribute("data-nav");
+  // Нижнее меню: выбор покупателя (cookie), иначе — что задал администратор; «Сплошное» — без атрибута.
+  var nav = cookie("nav");
+  if (["solid", "floating", "glass", "bar"].indexOf(nav) < 0) nav = shop.nav || "";
+  if (nav && nav !== "solid") root.setAttribute("data-nav", nav);
+  else if (nav) root.removeAttribute("data-nav");
 
   if (!theme && palette === "lime") return;
   // Скрипт стоит после стилей в <head> — переменные палитры уже доступны.

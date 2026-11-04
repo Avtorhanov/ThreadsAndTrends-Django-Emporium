@@ -58,6 +58,27 @@ def test_look_page_for_guest(client, db):
     assert reverse("web:profile_look") in client.get(reverse("web:profile")).content.decode()
 
 
+def test_customer_chooses_bottom_menu(client, db):
+    html = client.get(reverse("web:profile_look")).content.decode()
+    for value in ("solid", "floating", "glass", "bar"):
+        assert f'name="nav" value="{value}"' in html
+    assert 'name="nav" value="solid" checked' in html  # вид магазина по умолчанию
+
+    response = client.post(reverse("web:theme"), {"nav": "glass", "next": "/cart/"})
+    assert response.status_code == 302 and response.cookies["nav"].value == "glass"
+    client.cookies["nav"] = "glass"
+    html = client.get("/").content.decode()
+    assert '<html lang="ru" data-nav="glass">' in html
+    look_html = client.get(reverse("web:profile_look")).content.decode()
+    assert 'name="nav" value="glass" checked' in look_html
+
+    # Чужое значение не пишется и не попадает в разметку.
+    response = client.post(reverse("web:theme"), {"nav": "<side>"})
+    assert "nav" not in response.cookies
+    client.cookies["nav"] = "side"
+    assert "data-nav" not in client.get("/").content.decode()
+
+
 def test_profile_data_requires_login(client, db):
     response = client.get(reverse("web:profile_data"))
     assert response.status_code == 302 and response["Location"].startswith(reverse("web:login"))

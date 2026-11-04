@@ -139,6 +139,7 @@
     return map;
   }
 
+  var shownCount = null;
   function setBadges() {
     var count = sim.cartCount();
     ["cart-badge-top", "cart-badge-tab"].forEach(function (id) {
@@ -147,6 +148,9 @@
       badge.textContent = count > 99 ? "99+" : String(count);
       badge.hidden = !count;
     });
+    // Как htmx-обмен счётчика на сайте: корзина изменилась — site.js показывает меню.
+    if (shownCount !== null && shownCount !== count) document.dispatchEvent(new CustomEvent("didi:cart-changed"));
+    shownCount = count;
   }
 
   function renderCats(activeSlug) {
@@ -225,7 +229,8 @@
       palette: palette,
       accent: cookieValue("accent"),
       radius: cookieValue("radius") || t.default_radius,
-      text: cookieValue("text_size") || t.default_text || "s"
+      text: cookieValue("text_size") || t.default_text || "s",
+      nav: cookieValue("nav") || t.nav_style || "solid"
     };
     Object.keys(current).forEach(function (name) {
       if (!current[name]) return;
@@ -759,8 +764,8 @@
     deliveryBox.innerHTML = options.map(function (o) {
       return '<label class="choice"><input type="radio" name="delivery_method" value="' + o.method + '" data-cost="' + o.cost_kopecks + '"' + (o.method === picked ? " checked" : "") + " required>" +
         '<span class="choice__body"><span class="choice__title">' + esc(o.title) + "</span>" +
-        (o.address ? '<span class="choice__hint">' + esc(o.address) + "</span>" : '<span class="choice__hint">' + (o.cost_kopecks ? "Бесплатно от " : "Бесплатно — заказ от ") + money(s.free_from) + "</span>") +
-        '</span><span class="choice__price">' + money(o.cost_kopecks) + "</span></label>";
+        (o.address ? '<span class="choice__hint">' + esc(o.address) + "</span>" : '<span class="choice__hint">' + (o.cost_kopecks ? "Бесплатно от " : "Заказ от ") + money(s.free_from) + "</span>") +
+        '</span><span class="choice__price">' + (o.cost_kopecks ? money(o.cost_kopecks) : "Бесплатно") + "</span></label>";
     }).join("");
     form.querySelectorAll('input[name="payment_method"]').forEach(function (input) {
       var allowed = input.value === "online" ? s.online : s.cash;
@@ -1183,15 +1188,15 @@
       if (!/^\d{6}$/.test(value("code").trim())) errs.code = "Код — 6 цифр из письма (в демо подойдут любые).";
       if (value("new_password").length < 8) errs.new_password = "Пароль — не короче 8 символов.";
       if (Object.keys(errs).length) return showErrors(form, errs);
-      var who = sim.db().customers.filter(function (c) { return c.email === value("email").trim().toLowerCase(); })[0];
-      if (who && who.status === "active") {
-        who.password = value("new_password");
-        sim.login(who.email, who.password);
-        sim.updateCustomer({ password: value("new_password") });
-        flash("Пароль изменён, вы вошли.");
-        return go(ME + "/profile/");
-      }
-      return showErrors(form, { code: "Неверный или устаревший код." });
+      var resetEmail = value("email").trim().toLowerCase();
+      var reset = sim.resetPassword(resetEmail, value("new_password"));
+      if (reset.errors) return showErrors(form, reset.errors);
+      // Сотрудник после сброса — сразу в панели (как web.views.account.password_reset_confirm).
+      if (reset.admin) return go(BASE + "/panel/");
+      sim.login(resetEmail, value("new_password"));
+      sim.updateCustomer({ password: value("new_password") });
+      flash("Пароль изменён, вы вошли.");
+      return go(ME + "/profile/");
     }
     if (action === "/profile/data/") {
       sim.updateCustomer({ first_name: value("first_name"), last_name: value("last_name") });
@@ -1354,7 +1359,8 @@
     else if (HERE === "/profile/data/" && TREE === "me") renderProfileData();
     else if (HERE === "/contacts/") renderContacts();
     else if (/^\/articles\/[^/]+\/$/.test(HERE)) renderArticle();
-    if (HERE === "/password-reset/confirm/") {
+    // Email из адреса: «Забыли пароль?» на входе панели и шаг «код» сброса.
+    if (HERE === "/password-reset/confirm/" || HERE === "/password-reset/") {
       var email = document.querySelector('[name="email"]');
       if (email && query.get("email")) email.value = query.get("email");
     }

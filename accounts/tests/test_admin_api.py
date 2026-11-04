@@ -2,7 +2,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-from .conftest import PASSWORD, login
+from .conftest import NEW_PASSWORD, PASSWORD, login
 
 User = get_user_model()
 
@@ -188,3 +188,59 @@ def test_customers_have_orders_count(admin_client, customer, other_customer):
     assert admin_client.get(f"{CUSTOMERS}{customer.pk}/").json()["orders_count"] == 2
     blocked = admin_client.post(f"{CUSTOMERS}{customer.pk}/block/").json()
     assert blocked["orders_count"] == 2
+
+
+# --- Смена своего пароля в панели ---
+
+PASSWORD_CHANGE = "/api/v1/admin/auth/password/change/"
+
+
+def test_admin_changes_own_password_and_keeps_session(staff):
+    client, token = csrf_client()
+    assert admin_login(client, token, staff.email).status_code == 200
+    token = client.cookies["csrftoken"].value
+    other, other_token = csrf_client()  # второй браузер того же сотрудника
+    assert admin_login(other, other_token, staff.email).status_code == 200
+    app_refresh = login(APIClient(), staff.email).json()["refresh"]  # и приложение
+
+    response = client.post(
+        PASSWORD_CHANGE,
+        {"old_password": PASSWORD, "new_password": NEW_PASSWORD},
+        format="json",
+        HTTP_X_CSRFTOKEN=token,
+    )
+    assert response.status_code == 204, response.content
+    staff.refresh_from_db()
+    assert staff.check_password(NEW_PASSWORD)
+    # Эта сессия осталась, второй браузер вышел, refresh приложения отозван.
+    assert client.get("/api/v1/admin/auth/me/").status_code == 200
+    assert other.get("/api/v1/admin/auth/me/").status_code == 401
+    refreshed = APIClient().post("/api/v1/auth/refresh/", {"refresh": app_refresh}, format="json")
+    assert refreshed.status_code == 401
+
+
+def test_admin_password_change_checks_old_and_new_password(admin_client, staff):
+    wrong = admin_client.post(
+        PASSWORD_CHANGE, {"old_password": "wrong", "new_password": NEW_PASSWORD}, format="json"
+    )
+    assert wrong.status_code == 400 and "old_password" in wrong.json()
+    weak = admin_client.post(
+        PASSWORD_CHANGE, {"old_password": PASSWORD, "new_password": "123"}, format="json"
+    )
+    assert weak.status_code == 400 and "new_password" in weak.json()
+    staff.refresh_from_db()
+    assert staff.check_password(PASSWORD)
+
+
+def test_admin_password_change_requires_staff_session_and_csrf(customer, staff):
+    body = {"old_password": PASSWORD, "new_password": NEW_PASSWORD}
+    assert APIClient().post(PASSWORD_CHANGE, body, format="json").status_code == 401
+    shopper = APIClient()
+    shopper.force_login(customer)
+    assert shopper.post(PASSWORD_CHANGE, body, format="json").status_code == 403
+    no_csrf = APIClient(enforce_csrf_checks=True)
+    no_csrf.force_login(staff)
+    assert no_csrf.post(PASSWORD_CHANGE, body, format="json").status_code == 403
+    customer.refresh_from_db()
+    staff.refresh_from_db()
+    assert customer.check_password(PASSWORD) and staff.check_password(PASSWORD)

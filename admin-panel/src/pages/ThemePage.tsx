@@ -210,7 +210,10 @@ export function ThemePage() {
 
             <div className="card form-card">
               <h2>Нижнее меню витрины</h2>
-              <p className="muted small">Вкладки «Каталог · Контакты · Корзина · Профиль» на телефоне.</p>
+              <p className="muted small">
+                Вкладки «Каталог · Контакты · Корзина · Профиль» на телефоне. Это вид для нового посетителя:
+                покупатель может выбрать свой в профиле → «Оформление».
+              </p>
               <div className="nav-options" role="radiogroup" aria-label="Вид нижнего меню">
                 {(Object.keys(NAV_LABELS) as ThemeNav[]).map((value) => (
                   <button
@@ -315,6 +318,15 @@ function NavSketch({ kind }: { kind: ThemeNav }) {
   );
 }
 
+/** Фон меню в предпросмотре — как на витрине (site.css, data-nav). */
+function navBackground(nav: ThemeNav, dark: boolean, surface: string): string {
+  const navColor = dark ? "#050A07" : "#13261C";
+  if (nav === "bar") return surface;
+  if (nav === "glass") return dark ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.55)";
+  if (nav === "floating") return dark ? "rgba(5,10,7,0.78)" : "rgba(19,38,28,0.78)";
+  return navColor;
+}
+
 function ThemePreview({
   palette,
   dark,
@@ -356,17 +368,21 @@ function ThemePreview({
       </div>
       <span
         className={`theme-preview-nav theme-preview-nav-${nav}`}
-        style={{
-          background: nav === "bar" ? surface : dark ? "#050A07" : "#13261C",
-          borderRadius: nav === "floating" ? r(16) : 0,
-        }}
+        style={{ background: navBackground(nav, dark, surface), borderRadius: nav === "floating" || nav === "glass" ? r(16) : 0 }}
         aria-hidden="true"
       >
         {[0, 1, 2, 3].map((index) => (
           <i
             key={index}
             style={{
-              background: index === 0 ? palette.accent : nav === "bar" ? (dark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.14)") : "rgba(255,255,255,0.22)",
+              background:
+                index === 0
+                  ? palette.accent
+                  : nav === "bar" || nav === "glass"
+                    ? dark
+                      ? "rgba(255,255,255,0.2)"
+                      : "rgba(0,0,0,0.14)"
+                    : "rgba(255,255,255,0.22)",
               borderRadius: r(8),
             }}
           />

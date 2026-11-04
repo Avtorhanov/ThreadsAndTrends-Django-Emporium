@@ -32,7 +32,7 @@ function sectionFor(pathname: string) {
 }
 
 // Экраны с формами: жест «потянуть, чтобы обновить» сбросил бы несохранённые правки.
-const FORM_SCREEN = /^\/(catalog\/products|content\/articles)\/[^/]+$|^\/(settings|look)(\/|$)/;
+const FORM_SCREEN = /^\/(catalog\/products|content\/articles)\/[^/]+$|^\/(settings|look|account)(\/|$)/;
 
 const THEME_ICONS: Record<ThemeChoice, IconName> = { system: "system", light: "sun", dark: "moon" };
 
@@ -165,9 +165,11 @@ export function Layout() {
         <div className="sidebar-foot">
           <ThemeSwitch />
           <div className="sidebar-user">
-            <span className="muted small user-email" title={user?.email}>
-              {user?.email}
-            </span>
+            {/* Свой аккаунт: email и смена пароля. */}
+            <NavLink to="/account" className="user-email" title="Аккаунт и пароль">
+              <span className="user-email-label">Аккаунт</span>
+              <span className="user-email-value">{user?.email}</span>
+            </NavLink>
             <button
               type="button"
               className="icon-button"

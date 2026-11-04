@@ -12,6 +12,7 @@ import {
   STATUS_LABELS,
   ordersService,
 } from "../api/orders";
+import { FiltersToggle } from "../components/FiltersToggle";
 import { OrderStatusBadge } from "../components/orders/OrderStatusBadge";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useOrders } from "../hooks/useOrders";
@@ -40,6 +41,7 @@ export function OrdersPage() {
   const [delivery, setDelivery] = useState<DeliveryMethod | "">("");
   const [createdFrom, setCreatedFrom] = useState("");
   const [createdTo, setCreatedTo] = useState("");
+  const [moreFilters, setMoreFilters] = useState(false);
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebouncedValue(search.trim());
 
@@ -137,7 +139,7 @@ export function OrdersPage() {
         </p>
       ) : null}
 
-      <div className="filters">
+      <div className={moreFilters ? "filters is-open" : "filters"}>
         <input
           type="search"
           placeholder="Номер, email, имя или телефон"
@@ -156,7 +158,14 @@ export function OrdersPage() {
             </option>
           ))}
         </select>
+        <FiltersToggle
+          open={moreFilters}
+          active={[delivery, payment, createdFrom, createdTo].filter(Boolean).length}
+          onToggle={() => setMoreFilters((value) => !value)}
+        />
         <select
+          className="filters-extra"
+          aria-label="Доставка"
           value={delivery}
           onChange={(event) => filter(setDelivery)(event.target.value as DeliveryMethod | "")}
         >
@@ -168,6 +177,8 @@ export function OrdersPage() {
           ))}
         </select>
         <select
+          className="filters-extra"
+          aria-label="Оплата"
           value={payment}
           onChange={(event) => filter(setPayment)(event.target.value as PaymentMethod | "")}
         >
@@ -179,7 +190,7 @@ export function OrdersPage() {
           ))}
         </select>
         {/* Период — одним блоком: «с» и «по» не разъезжаются по строкам. */}
-        <span className="date-range">
+        <span className="date-range filters-extra">
           <label className="date-filter">
             с
             <input
@@ -245,7 +256,7 @@ export function OrdersPage() {
         </div>
       ) : null}
 
-      <Table loading={loading}>
+      <Table loading={loading} className="table-orders">
         <thead>
           <tr>
             <th className="check-cell">
@@ -268,12 +279,14 @@ export function OrdersPage() {
           {rows.map((order) => (
             <tr key={order.id} className={selected.has(order.id) ? "is-selected" : undefined}>
               <td className="check-cell">
-                <input
-                  type="checkbox"
-                  aria-label={`Отметить заказ ${order.number}`}
-                  checked={selected.has(order.id)}
-                  onChange={() => toggle(order.id)}
-                />
+                <label className="check-hit">
+                  <input
+                    type="checkbox"
+                    aria-label={`Отметить заказ ${order.number}`}
+                    checked={selected.has(order.id)}
+                    onChange={() => toggle(order.id)}
+                  />
+                </label>
               </td>
               <td>
                 <Link to={`/orders/${order.id}`}>{order.number}</Link>

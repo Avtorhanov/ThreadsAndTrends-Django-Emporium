@@ -160,15 +160,22 @@ def remove_avatar(user: User) -> User:
     return user
 
 
-def change_password(user: User, *, old_password: str, new_password: str) -> dict[str, str]:
-    """Смена пароля со старым паролем. Остальные устройства разлогиниваются,
-    текущему возвращается новая пара токенов."""
+def update_password(user: User, *, old_password: str, new_password: str) -> None:
+    """Смена пароля со старым паролем: приложение на всех устройствах выходит (refresh-токены
+    отозваны), сессии сайта и панели с прежним паролем перестают действовать. Текущую сессию
+    вызывающий сохраняет сам (update_session_auth_hash)."""
     if not user.check_password(old_password):
         raise ValidationError({"old_password": "Неверный текущий пароль."})
     _validate_new_password(new_password, user, field="new_password")
     user.set_password(new_password)
     user.save(update_fields=["password"])
     revoke_all_refresh_tokens(user)
+
+
+def change_password(user: User, *, old_password: str, new_password: str) -> dict[str, str]:
+    """Смена пароля из приложения: остальные устройства разлогиниваются, текущему —
+    новая пара токенов."""
+    update_password(user, old_password=old_password, new_password=new_password)
     return issue_tokens(user)
 
 

@@ -5,7 +5,7 @@ JWT мобильного клиента сюда не принимается: у
 к управлению магазином.
 """
 
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.db.models import Count, Q
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
@@ -22,6 +22,7 @@ from accounts.models import User
 from core.api.mixins import AdminAPIMixin
 
 from .serializers import (
+    ChangePasswordSerializer,
     CustomerSerializer,
     CustomerStatus,
     LoginSerializer,
@@ -30,7 +31,7 @@ from .serializers import (
     StaffUpdateSerializer,
     StaffUserSerializer,
 )
-from .throttles import LoginEmailThrottle, LoginIPThrottle
+from .throttles import LoginEmailThrottle, LoginIPThrottle, SensitiveActionThrottle
 
 TAG = "admin"
 
@@ -83,6 +84,28 @@ class AdminMeView(AdminAPIMixin, APIView):
     @extend_schema(responses={200: StaffUserSerializer}, operation_id="admin_me")
     def get(self, request):
         return Response(StaffUserSerializer(request.user).data)
+
+
+@extend_schema(tags=[TAG])
+class AdminPasswordChangeView(AdminAPIMixin, APIView):
+    """Смена своего пароля в панели — любому сотруднику, без прав на разделы. Лимит попыток
+    общий со сменой пароля на сайте и в приложении."""
+
+    throttle_classes = [SensitiveActionThrottle]
+
+    @extend_schema(
+        request=ChangePasswordSerializer,
+        responses={204: None},
+        operation_id="admin_password_change",
+        description="Нужен текущий пароль. Эта сессия остаётся, остальные браузеры и приложение "
+        "выходят.",
+    )
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        services.update_password(request.user, **serializer.validated_data)
+        update_session_auth_hash(request._request, request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(tags=[TAG])

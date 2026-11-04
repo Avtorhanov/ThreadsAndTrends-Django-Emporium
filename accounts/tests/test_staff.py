@@ -23,6 +23,7 @@ AUTH_VIEWS = {
     admin_views.AdminLoginView,
     admin_views.AdminLogoutView,
     admin_views.AdminMeView,
+    admin_views.AdminPasswordChangeView,  # свой пароль — любому сотруднику
 }
 
 

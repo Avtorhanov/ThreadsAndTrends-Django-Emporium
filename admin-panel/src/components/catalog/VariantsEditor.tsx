@@ -2,7 +2,7 @@ import { type FormEvent, useState } from "react";
 
 import { type Variant, variantsService } from "../../api/catalog";
 import { ApiError } from "../../api/errors";
-import { Table } from "../Table";
+import { Icon } from "../Icon";
 
 type Props = {
   productId: number;
@@ -13,6 +13,30 @@ type Props = {
 function message(error: unknown): string {
   if (!(error instanceof ApiError)) return "Действие не выполнено.";
   return Object.values(error.fieldErrors)[0]?.[0] ?? error.message;
+}
+
+/** Остаток: поле и «−/+» по краям — на телефоне не нужно вызывать цифровую клавиатуру ради ±1. */
+function StockInput({ value, onChange, label }: { value: string; onChange: (value: string) => void; label: string }) {
+  const number = Number(value);
+  const step = (delta: number) => onChange(String(Math.max(0, (Number.isInteger(number) ? number : 0) + delta)));
+  return (
+    <span className="stock-input">
+      <button type="button" aria-label={`${label}: меньше`} disabled={!(number > 0)} onClick={() => step(-1)}>
+        −
+      </button>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={0}
+        value={value}
+        aria-label={label}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <button type="button" aria-label={`${label}: больше`} onClick={() => step(1)}>
+        +
+      </button>
+    </span>
+  );
 }
 
 function VariantRow({ variant, busy, onSave, onDelete }: {
@@ -28,38 +52,55 @@ function VariantRow({ variant, busy, onSave, onDelete }: {
   const valid = Number.isInteger(stockNumber) && stockNumber >= 0;
   const dirty =
     size !== (variant.size ?? "") || sku !== (variant.sku ?? "") || stockNumber !== (variant.stock ?? 0);
+  const title = variant.size || "Без размера";
 
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (dirty && valid) onSave({ size, sku, stock: stockNumber });
+  }
+
+  // Строка — своя форма: Enter в любом поле сохраняет только её.
   return (
-    <tr>
-      <td>
-        <input value={size} placeholder="Без размера" maxLength={50} onChange={(e) => setSize(e.target.value)} />
-      </td>
-      <td>
-        <input value={sku} maxLength={64} onChange={(e) => setSku(e.target.value)} />
-      </td>
-      <td>
-        <input
-          className="input-narrow"
-          type="number"
-          min={0}
-          value={stock}
-          onChange={(e) => setStock(e.target.value)}
-        />
-      </td>
-      <td className="actions">
+    <form className={dirty ? "variant-row is-dirty" : "variant-row"} onSubmit={submit}>
+      <input
+        className="variant-size"
+        value={size}
+        placeholder="Без размера"
+        maxLength={50}
+        aria-label={`Размер: ${title}`}
+        onChange={(e) => setSize(e.target.value)}
+      />
+      <input
+        className="variant-sku"
+        value={sku}
+        maxLength={64}
+        aria-label={`Артикул: ${title}`}
+        onChange={(e) => setSku(e.target.value)}
+      />
+      <StockInput value={stock} onChange={setStock} label={`Остаток: ${title}`} />
+      {dirty ? (
+        <button
+          type="submit"
+          className="icon-button variant-action is-save"
+          disabled={busy || !valid}
+          aria-label={`Сохранить ${title}`}
+          title="Сохранить"
+        >
+          <Icon name="check" size={18} />
+        </button>
+      ) : (
         <button
           type="button"
-          className="button button-ghost"
-          disabled={busy || !dirty || !valid}
-          onClick={() => onSave({ size, sku, stock: stockNumber })}
+          className="icon-button variant-action is-delete"
+          disabled={busy}
+          aria-label={`Удалить ${title}`}
+          title="Удалить"
+          onClick={onDelete}
         >
-          Сохранить
+          <Icon name="trash" size={18} />
         </button>
-        <button type="button" className="button button-danger" disabled={busy} onClick={onDelete}>
-          Удалить
-        </button>
-      </td>
-    </tr>
+      )}
+    </form>
   );
 }
 
@@ -69,6 +110,7 @@ export function VariantsEditor({ productId, variants, onChanged }: Props) {
   const [size, setSize] = useState("");
   const [sku, setSku] = useState("");
   const [stock, setStock] = useState("0");
+  const single = variants.length === 1 && !variants[0]?.size;
 
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
@@ -98,50 +140,63 @@ export function VariantsEditor({ productId, variants, onChanged }: Props) {
   }
 
   return (
-    <div className="card">
+    <div className="card variants-card">
       <h2>Варианты и остатки</h2>
-      <p className="muted">
-        Товар без размеров — один вариант «Без размера». Чтобы добавить размеры, сначала укажите размер у него.
+      <p className="muted small">
+        {single
+          ? "Товар без размеров — один вариант «Без размера». Чтобы добавить размеры, сначала впишите размер ему."
+          : "Изменения строки сохраняет ✓ справа — отдельно от кнопки «Сохранить» товара."}
       </p>
       {error ? <p className="alert">{error}</p> : null}
-      <Table loading={busy}>
-        <thead>
-          <tr>
-            <th>Размер</th>
-            <th>Артикул</th>
-            <th>Остаток</th>
-            <th aria-label="Действия" />
-          </tr>
-        </thead>
-        <tbody>
-          {variants.map((variant) => (
-            <VariantRow
-              // Ключ с версией данных: после сохранения строка инициализируется заново.
-              key={`${variant.id}:${variant.size}:${variant.sku}:${variant.stock}`}
-              variant={variant}
-              busy={busy}
-              onSave={(patch) => void run(() => variantsService.update(variant.id, patch))}
-              onDelete={() => {
-                if (window.confirm("Удалить вариант?")) void run(() => variantsService.remove(variant.id));
-              }}
-            />
-          ))}
-        </tbody>
-        </Table>
-      <form className="filters inline-form" onSubmit={add}>
-        <input placeholder="Размер" value={size} maxLength={50} onChange={(e) => setSize(e.target.value)} />
-        <input placeholder="Артикул (необязательно)" value={sku} maxLength={64} onChange={(e) => setSku(e.target.value)} />
-        <input
-          className="input-narrow"
-          type="number"
-          min={0}
-          value={stock}
-          onChange={(e) => setStock(e.target.value)}
-        />
-        <button type="submit" className="button button-ghost" disabled={busy}>
-          Добавить вариант
-        </button>
-      </form>
+      <div className={busy ? "variants is-loading" : "variants"}>
+        <div className="variant-head" aria-hidden="true">
+          <span>Размер</span>
+          <span>Артикул</span>
+          <span>Остаток</span>
+        </div>
+        {variants.map((variant) => (
+          <VariantRow
+            // Ключ с версией данных: после сохранения строка инициализируется заново.
+            key={`${variant.id}:${variant.size}:${variant.sku}:${variant.stock}`}
+            variant={variant}
+            busy={busy}
+            onSave={(patch) => void run(() => variantsService.update(variant.id, patch))}
+            onDelete={() => {
+              if (window.confirm(`Удалить вариант «${variant.size || "Без размера"}»?`)) {
+                void run(() => variantsService.remove(variant.id));
+              }
+            }}
+          />
+        ))}
+        <form className="variant-row variant-new" onSubmit={add}>
+          <input
+            className="variant-size"
+            placeholder="Размер"
+            value={size}
+            maxLength={50}
+            aria-label="Размер нового варианта"
+            onChange={(e) => setSize(e.target.value)}
+          />
+          <input
+            className="variant-sku"
+            placeholder="Артикул — сам"
+            value={sku}
+            maxLength={64}
+            aria-label="Артикул нового варианта (необязательно)"
+            onChange={(e) => setSku(e.target.value)}
+          />
+          <StockInput value={stock} onChange={setStock} label="Остаток нового варианта" />
+          <button
+            type="submit"
+            className="icon-button variant-action is-add"
+            disabled={busy}
+            aria-label="Добавить вариант"
+            title="Добавить вариант"
+          >
+            <Icon name="plus" size={18} />
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

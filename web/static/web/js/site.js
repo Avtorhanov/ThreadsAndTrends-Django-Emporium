@@ -177,7 +177,7 @@
     });
   });
 
-  // --- Шапка: сворачивание с гистерезисом 24/8 px (как в приложении) ---
+  // --- Шапка: свёрнута после 24 px, у начала страницы (< 8 px) — развёрнута ---
   var header = document.querySelector("[data-header]");
   var quick = document.querySelector("[data-quick]");
   var drop = document.querySelector("[data-drop]");
@@ -203,22 +203,73 @@
     if (quickOpenBtn && drop) quickOpenBtn.setAttribute("aria-controls", compact ? "quick-search" : "drop-search");
   }
 
-  if (header && !fixedCompact) {
-    var ticking = false;
-    var onScroll = function () {
-      if (ticking) return;
-      ticking = true;
-      window.requestAnimationFrame(function () {
-        ticking = false;
-        var y = window.scrollY;
-        var compact = header.classList.contains("is-compact");
-        if (!compact && y > COLLAPSE_AT) setCompact(true);
-        else if (compact && y < EXPAND_BELOW) setCompact(false);
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
+  // --- Прокрутка: вниз — нижнее меню уезжает, шапка каталога сворачивается до строки;
+  // вверх в любом месте ленты — оба меню возвращаются (шапка каталога — с категориями, на
+  // стекле). Направление — по пути в одну сторону (BARS_DELTA), а не по каждому событию:
+  // мелкие рывки пальца и «резинка» iOS у краёв страницы меню не дёргают. ---
+  var BARS_DELTA = 16;
+  var NEAR_END = 48;
+  var lastY = Math.max(0, window.scrollY);
+  var travel = 0;
+  var tabbar = document.querySelector(".tabbar");
+
+  function setBars(hidden) {
+    if ((root.getAttribute("data-bars") === "hidden") === hidden) return;
+    if (hidden) root.setAttribute("data-bars", "hidden");
+    else root.removeAttribute("data-bars");
   }
+  function typing() {
+    // Поле ввода в фокусе — открыта клавиатура: раскладку не трогаем.
+    var active = document.activeElement;
+    return !!active && active.matches && active.matches("input:not([type=radio]):not([type=checkbox]), textarea, select");
+  }
+  function reveal(y) {
+    // Раскрытая посреди ленты шапка лежит на стекле; у начала страницы — без фона.
+    if (header && !fixedCompact) header.classList.toggle("is-revealed", !header.classList.contains("is-compact") && y > EXPAND_BELOW);
+  }
+
+  var ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(function () {
+      ticking = false;
+      var max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      var y = Math.min(Math.max(0, window.scrollY), max); // без «резинки» у краёв
+      var dy = y - lastY;
+      lastY = y;
+      if (y < EXPAND_BELOW) {
+        travel = 0;
+        setCompact(false);
+        setBars(false);
+        reveal(y);
+        return;
+      }
+      if (typing() || !dy) return;
+      if ((dy > 0) !== (travel > 0)) travel = 0;
+      travel += dy;
+      if (travel > BARS_DELTA && y > COLLAPSE_AT) {
+        setCompact(true);
+        // Короткая страница и конец страницы — меню остаётся: листать дальше почти некуда.
+        if (max > 240 && y < max - NEAR_END) setBars(true);
+      } else if (travel < -BARS_DELTA) {
+        setCompact(false);
+        setBars(false);
+      }
+      if (y >= max - NEAR_END) setBars(false);
+      reveal(y);
+    });
+  }
+  if (header && !fixedCompact && window.scrollY > COLLAPSE_AT) setCompact(true);
+  window.addEventListener("scroll", onScroll, { passive: true });
+  // Клавиатурой или диктором в меню — оно возвращается.
+  if (tabbar) tabbar.addEventListener("focusin", function () { setBars(false); });
+  // Товар добавлен в корзину — меню показывается: виден новый счётчик и путь в корзину.
+  document.addEventListener("htmx:oobAfterSwap", function (event) {
+    var target = event.detail && event.detail.target;
+    if (target && /^cart-badge/.test(target.id || "")) setBars(false);
+  });
+  document.addEventListener("didi:cart-changed", function () { setBars(false); });
 
   // --- Быстрый поиск: поле выезжает из лаймовой кнопки, страница не прокручивается ---
   var quickTimer = null;
@@ -354,13 +405,14 @@
       applyTheme(effectiveTheme() === "dark" ? "light" : "dark");
     });
   });
-  // Палитра, акцент «Своей», углы, размер текста: атрибут <html> + cookie (сервер проверяет
+  // Палитра, акцент «Своей», углы, размер текста, нижнее меню: атрибут <html> + cookie (сервер проверяет
   // значения по белому списку; значение по умолчанию — без атрибута).
   var LOOK = {
     palette: { attr: "data-palette", cookie: "palette", plain: "lime" },
     accent: { attr: "data-accent", cookie: "accent", plain: null },
     radius: { attr: "data-radius", cookie: "radius", plain: "normal" },
-    text: { attr: "data-text", cookie: "text_size", plain: "s" }
+    text: { attr: "data-text", cookie: "text_size", plain: "s" },
+    nav: { attr: "data-nav", cookie: "nav", plain: "solid" }
   };
 
   function applyLook(name, value, form) {

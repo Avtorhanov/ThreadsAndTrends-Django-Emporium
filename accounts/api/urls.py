@@ -29,5 +29,10 @@ admin_urlpatterns = [
     path("auth/login/", admin_views.AdminLoginView.as_view(), name="admin-login"),
     path("auth/logout/", admin_views.AdminLogoutView.as_view(), name="admin-logout"),
     path("auth/me/", admin_views.AdminMeView.as_view(), name="admin-me"),
+    path(
+        "auth/password/change/",
+        admin_views.AdminPasswordChangeView.as_view(),
+        name="admin-password-change",
+    ),
     *admin_router.urls,
 ]

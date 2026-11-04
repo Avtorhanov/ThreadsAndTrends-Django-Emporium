@@ -130,6 +130,9 @@ a { color: var(--brand); }
   backdrop-filter: blur(22px) saturate(180%);
 }
 .top.is-compact, .top--fixed { background-color: var(--glass); }
+/* Шапка каталога, раскрытая прокруткой вверх посреди ленты (site.js), — на стекле, как свёрнутая. */
+.top.is-revealed { background-color: var(--glass); box-shadow: var(--shadow-header); border-bottom-color: var(--glass-line); }
+.top.is-revealed::before { -webkit-backdrop-filter: blur(22px) saturate(180%); backdrop-filter: blur(22px) saturate(180%); }
 .top.is-compact {
   padding-top: calc(6px + var(--safe-top));
   padding-bottom: 8px;
@@ -137,7 +140,9 @@ a { color: var(--brand); }
   border-bottom-color: var(--glass-line);
 }
 .top__row, .top__more { max-width: var(--page-max); margin-inline: auto; }
-.top__row { position: relative; height: var(--size-header-button); display: flex; align-items: center; gap: 10px; }
+/* Строка шапки — логотип и кнопки фиксированного размера: крупный текст покупателя (и масштаб
+   текста браузера на Android) её не раздвигает, иначе кнопки наезжали на логотип. */
+.top__row { position: relative; height: var(--size-header-button); display: flex; align-items: center; gap: 10px; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 .brand { display: flex; align-items: center; gap: 7px; min-height: var(--size-touch-min); min-width: 0; color: var(--ink); text-decoration: none; }
 .logo {
@@ -296,7 +301,8 @@ a { color: var(--brand); }
 .flash .note { margin: 0; }
 
 .section-head { padding: 4px 0 14px; }
-.section-head--row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.section-head--row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 12px; }
+.section-head--row > div { min-width: 0; }
 .overline { margin: 0 0 6px; color: var(--muted); font: 800 12px/1 var(--font-text); letter-spacing: .12em; text-transform: uppercase; }
 .h1 { font: 700 28px/1.15 var(--font-display); letter-spacing: -.5px; overflow-wrap: anywhere; }
 .h2 { font: 700 18px/1.3 var(--font-display); margin: 24px 0 8px; }
@@ -578,18 +584,25 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .note--success { background: var(--success-bg); color: var(--success); }
 .note--info { background: var(--info-bg); color: var(--info); }
 .note a { color: inherit; font-weight: 800; }
-.note--row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.note--row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
 
+/* Одноколоночные сетки — minmax(0, 1fr): иначе колонка растёт до самой длинной неразрывной строки
+   (цена, кнопки) и на узком Android-экране карточки уходят за правый край. */
+.cart, .lines, .checkout, .order-info, .orders, .menu, .look, .auth, .box, .channels, .articles, .home-blocks { grid-template-columns: minmax(0, 1fr); }
 .cart { display: grid; gap: 4px; }
 .lines { display: grid; gap: 10px; margin-bottom: 14px; padding: 0; list-style: none; }
 .line { display: flex; gap: 12px; padding: 8px; border-radius: calc(16px * var(--radius-scale)); background: var(--card); box-shadow: var(--shadow-card); }
 .line__img { position: relative; flex: 0 0 84px; height: 104px; overflow: hidden; border-radius: calc(12px * var(--radius-scale)); background-color: var(--tone); }
 .line__photo { display: block; width: 100%; height: 100%; object-fit: cover; }
 .line__body { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 0; padding: 4px 4px 0 0; }
-.line__title { font: 700 15px/1.3 var(--font-text); }
+.line__title { font: 700 15px/1.3 var(--font-text); overflow-wrap: anywhere; }
 .line__title a { color: var(--ink); text-decoration: none; }
 .line__meta { color: var(--muted); font-size: 13px; }
-.line__foot { display: flex; align-items: center; gap: 8px; margin-top: auto; }
+.line__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: auto; }
+/* Удаление — в углу карточки: строка «−1+ · сумма» не переносится и на узком экране. */
+.line { position: relative; }
+.line__foot > form { position: absolute; top: 4px; right: 4px; }
+.lines:not(.lines--static) .line__title { padding-right: 38px; }
 .line__price { margin-left: auto; font: 700 15px var(--font-display); white-space: nowrap; }
 .lines--static .line { align-items: center; }
 .lines--static .line__img { height: 84px; }
@@ -646,8 +659,8 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .orders { display: grid; gap: 10px; padding: 0; list-style: none; }
 .order-card { display: grid; gap: 6px; padding: 16px 18px; border-radius: calc(16px * var(--radius-scale)); background: var(--card); box-shadow: var(--shadow-card); color: var(--ink); text-decoration: none; transition: transform .18s ease; }
 .order-card:active { transform: scale(.98); }
-.order-card__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.order-card__num { font: 700 16px var(--font-display); }
+.order-card__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
+.order-card__num { font: 700 16px var(--font-display); white-space: nowrap; }
 .order-card__meta { color: var(--muted); font-size: 13px; }
 .order-card__total { font: 700 17px var(--font-display); }
 .order-info { display: grid; gap: 0; }
@@ -664,7 +677,7 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .segments { display: flex; gap: 4px; padding: 4px; border-radius: var(--radius-control); background: var(--neutral-bg); }
 .segment { position: relative; flex: 1 1 auto; min-width: 0; }
 .segment input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-.segment span { display: flex; align-items: center; justify-content: center; height: 40px; padding: 0 10px; border-radius: var(--radius-seg); color: var(--muted); font: 800 13px var(--font-text); text-align: center; white-space: nowrap; transition: background-color .25s ease, color .25s ease; }
+.segment span { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 4px 8px; border-radius: var(--radius-seg); color: var(--muted); font: 800 13px/1.15 var(--font-text); text-align: center; transition: background-color .25s ease, color .25s ease; }
 .segment input:checked + span { background: var(--seg-on-bg); color: var(--seg-on-ink); }
 .segment input:focus-visible + span { outline: 2px solid var(--brand); outline-offset: 2px; }
 /* Оформление в профиле: палитры, акценты «Своей», углы, размер текста */
@@ -689,7 +702,51 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .accent span[aria-hidden] { display: grid; place-items: center; height: 44px; border-radius: var(--radius-seg); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); font: 800 13px var(--font-text); }
 .accent input:checked + span { box-shadow: 0 0 0 2px var(--card, #fff), 0 0 0 4px var(--ink); }
 .accent input:focus-visible + span { outline: 2px solid var(--brand); outline-offset: 4px; }
-.segment--corner span { gap: 6px; }
+/* Углы: значок над подписью — три варианта помещаются и на 320 px с крупным текстом. */
+.segment--corner span { flex-direction: column; gap: 4px; padding: 6px 4px; }
+/* Нижнее меню: четыре плитки с миниатюрой вида. Меню есть только на телефоне — на компьютере
+   выбор не показывается. */
+.navpick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.navpick__item {
+  position: relative; display: grid; align-content: start; gap: 2px; padding: 8px 8px 10px;
+  border: 1.5px solid var(--border); border-radius: calc(13px * var(--radius-scale)); cursor: pointer;
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.navpick__item:has(input:checked) { border-color: var(--brand); background: var(--tag); }
+.navpick__item:has(input:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
+.navpick__item input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.navpick__name { font: 800 14px/1.2 var(--font-text); }
+.navpick__hint { color: var(--muted); font: 500 12px/1.3 var(--font-secondary); }
+/* Миниатюра: «лента» из двух карточек и меню внизу в выбранном виде. */
+.navpick__demo {
+  position: relative; display: block; height: 58px; margin-bottom: 6px; overflow: hidden;
+  border-radius: calc(9px * var(--radius-scale)); background: var(--bg); box-shadow: inset 0 0 0 1px var(--border);
+}
+.navpick__demo::before {
+  content: ""; position: absolute; left: 8px; right: 8px; top: 8px; height: 40px;
+  border-radius: calc(5px * var(--radius-scale));
+  background: linear-gradient(90deg, var(--card) 0 47%, transparent 47% 53%, var(--card) 53%);
+  box-shadow: 0 0 0 1px var(--border);
+}
+.navpick__bar {
+  position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-around;
+  height: 16px; padding: 0 6px; background: var(--nav);
+}
+.navpick__bar i { width: 5px; height: 5px; border-radius: 3px; background: var(--nav-ink); }
+.navpick__bar i:first-child { width: 18px; background: var(--accent); }
+.navpick__demo--floating .navpick__bar, .navpick__demo--glass .navpick__bar {
+  left: 6px; right: 6px; bottom: 3px; height: 15px; border-radius: calc(6px * var(--radius-scale));
+}
+.navpick__demo--floating .navpick__bar { background: color-mix(in srgb, var(--nav) 78%, transparent); }
+.navpick__demo--glass .navpick__bar {
+  background: color-mix(in srgb, var(--glass) 62%, transparent); box-shadow: inset 0 0 0 1px var(--glass-line), 0 2px 6px rgba(0, 0, 0, .12);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.navpick__demo--glass .navpick__bar i, .navpick__demo--bar .navpick__bar i { background: var(--muted); }
+.navpick__demo--glass .navpick__bar i:first-child, .navpick__demo--bar .navpick__bar i:first-child { background: var(--accent); }
+.navpick__demo--bar .navpick__bar { height: 18px; background: var(--glass); border-top: 1px solid var(--glass-line); }
+.navpick__demo--bar .navpick__bar i:first-child { width: 12px; height: 7px; }
+@media (min-width: 900px) { .look__nav { display: none; } }
 .corner { width: 12px; height: 12px; border-top: 2px solid currentColor; border-left: 2px solid currentColor; }
 .corner--sharp { border-top-left-radius: 1px; }
 .corner--normal { border-top-left-radius: 5px; }
@@ -818,7 +875,7 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 }
 
 /* --- Подвал, нижняя панель, баннер приложения --- */
-.foot { padding: 28px var(--gutter) calc(var(--size-nav-height) + 28px + var(--safe-bottom)); color: var(--muted); font: 600 13px/1.5 var(--font-text); }
+.foot { padding: 28px var(--gutter) calc(var(--tabbar-top) + 24px); color: var(--muted); font: 600 13px/1.5 var(--font-text); }
 .foot__inner { display: grid; gap: 14px; max-width: var(--page-max); margin-inline: auto; padding-top: 22px; border-top: 1px solid var(--border); }
 .foot__brand { display: flex; align-items: center; gap: 10px; color: var(--ink); }
 .foot__links { display: grid; gap: 4px; }
@@ -828,16 +885,26 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .foot__part { display: inline-block; max-width: 100%; }
 .foot__links a { display: inline-flex; align-items: center; min-height: 32px; }
 
-/* Нижняя панель — футер экрана: от края до края, без скруглений, прижата к низу.
-   Вкладки — в полосе до 480px по центру; под ними — отступ домашнего индикатора. */
-.tabbar {
+/* Нижняя панель (data-nav на <html>; вид для нового посетителя — панель → «Тема», свой —
+   профиль → «Оформление»). --tabbar-top — сколько панель занимает снизу экрана: от неё отступ
+   подвала и баннера приложения. Сплошная — футер экрана от края до края, вкладки в полосе до
+   480px по центру, под ними — отступ домашнего индикатора. */
+:root {
   --tab-bottom: max(8px, calc(var(--safe-bottom) * .6));
+  --tabbar-top: calc(var(--size-nav-height) + var(--tab-bottom));
+}
+.tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   display: flex; gap: 2px;
   height: calc(var(--size-nav-height) + var(--tab-bottom));
   padding: 6px max(12px, calc((100% - 480px) / 2)) var(--tab-bottom);
   background: var(--nav); border-top: 1px solid color-mix(in srgb, var(--accent) 14%, transparent); /* панель тёмная в обеих темах */
+  /* Текст меню не увеличивается вместе с текстом страницы: подписи вкладок не обрезаются. */
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+  transition: transform .32s var(--ease-soft), opacity .32s ease;
 }
+/* Прокрутка вниз — меню уезжает (site.js ставит data-bars="hidden" на <html>), вверх — возвращается. */
+:root[data-bars="hidden"] .tabbar { transform: translateY(calc(100% + 24px)); opacity: 0; pointer-events: none; }
 .tab {
   display: flex; flex: 1 1 0; align-items: center; justify-content: center; gap: 7px; min-width: 0;
   border-radius: calc(12px * var(--radius-scale)); color: var(--nav-ink); font: 800 13px var(--font-text); text-decoration: none;
@@ -852,17 +919,33 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .tab.is-on .cbadge { right: -4px; top: -10px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 10.5px; line-height: 18px; }
 .tab.is-on .cbadge { background: var(--nav); color: var(--accent); box-shadow: none; }
 
-/* Плавающее меню (панель → «Тема»): тёмная капсула над страницей с отступом от краёв. */
-:root[data-nav="floating"] .tabbar {
+/* Плавающее и «Стекло»: капсула над страницей с отступом от краёв, опущена к домашнему
+   индикатору; полупрозрачная — лента видна сквозь размытие. */
+:root[data-nav="floating"], :root[data-nav="glass"] {
+  --tab-float: max(8px, calc(var(--safe-bottom) - 8px));
+  --tabbar-top: calc(var(--tab-float) + var(--size-nav-height) + 12px);
+}
+:root[data-nav="floating"] .tabbar, :root[data-nav="glass"] .tabbar {
   --nav-pad: 6px;
-  left: 12px; right: 12px; bottom: calc(10px + var(--safe-bottom));
+  left: 12px; right: 12px; bottom: var(--tab-float);
   max-width: 480px; margin-inline: auto;
   height: calc(var(--size-nav-height) + 2 * var(--nav-pad)); padding: var(--nav-pad);
-  border-top: 0; border-radius: calc(var(--radius-nav) * var(--radius-scale)); box-shadow: var(--shadow-nav);
+  border-top: 0; border-radius: calc(var(--radius-nav) * var(--radius-scale));
+  -webkit-backdrop-filter: blur(20px) saturate(170%); backdrop-filter: blur(20px) saturate(170%);
 }
+:root[data-nav="floating"] .tabbar { background: color-mix(in srgb, var(--nav) 78%, transparent); box-shadow: var(--shadow-nav); }
 /* Вкладка повторяет контур капсулы при любых углах: радиус панели минус внутренний отступ. */
-:root[data-nav="floating"] .tab { border-radius: max(4px, calc(var(--radius-nav) * var(--radius-scale) - var(--nav-pad))); }
+:root[data-nav="floating"] .tab, :root[data-nav="glass"] .tab { border-radius: max(4px, calc(var(--radius-nav) * var(--radius-scale) - var(--nav-pad))); }
+/* «Стекло»: капсула в цвет темы, прозрачнее стекла шапки. */
+:root[data-nav="glass"] .tabbar {
+  background: color-mix(in srgb, var(--glass) 62%, transparent);
+  box-shadow: inset 0 0 0 1px var(--glass-line), var(--shadow-header);
+}
+:root[data-nav="glass"] .tab { color: color-mix(in srgb, var(--ink) 74%, transparent); }
+:root[data-nav="glass"] .tab.is-on { color: var(--on-accent); }
+:root[data-nav="glass"] .tab.is-on .cbadge { background: var(--ink); color: var(--bg); }
 /* Нижняя панель: в цвет темы (стекло, как шапка), значок и подпись у каждой вкладки. */
+:root[data-nav="bar"] { --tabbar-top: calc(var(--size-nav-height) + 8px + var(--tab-bottom)); }
 :root[data-nav="bar"] .tabbar {
   height: calc(var(--size-nav-height) + 8px + var(--tab-bottom)); padding-top: 6px;
   background: var(--glass); border-top: 1px solid var(--glass-line);
@@ -881,15 +964,16 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 :root[data-nav="bar"] .tab.is-on .tab__icon { background: var(--accent); color: var(--on-accent); }
 :root[data-nav="bar"] .tab .cbadge { top: -4px; right: 2px; }
 :root[data-nav="bar"] .tab.is-on .cbadge { background: var(--ink); color: var(--bg); }
-:root[data-nav="floating"] .foot, :root[data-nav="bar"] .foot { padding-bottom: calc(var(--size-nav-height) + 40px + var(--safe-bottom)); }
-:root[data-nav="floating"] .appbar, :root[data-nav="bar"] .appbar { bottom: calc(var(--size-nav-height) + 24px + var(--safe-bottom)); }
 
 .appbar {
-  position: fixed; left: 16px; right: 16px; bottom: calc(var(--size-nav-height) + 14px + var(--safe-bottom)); z-index: 29;
+  position: fixed; left: 16px; right: 16px; bottom: calc(var(--tabbar-top) + 8px); z-index: 29;
   display: flex; align-items: center; gap: 10px; max-width: 480px; margin-inline: auto; padding: 8px 4px 8px 10px;
   border-radius: calc(16px * var(--radius-scale)); background: var(--surface); box-shadow: var(--shadow-card);
   animation: rise .45s var(--ease-out) .6s both;
+  transition: bottom .32s var(--ease-soft);
 }
+/* Меню спрятано — баннер опускается на его место. */
+:root[data-bars="hidden"] .appbar { bottom: calc(8px + var(--safe-bottom)); }
 .appbar__text { display: grid; flex: 1; min-width: 0; color: var(--muted); font: 600 12px/1.3 var(--font-text); }
 .appbar__text b { color: var(--ink); font-size: 14px; }
 .appbar form { display: flex; }
@@ -953,7 +1037,7 @@ a.hblock-photo__frame:active { transform: scale(.985); }
 .hblock-carousel__slide > .hblock { min-width: 0; }
 .hblock-carousel__dots { display: flex; justify-content: center; gap: 2px; position: relative; z-index: 1; margin-top: -2px; }
 .hblock-carousel__dot {
-  display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 32px; margin-block: -4px;
   padding: 0; border: 0; background: transparent; cursor: pointer;
 }
 .hblock-carousel__dot::before {

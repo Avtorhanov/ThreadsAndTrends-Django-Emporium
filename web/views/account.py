@@ -293,7 +293,7 @@ def password_change(request):
             form.add_error(None, ratelimit.TOO_MANY)
         else:
             try:
-                accounts.change_password(
+                accounts.update_password(
                     request.user,
                     old_password=form.cleaned_data["old_password"],
                     new_password=form.cleaned_data["new_password"],

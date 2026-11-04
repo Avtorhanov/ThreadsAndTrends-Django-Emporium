@@ -11,6 +11,7 @@ import {
 } from "../api/catalog";
 import { ApiError } from "../api/errors";
 import { LabelsManager } from "../components/catalog/LabelsManager";
+import { FiltersToggle } from "../components/FiltersToggle";
 import { Table } from "../components/Table";
 import { isLeaf, sortCategoryTree, useCategories, useLabels, useProducts } from "../hooks/useCatalog";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
@@ -39,6 +40,7 @@ export function ProductsPage() {
   const [label, setLabel] = useState("");
   const [category, setCategory] = useState<number | null>(null);
   const [stock, setStock] = useState<StockFilter | "">("");
+  const [moreFilters, setMoreFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [bulkLabel, setBulkLabel] = useState("");
@@ -101,7 +103,7 @@ export function ProductsPage() {
         </Link>
       </div>
 
-      <div className="filters">
+      <div className={moreFilters ? "filters is-open" : "filters"}>
         <input
           type="search"
           placeholder="Название или артикул"
@@ -126,7 +128,13 @@ export function ProductsPage() {
             </option>
           ))}
         </select>
+        <FiltersToggle
+          open={moreFilters}
+          active={[label, visibility, stock].filter(Boolean).length}
+          onToggle={() => setMoreFilters((value) => !value)}
+        />
         <select
+          className="filters-extra"
           value={label}
           aria-label="Статус"
           onChange={(event) => {
@@ -143,6 +151,7 @@ export function ProductsPage() {
           <option value="none">Без статуса</option>
         </select>
         <select
+          className="filters-extra"
           value={visibility}
           aria-label="Видимость"
           onChange={(event) => {
@@ -158,6 +167,7 @@ export function ProductsPage() {
           ))}
         </select>
         <select
+          className="filters-extra"
           value={stock}
           aria-label="Остаток"
           onChange={(event) => {
@@ -265,12 +275,14 @@ export function ProductsPage() {
             return (
               <tr key={product.id} className={selected.has(product.id) ? "is-selected" : undefined}>
                 <td className="check-cell">
-                  <input
-                    type="checkbox"
-                    aria-label={`Отметить ${product.name}`}
-                    checked={selected.has(product.id)}
-                    onChange={() => toggle(product.id)}
-                  />
+                  <label className="check-hit">
+                    <input
+                      type="checkbox"
+                      aria-label={`Отметить ${product.name}`}
+                      checked={selected.has(product.id)}
+                      onChange={() => toggle(product.id)}
+                    />
+                  </label>
                 </td>
                 <td className="thumb-cell">
                   {product.cover_url ? (
