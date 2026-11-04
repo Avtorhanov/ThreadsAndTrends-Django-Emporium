@@ -2563,6 +2563,7 @@ paths:
   /api/v1/orders/{number}/:
     get:
       operationId: orders_retrieve
+      description: Открытие заказа покупателем гасит отметку «есть новости» (status_unseen).
       parameters:
       - in: path
         name: number

@@ -160,9 +160,10 @@ def main(site: Path, shots: Path) -> None:
         page.goto(origin + BASE + check["path"], wait_until="load")
         page.wait_for_selector(".pd__share")
         page.click("[data-zoom]")
-        page.wait_for_selector(".pswp--open", timeout=10_000)
-        page.keyboard.press("Escape")
-        page.wait_for_selector(".pswp--open", state="detached")
+        page.wait_for_selector(".pswp--open .pswp__img", timeout=10_000)
+        page.wait_for_timeout(700)  # анимация открытия
+        page.click(".pswp__button--close")
+        page.wait_for_selector(".pswp", state="detached", timeout=10_000)
         page.goto(origin + f"{BASE}/me/profile/data/", wait_until="load")
         assert page.locator("text=логин аккаунта").count() == 0, "осталась подпись про логин"
         new_email = "new-" + data["customer"]["email"]
