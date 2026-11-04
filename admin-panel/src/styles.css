@@ -1120,6 +1120,10 @@ a.stat:hover {
   }
 
   /* Поиск — во всю ширину, основной фильтр и «Ещё фильтры» — одной строкой. */
+  .filters > input[type="search"] {
+    flex: 1 1 100%;
+  }
+
   .filters > select:not(.filters-extra) {
     flex: 1 1 0;
     min-width: 0;
@@ -2107,7 +2111,7 @@ a.stat:hover {
 
 @container (max-width: 360px) {
   .variant-row {
-    grid-template-columns: 64px minmax(0, 1fr) 40px;
+    grid-template-columns: 76px minmax(0, 1fr) 40px;
     grid-template-areas:
       "size stock act"
       "sku sku sku";
@@ -2122,7 +2126,8 @@ a.stat:hover {
     font-size: 14px;
   }
 
-  .variant-sku::placeholder {
+  .variant-sku::placeholder,
+  .variant-size::placeholder {
     font-size: 13px;
   }
 }
