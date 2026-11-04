@@ -40,7 +40,9 @@ def app_client(customer):
 def test_full_flow_via_app(app_client, customer, django_capture_on_commit_callbacks):
     with django_capture_on_commit_callbacks(execute=True):
         response = app_client.post(
-            APP_REQUEST, {"new_email": " New.Address@Example.com ", "password": PASSWORD}
+            APP_REQUEST,
+            {"new_email": " New.Address@Example.com ", "password": PASSWORD},
+            format="json",
         )
     assert response.status_code == 202, response.content
     assert response.json()["new_email"] == NEW
@@ -52,7 +54,7 @@ def test_full_flow_via_app(app_client, customer, django_capture_on_commit_callba
     assert customer.email == "customer@example.com"
 
     with django_capture_on_commit_callbacks(execute=True):
-        response = app_client.post(APP_CONFIRM, {"code": code})
+        response = app_client.post(APP_CONFIRM, {"code": code}, format="json")
     assert response.status_code == 200, response.content
     assert response.json()["email"] == NEW
     customer.refresh_from_db()
@@ -66,7 +68,7 @@ def test_full_flow_via_app(app_client, customer, django_capture_on_commit_callba
     assert login(APIClient(), "customer@example.com").status_code == 401
     assert app_client.get("/api/v1/auth/me/").status_code == 200
     # Код одноразовый.
-    assert app_client.post(APP_CONFIRM, {"code": code}).status_code == 400
+    assert app_client.post(APP_CONFIRM, {"code": code}, format="json").status_code == 400
 
 
 def test_request_checks_password_and_address(customer, other_customer):
@@ -149,8 +151,13 @@ def test_code_is_bound_to_its_user(customer, other_customer, django_capture_on_c
 
 def test_app_endpoints_require_auth():
     client = APIClient()
-    assert client.post(APP_REQUEST, {"new_email": NEW, "password": PASSWORD}).status_code == 401
-    assert client.post(APP_CONFIRM, {"code": "123456"}).status_code == 401
+    assert (
+        client.post(
+            APP_REQUEST, {"new_email": NEW, "password": PASSWORD}, format="json"
+        ).status_code
+        == 401
+    )
+    assert client.post(APP_CONFIRM, {"code": "123456"}, format="json").status_code == 401
 
 
 def test_staff_cannot_change_email_via_app(staff):
@@ -158,8 +165,13 @@ def test_staff_cannot_change_email_via_app(staff):
     client = APIClient()
     access = login(client, staff.email).json()["access"]
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
-    assert client.post(APP_REQUEST, {"new_email": NEW, "password": PASSWORD}).status_code == 403
-    assert client.post(APP_CONFIRM, {"code": "123456"}).status_code == 403
+    assert (
+        client.post(
+            APP_REQUEST, {"new_email": NEW, "password": PASSWORD}, format="json"
+        ).status_code
+        == 403
+    )
+    assert client.post(APP_CONFIRM, {"code": "123456"}, format="json").status_code == 403
     assert not EmailChangeCode.objects.exists()
 
 
@@ -194,12 +206,14 @@ def test_panel_flow_for_staff(staff, django_capture_on_commit_callbacks):
     client.force_login(staff)
     assert client.get(PANEL_REQUEST).status_code == 204
     with django_capture_on_commit_callbacks(execute=True):
-        response = client.post(PANEL_REQUEST, {"new_email": NEW, "password": PASSWORD})
+        response = client.post(
+            PANEL_REQUEST, {"new_email": NEW, "password": PASSWORD}, format="json"
+        )
     assert response.status_code == 202, response.content
     assert client.get(PANEL_REQUEST).json()["new_email"] == NEW
 
     with django_capture_on_commit_callbacks(execute=True):
-        response = client.post(PANEL_CONFIRM, {"code": code_from_mail()})
+        response = client.post(PANEL_CONFIRM, {"code": code_from_mail()}, format="json")
     assert response.status_code == 200, response.content
     assert response.json()["email"] == NEW
     # Сессия панели осталась.
@@ -227,7 +241,10 @@ def test_panel_endpoints_require_staff_session_and_csrf(customer, staff):
     shopper = APIClient()
     shopper.force_login(customer)
     assert shopper.post(PANEL_REQUEST, body).status_code == 403
-    assert shopper.patch("/api/v1/admin/auth/me/", {"first_name": "X"}).status_code == 403
+    assert (
+        shopper.patch("/api/v1/admin/auth/me/", {"first_name": "X"}, format="json").status_code
+        == 403
+    )
     # JWT приложения в панель не пускает.
     jwt = APIClient()
     jwt.credentials(HTTP_AUTHORIZATION=f"Bearer {login(APIClient(), staff.email).json()['access']}")
@@ -235,7 +252,10 @@ def test_panel_endpoints_require_staff_session_and_csrf(customer, staff):
     no_csrf = APIClient(enforce_csrf_checks=True)
     no_csrf.force_login(staff)
     assert no_csrf.post(PANEL_REQUEST, body).status_code == 403
-    assert no_csrf.patch("/api/v1/admin/auth/me/", {"first_name": "X"}).status_code == 403
+    assert (
+        no_csrf.patch("/api/v1/admin/auth/me/", {"first_name": "X"}, format="json").status_code
+        == 403
+    )
     assert not EmailChangeCode.objects.exists()
 
 
