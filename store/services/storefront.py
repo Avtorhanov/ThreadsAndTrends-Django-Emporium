@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.cache import cache
-from django.db.models import Exists, F, OuterRef, Prefetch, Q, QuerySet
+from django.db.models import Case, Exists, F, IntegerField, OuterRef, Prefetch, Q, QuerySet, When
 
 from store.models import Category, Product, ProductVariant
 from store.search import SEARCH_CONFIG, search_vector
@@ -106,6 +106,31 @@ def filter_products(filters: ProductFilters) -> QuerySet[Product]:
             "-rank", "-created_at", "-id"
         )
     return queryset.order_by("-created_at", "-id")
+
+
+# --- Похожие товары ---
+
+SIMILAR_LIMIT = 12
+
+
+def similar_products(product: Product, limit: int = SIMILAR_LIMIT) -> list[Product]:
+    """«Похожие» на карточке товара: сначала та же категория, затем соседние подкатегории
+    того же корня; внутри — товары в наличии первыми, затем новые."""
+    category = product.category
+    root_id = category.parent_id or category.pk
+    queryset = (
+        live_products()
+        .exclude(pk=product.pk)
+        .filter(Q(category_id=root_id) | Q(category__parent_id=root_id))
+        .annotate(
+            same_category=Case(
+                When(category_id=category.pk, then=0), default=1, output_field=IntegerField()
+            ),
+            available=Case(When(total_stock__gt=0, then=0), default=1, output_field=IntegerField()),
+        )
+        .order_by("same_category", "available", "-created_at", "-id")
+    )
+    return list(queryset[:limit])
 
 
 # --- Дерево категорий ---

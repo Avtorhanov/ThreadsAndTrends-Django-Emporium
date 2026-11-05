@@ -1,0 +1,2 @@
+{# Фото профиля (WebP 320×320) или первая буква имени/email на плашке акцента. #}
+<span class="avatar{% if big %} avatar--big{% endif %}" data-avatar>{% if user.avatar %}<img class="avatar__img" src="{{ user.avatar.url }}" width="320" height="320" alt="">{% else %}<span class="avatar__letter" aria-hidden="true">{{ user.first_name|default:user.email|first|upper }}</span>{% endif %}</span>

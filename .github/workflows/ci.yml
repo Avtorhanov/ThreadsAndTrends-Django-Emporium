@@ -1,5 +1,5 @@
-# Ветки: main — основа (только через PR), dev — функционал, visual — внешний вид.
-# Полный CI — на push в main и dev и на каждый PR (в том числе visual → main).
+# Ветки: main — основа (только через PR), dev — вся работа.
+# Полный CI — на push в main и dev и на каждый PR.
 name: CI
 
 on:
@@ -85,7 +85,7 @@ jobs:
           SECRET_KEY: ci-deploy-check-${{ github.run_id }}-not-a-real-secret-key-0123456789
           ALLOWED_HOSTS: example.com
       # Журналы — в служебную ветку: журналы Actions доступны не всем инструментам,
-      # а ветку можно прочитать обычным git fetch (как ci-report-visual у превью).
+      # а ветку можно прочитать обычным git fetch (как ci-report-preview у превью).
       - name: Publish report branch
         if: always() && github.event_name == 'push'
         env:

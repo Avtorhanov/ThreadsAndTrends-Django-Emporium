@@ -6,12 +6,16 @@
     <p class="overline">Профиль</p>
     <h1 class="h1">Добро пожаловать</h1>
   </header>
-  <div class="panel form">
+  <div class="panel auth">
     <p>Войдите, чтобы оформлять заказы и следить за ними. Корзина сохранится.</p>
-    <a class="cta cta--link" href="{% url 'web:login' %}"><span class="cta__label">Войти</span></a>
-    <a class="btn btn--ghost btn--block" href="{% url 'web:register' %}">Зарегистрироваться</a>
+    <div class="auth__actions">
+      <a class="btn btn--dark btn--block btn--lg" href="{% url 'web:login' %}">Войти</a>
+      <a class="btn btn--line btn--block btn--lg" href="{% url 'web:register' %}">Зарегистрироваться</a>
+    </div>
   </div>
-  {% include "web/account/_theme.html" %}
+  <nav class="menu" aria-label="Настройки">
+    <a class="menu__item" href="{% url 'web:profile_look' %}"><svg class="ic" width="20" height="20"><use href="#i-palette"/></svg>Оформление<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
+  </nav>
   {% include "web/partials/help.html" %}
 </section>
 {% endblock %}

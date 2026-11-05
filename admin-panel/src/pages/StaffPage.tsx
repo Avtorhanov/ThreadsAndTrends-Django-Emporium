@@ -12,6 +12,7 @@ import {
   staffService,
 } from "../api/staff";
 import { useLoader } from "../hooks/useCatalog";
+import { BackLink } from "../components/BackLink";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
@@ -230,6 +231,7 @@ export function StaffPage() {
   return (
     <section className="stack">
       <div className="page-header">
+        <BackLink to="/" label="Сводка" />
         <h1>Сотрудники</h1>
         {loader.data ? <span className="muted">Всего: {members.length}</span> : null}
       </div>

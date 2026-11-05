@@ -11,10 +11,12 @@ import {
 } from "../api/catalog";
 import { ApiError } from "../api/errors";
 import { LabelsManager } from "../components/catalog/LabelsManager";
+import { FiltersToggle } from "../components/FiltersToggle";
 import { Table } from "../components/Table";
 import { isLeaf, sortCategoryTree, useCategories, useLabels, useProducts } from "../hooks/useCatalog";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { formatKopecks } from "../lib/money";
+import { BackLink } from "../components/BackLink";
 
 const VISIBILITY_LABELS: Record<ProductStatus, string> = {
   active: "Активные",
@@ -39,6 +41,7 @@ export function ProductsPage() {
   const [label, setLabel] = useState("");
   const [category, setCategory] = useState<number | null>(null);
   const [stock, setStock] = useState<StockFilter | "">("");
+  const [moreFilters, setMoreFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [bulkLabel, setBulkLabel] = useState("");
@@ -94,6 +97,7 @@ export function ProductsPage() {
   return (
     <section>
       <div className="page-header">
+        <BackLink to="/" label="Сводка" />
         <h1>Товары</h1>
         {data ? <span className="muted">Всего: {data.count}</span> : null}
         <Link to="/catalog/products/new" className="button header-action">
@@ -101,7 +105,7 @@ export function ProductsPage() {
         </Link>
       </div>
 
-      <div className="filters">
+      <div className={moreFilters ? "filters is-open" : "filters"}>
         <input
           type="search"
           placeholder="Название или артикул"
@@ -126,7 +130,13 @@ export function ProductsPage() {
             </option>
           ))}
         </select>
+        <FiltersToggle
+          open={moreFilters}
+          active={[label, visibility, stock].filter(Boolean).length}
+          onToggle={() => setMoreFilters((value) => !value)}
+        />
         <select
+          className="filters-extra"
           value={label}
           aria-label="Статус"
           onChange={(event) => {
@@ -143,6 +153,7 @@ export function ProductsPage() {
           <option value="none">Без статуса</option>
         </select>
         <select
+          className="filters-extra"
           value={visibility}
           aria-label="Видимость"
           onChange={(event) => {
@@ -158,6 +169,7 @@ export function ProductsPage() {
           ))}
         </select>
         <select
+          className="filters-extra"
           value={stock}
           aria-label="Остаток"
           onChange={(event) => {
@@ -178,6 +190,15 @@ export function ProductsPage() {
       {selected.size > 0 ? (
         <div className="bulk-bar" role="region" aria-label="Действия с отмеченными товарами">
           <strong>Выбрано: {selected.size}</strong>
+          {allChecked ? null : (
+            <button
+              type="button"
+              className="bulk-link"
+              onClick={() => setSelected(new Set(rows.map((row) => row.id)))}
+            >
+              Выбрать все
+            </button>
+          )}
           <button type="button" className="bulk-link" onClick={() => setSelected(new Set())}>
             Снять выбор
           </button>
@@ -240,7 +261,7 @@ export function ProductsPage() {
         </div>
       ) : null}
 
-      <Table loading={loading}>
+      <Table loading={loading} className="table-products">
         <thead>
           <tr>
             <th className="check-cell">
@@ -251,7 +272,7 @@ export function ProductsPage() {
                 onChange={() => setSelected(allChecked ? new Set() : new Set(rows.map((row) => row.id)))}
               />
             </th>
-            <th aria-label="Фото" />
+            <th className="thumb-cell" aria-label="Фото" />
             <th>Название</th>
             <th>Цена</th>
             <th>Остаток</th>
@@ -265,14 +286,16 @@ export function ProductsPage() {
             return (
               <tr key={product.id} className={selected.has(product.id) ? "is-selected" : undefined}>
                 <td className="check-cell">
-                  <input
-                    type="checkbox"
-                    aria-label={`Отметить ${product.name}`}
-                    checked={selected.has(product.id)}
-                    onChange={() => toggle(product.id)}
-                  />
+                  <label className="check-hit">
+                    <input
+                      type="checkbox"
+                      aria-label={`Отметить ${product.name}`}
+                      checked={selected.has(product.id)}
+                      onChange={() => toggle(product.id)}
+                    />
+                  </label>
                 </td>
-                <td>
+                <td className="thumb-cell">
                   {product.cover_url ? (
                     <img className="thumb" src={product.cover_url} alt="" />
                   ) : (

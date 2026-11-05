@@ -3,20 +3,23 @@ import { Navigate, NavLink, Outlet, useLocation } from "react-router";
 
 import type { StaffUser } from "../auth/authService";
 import { useAuth } from "../auth/AuthProvider";
+import { STORE_URL } from "../lib/site";
 import { THEME_LABELS, type ThemeChoice, useTheme } from "../theme/theme";
 import { Icon, type IconName } from "./Icon";
+import { PullToRefresh } from "./PullToRefresh";
 
 type Access = keyof StaffUser["permissions"];
 
-const SECTIONS: { to: string; label: string; icon: IconName; access: Access; end?: boolean }[] = [
+// access не задан — раздел виден всем (во «Внешнем виде» есть личное «Оформление панели»;
+// права на подразделы витрины проверяет LookSection).
+const SECTIONS: { to: string; label: string; icon: IconName; access?: Access; end?: boolean }[] = [
   { to: "/", label: "Сводка", icon: "summary", access: "summary", end: true },
   { to: "/orders", label: "Заказы", icon: "orders", access: "orders" },
   { to: "/catalog/products", label: "Товары", icon: "products", access: "products" },
   { to: "/catalog/categories", label: "Категории", icon: "categories", access: "categories" },
   { to: "/content/articles", label: "Статьи", icon: "articles", access: "articles" },
   { to: "/customers", label: "Клиенты", icon: "customers", access: "customers" },
-  { to: "/home", label: "Главная", icon: "home", access: "storefront" },
-  { to: "/theme", label: "Тема", icon: "palette", access: "storefront" },
+  { to: "/look", label: "Внешний вид", icon: "palette" },
   { to: "/settings", label: "Настройки", icon: "settings", access: "settings" },
   { to: "/staff", label: "Сотрудники", icon: "customers", access: "staff" },
 ];
@@ -28,10 +31,11 @@ function sectionFor(pathname: string) {
   ).sort((a, b) => b.to.length - a.to.length)[0];
 }
 
+// Экраны с формами: жест «потянуть, чтобы обновить» сбросил бы несохранённые правки.
+const FORM_SCREEN = /^\/(catalog\/products|content\/articles)\/[^/]+$|^\/(settings|look|account)(\/|$)/;
+
 const THEME_ICONS: Record<ThemeChoice, IconName> = { system: "system", light: "sun", dark: "moon" };
 
-/** Витрина — корень сайта: панель живёт в /panel/ (на превью — /<репозиторий>/panel/). */
-const STORE_URL = import.meta.env.BASE_URL.replace(/panel\/?$/, "");
 
 /** Открыть магазин из любого раздела — посмотреть изменения глазами покупателя. */
 function StoreLink() {
@@ -49,14 +53,15 @@ function StoreLink() {
   );
 }
 
+/** Логотип как в магазине и приложении: плашка «DiDi» + «shop». */
 function Brand() {
   return (
-    <span className="brand">
+    <span className="brand" aria-label="DiDi shop">
       <span className="brand-mark" aria-hidden="true">
-        Di
+        DiDi
       </span>
-      <span className="brand-name">
-        DiDi<span className="brand-accent">-shop</span>
+      <span className="brand-name" aria-hidden="true">
+        shop
       </span>
     </span>
   );
@@ -87,6 +92,8 @@ function ThemeSwitch() {
 export function Layout() {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  // Смена ключа пересоздаёт экран — его хуки заново запрашивают данные.
+  const [refreshKey, setRefreshKey] = useState(0);
   const location = useLocation();
 
   // Переход по разделу закрывает шторку на телефоне.
@@ -94,9 +101,11 @@ export function Layout() {
 
   // Права сотрудника: недоступные разделы скрыты, только чтение — с плашкой. Проверяет сервер.
   const permissions = user?.permissions;
-  const visible = SECTIONS.filter((item) => !permissions || permissions[item.access] !== "none");
+  const visible = SECTIONS.filter(
+    (item) => !permissions || !item.access || permissions[item.access] !== "none",
+  );
   const current = sectionFor(location.pathname);
-  const level = current && permissions ? permissions[current.access] : "edit";
+  const level = current?.access && permissions ? permissions[current.access] : "edit";
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -123,6 +132,11 @@ export function Layout() {
         <Brand />
         <StoreLink />
       </header>
+
+      <PullToRefresh
+        disabled={menuOpen || FORM_SCREEN.test(location.pathname)}
+        onRefresh={() => setRefreshKey((key) => key + 1)}
+      />
 
       <div className="scrim" aria-hidden="true" onClick={() => setMenuOpen(false)} />
 
@@ -151,9 +165,11 @@ export function Layout() {
         <div className="sidebar-foot">
           <ThemeSwitch />
           <div className="sidebar-user">
-            <span className="muted small user-email" title={user?.email}>
-              {user?.email}
-            </span>
+            {/* Свой аккаунт: email и смена пароля. */}
+            <NavLink to="/account" className="user-email" title="Аккаунт и пароль">
+              <span className="user-email-label">Аккаунт</span>
+              <span className="user-email-value">{user?.email}</span>
+            </NavLink>
             <button
               type="button"
               className="icon-button"
@@ -182,7 +198,9 @@ export function Layout() {
             {level === "view" ? (
               <p className="note note-info view-only">Только просмотр: изменения в этом разделе вам недоступны.</p>
             ) : null}
-            <Outlet />
+            <div key={refreshKey} className="screen">
+              <Outlet />
+            </div>
           </>
         )}
       </main>

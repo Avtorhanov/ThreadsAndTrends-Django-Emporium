@@ -98,7 +98,19 @@ class Command(BaseCommand):
             text="Термосы Stanley и вещи на осень — уже в каталоге",
             color="#DDF38A",
             category=by_slug.get("dlya-doma"),
+            # Фото термоса в рамке карточки; без фото — цветная плашка.
+            product=Product.objects.live().filter(slug__startswith="stanley-").first(),
         )
+        # Второй баннер подряд — товар с фото: на витрине оба листаются каруселью.
+        featured = (
+            Product.objects.live()
+            .filter(images__isnull=False)
+            .exclude(slug__startswith="stanley-")
+            .order_by("-created_at")
+            .first()
+        )
+        if featured is not None:
+            home.update_block(home.add_block("banner"), title="", text="", product=featured)
         home.update_block(home.add_block("categories"), title="Категории")
         home.update_block(home.add_block("collection"), title="Новинки")
         if "luxe" in by_slug:

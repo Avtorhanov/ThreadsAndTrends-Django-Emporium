@@ -4,18 +4,21 @@
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics
+from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from core.api.mixins import PublicAPIMixin
 from store.models import Product, ProductImage, ProductVariant
-from store.services import storefront
+from store.services import history, storefront
 
 from .serializers import (
     CatalogCategoryTreeSerializer,
     CatalogProductDetailSerializer,
     CatalogProductSerializer,
     ProductListQuerySerializer,
+    ViewedRecordSerializer,
 )
 
 TAG = "catalog"
@@ -81,3 +84,50 @@ class ProductDetailView(PublicAPIMixin, generics.RetrieveAPIView):
     @extend_schema(operation_id="catalog_products_retrieve")
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+@extend_schema(tags=[TAG])
+class SimilarProductsView(PublicAPIMixin, generics.ListAPIView):
+    """«Похожие» для карточки товара: та же категория, затем соседние; до 12, без страниц."""
+
+    serializer_class = CatalogProductSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        product = get_object_or_404(
+            Product.objects.live().select_related("category"), slug=self.kwargs["slug"]
+        )
+        return storefront.similar_products(product)
+
+    @extend_schema(operation_id="catalog_products_similar")
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+@extend_schema(tags=[TAG])
+class ViewedProductsView(APIView):
+    """Журнал просмотров покупателя: последние товары (без страниц), запись и очистка."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses={200: CatalogProductSerializer(many=True)}, operation_id="viewed_list")
+    def get(self, request):
+        products = history.recent_products(request.user, limit=history.HISTORY_LIMIT)
+        return Response(
+            CatalogProductSerializer(products, many=True, context={"request": request}).data
+        )
+
+    @extend_schema(
+        request=ViewedRecordSerializer, responses={204: None}, operation_id="viewed_record"
+    )
+    def post(self, request):
+        serializer = ViewedRecordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        product = get_object_or_404(Product.objects.live(), slug=serializer.validated_data["slug"])
+        history.record_view(request.user, product)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(responses={204: None}, operation_id="viewed_clear")
+    def delete(self, request):
+        history.clear(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)

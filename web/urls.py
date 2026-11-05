@@ -35,7 +35,13 @@ urlpatterns = [
     path("password-reset/", account.password_reset, name="password_reset"),
     path("password-reset/confirm/", account.password_reset_confirm, name="password_reset_confirm"),
     path("profile/", account.profile, name="profile"),
+    path("profile/data/", account.profile_data, name="profile_data"),
+    path("profile/avatar/", account.avatar, name="avatar"),
+    path("profile/look/", account.profile_look, name="profile_look"),
+    path("profile/viewed/clear/", account.viewed_clear, name="viewed_clear"),
     path("profile/password/", account.password_change, name="password_change"),
+    path("profile/email/", account.email_change, name="email_change"),
+    path("profile/email/confirm/", account.email_change_confirm, name="email_change_confirm"),
     path("profile/delete/", account.delete_account, name="delete_account"),
     # Служебные
     path("theme/", pages.set_theme, name="theme"),

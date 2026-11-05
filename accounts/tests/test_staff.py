@@ -23,6 +23,9 @@ AUTH_VIEWS = {
     admin_views.AdminLoginView,
     admin_views.AdminLogoutView,
     admin_views.AdminMeView,
+    admin_views.AdminPasswordChangeView,  # свой пароль — любому сотруднику
+    admin_views.AdminEmailChangeView,  # свой email — тоже
+    admin_views.AdminEmailChangeConfirmView,
 }
 
 
@@ -73,6 +76,7 @@ MATRIX = [
     ("get", "/api/v1/admin/summary/", "summary"),
     ("get", "/api/v1/admin/orders/", "orders"),
     ("post", "/api/v1/admin/orders/999/transition/", "orders"),
+    ("post", "/api/v1/admin/orders/bulk-transition/", "orders"),
     ("get", "/api/v1/admin/catalog/products/", "products"),
     ("post", "/api/v1/admin/catalog/products/bulk/", "products"),
     ("get", "/api/v1/admin/catalog/statuses/", "products"),

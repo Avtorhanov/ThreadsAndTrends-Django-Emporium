@@ -3,6 +3,7 @@
 {% block title %}Мои заказы — DiDi-shop{% endblock %}
 {% block content %}
 <section class="page">
+  <a class="back-link" href="{% url 'web:profile' %}"><svg class="ic flip" width="16" height="16"><use href="#i-chevron"/></svg>Профиль</a>
   <header class="section-head">
     <p class="overline">Профиль</p>
     <h1 class="h1">Мои заказы</h1>
@@ -13,7 +14,7 @@
     <li>
       <a class="order-card" href="{% url 'web:order' order.number %}">
         <span class="order-card__head">
-          <span class="order-card__num">{{ order.number }}</span>
+          <span class="order-card__num">{{ order.number }}{% if order.status_unseen %}<span class="news-dot" aria-hidden="true"></span><span class="sr"> — статус обновлён</span>{% endif %}</span>
           <span class="status status--{{ order.status|status_tone }}">{{ order.get_status_display }}</span>
         </span>
         <span class="order-card__meta">{{ order.created_at|date:"j E Y, H:i" }} · {{ order.items_count|default:0|ru_plural:"товар,товара,товаров" }}</span>

@@ -13,11 +13,48 @@ class TokenPairSerializer(serializers.Serializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField(help_text="Фото профиля (WebP 320×320) или null")
+    has_order_news = serializers.SerializerMethodField(
+        help_text="Магазин сменил статус заказа, покупатель его ещё не открывал (значок «Профиля»)"
+    )
+
     class Meta:
         model = User
         # is_staff — в приложении у сотрудника есть вход в панель управления.
-        fields = ["id", "email", "first_name", "last_name", "date_joined", "is_staff"]
-        read_only_fields = ["id", "email", "date_joined", "is_staff"]
+        fields = [
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "date_joined",
+            "is_staff",
+            "avatar_url",
+            "has_order_news",
+        ]
+        read_only_fields = [
+            "id",
+            "email",
+            "date_joined",
+            "is_staff",
+            "avatar_url",
+            "has_order_news",
+        ]
+
+    def get_has_order_news(self, user) -> bool:
+        from orders.services.status import has_unseen  # accounts не зависит от orders при импорте
+
+        return has_unseen(user)
+
+    def get_avatar_url(self, user) -> str | None:
+        if not user.avatar:
+            return None
+        request = self.context.get("request")
+        url = user.avatar.url
+        return request.build_absolute_uri(url) if request else url
+
+
+class AvatarUploadSerializer(serializers.Serializer):
+    avatar = serializers.FileField(help_text="JPEG, PNG или WebP до 5 МБ")
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -43,6 +80,27 @@ class RefreshSerializer(serializers.Serializer):
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(trim_whitespace=False, max_length=128)
     new_password = serializers.CharField(trim_whitespace=False, max_length=128)
+
+
+class EmailChangeRequestSerializer(serializers.Serializer):
+    new_email = serializers.CharField(max_length=254, help_text="Новый email — на него придёт код")
+    password = serializers.CharField(
+        trim_whitespace=False, max_length=128, help_text="Текущий пароль"
+    )
+
+
+class EmailChangeConfirmSerializer(serializers.Serializer):
+    code = serializers.RegexField(r"^\d{6}$", error_messages={"invalid": "Код — 6 цифр."})
+
+
+class EmailChangePendingSerializer(serializers.Serializer):
+    new_email = serializers.EmailField(help_text="Адрес, на который отправлен код")
+    expires_at = serializers.DateTimeField(help_text="До какого времени действует код")
+
+
+class StaffProfileUpdateSerializer(serializers.Serializer):
+    first_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
 
 
 class DeleteAccountSerializer(serializers.Serializer):
@@ -156,6 +214,7 @@ class CustomerStatus:
 
 class CustomerSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
+    orders_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -168,8 +227,14 @@ class CustomerSerializer(serializers.ModelSerializer):
             "date_joined",
             "last_login",
             "deleted_at",
+            "orders_count",
         ]
         read_only_fields = fields
+
+    def get_orders_count(self, obj: User) -> int:
+        # В списке и карточке — аннотация queryset; после блокировки/удаления — один запрос.
+        count = getattr(obj, "orders_count", None)
+        return obj.orders.count() if count is None else count
 
     @extend_schema_field(serializers.ChoiceField(choices=CustomerStatus.CHOICES))
     def get_status(self, obj: User) -> str:

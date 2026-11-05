@@ -16,6 +16,8 @@ from payments import services as payment_services
 from payments.api.views import PaymentServiceUnavailable
 
 from .serializers import (
+    AdminBulkTransitionResultSerializer,
+    AdminBulkTransitionSerializer,
     AdminOrderDetailSerializer,
     AdminOrderListSerializer,
     AdminTransitionSerializer,
@@ -58,6 +60,9 @@ class AdminOrderViewSet(
             value = params.get(name)
             if value:
                 queryset = queryset.filter(**{name: value})
+        customer = params.get("customer", "")
+        if customer.isdigit():
+            queryset = queryset.filter(owner_id=int(customer))
         if params.get("unfinished") in ("1", "true"):
             queryset = queryset.unfinished()
         created_from = _date_param(params, "created_from")
@@ -87,6 +92,7 @@ class AdminOrderViewSet(
             OpenApiParameter("payment_method", str, enum=PaymentMethod.values),
             OpenApiParameter("delivery_method", str, enum=DeliveryMethod.values),
             OpenApiParameter("unfinished", bool, description="Только незавершённые заказы"),
+            OpenApiParameter("customer", int, description="Заказы одного клиента (id)"),
             OpenApiParameter("created_from", str, description="Дата оформления от (ГГГГ-ММ-ДД)"),
             OpenApiParameter("created_to", str, description="Дата оформления до (ГГГГ-ММ-ДД)"),
             OpenApiParameter(
@@ -127,6 +133,39 @@ class AdminOrderViewSet(
         )
         fresh = self.get_queryset().get(pk=order.pk)
         return Response(self.get_serializer(fresh).data)
+
+    @extend_schema(
+        operation_id="admin_orders_bulk_transition",
+        request=AdminBulkTransitionSerializer,
+        responses=AdminBulkTransitionResultSerializer,
+        description=(
+            "Перевести несколько заказов в один статус. Каждый заказ проверяется отдельно: "
+            "неподходящие (другой способ доставки, финальный статус) попадают в skipped "
+            "с причиной, остальные переводятся."
+        ),
+    )
+    @action(detail=False, methods=["post"], url_path="bulk-transition")
+    def bulk_transition(self, request):
+        serializer = AdminBulkTransitionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        done, skipped = status_service.bulk_transition(
+            set(data["ids"]),
+            data["status"],
+            by=ChangedBy.ADMIN,
+            actor=request.user,
+            comment=data["comment"],
+            notify=data["notify"],
+        )
+        return Response(
+            {
+                "updated": [order.pk for order in done],
+                "skipped": [
+                    {"id": order.pk, "number": order.number, "reason": reason}
+                    for order, reason in skipped
+                ],
+            }
+        )
 
     @extend_schema(
         operation_id="admin_orders_refund",

@@ -3,7 +3,16 @@ import { type ReactNode, useLayoutEffect, useRef } from "react";
 /** Таблица панели. На широком экране — обычная таблица; на телефоне CSS превращает строки
  * в карточки, а подпись каждой ячейки берётся из заголовка её колонки (data-label).
  * Подписи проставляются здесь, чтобы страницы не дублировали заголовки в каждой ячейке. */
-export function Table({ loading = false, children }: { loading?: boolean; children: ReactNode }) {
+export function Table({
+  loading = false,
+  className,
+  children,
+}: {
+  loading?: boolean;
+  /** Своя раскладка карточки на телефоне (например, table-orders). */
+  className?: string;
+  children: ReactNode;
+}) {
   const ref = useRef<HTMLTableElement>(null);
 
   useLayoutEffect(() => {
@@ -31,7 +40,7 @@ export function Table({ loading = false, children }: { loading?: boolean; childr
 
   return (
     <div className="table-wrap">
-      <table ref={ref} className={loading ? "table is-loading" : "table"}>
+      <table ref={ref} className={["table", className, loading ? "is-loading" : ""].filter(Boolean).join(" ")}>
         {children}
       </table>
     </div>

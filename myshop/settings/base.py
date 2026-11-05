@@ -166,6 +166,8 @@ REST_FRAMEWORK = {
         # Оплата: получение ссылки и сверка после возврата из браузера (на пользователя).
         "payment_start": env_str("THROTTLE_PAYMENT_START", "30/hour"),
         "payment_refresh": env_str("THROTTLE_PAYMENT_REFRESH", "120/hour"),
+        # Загрузка и удаление фото профиля (на пользователя).
+        "avatar_upload": env_str("THROTTLE_AVATAR_UPLOAD", "20/hour"),
     },
 }
 
@@ -253,6 +255,10 @@ SPECTACULAR_SETTINGS = {
         "PaletteGroupEnum": "content.look.PALETTE_GROUP_CHOICES",
         "ThemeModeEnum": "content.look.MODE_CHOICES",
         "ThemeRadiusEnum": "content.look.RADIUS_CHOICES",
+        "ThemeNavEnum": "content.look.NAV_CHOICES",
+        "ThemeTextEnum": "content.look.TEXT_CHOICES",
+        "HomeLinkKindEnum": "content.home.LINK_KIND_CHOICES",
+        "HomeLinkPageEnum": "content.home.LINK_PAGE_CHOICES",
         "StaffLevelEnum": "accounts.staff.LEVEL_CHOICES",
     },
 }

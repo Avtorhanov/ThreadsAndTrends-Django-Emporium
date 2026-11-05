@@ -340,3 +340,7 @@ class AdminProductBulkSerializer(serializers.Serializer):
 
 class AdminProductBulkResultSerializer(serializers.Serializer):
     updated = serializers.IntegerField(help_text="Сколько товаров изменено")
+
+
+class ViewedRecordSerializer(serializers.Serializer):
+    slug = serializers.SlugField(max_length=255, help_text="Открытый покупателем товар")

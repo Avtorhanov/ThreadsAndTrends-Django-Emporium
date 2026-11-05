@@ -11,8 +11,10 @@
     <nav class="topnav" aria-label="Разделы">
       <a href="{% url 'web:home' %}"{% if tab == "catalog" %} aria-current="page"{% endif %}>Каталог</a>
       <a href="{% url 'web:contacts' %}"{% if tab == "contacts" %} aria-current="page"{% endif %}>Контакты</a>
-      {% if user.is_authenticated %}
-      <a href="{% url 'web:orders' %}">Заказы</a>
+      {% if user.is_staff %}{# Администратор смотрит магазин глазами покупателя; кабинет — его панель #}
+      <a href="/panel/" data-panel-link>Панель</a>
+      {% elif user.is_authenticated %}
+      <a class="topnav__news" href="{% url 'web:orders' %}">Заказы{% if orders_news %}<span class="news-dot" aria-hidden="true"></span><span class="sr"> — есть новости</span>{% endif %}</a>
       <a href="{% url 'web:profile' %}"{% if tab == "profile" %} aria-current="page"{% endif %}>Профиль</a>
       {% else %}
       <a href="{% url 'web:login' %}"{% if tab == "profile" %} aria-current="page"{% endif %}>Войти</a>
@@ -53,6 +55,8 @@
   {% if not compact %}
   {# Выпадающий поиск (вверху каталога): поле, фильтры и быстрые сортировки одной формой. #}
   <form class="drop" id="drop-search" action="{% url 'web:search' %}" method="get" role="search" data-drop hidden>
+    {# Enter в поле — обычный поиск: кнопка по умолчанию стоит первой, иначе форма ушла бы с первым чипсом сортировки. #}
+    <button class="sr" type="submit" tabindex="-1">Найти</button>
     <div class="search">
       <svg class="ic" width="20" height="20"><use href="#i-search"/></svg>
       <input type="search" name="q" value="{{ values.q|default:'' }}" placeholder="Футболка, термос, плед…" aria-label="Поиск по каталогу" maxlength="100" autocomplete="off" enterkeyhint="search">

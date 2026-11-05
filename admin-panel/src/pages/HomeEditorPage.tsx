@@ -10,6 +10,7 @@ import {
   homeService,
   inkFor,
 } from "../api/home";
+import { Icon } from "../components/Icon";
 import { BlockSettings } from "../components/home/BlockSettings";
 import { HomePreview } from "../components/home/HomePreview";
 import { useCategories, useLoader } from "../hooks/useCatalog";
@@ -73,7 +74,17 @@ export function HomeEditorPage() {
       prev.map((block) => {
         if (block.id !== saved.id) return block;
         if (!pending.current.has(saved.id)) return saved;
-        return { ...block, ink: saved.ink, image_url: saved.image_url, preview_products: saved.preview_products };
+        return {
+          ...block,
+          ink: saved.ink,
+          image_url: saved.image_url,
+          image_ids: saved.image_ids,
+          images: saved.images,
+          preview_products: saved.preview_products,
+          preview_product: saved.preview_product,
+          preview_images: saved.preview_images,
+          preview_links: saved.preview_links,
+        };
       }),
     );
   }
@@ -178,32 +189,25 @@ export function HomeEditorPage() {
     });
   }
 
+  // Несколько картинок за раз — по очереди: каждый ответ содержит все картинки баннера,
+  // и более ранний ответ не перезапишет более полный.
+  const uploads = useRef<Promise<void>>(Promise.resolve());
   function upload(id: number, file: File) {
     if (file.size > 5 * 1024 * 1024) {
       setBlockError(id, "Файл больше 5 МБ.");
       return;
     }
-    void run(async () => {
-      try {
-        merge(await homeService.uploadImage(id, file));
-        setHasChanges(true);
-        setBlockError(id, null);
-      } catch (err) {
-        setBlockError(id, message(err));
-      }
-    });
-  }
-
-  function removeImage(id: number) {
-    void run(async () => {
-      try {
-        merge(await homeService.removeImage(id));
-        setHasChanges(true);
-        setBlockError(id, null);
-      } catch (err) {
-        setBlockError(id, message(err));
-      }
-    });
+    uploads.current = uploads.current.then(() =>
+      run(async () => {
+        try {
+          merge(await homeService.uploadImage(id, file));
+          setHasChanges(true);
+          setBlockError(id, null);
+        } catch (err) {
+          setBlockError(id, message(err));
+        }
+      }),
+    );
   }
 
   function publish() {
@@ -295,34 +299,37 @@ export function HomeEditorPage() {
                             {block.is_visible ? "" : " · скрыт"}
                             {blockErrors[block.id] ? " · ошибка" : ""}
                           </span>
-                          <strong>{block.title || "Без заголовка"}</strong>
+                          <strong>{block.title || block.preview_product?.name || "Без заголовка"}</strong>
                         </span>
                       </button>
                       <div className="he-row-actions">
                         <button
                           type="button"
                           aria-label="Выше"
+                          title="Выше"
                           disabled={busy || index === 0}
                           onClick={() => move(index, -1)}
                         >
-                          ↑
+                          <Icon name="up" size={18} />
                         </button>
                         <button
                           type="button"
                           aria-label="Ниже"
+                          title="Ниже"
                           disabled={busy || index === blocks.length - 1}
                           onClick={() => move(index, 1)}
                         >
-                          ↓
+                          <Icon name="down" size={18} />
                         </button>
                         <button
                           type="button"
                           className={block.is_visible ? "he-eye is-on" : "he-eye"}
                           aria-label={block.is_visible ? "Скрыть блок" : "Показать блок"}
+                          title={block.is_visible ? "Виден покупателям — скрыть" : "Скрыт — показать"}
                           aria-pressed={block.is_visible}
                           onClick={() => edit(block.id, { is_visible: !block.is_visible }, 0)}
                         >
-                          {block.is_visible ? "Виден" : "Скрыт"}
+                          <Icon name={block.is_visible ? "eye" : "eyeOff"} size={18} />
                         </button>
                       </div>
                     </li>
@@ -372,7 +379,6 @@ export function HomeEditorPage() {
                 busy={busy}
                 onChange={(changes, delay) => edit(selected.id, changes, delay)}
                 onUpload={(file) => upload(selected.id, file)}
-                onRemoveImage={() => removeImage(selected.id)}
                 onDelete={() => remove(selected.id)}
                 onBack={() => setView("list")}
               />

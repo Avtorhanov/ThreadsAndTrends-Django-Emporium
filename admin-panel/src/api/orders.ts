@@ -12,6 +12,7 @@ export type DeliveryMethod = Schemas["DeliveryMethodEnum"];
 export type AdminPayment = Schemas["AdminPayment"];
 export type PaymentStatus = Schemas["PaymentStatusEnum"];
 export type RefundStatus = Schemas["RefundStatusEnum"];
+export type BulkTransitionResult = Schemas["AdminBulkTransitionResult"];
 
 export type OrderQuery = {
   search: string;
@@ -22,6 +23,8 @@ export type OrderQuery = {
   createdFrom: string;
   createdTo: string;
   page: number;
+  /** Заказы одного клиента (переход из «Клиентов»). */
+  customer?: number | null;
 };
 
 export const PAGE_SIZE = 20;
@@ -31,8 +34,8 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   confirmed: "Принят",
   paid: "Оплачен",
   assembled: "Собран",
-  shipped: "Отправлен",
-  ready_for_pickup: "Готов к выдаче",
+  shipped: "В пути",
+  ready_for_pickup: "В пункте выдачи",
   delivered: "Получен",
   cancelled: "Отменён",
 };
@@ -60,6 +63,7 @@ export const ordersService = {
             delivery_method: query.delivery || undefined,
             created_from: query.createdFrom || undefined,
             created_to: query.createdTo || undefined,
+            customer: query.customer || undefined,
             page: query.page,
           },
         },
@@ -78,6 +82,13 @@ export const ordersService = {
         params: { path: { id } },
         body: { status, comment, notify },
       }),
+    );
+  },
+
+  /** Групповая смена статуса: неподходящие заказы возвращаются в skipped с причиной. */
+  bulkTransition(ids: number[], status: OrderStatus, comment = "", notify = true): Promise<BulkTransitionResult> {
+    return unwrap(
+      api.POST("/api/v1/admin/orders/bulk-transition/", { body: { ids, status, comment, notify } }),
     );
   },
 

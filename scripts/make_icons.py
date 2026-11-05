@@ -1,11 +1,12 @@
 """Иконки магазина в стиле «Лайм-тек»: приложение (Android/iOS), адаптивная иконка Android,
 заставка, веб-витрина (фавикон и «На экран Домой»).
 
-    cd mobile && npm ci && cd .. && python3 scripts/make_icons.py
+    python3 scripts/make_icons.py
 
-Знак — «Di» шрифтом Unbounded Bold, лайм (accent) на почти чёрном зелёном (ink) — значения
-из docs/design/lime-tech/tokens.json. Шрифт берётся из пакета @expo-google-fonts/unbounded
-(mobile/node_modules), поэтому сначала нужен npm ci. Нужен Pillow.
+Знак — «DiDi», как плашка логотипа в шапке магазина, приложения и панели: Unbounded Bold
+с трекингом −0,04 em, лайм (accent) на почти чёрном зелёном (ink) — значения из
+docs/design/lime-tech/tokens.json. Шрифт — тот же файл, что у витрины (переменный woff2 из
+web/static/web/fonts, начертание 700). Нужен Pillow с поддержкой WOFF2 (brotli).
 """
 
 import json
@@ -18,7 +19,9 @@ ASSETS = ROOT / "mobile/assets"
 # Веб-витрина (Django-статика): фавикон и иконки «На экран Домой».
 STOREFRONT = ROOT / "web/static/web/icons"
 TOKENS = json.loads((ROOT / "docs/design/lime-tech/tokens.json").read_text(encoding="utf-8"))
-FONT = ROOT / "mobile/node_modules/@expo-google-fonts/unbounded/700Bold/Unbounded_700Bold.ttf"
+FONT = ROOT / "web/static/web/fonts/unbounded-latin-wght-normal.woff2"
+MARK = "DiDi"
+TRACKING = -0.04  # em, как letter-spacing у .logo в site.css
 SS = 4  # суперсэмплинг для гладких краёв
 
 
@@ -32,20 +35,34 @@ LIME = rgb(TOKENS["color"]["light"]["accent"])  # #C6F432
 WHITE = (255, 255, 255)
 
 
+def _font(size: int) -> ImageFont.FreeTypeFont:
+    font = ImageFont.truetype(str(FONT), size)
+    font.set_variation_by_axes([700])
+    return font
+
+
+def _text_width(font: ImageFont.FreeTypeFont, size: int) -> float:
+    return sum(font.getlength(char) for char in MARK) + TRACKING * size * (len(MARK) - 1)
+
+
 def wordmark(size: int, color, scale: float) -> Image.Image:
-    """«Di» по центру прозрачного холста; scale — доля ширины холста под надпись."""
+    """«DiDi» по центру прозрачного холста; scale — доля ширины холста под надпись."""
     if not FONT.exists():
-        raise SystemExit(f"нет шрифта {FONT.relative_to(ROOT)}: выполните npm ci в mobile/")
+        raise SystemExit(f"нет шрифта {FONT.relative_to(ROOT)}")
     big = size * SS
     img = Image.new("RGBA", (big, big), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    font_size = int(big * scale * 0.62)
-    font = ImageFont.truetype(str(FONT), font_size)
-    # Оптический центр: «Di» без нижних выносных — центрируем по рамке глифов.
-    left, top, right, bottom = draw.textbbox((0, 0), "Di", font=font)
-    x = (big - (right - left)) / 2 - left
+    # Кегль подбирается под ширину: надпись занимает scale ширины холста.
+    font_size = int(big * scale / (_text_width(_font(100), 100) / 100))
+    font = _font(font_size)
+    width = _text_width(font, font_size)
+    # Оптический центр по высоте — по рамке глифов (у «DiDi» нет нижних выносных).
+    _, top, _, bottom = draw.textbbox((0, 0), MARK, font=font)
+    x = (big - width) / 2
     y = (big - (bottom - top)) / 2 - top
-    draw.text((x, y), "Di", font=font, fill=color)
+    for char in MARK:
+        draw.text((x, y), char, font=font, fill=color)
+        x += font.getlength(char) + TRACKING * font_size
     return img.resize((size, size), Image.LANCZOS)
 
 
@@ -56,7 +73,7 @@ def solid(size: int, scale: float) -> Image.Image:
 
 
 def plate(size: int, plate_scale: float, mark_scale: float) -> Image.Image:
-    """Скруглённая плашка ink с лаймовым «Di» на прозрачном фоне (заставка, favicon)."""
+    """Скруглённая плашка ink с лаймовым «DiDi» на прозрачном фоне (заставка, favicon)."""
     big = size * SS
     img = Image.new("RGBA", (big, big), (0, 0, 0, 0))
     side = big * plate_scale
@@ -70,20 +87,20 @@ def plate(size: int, plate_scale: float, mark_scale: float) -> Image.Image:
 
 
 def main() -> None:
-    solid(1024, 0.5).save(ASSETS / "icon.png", optimize=True)
-    # Адаптивная иконка Android: система обрезает края, знак — в центральных ~60%.
+    solid(1024, 0.62).save(ASSETS / "icon.png", optimize=True)
+    # Адаптивная иконка Android: система обрезает края, знак — в безопасном круге (~66%).
     Image.new("RGB", (512, 512), INK).save(ASSETS / "android-icon-background.png")
-    wordmark(512, LIME, 0.36).save(ASSETS / "android-icon-foreground.png", optimize=True)
-    wordmark(512, WHITE, 0.36).save(ASSETS / "android-icon-monochrome.png", optimize=True)
+    wordmark(512, LIME, 0.48).save(ASSETS / "android-icon-foreground.png", optimize=True)
+    wordmark(512, WHITE, 0.48).save(ASSETS / "android-icon-monochrome.png", optimize=True)
     # Заставка: плашка видна и на светлом (#EBF1E2), и на тёмном (#070E0A) фоне.
-    plate(1024, 0.72, 0.42).save(ASSETS / "splash-icon.png", optimize=True)
+    plate(1024, 0.72, 0.5).save(ASSETS / "splash-icon.png", optimize=True)
     # Витрина (PWA): обычные иконки, maskable (с полями) и иконка для iPhone (без прозрачности).
     STOREFRONT.mkdir(parents=True, exist_ok=True)
-    plate(48, 1.0, 0.62).save(STOREFRONT / "favicon-48.png", optimize=True)
-    solid(192, 0.5).save(STOREFRONT / "icon-192.png", optimize=True)
-    solid(512, 0.5).save(STOREFRONT / "icon-512.png", optimize=True)
-    solid(512, 0.36).save(STOREFRONT / "icon-maskable-512.png", optimize=True)
-    solid(180, 0.5).save(STOREFRONT / "apple-touch-icon.png", optimize=True)
+    plate(48, 1.0, 0.8).save(STOREFRONT / "favicon-48.png", optimize=True)
+    solid(192, 0.62).save(STOREFRONT / "icon-192.png", optimize=True)
+    solid(512, 0.62).save(STOREFRONT / "icon-512.png", optimize=True)
+    solid(512, 0.5).save(STOREFRONT / "icon-maskable-512.png", optimize=True)
+    solid(180, 0.62).save(STOREFRONT / "apple-touch-icon.png", optimize=True)
     print("иконки готовы")
 
 

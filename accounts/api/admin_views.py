@@ -5,8 +5,8 @@ JWT мобильного клиента сюда не принимается: у
 к управлению магазином.
 """
 
-from django.contrib.auth import login, logout
-from django.db.models import Q
+from django.contrib.auth import login, logout, update_session_auth_hash
+from django.db.models import Count, Q
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -22,15 +22,20 @@ from accounts.models import User
 from core.api.mixins import AdminAPIMixin
 
 from .serializers import (
+    ChangePasswordSerializer,
     CustomerSerializer,
     CustomerStatus,
+    EmailChangeConfirmSerializer,
+    EmailChangePendingSerializer,
+    EmailChangeRequestSerializer,
     LoginSerializer,
     StaffInviteSerializer,
     StaffMemberSerializer,
+    StaffProfileUpdateSerializer,
     StaffUpdateSerializer,
     StaffUserSerializer,
 )
-from .throttles import LoginEmailThrottle, LoginIPThrottle
+from .throttles import LoginEmailThrottle, LoginIPThrottle, SensitiveActionThrottle
 
 TAG = "admin"
 
@@ -84,6 +89,95 @@ class AdminMeView(AdminAPIMixin, APIView):
     def get(self, request):
         return Response(StaffUserSerializer(request.user).data)
 
+    @extend_schema(
+        request=StaffProfileUpdateSerializer,
+        responses={200: StaffUserSerializer},
+        operation_id="admin_me_update",
+        description="Своё имя и фамилия — любому сотруднику.",
+    )
+    def patch(self, request):
+        serializer = StaffProfileUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        fields = {name: value.strip() for name, value in serializer.validated_data.items()}
+        user = services.update_profile(request.user, **fields)
+        return Response(StaffUserSerializer(user).data)
+
+
+@extend_schema(tags=[TAG])
+class AdminEmailChangeView(AdminAPIMixin, APIView):
+    """Смена своего email в панели, шаг 1 (как у покупателя: пароль + код на новый адрес)."""
+
+    throttle_classes = [SensitiveActionThrottle]
+
+    def get_throttles(self):
+        # Лимит — только на отправку кода; просмотр и отмена запроса его не тратят.
+        return super().get_throttles() if self.request.method == "POST" else []
+
+    @extend_schema(
+        responses={200: EmailChangePendingSerializer, 204: None},
+        operation_id="admin_email_change_pending",
+        description="Действующий запрос смены email или 204, если его нет.",
+    )
+    def get(self, request):
+        record = services.pending_email_change(request.user)
+        if record is None:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(EmailChangePendingSerializer(record).data)
+
+    @extend_schema(
+        request=EmailChangeRequestSerializer,
+        responses={202: EmailChangePendingSerializer},
+        operation_id="admin_email_change_request",
+    )
+    def post(self, request):
+        serializer = EmailChangeRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        record = services.request_email_change(request.user, **serializer.validated_data)
+        return Response(EmailChangePendingSerializer(record).data, status=status.HTTP_202_ACCEPTED)
+
+    @extend_schema(request=None, responses={204: None}, operation_id="admin_email_change_cancel")
+    def delete(self, request):
+        services.cancel_email_change(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(tags=[TAG])
+class AdminEmailChangeConfirmView(AdminAPIMixin, APIView):
+    throttle_classes = [SensitiveActionThrottle]
+
+    @extend_schema(
+        request=EmailChangeConfirmSerializer,
+        responses={200: StaffUserSerializer},
+        operation_id="admin_email_change_confirm",
+    )
+    def post(self, request):
+        serializer = EmailChangeConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = services.confirm_email_change(request.user, **serializer.validated_data)
+        return Response(StaffUserSerializer(user).data)
+
+
+@extend_schema(tags=[TAG])
+class AdminPasswordChangeView(AdminAPIMixin, APIView):
+    """Смена своего пароля в панели — любому сотруднику, без прав на разделы. Лимит попыток
+    общий со сменой пароля на сайте и в приложении."""
+
+    throttle_classes = [SensitiveActionThrottle]
+
+    @extend_schema(
+        request=ChangePasswordSerializer,
+        responses={204: None},
+        operation_id="admin_password_change",
+        description="Нужен текущий пароль. Эта сессия остаётся, остальные браузеры и приложение "
+        "выходят.",
+    )
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        services.update_password(request.user, **serializer.validated_data)
+        update_session_auth_hash(request._request, request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 @extend_schema(tags=[TAG])
 class CustomerViewSet(
@@ -96,7 +190,12 @@ class CustomerViewSet(
     serializer_class = CustomerSerializer
 
     def get_queryset(self):
-        queryset = User.objects.customers().order_by("-date_joined", "-id")
+        # Число заказов — одним запросом для всей страницы (кнопка «Заказы · N» в панели).
+        queryset = (
+            User.objects.customers()
+            .annotate(orders_count=Count("orders"))
+            .order_by("-date_joined", "-id")
+        )
         if self.action != "list":
             return queryset
 

@@ -1,5 +1,5 @@
 // Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать.
-// Версия токенов: 1.6.0 (2026-10-28).
+// Версия токенов: 1.8.0 (2026-10-30).
 
 export type ThemeName = "light" | "dark";
 
@@ -201,7 +201,7 @@ export const radius = {
   "sheet": 28
 } as const;
 
-export type PaletteName = "lime" | "mint" | "sun" | "steel" | "graphite" | "olive" | "custom";
+export type PaletteName = "lime" | "mint" | "sun" | "steel" | "olive" | "custom";
 export type AccentName = "lime" | "mint" | "sun" | "sky" | "pink" | "lilac" | "steel" | "orange" | "olive" | "sand" | "navy" | "wine" | "graphite" | "forest";
 export type PaletteGroup = "bright" | "calm" | "custom";
 
@@ -246,12 +246,6 @@ export const paletteList: readonly PaletteInfo[] = [
     "name": "Сталь",
     "group": "calm",
     "note": "Холодный синий, строгая"
-  },
-  {
-    "key": "graphite",
-    "name": "Графит",
-    "group": "calm",
-    "note": "Тёмно-серая с оранжевым"
   },
   {
     "key": "olive",
@@ -605,90 +599,6 @@ export const paletteThemes: Record<PaletteName, ByTheme<Palette>> = {
       ]
     }
   },
-  "graphite": {
-    "light": {
-      "bg": "#E8EAED",
-      "surface": "#FFFFFF",
-      "ink": "#16191D",
-      "muted": "#5D6064",
-      "strike": "#878A8D",
-      "brand": "#3A4049",
-      "brandInk": "#FFFFFF",
-      "accent": "#FF8A3D",
-      "onAccent": "#16191D",
-      "segOnBg": "#16191D",
-      "segOnInk": "#FF8A3D",
-      "tag": "#DADDE2",
-      "tagInk": "#3A4049",
-      "glass": "rgba(232,234,237,0.74)",
-      "glassLine": "rgba(255,255,255,0.80)",
-      "btnGlass": "rgba(255,255,255,0.82)",
-      "nav": "#16191D",
-      "navInk": "#969899",
-      "navActiveInk": "#16191D",
-      "ctaBg": "#16191D",
-      "ctaInk": "#FFFFFF",
-      "ctaFill": "#FF8A3D",
-      "ctaDoneInk": "#16191D",
-      "border": "#D5D7DA",
-      "inputLine": "#C6C9CC",
-      "neutral": "#5D6064",
-      "neutralBg": "#E0E2E5",
-      "danger": "#B3261E",
-      "dangerBg": "#FBE7E4",
-      "success": "#24703F",
-      "successBg": "#DFF2D2",
-      "warning": "#8A5300",
-      "warningBg": "#FFEFC7",
-      "info": "#1E5FA6",
-      "infoBg": "#E2EDF9",
-      "card": "#FFFFFF",
-      "cardStops": null
-    },
-    "dark": {
-      "bg": "#0B0C0E",
-      "surface": "#212429",
-      "ink": "#F1F1F2",
-      "muted": "#A7A8A9",
-      "strike": "#8A8A8B",
-      "brand": "#FF8A3D",
-      "brandInk": "#16191D",
-      "accent": "#FF8A3D",
-      "onAccent": "#16191D",
-      "segOnBg": "#FF8A3D",
-      "segOnInk": "#16191D",
-      "tag": "#3A3F47",
-      "tagInk": "#FF9956",
-      "glass": "rgba(11,12,14,0.74)",
-      "glassLine": "rgba(255,138,61,0.14)",
-      "btnGlass": "rgba(33,36,41,0.85)",
-      "nav": "#08080A",
-      "navInk": "#7F7F80",
-      "navActiveInk": "#16191D",
-      "ctaBg": "#FF8A3D",
-      "ctaInk": "#16191D",
-      "ctaFill": "#F1F1F2",
-      "ctaDoneInk": "#16191D",
-      "border": "#303236",
-      "inputLine": "#46474B",
-      "neutral": "#A7A8A9",
-      "neutralBg": "#292C31",
-      "danger": "#FF9A8F",
-      "dangerBg": "#3B1F1B",
-      "success": "#A6E38A",
-      "successBg": "#1C3522",
-      "warning": "#FFCB6B",
-      "warningBg": "#3A2E12",
-      "info": "#9CCBFF",
-      "infoBg": "#172A3D",
-      "card": "#26292F",
-      "cardStops": [
-        "#34383F",
-        "#26292F",
-        "#1B1D21"
-      ]
-    }
-  },
   "olive": {
     "light": {
       "bg": "#ECEEE2",
@@ -932,24 +842,6 @@ export const paletteShadows: Record<PaletteName, ByTheme<Shadows>> = {
       "accentGlow": "0 10px 22px -6px rgba(127,167,207,.55)"
     }
   },
-  "graphite": {
-    "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(58,64,73,.48), 0 40px 60px -30px rgba(58,64,73,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(58,64,73,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(58,64,73,.68)",
-      "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
-      "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
-      "accentGlow": "0 10px 22px -6px rgba(255,138,61,.55)"
-    },
-    "dark": {
-      "card": "0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(255,138,61,.12), 0 0 26px -4px rgba(255,138,61,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95)",
-      "control": "0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,138,61,.10), 0 0 18px -4px rgba(255,138,61,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85)",
-      "header": "0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(255,138,61,.10), 0 0 30px -8px rgba(255,138,61,.20), 0 22px 38px -14px rgba(0,0,0,.9)",
-      "imageInset": "inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.05), inset 0 -34px 52px -26px rgba(0,0,0,.6), 0 10px 18px -12px rgba(0,0,0,.75)",
-      "nav": "0 0 0 1px rgba(255,138,61,.16), 0 0 30px -6px rgba(255,138,61,.24), 0 22px 40px -14px rgba(0,0,0,.9)",
-      "accentGlow": "0 10px 22px -6px rgba(255,138,61,.55)"
-    }
-  },
   "olive": {
     "light": {
       "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(27,31,18,.10), 0 18px 30px -12px rgba(75,83,32,.48), 0 40px 60px -30px rgba(75,83,32,.55)",
@@ -1001,7 +893,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#16191D",
       "brandInk": "#C6F432",
       "segOnBg": "#16191D",
-      "segOnInk": "#C6F432"
+      "segOnInk": "#C6F432",
+      "brand": "#596C25",
+      "tag": "#F1FCCE",
+      "tagInk": "#596C25"
     },
     "dark": {
       "accent": "#C6F432",
@@ -1013,7 +908,9 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaBg": "#C6F432",
       "ctaInk": "#16191D",
       "navActiveInk": "#16191D",
-      "glassLine": "rgba(198,244,50,0.14)"
+      "glassLine": "rgba(198,244,50,0.14)",
+      "tag": "#3E492B",
+      "tagInk": "#C6F432"
     }
   },
   "mint": {
@@ -1027,7 +924,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#16191D",
       "brandInk": "#5EE6A8",
       "segOnBg": "#16191D",
-      "segOnInk": "#5EE6A8"
+      "segOnInk": "#5EE6A8",
+      "brand": "#2E5F4C",
+      "tag": "#D8F9EA",
+      "tagInk": "#2E5F4C"
     },
     "dark": {
       "accent": "#5EE6A8",
@@ -1039,7 +939,9 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaBg": "#5EE6A8",
       "ctaInk": "#16191D",
       "navActiveInk": "#16191D",
-      "glassLine": "rgba(94,230,168,0.14)"
+      "glassLine": "rgba(94,230,168,0.14)",
+      "tag": "#2B4640",
+      "tagInk": "#5EE6A8"
     }
   },
   "sun": {
@@ -1053,7 +955,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#16191D",
       "brandInk": "#FFD23F",
       "segOnBg": "#16191D",
-      "segOnInk": "#FFD23F"
+      "segOnInk": "#FFD23F",
+      "brand": "#6A5C29",
+      "tag": "#FFF4D1",
+      "tagInk": "#6A5C29"
     },
     "dark": {
       "accent": "#FFD23F",
@@ -1065,7 +970,9 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaBg": "#FFD23F",
       "ctaInk": "#16191D",
       "navActiveInk": "#16191D",
-      "glassLine": "rgba(255,210,63,0.14)"
+      "glassLine": "rgba(255,210,63,0.14)",
+      "tag": "#48422D",
+      "tagInk": "#FFD23F"
     }
   },
   "sky": {
@@ -1079,7 +986,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#16191D",
       "brandInk": "#9CCBFF",
       "segOnBg": "#16191D",
-      "segOnInk": "#9CCBFF"
+      "segOnInk": "#9CCBFF",
+      "brand": "#415265",
+      "tag": "#E7F3FF",
+      "tagInk": "#415265"
     },
     "dark": {
       "accent": "#9CCBFF",
@@ -1091,7 +1001,9 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaBg": "#9CCBFF",
       "ctaInk": "#16191D",
       "navActiveInk": "#16191D",
-      "glassLine": "rgba(156,203,255,0.14)"
+      "glassLine": "rgba(156,203,255,0.14)",
+      "tag": "#364150",
+      "tagInk": "#9CCBFF"
     }
   },
   "pink": {
@@ -1105,7 +1017,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#16191D",
       "brandInk": "#FF9EC4",
       "segOnBg": "#16191D",
-      "segOnInk": "#FF9EC4"
+      "segOnInk": "#FF9EC4",
+      "brand": "#5C414F",
+      "tag": "#FFE8F1",
+      "tagInk": "#5C414F"
     },
     "dark": {
       "accent": "#FF9EC4",
@@ -1117,7 +1032,9 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaBg": "#FF9EC4",
       "ctaInk": "#16191D",
       "navActiveInk": "#16191D",
-      "glassLine": "rgba(255,158,196,0.14)"
+      "glassLine": "rgba(255,158,196,0.14)",
+      "tag": "#483945",
+      "tagInk": "#FF9EC4"
     }
   },
   "lilac": {
@@ -1131,7 +1048,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#16191D",
       "brandInk": "#B9A6FF",
       "segOnBg": "#16191D",
-      "segOnInk": "#B9A6FF"
+      "segOnInk": "#B9A6FF",
+      "brand": "#44405C",
+      "tag": "#EEEAFF",
+      "tagInk": "#44405C"
     },
     "dark": {
       "accent": "#B9A6FF",
@@ -1143,7 +1063,9 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaBg": "#B9A6FF",
       "ctaInk": "#16191D",
       "navActiveInk": "#16191D",
-      "glassLine": "rgba(185,166,255,0.14)"
+      "glassLine": "rgba(185,166,255,0.14)",
+      "tag": "#3C3B50",
+      "tagInk": "#B9A6FF"
     }
   },
   "steel": {
@@ -1157,7 +1079,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#16191D",
       "brandInk": "#7FA7CF",
       "segOnBg": "#16191D",
-      "segOnInk": "#7FA7CF"
+      "segOnInk": "#7FA7CF",
+      "brand": "#2F3B48",
+      "tag": "#E0EAF3",
+      "tagInk": "#2F3B48"
     },
     "dark": {
       "accent": "#7FA7CF",
@@ -1169,7 +1094,9 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaBg": "#7FA7CF",
       "ctaInk": "#16191D",
       "navActiveInk": "#16191D",
-      "glassLine": "rgba(127,167,207,0.14)"
+      "glassLine": "rgba(127,167,207,0.14)",
+      "tag": "#313B47",
+      "tagInk": "#7FA7CF"
     }
   },
   "orange": {
@@ -1183,7 +1110,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#16191D",
       "brandInk": "#FF8A3D",
       "segOnBg": "#16191D",
-      "segOnInk": "#FF8A3D"
+      "segOnInk": "#FF8A3D",
+      "brand": "#533625",
+      "tag": "#FFE3D0",
+      "tagInk": "#533625"
     },
     "dark": {
       "accent": "#FF8A3D",
@@ -1195,7 +1125,9 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaBg": "#FF8A3D",
       "ctaInk": "#16191D",
       "navActiveInk": "#16191D",
-      "glassLine": "rgba(255,138,61,0.14)"
+      "glassLine": "rgba(255,138,61,0.14)",
+      "tag": "#48362D",
+      "tagInk": "#FF8A3D"
     }
   },
   "olive": {
@@ -1209,7 +1141,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#16191D",
       "brandInk": "#B5C267",
       "segOnBg": "#16191D",
-      "segOnInk": "#B5C267"
+      "segOnInk": "#B5C267",
+      "brand": "#464C33",
+      "tag": "#EDF0DB",
+      "tagInk": "#464C33"
     },
     "dark": {
       "accent": "#B5C267",
@@ -1221,7 +1156,9 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaBg": "#B5C267",
       "ctaInk": "#16191D",
       "navActiveInk": "#16191D",
-      "glassLine": "rgba(181,194,103,0.14)"
+      "glassLine": "rgba(181,194,103,0.14)",
+      "tag": "#3B4034",
+      "tagInk": "#B5C267"
     }
   },
   "sand": {
@@ -1235,7 +1172,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#16191D",
       "brandInk": "#C8B98A",
       "segOnBg": "#16191D",
-      "segOnInk": "#C8B98A"
+      "segOnInk": "#C8B98A",
+      "brand": "#4B493E",
+      "tag": "#F2EEE3",
+      "tagInk": "#4B493E"
     },
     "dark": {
       "accent": "#C8B98A",
@@ -1247,7 +1187,9 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaBg": "#C8B98A",
       "ctaInk": "#16191D",
       "navActiveInk": "#16191D",
-      "glassLine": "rgba(200,185,138,0.14)"
+      "glassLine": "rgba(200,185,138,0.14)",
+      "tag": "#3E3E3A",
+      "tagInk": "#C8B98A"
     }
   },
   "navy": {
@@ -1261,7 +1203,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#FFFFFF",
       "brandInk": "#FFFFFF",
       "segOnBg": "#2F5D8A",
-      "segOnInk": "#FFFFFF"
+      "segOnInk": "#FFFFFF",
+      "brand": "#2F5D8A",
+      "tag": "#DEE5EC",
+      "tagInk": "#2F5D8A"
     },
     "dark": {
       "accent": "#2F5D8A",
@@ -1287,7 +1232,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#FFFFFF",
       "brandInk": "#FFFFFF",
       "segOnBg": "#8E2C3E",
-      "segOnInk": "#FFFFFF"
+      "segOnInk": "#FFFFFF",
+      "brand": "#8E2C3E",
+      "tag": "#EDDDE0",
+      "tagInk": "#8E2C3E"
     },
     "dark": {
       "accent": "#8E2C3E",
@@ -1299,7 +1247,9 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaBg": "#8E2C3E",
       "ctaInk": "#FFFFFF",
       "navActiveInk": "#FFFFFF",
-      "glassLine": "rgba(142,44,62,0.14)"
+      "glassLine": "rgba(142,44,62,0.14)",
+      "tag": "#34252D",
+      "tagInk": "#BB808B"
     }
   },
   "graphite": {
@@ -1313,7 +1263,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#FFFFFF",
       "brandInk": "#FFFFFF",
       "segOnBg": "#3A4049",
-      "segOnInk": "#FFFFFF"
+      "segOnInk": "#FFFFFF",
+      "brand": "#3A4049",
+      "tag": "#DFE0E2",
+      "tagInk": "#3A4049"
     },
     "dark": {
       "accent": "#3A4049",
@@ -1325,7 +1278,9 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaBg": "#3A4049",
       "ctaInk": "#FFFFFF",
       "navActiveInk": "#FFFFFF",
-      "glassLine": "rgba(58,64,73,0.14)"
+      "glassLine": "rgba(58,64,73,0.14)",
+      "tag": "#25282F",
+      "tagInk": "#8D9095"
     }
   },
   "forest": {
@@ -1339,7 +1294,10 @@ export const accents: Record<AccentName, AccentInfo> = {
       "ctaDoneInk": "#FFFFFF",
       "brandInk": "#FFFFFF",
       "segOnBg": "#1F7A5C",
-      "segOnInk": "#FFFFFF"
+      "segOnInk": "#FFFFFF",
+      "brand": "#1E7458",
+      "tag": "#DBEAE5",
+      "tagInk": "#1E7458"
     },
     "dark": {
       "accent": "#1F7A5C",
@@ -1359,9 +1317,9 @@ export const accents: Record<AccentName, AccentInfo> = {
 export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   "lime": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(89,108,37,.48), 0 40px 60px -30px rgba(89,108,37,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(89,108,37,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(89,108,37,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(198,244,50,.55)"
@@ -1377,9 +1335,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "mint": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(46,95,76,.48), 0 40px 60px -30px rgba(46,95,76,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(46,95,76,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(46,95,76,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(94,230,168,.55)"
@@ -1395,9 +1353,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "sun": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(106,92,41,.48), 0 40px 60px -30px rgba(106,92,41,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(106,92,41,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(106,92,41,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(255,210,63,.55)"
@@ -1413,9 +1371,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "sky": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(65,82,101,.48), 0 40px 60px -30px rgba(65,82,101,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(65,82,101,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(65,82,101,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(156,203,255,.55)"
@@ -1431,9 +1389,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "pink": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(92,65,79,.48), 0 40px 60px -30px rgba(92,65,79,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(92,65,79,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(92,65,79,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(255,158,196,.55)"
@@ -1449,9 +1407,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "lilac": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(68,64,92,.48), 0 40px 60px -30px rgba(68,64,92,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(68,64,92,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(68,64,92,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(185,166,255,.55)"
@@ -1467,9 +1425,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "steel": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(47,59,72,.48), 0 40px 60px -30px rgba(47,59,72,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(47,59,72,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(47,59,72,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(127,167,207,.55)"
@@ -1485,9 +1443,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "orange": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(83,54,37,.48), 0 40px 60px -30px rgba(83,54,37,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(83,54,37,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(83,54,37,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(255,138,61,.55)"
@@ -1503,9 +1461,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "olive": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(70,76,51,.48), 0 40px 60px -30px rgba(70,76,51,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(70,76,51,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(70,76,51,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(181,194,103,.55)"
@@ -1521,9 +1479,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "sand": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(75,73,62,.48), 0 40px 60px -30px rgba(75,73,62,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(75,73,62,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(75,73,62,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(200,185,138,.55)"
@@ -1539,9 +1497,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "navy": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(47,93,138,.48), 0 40px 60px -30px rgba(47,93,138,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(47,93,138,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(47,93,138,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(47,93,138,.55)"
@@ -1557,9 +1515,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "wine": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(142,44,62,.48), 0 40px 60px -30px rgba(142,44,62,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(142,44,62,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(142,44,62,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(142,44,62,.55)"
@@ -1575,9 +1533,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "graphite": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(58,64,73,.48), 0 40px 60px -30px rgba(58,64,73,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(58,64,73,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(58,64,73,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(58,64,73,.55)"
@@ -1593,9 +1551,9 @@ export const accentShadows: Record<AccentName, ByTheme<Shadows>> = {
   },
   "forest": {
     "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68)",
+      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(30,116,88,.48), 0 40px 60px -30px rgba(30,116,88,.55)",
+      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(30,116,88,.5)",
+      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(30,116,88,.68)",
       "imageInset": "inset 0 -28px 46px -26px rgba(22,25,29,.32)",
       "nav": "0 22px 40px -14px rgba(22,25,29,.82)",
       "accentGlow": "0 10px 22px -6px rgba(31,122,92,.55)"

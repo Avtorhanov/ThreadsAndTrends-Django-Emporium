@@ -4,13 +4,14 @@
 и демо-заказах, поэтому любая правка вёрстки, стилей или токенов сразу видна в превью.
 Два дерева страниц: гость — `<base>/…`, вошедший покупатель — `<base>/me/…`; отдельные
 состояния (ошибки форм, проблемная корзина, баннер) — `<base>/rooms/…`, оглавление —
-`<base>/rooms/`. Отправка форм и корзину имитирует static/preview/preview.js (только здесь,
-на боевом сайте его нет).
+`<base>/rooms/`. Логику сервера (корзина, оформление, заказы, вход, поиск и фильтры, изменения
+из панели) имитируют static/preview/sim.js и preview.js — только здесь, на боевом сайте их нет.
 
 Панель администратора — `<base>/panel/`: настоящая сборка admin-panel (VITE_PREVIEW=1), а ответы
-admin-API на тех же демо-данных записываются здесь в `<base>/panel/preview-api.json`; панель
-читает их вместо сервера (admin-panel/src/preview/). Сборку панели (`npm run build` с
-PREVIEW_PANEL_DIST) делает workflow до этого скрипта; без неё раздел панели пропускается.
+admin-API на тех же демо-данных записываются здесь в `<base>/panel/preview-api.json` — это
+начальные данные имитации (sim.js), общей для панели и магазина (admin-panel/src/preview/).
+Сборку панели (`npm run build` с PREVIEW_PANEL_DIST) делает workflow до этого скрипта; без неё
+раздел панели пропускается.
 
 Запуск (нужен Postgres из DB_*):
     PREVIEW_BASE=/ThreadsAndTrends-Django-Emporium python deploy/preview/build.py _site
@@ -21,8 +22,8 @@ import os
 import re
 import shutil
 import sys
-from datetime import timedelta
-from pathlib import Path
+from datetime import datetime, timedelta
+from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -43,14 +44,16 @@ from django.test import Client, RequestFactory  # noqa: E402
 from django.urls import set_script_prefix  # noqa: E402
 from django.utils import timezone  # noqa: E402
 
-from content.models import Article  # noqa: E402
+from accounts.models import EmailChangeCode  # noqa: E402
+from content.contacts import ask_links  # noqa: E402
+from content.models import Article, ArticleImage, HomeImage  # noqa: E402
 from orders.models import ChangedBy, DeliveryMethod, Order, OrderStatus, PaymentMethod  # noqa: E402
 from orders.services import checkout as checkout_service  # noqa: E402
 from orders.services import status as status_service  # noqa: E402
 from payments import providers  # noqa: E402
 from payments import services as payments  # noqa: E402
 from payments.tests.fake import FakeProvider  # noqa: E402
-from store.models import CartItem, Category, Product, ProductVariant  # noqa: E402
+from store.models import CartItem, Category, Product, ProductImage, ProductVariant  # noqa: E402
 from store.services import cart as cart_service  # noqa: E402
 
 User = get_user_model()
@@ -141,7 +144,10 @@ class Site:
             f'  <link rel="stylesheet" href="{BASE}/static/preview/preview.css">\n'
         )
         html = html.replace("</head>", head + "</head>", 1)
-        body = f'<script src="{BASE}/static/preview/preview.js" defer></script>\n'
+        body = (
+            f'<script src="{BASE}/static/preview/sim.js" data-base="{BASE}" defer></script>\n'
+            f'<script src="{BASE}/static/preview/preview.js" defer></script>\n'
+        )
         return html.replace("</body>", body + "</body>", 1)
 
 
@@ -255,6 +261,75 @@ def demo_orders(user, variants, fake) -> list[Order]:
     return [Order.objects.get(pk=order.pk) for order in orders]
 
 
+def image_sources() -> dict[str, dict]:
+    """Фото → srcset из уменьшенных копий и размеры (sim.js рисует карточки, как product_img)."""
+    result = {}
+    for model in (ProductImage, ArticleImage, HomeImage):
+        for image in model.objects.all():
+            sources = image.sources
+            entry = {"w": image.width, "h": image.height}
+            if len(sources) > 1 and all(width for _, width in sources):
+                entry["srcset"] = ", ".join(f"{url} {width}w" for url, width in sources)
+            result[image.image.url] = entry
+    return result
+
+
+def templates(orders: list[Order]) -> dict[str, str]:
+    """Страницы-образцы (адрес внутри дерева): по ним 404 показывает новый товар, заказ и т. п."""
+    product = Product.objects.live().order_by("pk").first()
+    category = Category.objects.filter(is_active=True).order_by("pk").first()
+    article = Article.objects.filter(is_published=True).order_by("pk").first()
+    return {
+        "product": f"/product/{product.slug}/",
+        "category": f"/category/{category.slug}/",
+        "article": f"/articles/{article.slug}/",
+        "order": f"/orders/{orders[0].number}/",
+    }
+
+
+def stable_media_names():
+    """Фото демо — по порядку загрузки (products/demo/0001.jpg), без даты и UUID.
+
+    Сид идёт в одном порядке, поэтому имена одинаковы в каждой сборке: «база» демо в браузере
+    покупателя (sim.js) не ссылается на файлы, которых в новой сборке уже нет. На боевом сайте —
+    UUID (store.models.product_image_path и др.).
+    """
+    from content.models import ArticleImage, HomeImage
+    from store.models import ProductImage
+
+    counters: dict[str, int] = {}
+
+    def make(prefix):
+        def upload_to(instance, filename):
+            counters[prefix] = counters.get(prefix, 0) + 1
+            ext = PurePosixPath(filename).suffix.lower() or ".jpg"
+            return f"{prefix}/demo/{counters[prefix]:04d}{ext}"
+
+        return upload_to
+
+    models = ((ProductImage, "products"), (ArticleImage, "articles"), (HomeImage, "home"))
+    for model, prefix in models:
+        model._meta.get_field("image").upload_to = make(prefix)
+
+
+def stamp_build(sim_js: Path):
+    """Метка сборки в sim.js: новая сборка — «база» один раз сверяет фото со снимком."""
+    build = (os.environ.get("GITHUB_SHA") or datetime.now().strftime("%Y%m%d%H%M%S"))[:12]
+    text = sim_js.read_text(encoding="utf-8")
+    assert '"__BUILD__"' in text, "sim.js без метки сборки"
+    sim_js.write_text(text.replace('"__BUILD__"', f'"{build}"', 1), encoding="utf-8")
+
+
+def check_product(variants: list[ProductVariant]) -> dict:
+    """Товар с размерами и остатком больше одного — для сценария корзины в check.py."""
+    variant = next(v for v in variants if v.size and v.stock > 1)
+    return {
+        "path": f"/product/{variant.product.slug}/",
+        "variant": variant.pk,
+        "name": variant.product.name,
+    }
+
+
 # --- Сборка ---
 
 
@@ -281,6 +356,7 @@ def build(out: Path) -> None:
         shutil.rmtree(media)
 
     call_command("migrate", verbosity=0)
+    stable_media_names()
     call_command("seed_demo", verbosity=0)
 
     fake = FakeProvider()
@@ -300,7 +376,7 @@ def build(out: Path) -> None:
         site.save(guest, BASE, path, tree="guest")
     site.save(guest, BASE, f"/search/?q={query}", tree="guest")
     site.save(guest, BASE, "/cart/", tree="guest")
-    for path in ("/login/", "/register/", "/password-reset/", "/profile/"):
+    for path in ("/login/", "/register/", "/password-reset/", "/profile/", "/profile/look/"):
         site.save(guest, BASE, path, tree="guest")
     site.save(guest, BASE, f"/password-reset/confirm/?email={CUSTOMER_EMAIL}", tree="guest")
     # Оформление и заказы гостю недоступны — там страница входа, как на сайте.
@@ -313,8 +389,23 @@ def build(out: Path) -> None:
         site.save(me, ME, path, tree="me")
     site.save(me, ME, f"/search/?q={query}", tree="me")
     site.save(me, ME, "/cart/", tree="me")
-    for path in ("/profile/", "/profile/password/", "/profile/delete/", "/orders/"):
+    for path in (
+        "/profile/",
+        "/profile/data/",
+        "/profile/look/",
+        "/profile/delete/",
+        "/orders/",
+    ):
         site.save(me, ME, path, tree="me")
+    # «Личные данные» в состоянии «код отправлен» — образец формы кода для preview.js.
+    pending = EmailChangeCode.objects.create(
+        user=customer,
+        new_email="new-" + CUSTOMER_EMAIL,
+        code_hash="0" * 64,
+        expires_at=timezone.now() + timedelta(minutes=15),
+    )
+    site.save(me, ME, "/profile/data/", "/me/profile/data/email-code/", tree="me")
+    pending.delete()
     for order in orders:
         site.save(me, ME, f"/orders/{order.number}/", tree="me")
     for variant, quantity in ((variants[0], 1), (variants[7], 2)):
@@ -322,32 +413,30 @@ def build(out: Path) -> None:
     site.save(me, ME, "/checkout/", tree="me")
     site.save_raw(me, ME, "/manifest.webmanifest")
     rooms = render_rooms_states(site, guest, me, customer, variants, query, fake)
-    site.save(guest, BASE, "/no-such-page/", "/404.html", tree="guest", status=404)
+    # 404: новые товары, заказы, статьи и категории из имитации (страниц на Pages нет)
+    # и маршруты панели — preview.js подставляет нужную страницу по адресу.
+    site.save(guest, BASE, "/no-such-page/", "/404.html", tree="guest", room="404", status=404)
 
-    # Данные имитации: корзина со всеми товарами (строки берутся из настоящего шаблона).
-    sim_cart(site, variants)
+    # Данные имитации (sim.js, preview.js): фото с уменьшенными копиями, мессенджеры для «Узнать»,
+    # страницы-образцы для новых товаров и заказов, товар для проверки в браузере (check.py).
     data = {
         "base": BASE,
         "pages": sorted(site.pages),
-        "freeFrom": settings.DELIVERY_FREE_FROM_KOPECKS,
-        "courier": settings.DELIVERY_COURIER_KOPECKS,
-        "maxQuantity": settings.CART_MAX_QUANTITY,
         "admin": {"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-        "variants": {
-            str(v.pk): {
-                "name": v.product.name,
-                "size": v.size,
-                "price": v.product.price_kopecks,
-                "max": min(v.stock, settings.CART_MAX_QUANTITY),
-            }
-            for v in variants
-        },
+        "customer": {"email": CUSTOMER_EMAIL, "password": PASSWORD},
+        "images": image_sources(),
+        "ask": [
+            {"kind": str(link.kind), "title": link.title, "url": link.url} for link in ask_links("")
+        ],
+        "templates": templates(orders),
+        "check": check_product(variants),
     }
     (out / "static/preview").mkdir(parents=True)
     write_rooms(out, orders, rooms, query)
 
     shutil.copytree(ROOT / "web/static", out / "static", dirs_exist_ok=True)
     shutil.copytree(ROOT / "deploy/preview/assets", out / "static/preview", dirs_exist_ok=True)
+    stamp_build(out / "static/preview/sim.js")
     (out / "static/preview/data.json").write_text(
         json.dumps(data, ensure_ascii=False), encoding="utf-8"
     )
@@ -493,32 +582,6 @@ def render_rooms_states(site, guest, me, customer, variants, query, fake) -> dic
     return rooms
 
 
-def sim_cart(site: Site, variants) -> None:
-    """Корзины со всеми товарами в наличии (гость и покупатель) и фрагмент «Добавлено»:
-    preview.js берёт из них разметку строк и пересчитывает количество и суммы."""
-    guest = Client()
-    for variant in variants:
-        site.request(guest, BASE, "/cart/add/", data={"variant": variant.pk, "quantity": 1})
-    site.save(guest, BASE, "/cart/", "/_sim/cart-guest/", tree="guest", room="sim")
-    added = site.request(
-        guest, BASE, "/cart/add/", data={"variant": variants[0].pk}, HTTP_HX_REQUEST="true"
-    )
-    (site.out / "_sim").mkdir(exist_ok=True)
-    (site.out / "_sim/added-guest.html").write_bytes(added.content)
-
-    buyer = make_customer("sim@example.ru", "Сим")
-    for variant in variants:
-        cart_service.add(buyer, variant.pk, 1)
-    client = Client()
-    client.force_login(buyer)
-    site.save(client, ME, "/cart/", "/_sim/cart-me/", tree="me", room="sim")
-    added = site.request(
-        client, ME, "/cart/add/", data={"variant": variants[0].pk}, HTTP_HX_REQUEST="true"
-    )
-    (site.out / "_sim/added-me.html").write_bytes(added.content)
-    site.pages -= {f"{BASE}/_sim/cart-guest/", f"{BASE}/_sim/cart-me/"}
-
-
 def write_rooms(out: Path, orders: list[Order], rooms: dict, query: str) -> None:
     """Оглавление «Все комнаты» — в стиле витрины (наследует web/base.html)."""
     g, m = BASE, ME
@@ -572,7 +635,9 @@ def write_rooms(out: Path, orders: list[Order], rooms: dict, query: str) -> None
             [
                 ("Профиль гостя", f"{g}/profile/"),
                 ("Профиль покупателя", f"{m}/profile/"),
-                ("Смена пароля", f"{m}/profile/password/"),
+                ("Личные данные и фото", f"{m}/profile/data/"),
+                ("Оформление (тема, палитра)", f"{m}/profile/look/"),
+                ("Личные данные: смена email — ввод кода", f"{m}/profile/data/email-code/"),
                 ("Удаление аккаунта", f"{m}/profile/delete/"),
                 ("Вход", f"{g}/login/"),
                 rooms.pop("login-error"),
@@ -633,7 +698,12 @@ PANEL_ROUTES = (
     "settings",
     "home",
     "theme",
+    "look",
+    "look/home",
+    "look/theme",
+    "look/panel",
     "staff",
+    "account",
 )
 
 
@@ -697,6 +767,7 @@ def panel_snapshot() -> dict:
         grab(f"{ADMIN_API}/content/articles/{pk}/")
     grab(f"{ADMIN_API}/customers/")
     grab(f"{ADMIN_API}/content/settings/")
+    grab(f"{ADMIN_API}/content/blocks/", {"area": "contacts"})
     grab(f"{ADMIN_API}/content/home/")
     grab(f"{ADMIN_API}/content/theme/")
     grab(f"{ADMIN_API}/staff/")
@@ -746,10 +817,12 @@ def panel_section(orders: list[Order]) -> tuple[str, list[tuple[str, str]]]:
         ("Категории", f"{panel}/catalog/categories/"),
         ("Статьи", f"{panel}/content/articles/"),
         ("Клиенты", f"{panel}/customers/"),
-        ("Главная из блоков", f"{panel}/home/"),
-        ("Тема для покупателей", f"{panel}/theme/"),
+        ("Внешний вид: главная из блоков", f"{panel}/look/home/"),
+        ("Внешний вид: тема витрины", f"{panel}/look/theme/"),
+        ("Внешний вид: оформление панели", f"{panel}/look/panel/"),
         ("Сотрудники и права", f"{panel}/staff/"),
         ("Настройки магазина", f"{panel}/settings/"),
+        ("Аккаунт и смена пароля", f"{panel}/account/"),
         ("Вход в панель", f"{panel}/login/"),
     ]
     if first_product:

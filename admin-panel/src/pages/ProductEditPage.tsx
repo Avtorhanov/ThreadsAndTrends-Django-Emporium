@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 
 import { imagesService, productsService } from "../api/catalog";
 import { ApiError } from "../api/errors";
@@ -8,6 +8,8 @@ import { MAX_PRODUCT_IMAGES, PendingPhotos } from "../components/catalog/Pending
 import { ProductForm, type ProductFormValues } from "../components/catalog/ProductForm";
 import { VariantsEditor } from "../components/catalog/VariantsEditor";
 import { useCategories, useLabels, useProduct } from "../hooks/useCatalog";
+import { storeUrl } from "../lib/site";
+import { BackLink } from "../components/BackLink";
 
 type CreatedState = { photosFailed?: string[] } | null;
 
@@ -73,13 +75,11 @@ export function ProductEditPage() {
   return (
     <section className="stack">
       <div className="page-header">
-        <Link to="/catalog/products" className="muted">
-          ← Товары
-        </Link>
+        <BackLink to="/catalog/products" label="Товары" />
         <h1>{productId === null ? "Новый товар" : (product.data?.name ?? "Товар")}</h1>
         {product.data?.deleted_at ? <span className="badge badge-deleted">Удалён</span> : null}
         {product.data && !product.data.deleted_at && product.data.is_active ? (
-          <a className="button button-ghost" href={`/product/${product.data.slug}/`} target="_blank" rel="noreferrer">
+          <a className="button button-ghost" href={storeUrl(`product/${product.data.slug}/`)} target="_blank" rel="noreferrer">
             Открыть на сайте
           </a>
         ) : null}

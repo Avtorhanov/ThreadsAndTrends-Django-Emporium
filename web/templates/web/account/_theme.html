@@ -1,12 +1,13 @@
 {% comment %}
-Оформление: тема, палитра (что разрешил администратор), акцент «Своей», углы, размер текста.
+Оформление: тема, палитра (что разрешил администратор), акцент «Своей», углы, размер текста,
+вид нижнего меню.
 Выбор — в cookie: сервер сразу рисует нужный вид; с JS меняется без перезагрузки.
 {% endcomment %}
 <form class="panel look" method="post" action="{% url 'web:theme' %}" data-theme-select>
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ request.path }}">
   <fieldset>
-    <legend class="panel__title">Оформление</legend>
+    <legend class="panel__title">Тема</legend>
     <div class="segments" role="radiogroup" aria-label="Тема">
       {% for value, label in theme_choices %}
       <label class="segment">
@@ -65,6 +66,19 @@
       <label class="segment">
         <input type="radio" name="text" value="{{ value }}"{% if look.text == value %} checked{% endif %}>
         <span>{{ label }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  <fieldset class="look__group look__nav">
+    <legend class="look__legend">Нижнее меню</legend>
+    <div class="navpick" role="radiogroup" aria-label="Нижнее меню">
+      {% for value, label, hint in nav_choices %}
+      <label class="navpick__item">
+        <input type="radio" name="nav" value="{{ value }}"{% if look.nav == value %} checked{% endif %}>
+        <span class="navpick__demo navpick__demo--{{ value }}" aria-hidden="true"><span class="navpick__bar"><i></i><i></i><i></i><i></i></span></span>
+        <span class="navpick__name">{{ label }}</span>
+        <span class="navpick__hint">{{ hint }}</span>
       </label>
       {% endfor %}
     </div>

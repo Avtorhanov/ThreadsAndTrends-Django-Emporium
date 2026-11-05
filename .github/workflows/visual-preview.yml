@@ -2,13 +2,13 @@
 # (deploy/preview/build.py) и панель администратора (/panel/, ответы API из снимка),
 # проверка в браузере и публикация в ветку gh-pages.
 # Pages: Settings → Pages → Build and deployment → Deploy from a branch → gh-pages / (root).
-# Запускается на push в visual и dev (превью — последней отправленной ветки);
+# Запускается на push в dev;
 # ручной запуск — Run workflow.
 name: Visual preview
 
 on:
   push:
-    branches: [visual, dev]
+    branches: [dev]
   workflow_dispatch:
 
 permissions:
@@ -85,7 +85,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -q -m "Отчёт превью ${GITHUB_SHA::7}" || exit 0
-          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-report-visual
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-report-preview
       - uses: actions/upload-artifact@v4
         if: always()
         with:

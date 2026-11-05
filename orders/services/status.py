@@ -84,13 +84,21 @@ COMMENT_MAX = 500
 
 @transaction.atomic
 def transition(
-    order: Order, to_status: str, *, by: str, actor=None, comment: str = "", notify: bool = True
+    order: Order,
+    to_status: str,
+    *,
+    by: str,
+    actor=None,
+    comment: str = "",
+    notify: bool = True,
+    news: bool | None = None,
 ) -> Order:
     """Перевести заказ в статус. Повтор того же статуса — без изменений (повторный клик,
     повторный webhook). Недопустимый переход — ValidationError.
 
     comment — пояснение для клиента (история заказа и письмо); notify=False — без письма
-    (администратор меняет статус «для себя», например исправляет ошибку)."""
+    (администратор меняет статус «для себя», например исправляет ошибку).
+    news — отметка «есть новости» на «Профиле»; по умолчанию — если статус сменил не покупатель."""
     comment = " ".join(comment.split())
     if len(comment) > COMMENT_MAX:
         raise ValidationError(
@@ -108,7 +116,9 @@ def transition(
 
     from_status = locked.status
     locked.status = to_status
-    locked.save(update_fields=["status", "updated_at"])
+    # Смену, сделанную самим покупателем (отмена), отмечать новостью не нужно.
+    locked.status_unseen = by != ChangedBy.CUSTOMER if news is None else news
+    locked.save(update_fields=["status", "status_unseen", "updated_at"])
     sent = notify and notifications.notify_status(locked, comment=comment)
     OrderStatusChange.objects.create(
         order=locked,
@@ -125,13 +135,50 @@ def transition(
     return locked
 
 
+def mark_seen(order: Order) -> None:
+    """Покупатель открыл заказ — значок «есть новости» гаснет. Один UPDATE и только если надо."""
+    if order.status_unseen:
+        Order.objects.filter(pk=order.pk, status_unseen=True).update(status_unseen=False)
+        order.status_unseen = False
+
+
+def has_unseen(user) -> bool:
+    """Есть ли у покупателя заказ со сменой статуса, которую он ещё не видел."""
+    if not getattr(user, "is_authenticated", False) or user.is_staff:
+        return False
+    return Order.objects.filter(owner=user, status_unseen=True).exists()
+
+
+def bulk_transition(
+    order_ids, to_status: str, *, by: str, actor=None, comment: str = "", notify: bool = True
+) -> tuple[list[Order], list[tuple[Order, str]]]:
+    """Групповая смена статуса: каждый заказ — в своей транзакции, чтобы один неподходящий
+    заказ не откатывал остальные. Возвращает (переведённые, [(пропущенный, причина)]).
+    Заказ уже в этом статусе считается пропущенным — администратор видит, что ничего
+    не изменилось."""
+    done: list[Order] = []
+    skipped: list[tuple[Order, str]] = []
+    for order in Order.objects.filter(pk__in=list(order_ids)).order_by("created_at", "id"):
+        if order.status == to_status:
+            skipped.append((order, "Уже в этом статусе."))
+            continue
+        try:
+            done.append(
+                transition(order, to_status, by=by, actor=actor, comment=comment, notify=notify)
+            )
+        except ValidationError as exc:
+            skipped.append((order, " ".join(exc.messages)))
+    return done, skipped
+
+
 def cancel(order: Order, *, by: str, actor=None, comment: str = "") -> Order:
     return transition(order, S.CANCELLED, by=by, actor=actor, comment=comment)
 
 
 def mark_paid(order: Order) -> Order:
     """Оплата подтверждена провайдером (вызывают платежи, сессия 6)."""
-    return transition(order, S.PAID, by=ChangedBy.SYSTEM)
+    # Оплату покупатель сделал сам — это не новость для него (автоотмена — новость).
+    return transition(order, S.PAID, by=ChangedBy.SYSTEM, news=False)
 
 
 def _was_paid(order: Order) -> bool:

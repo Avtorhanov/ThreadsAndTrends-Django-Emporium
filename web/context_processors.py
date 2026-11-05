@@ -6,6 +6,7 @@ from functools import cache
 from django.conf import settings
 
 from content import shop as shop_settings
+from orders.services import status as order_status
 from store.services.storefront import category_tree
 
 from . import cart, theme
@@ -51,6 +52,11 @@ def storefront(request):
         return cart.product_slugs(request)
 
     @cache
+    def orders_news():
+        # Магазин сменил статус заказа, а покупатель его ещё не открывал — точка на «Профиле».
+        return order_status.has_unseen(request.user)
+
+    @cache
     def seller():
         # Реквизиты из панели («Настройки»), пустое поле — из .env.
         return shop_settings.current().seller
@@ -67,6 +73,7 @@ def storefront(request):
         "nav_categories": nav_categories,
         "app_banner": banner,
         "cart_slugs": cart_slugs,
+        "orders_news": orders_news,
         "android_apk_url": settings.ANDROID_APK_URL,
         "seller": seller,
         "seller_line": seller_line,

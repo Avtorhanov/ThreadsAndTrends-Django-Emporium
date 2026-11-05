@@ -2,8 +2,10 @@ import { type FormEvent, useState } from "react";
 
 import { ApiError, type FieldErrors } from "../api/errors";
 import { type ShopSettings, sellerParts, shopSettingsService } from "../api/settings";
+import { ContactsSettings } from "../components/settings/ContactsSettings";
 import { useShopSettings } from "../hooks/useContent";
 import { formatKopecks, kopecksToInput, parseRublesToKopecks } from "../lib/money";
+import { BackLink } from "../components/BackLink";
 
 function FieldError({ errors, name }: { errors: FieldErrors; name: string }) {
   const message = errors[name]?.[0];
@@ -140,6 +142,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
   return (
     <form className="settings" onSubmit={submit} noValidate>
       <div className="page-header">
+        <BackLink to="/" label="Сводка" />
         <h1>Настройки магазина</h1>
         <div className="header-action pf-actions">
           {saved ? <span className="saved">Сохранено</span> : null}
@@ -337,6 +340,47 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
   );
 }
 
+/** Только демо на GitHub Pages: вернуть магазин и панель к исходным данным. */
+function DemoReset() {
+  const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+
+  async function reset() {
+    setBusy(true);
+    // Имитация сервера (preview/mock.ts → sim.js) уже загружена: панель работает через неё.
+    await window.DidiSim?.reset();
+    window.location.reload();
+  }
+
+  return (
+    <section className="card form-card">
+      <h2>Демо-данные</h2>
+      <p className="muted small">
+        Это демо: товары, заказы, клиенты и настройки хранятся в этом браузере — общие для панели и магазина.
+      </p>
+      {confirming ? (
+        <div className="he-confirm">
+          <span>Удалить все изменения и вернуть исходный каталог, заказы и настройки?</span>
+          <div className="actions">
+            <button type="button" className="button button-danger" disabled={busy} onClick={() => void reset()}>
+              {busy ? "Сбрасываем…" : "Сбросить"}
+            </button>
+            <button type="button" className="button button-ghost" disabled={busy} onClick={() => setConfirming(false)}>
+              Отмена
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <button type="button" className="button button-outline" onClick={() => setConfirming(true)}>
+            Сбросить демо-данные
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function SettingsPage() {
   const settings = useShopSettings();
   return (
@@ -350,6 +394,9 @@ export function SettingsPage() {
           onSaved={settings.set}
         />
       ) : null}
+      {/* Контакты сохраняются сразу, отдельно от формы настроек (свой API блоков сайта). */}
+      <ContactsSettings />
+      {import.meta.env.VITE_PREVIEW === "1" ? <DemoReset /> : null}
     </section>
   );
 }

@@ -16,6 +16,78 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/admin/auth/email/change/:
+    get:
+      operationId: admin_email_change_pending
+      description: Действующий запрос смены email или 204, если его нет.
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailChangePending'
+          description: ''
+        '204':
+          description: No response body
+    post:
+      operationId: admin_email_change_request
+      description: 'Смена своего email в панели, шаг 1 (как у покупателя: пароль +
+        код на новый адрес).'
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailChangePending'
+          description: ''
+    delete:
+      operationId: admin_email_change_cancel
+      description: 'Смена своего email в панели, шаг 1 (как у покупателя: пароль +
+        код на новый адрес).'
+      tags:
+      - admin
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/admin/auth/email/change/confirm/:
+    post:
+      operationId: admin_email_change_confirm
+      description: |-
+        API панели администратора: только сессия Django (+ CSRF) и роль администратора.
+        JWT мобильного клиента не принимается.
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeConfirmRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffUser'
+          description: ''
   /api/v1/admin/auth/login/:
     post:
       operationId: admin_login
@@ -71,6 +143,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/StaffUser'
           description: ''
+    patch:
+      operationId: admin_me_update
+      description: Своё имя и фамилия — любому сотруднику.
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffProfileUpdateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffUser'
+          description: ''
+  /api/v1/admin/auth/password/change/:
+    post:
+      operationId: admin_password_change
+      description: Нужен текущий пароль. Эта сессия остаётся, остальные браузеры и
+        приложение выходят.
+      tags:
+      - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/admin/catalog/categories/:
     get:
       operationId: admin_catalog_categories_list
@@ -1044,7 +1153,8 @@ paths:
   /api/v1/admin/content/home/blocks/{id}/image/:
     post:
       operationId: admin_content_home_blocks_image_create
-      description: Картинка баннера (JPEG/PNG/WebP, до 5 МБ); заменяет прежнюю.
+      description: Добавить картинку баннера (JPEG, PNG, WebP или GIF, до 5 МБ) в
+        конец списка; несколько картинок сменяют друг друга на витрине.
       parameters:
       - in: path
         name: id
@@ -1070,7 +1180,9 @@ paths:
           description: ''
     delete:
       operationId: admin_content_home_blocks_image_destroy
-      description: 'Картинка баннера: загрузить (заменяет прежнюю) или убрать.'
+      description: |-
+        Картинки баннера: добавить ещё одну (до 6) или убрать все. Порядок и удаление
+        одной — PATCH блока с image_ids.
       parameters:
       - in: path
         name: id
@@ -1225,8 +1337,9 @@ paths:
           description: ''
     put:
       operationId: admin_content_theme_update
-      description: 'Панель → «Тема»: все палитры, какие доступны покупателям, оформление
-        по умолчанию.'
+      description: 'Сохранение сбрасывает личный выбор оформления в этом браузере
+        (cookie темы, палитры, углов, текста): администратор сразу видит витрину как
+        новый посетитель.'
       tags:
       - admin-content
       requestBody:
@@ -1389,6 +1502,11 @@ paths:
           type: string
         description: Дата оформления до (ГГГГ-ММ-ДД)
       - in: query
+        name: customer
+        schema:
+          type: integer
+        description: Заказы одного клиента (id)
+      - in: query
         name: delivery_method
         schema:
           type: string
@@ -1543,6 +1661,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminOrderDetail'
           description: ''
+  /api/v1/admin/orders/bulk-transition/:
+    post:
+      operationId: admin_orders_bulk_transition
+      description: 'Перевести несколько заказов в один статус. Каждый заказ проверяется
+        отдельно: неподходящие (другой способ доставки, финальный статус) попадают
+        в skipped с причиной, остальные переводятся.'
+      tags:
+      - admin-orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminBulkTransitionRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBulkTransitionResult'
+          description: ''
   /api/v1/admin/staff/:
     get:
       operationId: admin_staff_list
@@ -1642,6 +1783,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/AdminSummary'
           description: ''
+  /api/v1/auth/email/change/:
+    post:
+      operationId: email_change_request
+      description: Код из 6 цифр уходит на новый адрес и действует 15 минут; действует
+        последний запрос. Повторно — не чаще раза в минуту и не больше 5 раз в час.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailChangePending'
+          description: ''
+  /api/v1/auth/email/change/confirm/:
+    post:
+      operationId: email_change_confirm
+      description: 'Смена email, шаг 2: код с нового адреса. На прежний уходит уведомление.'
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailChangeConfirmRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
   /api/v1/auth/login/:
     post:
       operationId: login
@@ -1706,6 +1892,43 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedProfileRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
+  /api/v1/auth/me/avatar/:
+    put:
+      operationId: upload_avatar
+      description: 'Фото профиля: загрузка (multipart, поле `avatar`) и удаление.'
+      tags:
+      - auth
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AvatarUploadRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
+    delete:
+      operationId: delete_avatar
+      description: 'Фото профиля: загрузка (multipart, поле `avatar`) и удаление.'
+      tags:
+      - auth
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -2103,6 +2326,79 @@ paths:
               schema:
                 $ref: '#/components/schemas/CatalogProductDetail'
           description: ''
+  /api/v1/catalog/products/{slug}/similar/:
+    get:
+      operationId: catalog_products_similar
+      description: '«Похожие» для карточки товара: та же категория, затем соседние;
+        до 12, без страниц.'
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogProduct'
+          description: ''
+  /api/v1/catalog/viewed/:
+    get:
+      operationId: viewed_list
+      description: 'Журнал просмотров покупателя: последние товары (без страниц),
+        запись и очистка.'
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogProduct'
+          description: ''
+    post:
+      operationId: viewed_record
+      description: 'Журнал просмотров покупателя: последние товары (без страниц),
+        запись и очистка.'
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ViewedRecordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+    delete:
+      operationId: viewed_clear
+      description: 'Журнал просмотров покупателя: последние товары (без страниц),
+        запись и очистка.'
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/content/articles/:
     get:
       operationId: content_articles_list
@@ -2267,6 +2563,7 @@ paths:
   /api/v1/orders/{number}/:
     get:
       operationId: orders_retrieve
+      description: Открытие заказа покупателем гасит отметку «есть новости» (status_unseen).
       parameters:
       - in: path
         name: number
@@ -2675,6 +2972,59 @@ components:
       required:
       - area
       - value
+    AdminBulkSkipped:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        reason:
+          type: string
+      required:
+      - id
+      - number
+      - reason
+    AdminBulkTransitionRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          description: id заказов (до 100)
+          maxItems: 100
+          minItems: 1
+        status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+        comment:
+          type: string
+          default: ''
+          description: 'Пояснение для клиента: история заказа и письмо'
+          maxLength: 500
+        notify:
+          type: boolean
+          default: true
+          description: Отправить клиентам письма о смене статуса
+      required:
+      - ids
+      - status
+    AdminBulkTransitionResult:
+      type: object
+      properties:
+        updated:
+          type: array
+          items:
+            type: integer
+          description: id переведённых
+        skipped:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminBulkSkipped'
+      required:
+      - skipped
+      - updated
     AdminCategory:
       type: object
       properties:
@@ -2813,6 +3163,36 @@ components:
           type: string
           nullable: true
           readOnly: true
+          description: Первая картинка баннера
+        image_ids:
+          type: array
+          items:
+            type: integer
+          readOnly: true
+          description: Картинки баннера по порядку
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminHomeImage'
+          readOnly: true
+        product:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Товар
+        preview_product:
+          allOf:
+          - $ref: '#/components/schemas/CatalogProduct'
+          nullable: true
+          readOnly: true
+          description: Товар баннера, как его увидит покупатель; null — не выбран
+            или скрыт
+        preview_images:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          description: Картинки баннера на витрине (свои или фото товара)
         category:
           type: integer
           readOnly: true
@@ -2835,16 +3215,35 @@ components:
             $ref: '#/components/schemas/CatalogProduct'
           readOnly: true
           description: Товары подборки, как их увидит покупатель
+        links:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        preview_links:
+          type: array
+          items:
+            $ref: '#/components/schemas/HomeLink'
+          readOnly: true
+          description: Вкладки ленты, как их увидит покупатель
       required:
       - category
       - color
       - id
+      - image_ids
       - image_url
+      - images
       - ink
       - is_visible
       - kind
+      - links
       - position
+      - preview_images
+      - preview_links
+      - preview_product
       - preview_products
+      - product
       - product_ids
       - source
       - text
@@ -2856,15 +3255,47 @@ components:
           $ref: '#/components/schemas/HomeBlockKindEnum'
       required:
       - kind
+    AdminHomeImage:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+      required:
+      - id
+      - url
     AdminHomeImageUploadRequest:
       type: object
       properties:
         image:
           type: string
           format: binary
-          description: JPEG, PNG или WebP, до 5 МБ
+          description: JPEG, PNG, WebP или GIF, до 5 МБ
       required:
       - image
+    AdminHomeLinkRequest:
+      type: object
+      description: 'Вкладка ленты: категория или статья (id), страница магазина (key)
+        или адрес (url).'
+      properties:
+        kind:
+          $ref: '#/components/schemas/HomeLinkKindEnum'
+        title:
+          type: string
+          default: ''
+          maxLength: 40
+        id:
+          type: integer
+          minimum: 1
+        key:
+          $ref: '#/components/schemas/HomeLinkPageEnum'
+        url:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - kind
     AdminHomeReorderRequest:
       type: object
       properties:
@@ -3141,8 +3572,8 @@ components:
             * `confirmed` - Принят
             * `paid` - Оплачен
             * `assembled` - Собран
-            * `shipped` - Отправлен
-            * `ready_for_pickup` - Готов к выдаче
+            * `shipped` - В пути
+            * `ready_for_pickup` - В пункте выдачи
             * `delivered` - Получен
             * `cancelled` - Отменён
           oneOf:
@@ -3823,6 +4254,18 @@ components:
           $ref: '#/components/schemas/ThemeModeEnum'
         default_radius:
           $ref: '#/components/schemas/ThemeRadiusEnum'
+        default_text:
+          $ref: '#/components/schemas/ThemeTextEnum'
+        nav_style:
+          allOf:
+          - $ref: '#/components/schemas/ThemeNavEnum'
+          description: |-
+            Вид нижнего меню витрины на телефоне
+
+            * `solid` - Сплошное
+            * `floating` - Плавающее
+            * `glass` - Стекло
+            * `bar` - Нижняя панель
         enabled:
           type: array
           items:
@@ -3833,7 +4276,9 @@ components:
       - default_mode
       - default_palette
       - default_radius
+      - default_text
       - enabled
+      - nav_style
       - palettes
     AdminThemeWriteRequest:
       type: object
@@ -3849,6 +4294,25 @@ components:
           $ref: '#/components/schemas/ThemeModeEnum'
         default_radius:
           $ref: '#/components/schemas/ThemeRadiusEnum'
+        default_text:
+          allOf:
+          - $ref: '#/components/schemas/ThemeTextEnum'
+          description: |-
+            Размер текста для нового посетителя; не передан — прежний
+
+            * `s` - Обычный
+            * `m` - Крупнее
+            * `l` - Крупный
+        nav_style:
+          allOf:
+          - $ref: '#/components/schemas/ThemeNavEnum'
+          description: |-
+            Вид нижнего меню витрины; не передан — прежний
+
+            * `solid` - Сплошное
+            * `floating` - Плавающее
+            * `glass` - Стекло
+            * `bar` - Нижняя панель
       required:
       - default_mode
       - default_palette
@@ -4045,6 +4509,15 @@ components:
       - access
       - refresh
       - user
+    AvatarUploadRequest:
+      type: object
+      properties:
+        avatar:
+          type: string
+          format: binary
+          description: JPEG, PNG или WebP до 5 МБ
+      required:
+      - avatar
     BlankEnum:
       enum:
       - ''
@@ -4659,6 +5132,9 @@ components:
           readOnly: true
           nullable: true
           title: Удалён
+        orders_count:
+          type: integer
+          readOnly: true
       required:
       - date_joined
       - deleted_at
@@ -4667,6 +5143,7 @@ components:
       - id
       - last_login
       - last_name
+      - orders_count
       - status
     CustomerStatusEnum:
       enum:
@@ -4713,6 +5190,45 @@ components:
       - cost_kopecks
       - method
       - title
+    EmailChangeConfirmRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          pattern: ^\d{6}$
+      required:
+      - code
+    EmailChangePending:
+      type: object
+      properties:
+        new_email:
+          type: string
+          format: email
+          description: Адрес, на который отправлен код
+        expires_at:
+          type: string
+          format: date-time
+          description: До какого времени действует код
+      required:
+      - expires_at
+      - new_email
+    EmailChangeRequestRequest:
+      type: object
+      properties:
+        new_email:
+          type: string
+          minLength: 1
+          description: Новый email — на него придёт код
+          maxLength: 254
+        password:
+          type: string
+          minLength: 1
+          description: Текущий пароль
+          maxLength: 128
+      required:
+      - new_email
+      - password
     Health:
       type: object
       properties:
@@ -4765,6 +5281,19 @@ components:
           type: string
           nullable: true
           readOnly: true
+          description: Первая картинка баннера
+        images:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          description: Картинки баннера по порядку (сменяют друг друга); у баннера
+            товара — его фото
+        product:
+          allOf:
+          - $ref: '#/components/schemas/CatalogProduct'
+          nullable: true
+          description: Баннер товара — переход на товар
         category:
           allOf:
           - $ref: '#/components/schemas/HomeCategory'
@@ -4779,14 +5308,22 @@ components:
           items:
             $ref: '#/components/schemas/HomeCategory'
           description: 'Лента категорий: корневые'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/HomeLink'
+          description: 'Лента категорий: свои вкладки; пусто — показать categories'
       required:
       - categories
       - category
       - color
       - id
       - image_url
+      - images
       - ink
       - kind
+      - links
+      - product
       - products
       - text
       - title
@@ -4815,6 +5352,46 @@ components:
       - id
       - name
       - slug
+    HomeLink:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/HomeLinkKindEnum'
+        title:
+          type: string
+        url:
+          type: string
+          description: Адрес на сайте (/…) или внешний
+        slug:
+          type: string
+          description: Категория или статья — slug; страница — ключ
+      required:
+      - kind
+      - slug
+      - title
+      - url
+    HomeLinkKindEnum:
+      enum:
+      - category
+      - article
+      - page
+      - url
+      type: string
+      description: |-
+        * `category` - Категория
+        * `article` - Статья
+        * `page` - Страница магазина
+        * `url` - Ссылка
+    HomeLinkPageEnum:
+      enum:
+      - products
+      - contacts
+      - delivery
+      type: string
+      description: |-
+        * `products` - Все товары
+        * `contacts` - Контакты
+        * `delivery` - Доставка и оплата
     LoginRequest:
       type: object
       properties:
@@ -5031,6 +5608,11 @@ components:
         items_count:
           type: integer
           description: Всего единиц товара
+        status_unseen:
+          type: boolean
+          readOnly: true
+          title: Смена статуса не просмотрена
+          description: Магазин сменил статус, заказ ещё не открыт
         created_at:
           type: string
           format: date-time
@@ -5044,6 +5626,7 @@ components:
       - payment_method
       - status
       - status_display
+      - status_unseen
       - total_kopecks
     OrderStatusChange:
       type: object
@@ -5056,8 +5639,8 @@ components:
             * `confirmed` - Принят
             * `paid` - Оплачен
             * `assembled` - Собран
-            * `shipped` - Отправлен
-            * `ready_for_pickup` - Готов к выдаче
+            * `shipped` - В пути
+            * `ready_for_pickup` - В пункте выдачи
             * `delivered` - Получен
             * `cancelled` - Отменён
           oneOf:
@@ -5098,8 +5681,8 @@ components:
         * `confirmed` - Принят
         * `paid` - Оплачен
         * `assembled` - Собран
-        * `shipped` - Отправлен
-        * `ready_for_pickup` - Готов к выдаче
+        * `shipped` - В пути
+        * `ready_for_pickup` - В пункте выдачи
         * `delivered` - Получен
         * `cancelled` - Отменён
     PaginatedAdminArticleList:
@@ -5256,7 +5839,6 @@ components:
       - mint
       - sun
       - steel
-      - graphite
       - olive
       - custom
       type: string
@@ -5265,7 +5847,6 @@ components:
         * `mint` - Мята
         * `sun` - Солнце
         * `steel` - Сталь
-        * `graphite` - Графит
         * `olive` - Олива
         * `custom` - Своя
     PasswordResetConfirmRequest:
@@ -5382,6 +5963,23 @@ components:
             type: integer
             minimum: 1
           maxItems: 12
+        image_ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          description: Порядок картинок баннера; без id — картинка убрана
+          maxItems: 6
+        product:
+          type: integer
+          nullable: true
+          description: 'Баннер товара: фото товара и переход на него'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminHomeLinkRequest'
+          description: 'Лента категорий: свои вкладки; пустой список — корневые категории'
+          maxItems: 12
     PatchedAdminProductStatusRequest:
       type: object
       properties:
@@ -5478,6 +6076,15 @@ components:
         last_name:
           type: string
           title: Фамилия
+          maxLength: 150
+    PatchedStaffProfileUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
           maxLength: 150
     PatchedStaffUpdateRequest:
       type: object
@@ -5586,9 +6193,21 @@ components:
           title: Статус персонала
           description: Отметьте, если пользователь может входить в административную
             часть сайта.
+        avatar_url:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Фото профиля (WebP 320×320) или null
+        has_order_news:
+          type: boolean
+          readOnly: true
+          description: Магазин сменил статус заказа, покупатель его ещё не открывал
+            (значок «Профиля»)
       required:
+      - avatar_url
       - date_joined
       - email
+      - has_order_news
       - id
       - is_staff
     RecipientDefaults:
@@ -5675,11 +6294,25 @@ components:
           $ref: '#/components/schemas/ThemeModeEnum'
         default_radius:
           $ref: '#/components/schemas/ThemeRadiusEnum'
+        default_text:
+          $ref: '#/components/schemas/ThemeTextEnum'
+        nav_style:
+          allOf:
+          - $ref: '#/components/schemas/ThemeNavEnum'
+          description: |-
+            Вид нижнего меню витрины на телефоне
+
+            * `solid` - Сплошное
+            * `floating` - Плавающее
+            * `glass` - Стекло
+            * `bar` - Нижняя панель
       required:
       - accents
       - default_mode
       - default_palette
       - default_radius
+      - default_text
+      - nav_style
       - palettes
     StaffInviteRequest:
       type: object
@@ -5900,6 +6533,18 @@ components:
         * `system` - Как в системе
         * `light` - Светлая
         * `dark` - Тёмная
+    ThemeNavEnum:
+      enum:
+      - solid
+      - floating
+      - glass
+      - bar
+      type: string
+      description: |-
+        * `solid` - Сплошное
+        * `floating` - Плавающее
+        * `glass` - Стекло
+        * `bar` - Нижняя панель
     ThemePalette:
       type: object
       properties:
@@ -5942,6 +6587,16 @@ components:
         * `sharp` - Острые
         * `normal` - Средние
         * `soft` - Мягкие
+    ThemeTextEnum:
+      enum:
+      - s
+      - m
+      - l
+      type: string
+      description: |-
+        * `s` - Обычный
+        * `m` - Крупнее
+        * `l` - Крупный
     TokenPair:
       type: object
       properties:
@@ -5966,6 +6621,17 @@ components:
         * `warning` - Жёлтый
         * `info` - Синий
         * `neutral` - Серый
+    ViewedRecordRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          description: Открытый покупателем товар
+          maxLength: 255
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - slug
   securitySchemes:
     cookieAuth:
       type: apiKey

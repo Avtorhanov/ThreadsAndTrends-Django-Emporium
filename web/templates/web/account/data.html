@@ -1,0 +1,85 @@
+{% extends "web/base.html" %}
+{% block title %}Личные данные — DiDi-shop{% endblock %}
+{% block content %}
+<section class="page page--narrow">
+  <a class="back-link" href="{% url 'web:profile' %}"><svg class="ic flip" width="16" height="16"><use href="#i-chevron"/></svg>Профиль</a>
+  <header class="section-head">
+    <p class="overline">Профиль</p>
+    <h1 class="h1">Личные данные</h1>
+  </header>
+
+  <div class="panel photo" data-photo>
+    {% include "web/account/_avatar.html" with big=True %}
+    <div class="photo__body">
+      <p class="panel__title photo__title">Фото профиля</p>
+      <p class="muted photo__hint">JPEG, PNG или WebP до 5 МБ. Видите его только вы.</p>
+      <div class="photo__actions">
+        <form method="post" action="{% url 'web:avatar' %}" enctype="multipart/form-data" data-avatar-upload>
+          {% csrf_token %}
+          <label class="btn btn--dark btn--sm photo__pick">
+            <svg class="ic" width="16" height="16"><use href="#i-camera"/></svg><span data-pick-label>{% if user.avatar %}Заменить{% else %}Загрузить{% endif %}</span>
+            <input class="sr" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" data-autosubmit>
+          </label>
+          <noscript><button class="btn btn--line btn--sm" type="submit">Отправить</button></noscript>
+        </form>
+        <form method="post" action="{% url 'web:avatar' %}" data-avatar-remove{% if not user.avatar %} hidden{% endif %}>
+          {% csrf_token %}
+          <input type="hidden" name="remove" value="1">
+          <button class="btn btn--line btn--sm" type="submit">Удалить</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <form class="panel form" method="post" action="{% url 'web:profile_data' %}" novalidate>
+    {% csrf_token %}
+    <p class="panel__title">Как к вам обращаться</p>
+    {% include "web/partials/form_errors.html" %}
+    {% include "web/partials/field.html" with field=form.first_name %}
+    {% include "web/partials/field.html" with field=form.last_name %}
+    <button class="btn btn--dark btn--block" type="submit">Сохранить</button>
+  </form>
+
+  {# Email — логин: меняется только после кода с нового адреса; на прежний уходит уведомление. #}
+  <div class="panel form" id="email">
+    <p class="panel__title">Email</p>
+    <div class="field">
+      <span class="field__label">Сейчас</span>
+      <p class="readonly">{{ user.email }}</p>
+    </div>
+    {% if pending_email %}
+    <form class="form" method="post" action="{% url 'web:email_change_confirm' %}" novalidate>
+      {% csrf_token %}
+      <p class="muted">Код отправлен на <strong>{{ pending_email.new_email }}</strong>. Он действует до {{ pending_email.expires_at|time:"H:i" }}.</p>
+      {% include "web/partials/form_errors.html" with form=code_form %}
+      {% include "web/partials/field.html" with field=code_form.code placeholder="000000" %}
+      <button class="btn btn--dark btn--block" type="submit">Подтвердить email</button>
+    </form>
+    <form method="post" action="{% url 'web:email_change' %}">
+      {% csrf_token %}
+      <input type="hidden" name="cancel" value="1">
+      <button class="btn btn--line btn--block" type="submit">Отменить смену</button>
+    </form>
+    {% else %}
+    <form class="form" method="post" action="{% url 'web:email_change' %}" novalidate>
+      {% csrf_token %}
+      {% include "web/partials/form_errors.html" with form=email_form %}
+      {% include "web/partials/field.html" with field=email_form.new_email %}
+      {% include "web/partials/field.html" with field=email_form.password %}
+      <p class="muted">Пришлём код на новый адрес. Пока вы его не введёте, вход — по прежнему email.</p>
+      <button class="btn btn--dark btn--block" type="submit">Получить код</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <form class="panel form" id="password" method="post" action="{% url 'web:password_change' %}" novalidate>
+    {% csrf_token %}
+    <p class="panel__title">Пароль</p>
+    {% include "web/partials/form_errors.html" with form=password_form %}
+    {% include "web/partials/field.html" with field=password_form.old_password %}
+    {% include "web/partials/field.html" with field=password_form.new_password %}
+    <p class="muted">На других устройствах и в приложении нужно будет войти заново. Не помните текущий пароль? <a href="{% url 'web:password_reset' %}">Восстановить по коду из письма</a>.</p>
+    <button class="btn btn--dark btn--block" type="submit">Сменить пароль</button>
+  </form>
+</section>
+{% endblock %}

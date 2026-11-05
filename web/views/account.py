@@ -15,13 +15,17 @@ from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 
 from accounts import services as accounts
-from orders.models import Order
+from orders.models import Order, OrderStatus
+from store.services import history
 from store.services.cart import MergeNoticeReason
 
 from .. import cart as web_cart
 from .. import ratelimit, theme
 from ..forms import (
+    AvatarForm,
     DeleteAccountForm,
+    EmailChangeForm,
+    EmailCodeForm,
     LoginForm,
     PasswordChangeForm,
     ProfileForm,
@@ -185,52 +189,174 @@ def password_reset_confirm(request):
     )
 
 
+PURCHASES_ON_PROFILE = 3
+VIEWED_ON_PROFILE = 12
+
+
 def profile(request):
+    """Профиль: фото и имя, текущий заказ, полученные покупки, корзина, «Вы смотрели»."""
     if request.user.is_authenticated and request.user.is_staff:
         return redirect(PANEL_URL)
     if not request.user.is_authenticated:
         # Профиль гостя — «Войти» и «Зарегистрироваться», как в приложении.
-        return render(
-            request,
-            "web/account/guest.html",
-            {**theme.options(request), "tab": "profile", "noindex": True},
-        )
+        return render(request, "web/account/guest.html", {"tab": "profile", "noindex": True})
     user = request.user
-    form = ProfileForm(
-        request.POST or None,
-        initial={"first_name": user.first_name, "last_name": user.last_name},
+    orders = Order.objects.filter(owner=user)
+    current = orders.unfinished().order_by("-created_at", "-id").first()
+    delivered = orders.filter(status=OrderStatus.DELIVERED)
+    purchases = list(
+        delivered.order_by("-created_at", "-id").prefetch_related("items")[:PURCHASES_ON_PROFILE]
     )
-    if request.method == "POST" and form.is_valid():
-        accounts.update_profile(
-            user,
-            first_name=form.cleaned_data["first_name"].strip(),
-            last_name=form.cleaned_data["last_name"].strip(),
-        )
-        messages.success(request, "Профиль сохранён.")
-        return redirect("web:profile")
-    current = Order.objects.filter(owner=user).unfinished().order_by("-created_at", "-id").first()
     return render(
         request,
         "web/account/profile.html",
         {
-            "form": form,
             "current_order": current,
-            **theme.options(request),
+            "purchases": purchases,
+            "purchases_count": delivered.count() if purchases else 0,
+            "cart_summary": web_cart.summary(request),
+            "viewed": history.recent_products(user, limit=VIEWED_ON_PROFILE),
             "tab": "profile",
             "noindex": True,
         },
     )
 
 
+def _render_data(request, **forms):
+    """Личные данные: фото, имя и фамилия, email (смена с кодом на новый адрес) и пароль.
+    Форма с ошибками передаётся из своего обработчика, остальные — пустые."""
+    user = request.user
+    context = {
+        "form": forms.get("form")
+        or ProfileForm(initial={"first_name": user.first_name, "last_name": user.last_name}),
+        "avatar_form": AvatarForm(),
+        "email_form": forms.get("email_form") or EmailChangeForm(),
+        "code_form": forms.get("code_form") or EmailCodeForm(),
+        "password_form": forms.get("password_form") or PasswordChangeForm(),
+        "pending_email": accounts.pending_email_change(user),
+        "tab": "profile",
+        "noindex": True,
+    }
+    return render(request, "web/account/data.html", context)
+
+
 @customer_required
-def password_change(request):
-    form = PasswordChangeForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
+def profile_data(request):
+    """Личные данные: фото профиля, имя и фамилия."""
+    if request.method != "POST":
+        return _render_data(request)
+    form = ProfileForm(request.POST)
+    if form.is_valid():
+        accounts.update_profile(
+            request.user,
+            first_name=form.cleaned_data["first_name"].strip(),
+            last_name=form.cleaned_data["last_name"].strip(),
+        )
+        messages.success(request, "Данные сохранены.")
+        return redirect("web:profile_data")
+    return _render_data(request, form=form)
+
+
+@require_POST
+@customer_required
+def email_change(request):
+    """Смена email, шаг 1: пароль + новый адрес → код на новый адрес."""
+    if request.POST.get("cancel"):
+        accounts.cancel_email_change(request.user)
+        messages.success(request, "Смена email отменена.")
+        return redirect(reverse("web:profile_data") + "#email")
+    form = EmailChangeForm(request.POST)
+    if form.is_valid():
         if not ratelimit.allow(request, "auth_sensitive"):
             form.add_error(None, ratelimit.TOO_MANY)
         else:
             try:
-                accounts.change_password(
+                record = accounts.request_email_change(
+                    request.user,
+                    new_email=form.cleaned_data["new_email"],
+                    password=form.cleaned_data["password"],
+                )
+            except ValidationError as exc:
+                _apply_errors(form, exc)
+            else:
+                messages.success(request, f"Код отправлен на {record.new_email}.")
+                return redirect(reverse("web:profile_data") + "#email")
+    return _render_data(request, email_form=form)
+
+
+@require_POST
+@customer_required
+def email_change_confirm(request):
+    """Смена email, шаг 2: код с нового адреса."""
+    form = EmailCodeForm(request.POST)
+    if form.is_valid():
+        if not ratelimit.allow(request, "auth_sensitive"):
+            form.add_error(None, ratelimit.TOO_MANY)
+        else:
+            try:
+                user = accounts.confirm_email_change(request.user, code=form.cleaned_data["code"])
+            except ValidationError as exc:
+                _apply_errors(form, exc)
+            else:
+                messages.success(request, f"Email изменён: теперь входите с {user.email}.")
+                return redirect(reverse("web:profile_data") + "#email")
+    return _render_data(request, code_form=form)
+
+
+@require_POST
+@customer_required
+def avatar(request):
+    """Загрузить (поле avatar) или удалить (remove=1) фото профиля."""
+    if not ratelimit.allow(request, "avatar_upload", user=request.user):
+        messages.error(request, ratelimit.TOO_MANY)
+    elif request.POST.get("remove"):
+        accounts.remove_avatar(request.user)
+        messages.success(request, "Фото удалено.")
+    else:
+        form = AvatarForm(request.POST, request.FILES)
+        if not form.is_valid():
+            messages.error(request, "Выберите файл с фото.")
+        else:
+            try:
+                accounts.set_avatar(request.user, form.cleaned_data["avatar"])
+            except ValidationError as exc:
+                messages.error(request, " ".join(exc.messages))
+            else:
+                messages.success(request, "Фото обновлено.")
+    return redirect("web:profile_data")
+
+
+def profile_look(request):
+    """Оформление витрины: тема, палитра, углы, размер текста (и гостю — выбор в cookie)."""
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect(PANEL_URL)
+    return render(
+        request,
+        "web/account/look.html",
+        {**theme.options(request), "tab": "profile", "noindex": True},
+    )
+
+
+@require_POST
+@customer_required
+def viewed_clear(request):
+    history.clear(request.user)
+    messages.success(request, "История просмотров очищена.")
+    return redirect("web:profile")
+
+
+@customer_required
+def password_change(request):
+    """Смена пароля — блок на странице «Личные данные» (отдельной страницы больше нет)."""
+    if request.method != "POST":
+        return redirect(reverse("web:profile_data") + "#password")
+    form = PasswordChangeForm(request.POST)
+    if form.is_valid():
+        if not ratelimit.allow(request, "auth_sensitive"):
+            form.add_error(None, ratelimit.TOO_MANY)
+        else:
+            try:
+                accounts.update_password(
                     request.user,
                     old_password=form.cleaned_data["old_password"],
                     new_password=form.cleaned_data["new_password"],
@@ -241,12 +367,8 @@ def password_change(request):
                 # Эта сессия остаётся, остальные (другие браузеры) — выходят.
                 update_session_auth_hash(request, request.user)
                 messages.success(request, "Пароль изменён.")
-                return redirect("web:profile")
-    return render(
-        request,
-        "web/account/password_change.html",
-        {"form": form, "tab": "profile", "noindex": True},
-    )
+                return redirect(reverse("web:profile_data") + "#password")
+    return _render_data(request, password_form=form)
 
 
 @customer_required

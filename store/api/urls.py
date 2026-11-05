@@ -7,6 +7,12 @@ catalog_urlpatterns = [
     path("categories/", views.CategoryTreeView.as_view(), name="catalog-categories"),
     path("products/", views.ProductListView.as_view(), name="catalog-products"),
     path("products/<slug:slug>/", views.ProductDetailView.as_view(), name="catalog-product"),
+    path(
+        "products/<slug:slug>/similar/",
+        views.SimilarProductsView.as_view(),
+        name="catalog-product-similar",
+    ),
+    path("viewed/", views.ViewedProductsView.as_view(), name="catalog-viewed"),
 ]
 
 cart_urlpatterns = [

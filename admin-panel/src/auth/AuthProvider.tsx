@@ -10,6 +10,7 @@ import {
 
 import { onUnauthorized } from "../api/client";
 import { authService, type StaffUser } from "./authService";
+import { STORE_URL } from "../lib/site";
 
 type Status = "loading" | "error" | "signedIn" | "signedOut";
 
@@ -19,6 +20,8 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   retry: () => void;
+  /** Данные сотрудника изменились (имя, email) — шапка и меню показывают новые. */
+  updateUser: (user: StaffUser) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -55,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status,
       user,
       retry: () => void bootstrap(),
+      updateUser: setUser,
       login: async (email, password) => {
         const staff = await authService.login(email, password);
         setUser(staff);
@@ -62,7 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       logout: async () => {
         await authService.logout().catch(() => undefined);
-        signOut();
+        // Вышел из панели — остаётся в магазине гостем (сессия Django уже закрыта).
+        window.location.assign(STORE_URL);
       },
     }),
     [status, user, bootstrap, signOut],

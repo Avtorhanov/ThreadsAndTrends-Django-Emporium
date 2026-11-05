@@ -3,7 +3,7 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch import Signal, receiver
 
 from accounts.signals import account_deleted
-from store.models import Cart, Category
+from store.models import Cart, Category, ProductView
 from store.services.storefront import invalidate_category_tree
 
 # Массовое изменение товаров (bulk_update не шлёт post_save): витрина сбрасывает кэш сеток.
@@ -14,6 +14,7 @@ products_bulk_updated = Signal()
 def delete_cart_of_deleted_account(sender, user, **kwargs):
     # Корзина — не история покупок: при удалении аккаунта она не нужна.
     Cart.objects.filter(owner=user).delete()
+    ProductView.objects.filter(user=user).delete()
 
 
 @receiver(post_save, sender=Category)

@@ -2,7 +2,8 @@
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,8 +14,12 @@ from accounts import services
 
 from .serializers import (
     AuthResultSerializer,
+    AvatarUploadSerializer,
     ChangePasswordSerializer,
     DeleteAccountSerializer,
+    EmailChangeConfirmSerializer,
+    EmailChangePendingSerializer,
+    EmailChangeRequestSerializer,
     LoginSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetEmailSerializer,
@@ -24,6 +29,7 @@ from .serializers import (
     TokenPairSerializer,
 )
 from .throttles import (
+    AvatarThrottle,
     LoginEmailThrottle,
     LoginIPThrottle,
     PasswordResetConfirmEmailThrottle,
@@ -120,7 +126,7 @@ class MeView(APIView):
 
     @extend_schema(responses={200: ProfileSerializer}, operation_id="get_profile")
     def get(self, request):
-        return Response(ProfileSerializer(request.user).data)
+        return Response(ProfileSerializer(request.user, context={"request": request}).data)
 
     @extend_schema(
         request=ProfileSerializer, responses={200: ProfileSerializer}, operation_id="update_profile"
@@ -129,7 +135,32 @@ class MeView(APIView):
         serializer = ProfileSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         user = services.update_profile(request.user, **serializer.validated_data)
-        return Response(ProfileSerializer(user).data)
+        return Response(ProfileSerializer(user, context={"request": request}).data)
+
+
+@extend_schema(tags=[TAG])
+class AvatarView(APIView):
+    """Фото профиля: загрузка (multipart, поле `avatar`) и удаление."""
+
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+    throttle_classes = [AvatarThrottle]
+
+    @extend_schema(
+        request={"multipart/form-data": AvatarUploadSerializer},
+        responses={200: ProfileSerializer},
+        operation_id="upload_avatar",
+    )
+    def put(self, request):
+        serializer = AvatarUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = services.set_avatar(request.user, serializer.validated_data["avatar"])
+        return Response(ProfileSerializer(user, context={"request": request}).data)
+
+    @extend_schema(responses={200: ProfileSerializer}, operation_id="delete_avatar")
+    def delete(self, request):
+        user = services.remove_avatar(request.user)
+        return Response(ProfileSerializer(user, context={"request": request}).data)
 
 
 @extend_schema(tags=[TAG])
@@ -148,6 +179,58 @@ class ChangePasswordView(APIView):
         serializer.is_valid(raise_exception=True)
         tokens = services.change_password(request.user, **serializer.validated_data)
         return Response(TokenPairSerializer(tokens).data)
+
+
+@extend_schema(tags=[TAG])
+class EmailChangeView(APIView):
+    """Смена email, шаг 1: текущий пароль + новый адрес → код на новый адрес."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [SensitiveActionThrottle]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        # Email сотрудника — логин панели: меняется только там (сессия + CSRF).
+        if request.user.is_staff:
+            raise PermissionDenied("Email сотрудника меняется в панели → «Аккаунт».")
+
+    @extend_schema(
+        request=EmailChangeRequestSerializer,
+        responses={202: EmailChangePendingSerializer},
+        operation_id="email_change_request",
+        description="Код из 6 цифр уходит на новый адрес и действует 15 минут; действует "
+        "последний запрос. Повторно — не чаще раза в минуту и не больше 5 раз в час.",
+    )
+    def post(self, request):
+        serializer = EmailChangeRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        record = services.request_email_change(request.user, **serializer.validated_data)
+        return Response(EmailChangePendingSerializer(record).data, status=status.HTTP_202_ACCEPTED)
+
+
+@extend_schema(tags=[TAG])
+class EmailChangeConfirmView(APIView):
+    """Смена email, шаг 2: код с нового адреса. На прежний уходит уведомление."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [SensitiveActionThrottle]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        # Email сотрудника — логин панели: меняется только там (сессия + CSRF).
+        if request.user.is_staff:
+            raise PermissionDenied("Email сотрудника меняется в панели → «Аккаунт».")
+
+    @extend_schema(
+        request=EmailChangeConfirmSerializer,
+        responses={200: ProfileSerializer},
+        operation_id="email_change_confirm",
+    )
+    def post(self, request):
+        serializer = EmailChangeConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = services.confirm_email_change(request.user, **serializer.validated_data)
+        return Response(ProfileSerializer(user, context={"request": request}).data)
 
 
 @extend_schema(tags=[TAG])

@@ -1,5 +1,5 @@
 /* Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать. */
-/* Версия токенов: 1.6.0 (2026-10-28).
+/* Версия токенов: 1.8.0 (2026-10-30).
    Тёмная тема — data-theme="dark"
    или системная (prefers-color-scheme), если data-theme не задан явно. */
 
@@ -534,119 +534,6 @@
   }
 }
 
-:root[data-palette="graphite"] {
-  --accent: #FF8A3D;
-  --bg: #E8EAED;
-  --border: #D5D7DA;
-  --brand: #3A4049;
-  --brand-ink: #FFFFFF;
-  --btn-glass: rgba(255,255,255,0.82);
-  --card: #FFFFFF;
-  --cta-bg: #16191D;
-  --cta-done-ink: #16191D;
-  --cta-fill: #FF8A3D;
-  --cta-ink: #FFFFFF;
-  --glass: rgba(232,234,237,0.74);
-  --glass-line: rgba(255,255,255,0.80);
-  --ink: #16191D;
-  --input-line: #C6C9CC;
-  --muted: #5D6064;
-  --nav: #16191D;
-  --nav-active-ink: #16191D;
-  --nav-ink: #969899;
-  --neutral: #5D6064;
-  --neutral-bg: #E0E2E5;
-  --on-accent: #16191D;
-  --seg-on-bg: #16191D;
-  --seg-on-ink: #FF8A3D;
-  --strike: #878A8D;
-  --surface: #FFFFFF;
-  --tag: #DADDE2;
-  --tag-ink: #3A4049;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(58,64,73,.48), 0 40px 60px -30px rgba(58,64,73,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(58,64,73,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(58,64,73,.68);
-  --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
-  --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
-  --shadow-accent-glow: 0 10px 22px -6px rgba(255,138,61,.55);
-}
-
-:root[data-palette="graphite"][data-theme="dark"] {
-  --accent: #FF8A3D;
-  --bg: #0B0C0E;
-  --border: #303236;
-  --brand: #FF8A3D;
-  --brand-ink: #16191D;
-  --btn-glass: rgba(33,36,41,0.85);
-  --card: linear-gradient(165deg, #34383F 0%, #26292F 45%, #1B1D21 100%);
-  --cta-bg: #FF8A3D;
-  --cta-done-ink: #16191D;
-  --cta-fill: #F1F1F2;
-  --cta-ink: #16191D;
-  --glass: rgba(11,12,14,0.74);
-  --glass-line: rgba(255,138,61,0.14);
-  --ink: #F1F1F2;
-  --input-line: #46474B;
-  --muted: #A7A8A9;
-  --nav: #08080A;
-  --nav-active-ink: #16191D;
-  --nav-ink: #7F7F80;
-  --neutral: #A7A8A9;
-  --neutral-bg: #292C31;
-  --on-accent: #16191D;
-  --seg-on-bg: #FF8A3D;
-  --seg-on-ink: #16191D;
-  --strike: #8A8A8B;
-  --surface: #212429;
-  --tag: #3A3F47;
-  --tag-ink: #FF9956;
-  --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(255,138,61,.12), 0 0 26px -4px rgba(255,138,61,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
-  --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,138,61,.10), 0 0 18px -4px rgba(255,138,61,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(255,138,61,.10), 0 0 30px -8px rgba(255,138,61,.20), 0 22px 38px -14px rgba(0,0,0,.9);
-  --shadow-image-inset: inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.05), inset 0 -34px 52px -26px rgba(0,0,0,.6), 0 10px 18px -12px rgba(0,0,0,.75);
-  --shadow-nav: 0 0 0 1px rgba(255,138,61,.16), 0 0 30px -6px rgba(255,138,61,.24), 0 22px 40px -14px rgba(0,0,0,.9);
-  --shadow-accent-glow: 0 10px 22px -6px rgba(255,138,61,.55);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-palette="graphite"]:not([data-theme="light"]) {
-    --accent: #FF8A3D;
-    --bg: #0B0C0E;
-    --border: #303236;
-    --brand: #FF8A3D;
-    --brand-ink: #16191D;
-    --btn-glass: rgba(33,36,41,0.85);
-    --card: linear-gradient(165deg, #34383F 0%, #26292F 45%, #1B1D21 100%);
-    --cta-bg: #FF8A3D;
-    --cta-done-ink: #16191D;
-    --cta-fill: #F1F1F2;
-    --cta-ink: #16191D;
-    --glass: rgba(11,12,14,0.74);
-    --glass-line: rgba(255,138,61,0.14);
-    --ink: #F1F1F2;
-    --input-line: #46474B;
-    --muted: #A7A8A9;
-    --nav: #08080A;
-    --nav-active-ink: #16191D;
-    --nav-ink: #7F7F80;
-    --neutral: #A7A8A9;
-    --neutral-bg: #292C31;
-    --on-accent: #16191D;
-    --seg-on-bg: #FF8A3D;
-    --seg-on-ink: #16191D;
-    --strike: #8A8A8B;
-    --surface: #212429;
-    --tag: #3A3F47;
-    --tag-ink: #FF9956;
-    --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(255,138,61,.12), 0 0 26px -4px rgba(255,138,61,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
-    --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,138,61,.10), 0 0 18px -4px rgba(255,138,61,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
-    --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(255,138,61,.10), 0 0 30px -8px rgba(255,138,61,.20), 0 22px 38px -14px rgba(0,0,0,.9);
-    --shadow-image-inset: inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.05), inset 0 -34px 52px -26px rgba(0,0,0,.6), 0 10px 18px -12px rgba(0,0,0,.75);
-    --shadow-nav: 0 0 0 1px rgba(255,138,61,.16), 0 0 30px -6px rgba(255,138,61,.24), 0 22px 40px -14px rgba(0,0,0,.9);
-    --shadow-accent-glow: 0 10px 22px -6px rgba(255,138,61,.55);
-  }
-}
-
 :root[data-palette="olive"] {
   --accent: #B5C267;
   --bg: #ECEEE2;
@@ -878,7 +765,7 @@
 
 :root[data-palette="custom"][data-accent="lime"] {
   --accent: #C6F432;
-  --brand: #2A3038;
+  --brand: #596C25;
   --brand-ink: #C6F432;
   --cta-bg: #16191D;
   --cta-done-ink: #16191D;
@@ -889,9 +776,11 @@
   --on-accent: #16191D;
   --seg-on-bg: #16191D;
   --seg-on-ink: #C6F432;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #F1FCCE;
+  --tag-ink: #596C25;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(89,108,37,.48), 0 40px 60px -30px rgba(89,108,37,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(89,108,37,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(89,108,37,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(198,244,50,.55);
@@ -910,6 +799,8 @@
   --on-accent: #16191D;
   --seg-on-bg: #C6F432;
   --seg-on-ink: #16191D;
+  --tag: #3E492B;
+  --tag-ink: #C6F432;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(198,244,50,.12), 0 0 26px -4px rgba(198,244,50,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(198,244,50,.10), 0 0 18px -4px rgba(198,244,50,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(198,244,50,.10), 0 0 30px -8px rgba(198,244,50,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -932,6 +823,8 @@
     --on-accent: #16191D;
     --seg-on-bg: #C6F432;
     --seg-on-ink: #16191D;
+    --tag: #3E492B;
+    --tag-ink: #C6F432;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(198,244,50,.12), 0 0 26px -4px rgba(198,244,50,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(198,244,50,.10), 0 0 18px -4px rgba(198,244,50,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(198,244,50,.10), 0 0 30px -8px rgba(198,244,50,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -943,7 +836,7 @@
 
 :root[data-palette="custom"][data-accent="mint"] {
   --accent: #5EE6A8;
-  --brand: #2A3038;
+  --brand: #2E5F4C;
   --brand-ink: #5EE6A8;
   --cta-bg: #16191D;
   --cta-done-ink: #16191D;
@@ -954,9 +847,11 @@
   --on-accent: #16191D;
   --seg-on-bg: #16191D;
   --seg-on-ink: #5EE6A8;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #D8F9EA;
+  --tag-ink: #2E5F4C;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(46,95,76,.48), 0 40px 60px -30px rgba(46,95,76,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(46,95,76,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(46,95,76,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(94,230,168,.55);
@@ -975,6 +870,8 @@
   --on-accent: #16191D;
   --seg-on-bg: #5EE6A8;
   --seg-on-ink: #16191D;
+  --tag: #2B4640;
+  --tag-ink: #5EE6A8;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(94,230,168,.12), 0 0 26px -4px rgba(94,230,168,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(94,230,168,.10), 0 0 18px -4px rgba(94,230,168,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(94,230,168,.10), 0 0 30px -8px rgba(94,230,168,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -997,6 +894,8 @@
     --on-accent: #16191D;
     --seg-on-bg: #5EE6A8;
     --seg-on-ink: #16191D;
+    --tag: #2B4640;
+    --tag-ink: #5EE6A8;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(94,230,168,.12), 0 0 26px -4px rgba(94,230,168,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(94,230,168,.10), 0 0 18px -4px rgba(94,230,168,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(94,230,168,.10), 0 0 30px -8px rgba(94,230,168,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1008,7 +907,7 @@
 
 :root[data-palette="custom"][data-accent="sun"] {
   --accent: #FFD23F;
-  --brand: #2A3038;
+  --brand: #6A5C29;
   --brand-ink: #FFD23F;
   --cta-bg: #16191D;
   --cta-done-ink: #16191D;
@@ -1019,9 +918,11 @@
   --on-accent: #16191D;
   --seg-on-bg: #16191D;
   --seg-on-ink: #FFD23F;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #FFF4D1;
+  --tag-ink: #6A5C29;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(106,92,41,.48), 0 40px 60px -30px rgba(106,92,41,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(106,92,41,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(106,92,41,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(255,210,63,.55);
@@ -1040,6 +941,8 @@
   --on-accent: #16191D;
   --seg-on-bg: #FFD23F;
   --seg-on-ink: #16191D;
+  --tag: #48422D;
+  --tag-ink: #FFD23F;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(255,210,63,.12), 0 0 26px -4px rgba(255,210,63,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,210,63,.10), 0 0 18px -4px rgba(255,210,63,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(255,210,63,.10), 0 0 30px -8px rgba(255,210,63,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1062,6 +965,8 @@
     --on-accent: #16191D;
     --seg-on-bg: #FFD23F;
     --seg-on-ink: #16191D;
+    --tag: #48422D;
+    --tag-ink: #FFD23F;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(255,210,63,.12), 0 0 26px -4px rgba(255,210,63,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,210,63,.10), 0 0 18px -4px rgba(255,210,63,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(255,210,63,.10), 0 0 30px -8px rgba(255,210,63,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1073,7 +978,7 @@
 
 :root[data-palette="custom"][data-accent="sky"] {
   --accent: #9CCBFF;
-  --brand: #2A3038;
+  --brand: #415265;
   --brand-ink: #9CCBFF;
   --cta-bg: #16191D;
   --cta-done-ink: #16191D;
@@ -1084,9 +989,11 @@
   --on-accent: #16191D;
   --seg-on-bg: #16191D;
   --seg-on-ink: #9CCBFF;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #E7F3FF;
+  --tag-ink: #415265;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(65,82,101,.48), 0 40px 60px -30px rgba(65,82,101,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(65,82,101,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(65,82,101,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(156,203,255,.55);
@@ -1105,6 +1012,8 @@
   --on-accent: #16191D;
   --seg-on-bg: #9CCBFF;
   --seg-on-ink: #16191D;
+  --tag: #364150;
+  --tag-ink: #9CCBFF;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(156,203,255,.12), 0 0 26px -4px rgba(156,203,255,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(156,203,255,.10), 0 0 18px -4px rgba(156,203,255,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(156,203,255,.10), 0 0 30px -8px rgba(156,203,255,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1127,6 +1036,8 @@
     --on-accent: #16191D;
     --seg-on-bg: #9CCBFF;
     --seg-on-ink: #16191D;
+    --tag: #364150;
+    --tag-ink: #9CCBFF;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(156,203,255,.12), 0 0 26px -4px rgba(156,203,255,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(156,203,255,.10), 0 0 18px -4px rgba(156,203,255,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(156,203,255,.10), 0 0 30px -8px rgba(156,203,255,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1138,7 +1049,7 @@
 
 :root[data-palette="custom"][data-accent="pink"] {
   --accent: #FF9EC4;
-  --brand: #2A3038;
+  --brand: #5C414F;
   --brand-ink: #FF9EC4;
   --cta-bg: #16191D;
   --cta-done-ink: #16191D;
@@ -1149,9 +1060,11 @@
   --on-accent: #16191D;
   --seg-on-bg: #16191D;
   --seg-on-ink: #FF9EC4;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #FFE8F1;
+  --tag-ink: #5C414F;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(92,65,79,.48), 0 40px 60px -30px rgba(92,65,79,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(92,65,79,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(92,65,79,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(255,158,196,.55);
@@ -1170,6 +1083,8 @@
   --on-accent: #16191D;
   --seg-on-bg: #FF9EC4;
   --seg-on-ink: #16191D;
+  --tag: #483945;
+  --tag-ink: #FF9EC4;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(255,158,196,.12), 0 0 26px -4px rgba(255,158,196,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,158,196,.10), 0 0 18px -4px rgba(255,158,196,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(255,158,196,.10), 0 0 30px -8px rgba(255,158,196,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1192,6 +1107,8 @@
     --on-accent: #16191D;
     --seg-on-bg: #FF9EC4;
     --seg-on-ink: #16191D;
+    --tag: #483945;
+    --tag-ink: #FF9EC4;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(255,158,196,.12), 0 0 26px -4px rgba(255,158,196,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,158,196,.10), 0 0 18px -4px rgba(255,158,196,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(255,158,196,.10), 0 0 30px -8px rgba(255,158,196,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1203,7 +1120,7 @@
 
 :root[data-palette="custom"][data-accent="lilac"] {
   --accent: #B9A6FF;
-  --brand: #2A3038;
+  --brand: #44405C;
   --brand-ink: #B9A6FF;
   --cta-bg: #16191D;
   --cta-done-ink: #16191D;
@@ -1214,9 +1131,11 @@
   --on-accent: #16191D;
   --seg-on-bg: #16191D;
   --seg-on-ink: #B9A6FF;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #EEEAFF;
+  --tag-ink: #44405C;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(68,64,92,.48), 0 40px 60px -30px rgba(68,64,92,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(68,64,92,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(68,64,92,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(185,166,255,.55);
@@ -1235,6 +1154,8 @@
   --on-accent: #16191D;
   --seg-on-bg: #B9A6FF;
   --seg-on-ink: #16191D;
+  --tag: #3C3B50;
+  --tag-ink: #B9A6FF;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(185,166,255,.12), 0 0 26px -4px rgba(185,166,255,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(185,166,255,.10), 0 0 18px -4px rgba(185,166,255,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(185,166,255,.10), 0 0 30px -8px rgba(185,166,255,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1257,6 +1178,8 @@
     --on-accent: #16191D;
     --seg-on-bg: #B9A6FF;
     --seg-on-ink: #16191D;
+    --tag: #3C3B50;
+    --tag-ink: #B9A6FF;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(185,166,255,.12), 0 0 26px -4px rgba(185,166,255,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(185,166,255,.10), 0 0 18px -4px rgba(185,166,255,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(185,166,255,.10), 0 0 30px -8px rgba(185,166,255,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1268,7 +1191,7 @@
 
 :root[data-palette="custom"][data-accent="steel"] {
   --accent: #7FA7CF;
-  --brand: #2A3038;
+  --brand: #2F3B48;
   --brand-ink: #7FA7CF;
   --cta-bg: #16191D;
   --cta-done-ink: #16191D;
@@ -1279,9 +1202,11 @@
   --on-accent: #16191D;
   --seg-on-bg: #16191D;
   --seg-on-ink: #7FA7CF;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #E0EAF3;
+  --tag-ink: #2F3B48;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(47,59,72,.48), 0 40px 60px -30px rgba(47,59,72,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(47,59,72,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(47,59,72,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(127,167,207,.55);
@@ -1300,6 +1225,8 @@
   --on-accent: #16191D;
   --seg-on-bg: #7FA7CF;
   --seg-on-ink: #16191D;
+  --tag: #313B47;
+  --tag-ink: #7FA7CF;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(127,167,207,.12), 0 0 26px -4px rgba(127,167,207,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(127,167,207,.10), 0 0 18px -4px rgba(127,167,207,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(127,167,207,.10), 0 0 30px -8px rgba(127,167,207,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1322,6 +1249,8 @@
     --on-accent: #16191D;
     --seg-on-bg: #7FA7CF;
     --seg-on-ink: #16191D;
+    --tag: #313B47;
+    --tag-ink: #7FA7CF;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(127,167,207,.12), 0 0 26px -4px rgba(127,167,207,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(127,167,207,.10), 0 0 18px -4px rgba(127,167,207,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(127,167,207,.10), 0 0 30px -8px rgba(127,167,207,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1333,7 +1262,7 @@
 
 :root[data-palette="custom"][data-accent="orange"] {
   --accent: #FF8A3D;
-  --brand: #2A3038;
+  --brand: #533625;
   --brand-ink: #FF8A3D;
   --cta-bg: #16191D;
   --cta-done-ink: #16191D;
@@ -1344,9 +1273,11 @@
   --on-accent: #16191D;
   --seg-on-bg: #16191D;
   --seg-on-ink: #FF8A3D;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #FFE3D0;
+  --tag-ink: #533625;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(83,54,37,.48), 0 40px 60px -30px rgba(83,54,37,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(83,54,37,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(83,54,37,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(255,138,61,.55);
@@ -1365,6 +1296,8 @@
   --on-accent: #16191D;
   --seg-on-bg: #FF8A3D;
   --seg-on-ink: #16191D;
+  --tag: #48362D;
+  --tag-ink: #FF8A3D;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(255,138,61,.12), 0 0 26px -4px rgba(255,138,61,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,138,61,.10), 0 0 18px -4px rgba(255,138,61,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(255,138,61,.10), 0 0 30px -8px rgba(255,138,61,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1387,6 +1320,8 @@
     --on-accent: #16191D;
     --seg-on-bg: #FF8A3D;
     --seg-on-ink: #16191D;
+    --tag: #48362D;
+    --tag-ink: #FF8A3D;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(255,138,61,.12), 0 0 26px -4px rgba(255,138,61,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,138,61,.10), 0 0 18px -4px rgba(255,138,61,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(255,138,61,.10), 0 0 30px -8px rgba(255,138,61,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1398,7 +1333,7 @@
 
 :root[data-palette="custom"][data-accent="olive"] {
   --accent: #B5C267;
-  --brand: #2A3038;
+  --brand: #464C33;
   --brand-ink: #B5C267;
   --cta-bg: #16191D;
   --cta-done-ink: #16191D;
@@ -1409,9 +1344,11 @@
   --on-accent: #16191D;
   --seg-on-bg: #16191D;
   --seg-on-ink: #B5C267;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #EDF0DB;
+  --tag-ink: #464C33;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(70,76,51,.48), 0 40px 60px -30px rgba(70,76,51,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(70,76,51,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(70,76,51,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(181,194,103,.55);
@@ -1430,6 +1367,8 @@
   --on-accent: #16191D;
   --seg-on-bg: #B5C267;
   --seg-on-ink: #16191D;
+  --tag: #3B4034;
+  --tag-ink: #B5C267;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(181,194,103,.12), 0 0 26px -4px rgba(181,194,103,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(181,194,103,.10), 0 0 18px -4px rgba(181,194,103,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(181,194,103,.10), 0 0 30px -8px rgba(181,194,103,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1452,6 +1391,8 @@
     --on-accent: #16191D;
     --seg-on-bg: #B5C267;
     --seg-on-ink: #16191D;
+    --tag: #3B4034;
+    --tag-ink: #B5C267;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(181,194,103,.12), 0 0 26px -4px rgba(181,194,103,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(181,194,103,.10), 0 0 18px -4px rgba(181,194,103,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(181,194,103,.10), 0 0 30px -8px rgba(181,194,103,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1463,7 +1404,7 @@
 
 :root[data-palette="custom"][data-accent="sand"] {
   --accent: #C8B98A;
-  --brand: #2A3038;
+  --brand: #4B493E;
   --brand-ink: #C8B98A;
   --cta-bg: #16191D;
   --cta-done-ink: #16191D;
@@ -1474,9 +1415,11 @@
   --on-accent: #16191D;
   --seg-on-bg: #16191D;
   --seg-on-ink: #C8B98A;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #F2EEE3;
+  --tag-ink: #4B493E;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(75,73,62,.48), 0 40px 60px -30px rgba(75,73,62,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(75,73,62,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(75,73,62,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(200,185,138,.55);
@@ -1495,6 +1438,8 @@
   --on-accent: #16191D;
   --seg-on-bg: #C8B98A;
   --seg-on-ink: #16191D;
+  --tag: #3E3E3A;
+  --tag-ink: #C8B98A;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(200,185,138,.12), 0 0 26px -4px rgba(200,185,138,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(200,185,138,.10), 0 0 18px -4px rgba(200,185,138,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(200,185,138,.10), 0 0 30px -8px rgba(200,185,138,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1517,6 +1462,8 @@
     --on-accent: #16191D;
     --seg-on-bg: #C8B98A;
     --seg-on-ink: #16191D;
+    --tag: #3E3E3A;
+    --tag-ink: #C8B98A;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(200,185,138,.12), 0 0 26px -4px rgba(200,185,138,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(200,185,138,.10), 0 0 18px -4px rgba(200,185,138,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(200,185,138,.10), 0 0 30px -8px rgba(200,185,138,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1528,7 +1475,7 @@
 
 :root[data-palette="custom"][data-accent="navy"] {
   --accent: #2F5D8A;
-  --brand: #2A3038;
+  --brand: #2F5D8A;
   --brand-ink: #FFFFFF;
   --cta-bg: #16191D;
   --cta-done-ink: #FFFFFF;
@@ -1539,9 +1486,11 @@
   --on-accent: #FFFFFF;
   --seg-on-bg: #2F5D8A;
   --seg-on-ink: #FFFFFF;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #DEE5EC;
+  --tag-ink: #2F5D8A;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(47,93,138,.48), 0 40px 60px -30px rgba(47,93,138,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(47,93,138,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(47,93,138,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(47,93,138,.55);
@@ -1560,6 +1509,8 @@
   --on-accent: #FFFFFF;
   --seg-on-bg: #2F5D8A;
   --seg-on-ink: #FFFFFF;
+  --tag: #2E333B;
+  --tag-ink: #7FA7CF;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(47,93,138,.12), 0 0 26px -4px rgba(47,93,138,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(47,93,138,.10), 0 0 18px -4px rgba(47,93,138,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(47,93,138,.10), 0 0 30px -8px rgba(47,93,138,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1582,6 +1533,8 @@
     --on-accent: #FFFFFF;
     --seg-on-bg: #2F5D8A;
     --seg-on-ink: #FFFFFF;
+    --tag: #2E333B;
+    --tag-ink: #7FA7CF;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(47,93,138,.12), 0 0 26px -4px rgba(47,93,138,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(47,93,138,.10), 0 0 18px -4px rgba(47,93,138,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(47,93,138,.10), 0 0 30px -8px rgba(47,93,138,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1593,7 +1546,7 @@
 
 :root[data-palette="custom"][data-accent="wine"] {
   --accent: #8E2C3E;
-  --brand: #2A3038;
+  --brand: #8E2C3E;
   --brand-ink: #FFFFFF;
   --cta-bg: #16191D;
   --cta-done-ink: #FFFFFF;
@@ -1604,9 +1557,11 @@
   --on-accent: #FFFFFF;
   --seg-on-bg: #8E2C3E;
   --seg-on-ink: #FFFFFF;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #EDDDE0;
+  --tag-ink: #8E2C3E;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(142,44,62,.48), 0 40px 60px -30px rgba(142,44,62,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(142,44,62,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(142,44,62,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(142,44,62,.55);
@@ -1625,6 +1580,8 @@
   --on-accent: #FFFFFF;
   --seg-on-bg: #8E2C3E;
   --seg-on-ink: #FFFFFF;
+  --tag: #34252D;
+  --tag-ink: #BB808B;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(142,44,62,.12), 0 0 26px -4px rgba(142,44,62,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(142,44,62,.10), 0 0 18px -4px rgba(142,44,62,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(142,44,62,.10), 0 0 30px -8px rgba(142,44,62,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1647,6 +1604,8 @@
     --on-accent: #FFFFFF;
     --seg-on-bg: #8E2C3E;
     --seg-on-ink: #FFFFFF;
+    --tag: #34252D;
+    --tag-ink: #BB808B;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(142,44,62,.12), 0 0 26px -4px rgba(142,44,62,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(142,44,62,.10), 0 0 18px -4px rgba(142,44,62,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(142,44,62,.10), 0 0 30px -8px rgba(142,44,62,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1658,7 +1617,7 @@
 
 :root[data-palette="custom"][data-accent="graphite"] {
   --accent: #3A4049;
-  --brand: #2A3038;
+  --brand: #3A4049;
   --brand-ink: #FFFFFF;
   --cta-bg: #16191D;
   --cta-done-ink: #FFFFFF;
@@ -1669,9 +1628,11 @@
   --on-accent: #FFFFFF;
   --seg-on-bg: #3A4049;
   --seg-on-ink: #FFFFFF;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #DFE0E2;
+  --tag-ink: #3A4049;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(58,64,73,.48), 0 40px 60px -30px rgba(58,64,73,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(58,64,73,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(58,64,73,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(58,64,73,.55);
@@ -1690,6 +1651,8 @@
   --on-accent: #FFFFFF;
   --seg-on-bg: #3A4049;
   --seg-on-ink: #FFFFFF;
+  --tag: #25282F;
+  --tag-ink: #8D9095;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(58,64,73,.12), 0 0 26px -4px rgba(58,64,73,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(58,64,73,.10), 0 0 18px -4px rgba(58,64,73,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(58,64,73,.10), 0 0 30px -8px rgba(58,64,73,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1712,6 +1675,8 @@
     --on-accent: #FFFFFF;
     --seg-on-bg: #3A4049;
     --seg-on-ink: #FFFFFF;
+    --tag: #25282F;
+    --tag-ink: #8D9095;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(58,64,73,.12), 0 0 26px -4px rgba(58,64,73,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(58,64,73,.10), 0 0 18px -4px rgba(58,64,73,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(58,64,73,.10), 0 0 30px -8px rgba(58,64,73,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1723,7 +1688,7 @@
 
 :root[data-palette="custom"][data-accent="forest"] {
   --accent: #1F7A5C;
-  --brand: #2A3038;
+  --brand: #1E7458;
   --brand-ink: #FFFFFF;
   --cta-bg: #16191D;
   --cta-done-ink: #FFFFFF;
@@ -1734,9 +1699,11 @@
   --on-accent: #FFFFFF;
   --seg-on-bg: #1F7A5C;
   --seg-on-ink: #FFFFFF;
-  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(42,48,56,.48), 0 40px 60px -30px rgba(42,48,56,.55);
-  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(42,48,56,.5);
-  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(42,48,56,.68);
+  --tag: #DBEAE5;
+  --tag-ink: #1E7458;
+  --shadow-card: 0 1px 0 #FFFFFF inset, 0 3px 6px rgba(22,25,29,.10), 0 18px 30px -12px rgba(30,116,88,.48), 0 40px 60px -30px rgba(30,116,88,.55);
+  --shadow-control: 0 1px 0 #FFFFFF inset, 0 3px 5px rgba(22,25,29,.09), 0 14px 22px -10px rgba(30,116,88,.5);
+  --shadow-header: 0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(30,116,88,.68);
   --shadow-image-inset: inset 0 -28px 46px -26px rgba(22,25,29,.32);
   --shadow-nav: 0 22px 40px -14px rgba(22,25,29,.82);
   --shadow-accent-glow: 0 10px 22px -6px rgba(31,122,92,.55);
@@ -1755,6 +1722,8 @@
   --on-accent: #FFFFFF;
   --seg-on-bg: #1F7A5C;
   --seg-on-ink: #FFFFFF;
+  --tag: #2E333B;
+  --tag-ink: #7FA7CF;
   --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(31,122,92,.12), 0 0 26px -4px rgba(31,122,92,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
   --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(31,122,92,.10), 0 0 18px -4px rgba(31,122,92,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
   --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(31,122,92,.10), 0 0 30px -8px rgba(31,122,92,.20), 0 22px 38px -14px rgba(0,0,0,.9);
@@ -1777,6 +1746,8 @@
     --on-accent: #FFFFFF;
     --seg-on-bg: #1F7A5C;
     --seg-on-ink: #FFFFFF;
+    --tag: #2E333B;
+    --tag-ink: #7FA7CF;
     --shadow-card: 0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(31,122,92,.12), 0 0 26px -4px rgba(31,122,92,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95);
     --shadow-control: 0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(31,122,92,.10), 0 0 18px -4px rgba(31,122,92,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85);
     --shadow-header: 0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(31,122,92,.10), 0 0 30px -8px rgba(31,122,92,.20), 0 22px 38px -14px rgba(0,0,0,.9);

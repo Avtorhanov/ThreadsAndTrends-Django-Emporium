@@ -1,10 +1,13 @@
-{# Плавающая нижняя панель — на телефонах (на десктопе разделы в шапке). Активная вкладка шире и с подписью. #}
+{% comment %}Нижняя панель — на телефонах (на десктопе разделы в шапке). Вид — data-nav на <html>: для нового
+   посетителя задаёт панель → «Тема», свой выбирает покупатель в профиле → «Оформление». Сплошная полоса
+   (по умолчанию), плавающая тёмная капсула и «Стекло» — активная вкладка шире и с подписью; нижняя
+   панель — подписи у всех вкладок. При прокрутке вниз уезжает, вверх — возвращается (site.js).{% endcomment %}
 <nav class="tabbar" aria-label="Разделы">
   <a class="tab{% if tab == 'catalog' %} is-on{% endif %}" href="{% url 'web:home' %}"{% if tab == "catalog" %} aria-current="page"{% endif %}>
-    <svg class="ic" width="22" height="22"><use href="#i-grid"/></svg><span>Каталог</span>
+    <span class="tab__icon"><svg class="ic" width="22" height="22"><use href="#i-grid"/></svg></span><span>Каталог</span>
   </a>
   <a class="tab{% if tab == 'contacts' %} is-on{% endif %}" href="{% url 'web:contacts' %}"{% if tab == "contacts" %} aria-current="page"{% endif %}>
-    <svg class="ic" width="22" height="22"><use href="#i-chat"/></svg><span>Контакты</span>
+    <span class="tab__icon"><svg class="ic" width="22" height="22"><use href="#i-chat"/></svg></span><span>Контакты</span>
   </a>
   <a class="tab{% if tab == 'cart' %} is-on{% endif %}" href="{% url 'web:cart' %}"{% if tab == "cart" %} aria-current="page"{% endif %}>
     <span class="tab__icon">
@@ -12,7 +15,13 @@
       {% include "web/partials/cart_badge.html" with badge_id="cart-badge-tab" count=cart_count %}
     </span><span>Корзина</span>
   </a>
-  <a class="tab{% if tab == 'profile' %} is-on{% endif %}" href="{% url 'web:profile' %}"{% if tab == "profile" %} aria-current="page"{% endif %}>
-    <svg class="ic" width="22" height="22"><use href="#i-user"/></svg><span>Профиль</span>
+  {% if user.is_staff %}
+  <a class="tab" href="/panel/" data-panel-link>
+    <span class="tab__icon"><svg class="ic" width="22" height="22"><use href="#i-user"/></svg></span><span>Панель</span>
   </a>
+  {% else %}
+  <a class="tab{% if tab == 'profile' %} is-on{% endif %}" href="{% url 'web:profile' %}"{% if tab == "profile" %} aria-current="page"{% endif %}>
+    <span class="tab__icon"><svg class="ic" width="22" height="22"><use href="#i-user"/></svg>{% if orders_news %}<span class="news-dot" aria-hidden="true"></span>{% endif %}</span><span>Профиль{% if orders_news %}<span class="sr"> — есть новости по заказу</span>{% endif %}</span>
+  </a>
+  {% endif %}
 </nav>

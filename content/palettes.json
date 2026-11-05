@@ -50,18 +50,6 @@
       }
     },
     {
-      "key": "graphite",
-      "name": "Графит",
-      "group": "calm",
-      "note": "Тёмно-серая с оранжевым",
-      "accent": "#FF8A3D",
-      "brand": "#3A4049",
-      "bg": {
-        "light": "#E8EAED",
-        "dark": "#0B0C0E"
-      }
-    },
-    {
       "key": "olive",
       "name": "Олива",
       "group": "calm",

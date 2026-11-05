@@ -1,6 +1,9 @@
+import uuid
+
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 def normalize_email(value: str) -> str:
@@ -43,6 +46,11 @@ class UserManager(BaseUserManager.from_queryset(UserQuerySet)):
         return self.get(email=normalize_email(email))
 
 
+def avatar_path(instance, filename):
+    # Фото профиля всегда перекодируется в WebP (accounts.services.set_avatar): имя — UUID.
+    return f"avatars/{timezone.now():%Y/%m}/{uuid.uuid4().hex}.webp"
+
+
 class User(AbstractUser):
     """Клиент (is_staff=False) или Администратор (is_staff=True, единственный продавец).
 
@@ -52,6 +60,11 @@ class User(AbstractUser):
     username = None
     email = models.EmailField("Email", unique=True)
     deleted_at = models.DateTimeField("Удалён", null=True, blank=True, db_index=True)
+    # db_default: строки, вставленные в обход модели (миграции данных, старые версии кода),
+    # получают пустое значение, а не NULL.
+    avatar = models.ImageField(
+        "Фото профиля", upload_to=avatar_path, blank=True, default="", db_default=""
+    )
 
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
@@ -103,6 +116,32 @@ class PasswordResetCode(models.Model):
 
     def __str__(self):
         return f"Код сброса для {self.user_id} от {self.created_at:%Y-%m-%d %H:%M}"
+
+
+class EmailChangeCode(models.Model):
+    """Смена email: одноразовый код отправлен на новый адрес. Хранится только HMAC кода
+    (вместе с новым адресом — код подтверждает именно его). Действует последний выданный."""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="email_change_codes",
+        verbose_name="Пользователь",
+    )
+    new_email = models.EmailField("Новый email")
+    code_hash = models.CharField("HMAC кода", max_length=64)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+    expires_at = models.DateTimeField("Действует до", db_index=True)
+    attempts = models.PositiveSmallIntegerField("Неудачных попыток", default=0)
+    used_at = models.DateTimeField("Использован/аннулирован", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Код смены email"
+        verbose_name_plural = "Коды смены email"
+        indexes = [models.Index(fields=["user", "-created_at"], name="email_code_user_created_idx")]
+
+    def __str__(self):
+        return f"Смена email для {self.user_id} от {self.created_at:%Y-%m-%d %H:%M}"
 
 
 class StaffAccess(models.Model):

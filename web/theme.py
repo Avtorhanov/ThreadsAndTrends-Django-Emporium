@@ -1,6 +1,6 @@
 """Оформление витрины. Выбор покупателя хранится в cookie, чтобы сервер сразу отдал атрибуты
-<html> (data-theme, data-palette, data-accent, data-radius, data-text): страница рисуется в
-нужном виде без мигания. Значения — только из белого списка content.look. Нет cookie —
+<html> (data-theme, data-palette, data-accent, data-radius, data-text, data-nav): страница
+рисуется в нужном виде без мигания. Значения — только из белого списка content.look. Нет cookie —
 то, что администратор выбрал для новых посетителей (панель → «Тема»)."""
 
 from content import look
@@ -13,7 +13,13 @@ CHOICES = [(SYSTEM, "Как в системе"), (LIGHT, "Светлая"), (DAR
 COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 # Cookie выбора покупателя (не httponly: site.js меняет вид без перезагрузки и пишет их сам).
-LOOK_COOKIES = {"palette": "palette", "accent": "accent", "radius": "radius", "text": "text_size"}
+LOOK_COOKIES = {
+    "palette": "palette",
+    "accent": "accent",
+    "radius": "radius",
+    "text": "text_size",
+    "nav": "nav",
+}
 
 
 def get_theme(request) -> str:
@@ -40,12 +46,13 @@ def apply_theme(response, value: str):
 
 
 def apply_look(response, values: dict):
-    """Сохранить выбор (палитра, акцент, углы, текст); недопустимое значение не пишется."""
+    """Сохранить выбор (палитра, акцент, углы, текст, нижнее меню); недопустимое не пишется."""
     allowed = {
         "palette": look.shop_theme().palettes,
         "accent": tuple(look.ACCENTS),
         "radius": look.RADIUS,
         "text": look.TEXT,
+        "nav": look.NAV,
     }
     for field, name in LOOK_COOKIES.items():
         value = values.get(field)
@@ -56,7 +63,7 @@ def apply_look(response, values: dict):
 
 def options(request) -> dict:
     """Контекст блока «Оформление» в профиле: доступные палитры по группам, акценты, углы,
-    размер текста и текущий выбор."""
+    размер текста, вид нижнего меню и текущий выбор."""
     current = get_look(request)
     enabled = look.shop_theme().palettes
     groups = []
@@ -73,4 +80,5 @@ def options(request) -> dict:
         "custom_enabled": look.CUSTOM in enabled,
         "radius_choices": list(look.RADIUS_LABELS.items()),
         "text_choices": list(look.TEXT_LABELS.items()),
+        "nav_choices": [(key, name, look.NAV_HINTS[key]) for key, name in look.NAV_LABELS.items()],
     }

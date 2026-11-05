@@ -33,14 +33,37 @@ PALETTE_GROUPS = {"bright": "Яркие", "calm": "Сдержанные", "custo
 RADIUS_LABELS = {"sharp": "Острые", "normal": "Средние", "soft": "Мягкие"}
 TEXT_LABELS = {"s": "Обычный", "m": "Крупнее", "l": "Крупный"}
 MODE_LABELS = {"system": "Как в системе", "light": "Светлая", "dark": "Тёмная"}
+# Нижнее меню витрины на телефоне: сплошная полоса-футер, плавающая тёмная капсула, капсула
+# из стекла в цвет темы, нижняя панель с подписями у всех вкладок. Администратор задаёт вид
+# для нового посетителя, покупатель может выбрать свой (cookie «nav»).
+NAV_LABELS = {
+    "solid": "Сплошное",
+    "floating": "Плавающее",
+    "glass": "Стекло",
+    "bar": "Нижняя панель",
+}
+NAV_HINTS = {
+    "solid": "Тёмная полоса от края до края",
+    "floating": "Тёмная капсула над страницей",
+    "glass": "Прозрачная капсула в цвет темы",
+    "bar": "Подписи у всех вкладок",
+}
+NAV: tuple[str, ...] = tuple(NAV_LABELS)
+DEFAULT_NAV = "solid"
 
 # Варианты для API (имена перечислений в схеме — SPECTACULAR_SETTINGS.ENUM_NAME_OVERRIDES).
 PALETTE_CHOICES = [(key, item["name"]) for key, item in PALETTES.items()]
 PALETTE_GROUP_CHOICES = list(PALETTE_GROUPS.items())
 MODE_CHOICES = list(MODE_LABELS.items())
 RADIUS_CHOICES = [(key, RADIUS_LABELS[key]) for key in RADIUS]
+TEXT_CHOICES = [(key, TEXT_LABELS[key]) for key in TEXT]
+NAV_CHOICES = list(NAV_LABELS.items())
 
-CACHE_KEY = "content:theme-settings:v1"
+CACHE_KEY = "content:theme-settings:v3"
+
+# Cookie личного выбора покупателя (пишут web/theme.py и site.js). Сохранение темы в панели
+# удаляет их в браузере администратора — он сразу видит витрину как новый посетитель.
+VISITOR_COOKIES = ("theme", "palette", "accent", "radius", "text_size", "nav")
 
 
 @dataclass(frozen=True)
@@ -49,6 +72,8 @@ class ShopTheme:
     default_palette: str
     default_mode: str
     default_radius: str
+    nav_style: str = DEFAULT_NAV
+    default_text: str = DEFAULT_TEXT
 
 
 def _from_row(row: ThemeSettings | None) -> ShopTheme:
@@ -59,7 +84,9 @@ def _from_row(row: ThemeSettings | None) -> ShopTheme:
     default = row.default_palette if row.default_palette in palettes else palettes[0]
     mode = row.default_mode if row.default_mode in MODES else "system"
     radius = row.default_radius if row.default_radius in RADIUS else DEFAULT_RADIUS
-    return ShopTheme(palettes, default, mode, radius)
+    nav = row.nav_style if row.nav_style in NAV else DEFAULT_NAV
+    text = row.default_text if row.default_text in TEXT else DEFAULT_TEXT
+    return ShopTheme(palettes, default, mode, radius, nav, text)
 
 
 def shop_theme() -> ShopTheme:
@@ -76,7 +103,15 @@ def get_row() -> ThemeSettings:
 
 
 @transaction.atomic
-def update(*, palettes: list[str], default_palette: str, default_mode: str, default_radius: str):
+def update(
+    *,
+    palettes: list[str],
+    default_palette: str,
+    default_mode: str,
+    default_radius: str,
+    nav_style: str | None = None,
+    default_text: str | None = None,
+):
     unknown = [key for key in palettes if key not in PALETTES]
     if unknown:
         raise ValidationError({"palettes": f"Неизвестные палитры: {', '.join(unknown)}."})
@@ -90,12 +125,20 @@ def update(*, palettes: list[str], default_palette: str, default_mode: str, defa
         raise ValidationError({"default_mode": "Неизвестная тема."})
     if default_radius not in RADIUS:
         raise ValidationError({"default_radius": "Неизвестный вариант углов."})
+    if nav_style is not None and nav_style not in NAV:
+        raise ValidationError({"nav_style": "Неизвестный вид нижнего меню."})
+    if default_text is not None and default_text not in TEXT:
+        raise ValidationError({"default_text": "Неизвестный размер текста."})
     row = get_row()
     # Порядок — как в tokens.json, без повторов.
     row.palettes = [key for key in PALETTES if key in set(palettes)]
     row.default_palette = default_palette
     row.default_mode = default_mode
     row.default_radius = default_radius
+    if nav_style is not None:
+        row.nav_style = nav_style
+    if default_text is not None:
+        row.default_text = default_text
     row.save()
     cache.delete(CACHE_KEY)
     transaction.on_commit(lambda: cache.delete(CACHE_KEY))
@@ -110,6 +153,7 @@ class Look:
     accent: str
     radius: str
     text: str
+    nav: str = DEFAULT_NAV
 
     @property
     def attrs(self) -> dict[str, str]:
@@ -123,6 +167,8 @@ class Look:
             attrs["data-radius"] = self.radius
         if self.text != DEFAULT_TEXT:
             attrs["data-text"] = self.text
+        if self.nav != DEFAULT_NAV:
+            attrs["data-nav"] = self.nav
         return attrs
 
     @property
@@ -130,12 +176,15 @@ class Look:
         return PALETTES[self.palette]["bg"]
 
 
-def resolve_look(*, palette: str = "", accent: str = "", radius: str = "", text: str = "") -> Look:
+def resolve_look(
+    *, palette: str = "", accent: str = "", radius: str = "", text: str = "", nav: str = ""
+) -> Look:
     """Выбор покупателя → допустимые значения: недоступная палитра — палитра по умолчанию."""
     shop = shop_theme()
     return Look(
         palette=palette if palette in shop.palettes else shop.default_palette,
         accent=accent if accent in ACCENTS else DEFAULT_ACCENT,
         radius=radius if radius in RADIUS else shop.default_radius,
-        text=text if text in TEXT else DEFAULT_TEXT,
+        text=text if text in TEXT else shop.default_text,
+        nav=nav if nav in NAV else shop.nav_style,
     )

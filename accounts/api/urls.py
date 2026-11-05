@@ -9,8 +9,15 @@ auth_urlpatterns = [
     path("refresh/", views.RefreshView.as_view(), name="auth-refresh"),
     path("logout/", views.LogoutView.as_view(), name="auth-logout"),
     path("me/", views.MeView.as_view(), name="auth-me"),
+    path("me/avatar/", views.AvatarView.as_view(), name="auth-avatar"),
     path("me/delete/", views.DeleteAccountView.as_view(), name="auth-delete-account"),
     path("password/change/", views.ChangePasswordView.as_view(), name="auth-password-change"),
+    path("email/change/", views.EmailChangeView.as_view(), name="auth-email-change"),
+    path(
+        "email/change/confirm/",
+        views.EmailChangeConfirmView.as_view(),
+        name="auth-email-change-confirm",
+    ),
     path("password/reset/", views.PasswordResetRequestView.as_view(), name="auth-password-reset"),
     path(
         "password/reset/confirm/",
@@ -28,5 +35,20 @@ admin_urlpatterns = [
     path("auth/login/", admin_views.AdminLoginView.as_view(), name="admin-login"),
     path("auth/logout/", admin_views.AdminLogoutView.as_view(), name="admin-logout"),
     path("auth/me/", admin_views.AdminMeView.as_view(), name="admin-me"),
+    path(
+        "auth/password/change/",
+        admin_views.AdminPasswordChangeView.as_view(),
+        name="admin-password-change",
+    ),
+    path(
+        "auth/email/change/",
+        admin_views.AdminEmailChangeView.as_view(),
+        name="admin-email-change",
+    ),
+    path(
+        "auth/email/change/confirm/",
+        admin_views.AdminEmailChangeConfirmView.as_view(),
+        name="admin-email-change-confirm",
+    ),
     *admin_router.urls,
 ]

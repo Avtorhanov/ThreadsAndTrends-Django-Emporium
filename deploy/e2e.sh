@@ -171,7 +171,9 @@ if command -v npx >/dev/null; then
   }
   # Сбой записи трейса (NO_NAVSTART и т.п.) — ошибка самого Lighthouse, не страницы: до 3 попыток.
   for attempt in 1 2 3; do
-    lighthouse || fail "Lighthouse не запустился"
+    rm -f "$OUT/lighthouse-product.report.json"
+    # Сбой трейса Lighthouse завершает с ошибкой, но отчёт пишет — тогда это повод повторить.
+    lighthouse || [ -f "$OUT/lighthouse-product.report.json" ] || fail "Lighthouse не запустился"
     traced && break
     echo "Lighthouse: сбой трейса (попытка $attempt)"
   done
