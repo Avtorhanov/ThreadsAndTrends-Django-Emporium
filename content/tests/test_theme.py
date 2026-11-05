@@ -54,7 +54,7 @@ def test_unknown_values_fall_back():
         "lime",
         look.DEFAULT_ACCENT,
         "normal",
-        "s",
+        "100",
     )
 
 
