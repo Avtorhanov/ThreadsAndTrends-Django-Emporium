@@ -1154,8 +1154,8 @@ paths:
   /api/v1/admin/content/home/blocks/{id}/image/:
     post:
       operationId: admin_content_home_blocks_image_create
-      description: 'Добавить картинку баннера (JPEG, PNG, WebP или GIF, до 5 МБ)
-        в конец списка; несколько картинок сменяют друг друга на витрине. У текстового
+      description: 'Добавить картинку баннера (JPEG, PNG, WebP или GIF, до 5 МБ) в
+        конец списка; несколько картинок сменяют друг друга на витрине. У текстового
         блока — одна картинка: новая заменяет прежнюю.'
       parameters:
       - in: path
@@ -1184,7 +1184,7 @@ paths:
       operationId: admin_content_home_blocks_image_destroy
       description: |-
         Картинки баннера: добавить ещё одну (до 6) или убрать все. Порядок и удаление
-        одной — PATCH блока с image_ids.
+        одной — PATCH блока с image_ids. У текста — одна картинка: новая заменяет прежнюю.
       parameters:
       - in: path
         name: id
