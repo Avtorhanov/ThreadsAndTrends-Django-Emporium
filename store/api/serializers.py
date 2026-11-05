@@ -239,6 +239,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "compare_at_kopecks",
             "status",
             "is_active",
+            "is_draft",
             "deleted_at",
             "total_stock",
             "cover_url",
@@ -296,6 +297,10 @@ class AdminProductUpdateSerializer(serializers.Serializer):
 
 
 class AdminProductCreateSerializer(AdminProductUpdateSerializer):
+    is_draft = serializers.BooleanField(
+        required=False,
+        help_text="Черновик («Добавить пачкой»): скрыт до публикации, is_active игнорируется",
+    )
     variants = AdminVariantSerializer(
         many=True,
         required=False,
@@ -335,7 +340,9 @@ class AdminProductBulkSerializer(serializers.Serializer):
     category = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), required=False, help_text="Перенести в категорию"
     )
-    is_active = serializers.BooleanField(required=False, help_text="Показывать на витрине")
+    is_active = serializers.BooleanField(
+        required=False, help_text="Показывать на витрине; true у черновиков — опубликовать"
+    )
 
 
 class AdminProductBulkResultSerializer(serializers.Serializer):

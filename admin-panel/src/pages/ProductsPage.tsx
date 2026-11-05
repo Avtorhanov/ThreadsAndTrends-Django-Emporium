@@ -17,15 +17,20 @@ import { isLeaf, sortCategoryTree, useCategories, useLabels, useProducts } from 
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { formatKopecks } from "../lib/money";
 import { BackLink } from "../components/BackLink";
+import { Icon } from "../components/Icon";
 
-const VISIBILITY_LABELS: Record<ProductStatus, string> = {
+// Черновики — отдельным экраном («Черновики · N» в шапке), не фильтром списка.
+const VISIBILITY_LABELS: Record<Exclude<ProductStatus, "draft">, string> = {
   active: "Активные",
   inactive: "Скрытые",
   deleted: "Удалённые",
 };
 
+const DRAFTS_QUERY = { search: "", status: "draft", label: "", category: null, stock: "", page: 1 } as const;
+
 function visibilityBadge(product: ProductRow) {
   if (product.deleted_at) return <span className="badge badge-deleted">Удалён</span>;
+  if (product.is_draft) return <span className="badge badge-warning">Черновик</span>;
   if (!product.is_active) return <span className="badge badge-blocked">Скрыт</span>;
   return <span className="badge badge-active">Активен</span>;
 }
@@ -54,6 +59,7 @@ export function ProductsPage() {
   const labels = useLabels();
   const query = { search: debouncedSearch, status: visibility, label, category, stock, page };
   const products = useProducts(query);
+  const drafts = useProducts(DRAFTS_QUERY);
   const { data, loading, error } = products;
 
   // Другая страница или фильтр — выбор сбрасывается: действие касается только видимых строк.
@@ -100,10 +106,23 @@ export function ProductsPage() {
         <BackLink to="/" label="Сводка" />
         <h1>Товары</h1>
         {data ? <span className="muted">Всего: {data.count}</span> : null}
-        <Link to="/catalog/products/new" className="button header-action">
-          Добавить товар
-        </Link>
+        <div className="header-actions">
+          <Link to="/catalog/products/batch" className="button button-ghost">
+            Добавить пачкой
+          </Link>
+          <Link to="/catalog/products/new" className="button">
+            Добавить товар
+          </Link>
+        </div>
       </div>
+
+      {drafts.data?.count ? (
+        <Link to="/catalog/products/drafts" className="drafts-banner">
+          <span className="badge badge-warning">Черновики · {drafts.data.count}</span>
+          <span className="drafts-banner-text">Допишите цену и опубликуйте</span>
+          <Icon name="right" size={18} />
+        </Link>
+      ) : null}
 
       <div className={moreFilters ? "filters is-open" : "filters"}>
         <input

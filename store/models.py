@@ -119,6 +119,9 @@ class Product(models.Model):
         verbose_name="Статус",
     )
     is_active = models.BooleanField(default=True, verbose_name="Активен")
+    # Черновик из «Добавить пачкой»: всегда скрыт, в списке панели — отдельно от скрытых.
+    # Публикация (is_active=True) снимает отметку.
+    is_draft = models.BooleanField(default=False, db_default=False, verbose_name="Черновик")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создан")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменён")
     deleted_at = models.DateTimeField(null=True, blank=True, verbose_name="Удалён")
@@ -143,11 +146,21 @@ class Product(models.Model):
             GinIndex(search_vector(), name="product_search_idx"),
             # Сортировка и фильтр по цене.
             models.Index(fields=["price_kopecks"], name="product_price_idx"),
+            # Список черновиков панели.
+            models.Index(
+                fields=["-created_at"],
+                name="product_draft_idx",
+                condition=Q(is_draft=True, deleted_at__isnull=True),
+            ),
         ]
         constraints = [
             models.CheckConstraint(
                 condition=Q(price_kopecks__isnull=True) | Q(price_kopecks__gt=0),
                 name="product_price_positive",
+            ),
+            models.CheckConstraint(
+                condition=Q(is_draft=False) | Q(is_active=False),
+                name="product_draft_hidden",
             ),
             # Старая цена — только у товара с ценой (сравнение с NULL в CHECK проходит молча).
             models.CheckConstraint(

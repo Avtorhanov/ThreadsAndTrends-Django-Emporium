@@ -340,8 +340,9 @@ paths:
           enum:
           - active
           - deleted
+          - draft
           - inactive
-        description: По умолчанию — кроме удалённых
+        description: По умолчанию — кроме удалённых и черновиков
       - in: query
         name: stock
         schema:
@@ -3684,6 +3685,10 @@ components:
           type: boolean
           readOnly: true
           title: Активен
+        is_draft:
+          type: boolean
+          readOnly: true
+          title: Черновик
         deleted_at:
           type: string
           format: date-time
@@ -3717,6 +3722,7 @@ components:
       - deleted_at
       - id
       - is_active
+      - is_draft
       - name
       - price_kopecks
       - slug
@@ -3742,7 +3748,7 @@ components:
           description: Перенести в категорию
         is_active:
           type: boolean
-          description: Показывать на витрине
+          description: Показывать на витрине; true у черновиков — опубликовать
       required:
       - ids
     AdminProductBulkResult:
@@ -3792,6 +3798,10 @@ components:
           description: id статуса; null — без метки
         is_active:
           type: boolean
+        is_draft:
+          type: boolean
+          description: 'Черновик («Добавить пачкой»): скрыт до публикации, is_active
+            игнорируется'
         variants:
           type: array
           items:
@@ -3841,6 +3851,10 @@ components:
           type: boolean
           readOnly: true
           title: Активен
+        is_draft:
+          type: boolean
+          readOnly: true
+          title: Черновик
         deleted_at:
           type: string
           format: date-time
@@ -3890,6 +3904,7 @@ components:
       - id
       - images
       - is_active
+      - is_draft
       - name
       - price_kopecks
       - slug

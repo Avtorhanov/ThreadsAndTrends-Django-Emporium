@@ -27,6 +27,13 @@ const PATHS = {
   trash: "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3",
   up: "M6 15l6-6 6 6",
   down: "M6 9l6 6 6-6",
+  left: "M15 6l-6 6 6 6",
+  right: "M9 6l6 6-6 6",
+  photos: "M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM8.5 10.5h.01M21 15l-5-5L5 19",
+  merge: "M4 4h16v16H4zM9 12h6M12 9v6",
+  split: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
+  folder: "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+  ungroup: "M4 4h6v6H4zM14 14h6v6h-6zM14 4h6M17 4v6M4 17h6",
 } as const;
 
 export type IconName = keyof typeof PATHS;

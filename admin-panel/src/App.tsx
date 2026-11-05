@@ -12,6 +12,8 @@ import { CustomersPage } from "./pages/CustomersPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OrderDetailPage } from "./pages/OrderDetailPage";
 import { OrdersPage } from "./pages/OrdersPage";
+import { ProductBatchPage } from "./pages/ProductBatchPage";
+import { ProductDraftsPage } from "./pages/ProductDraftsPage";
 import { ProductEditPage } from "./pages/ProductEditPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { HomeEditorPage } from "./pages/HomeEditorPage";
@@ -67,6 +69,8 @@ export function App() {
               <Route path="/catalog" element={<Navigate to="/catalog/products" replace />} />
               <Route path="/catalog/products" element={<ProductsPage />} />
               <Route path="/catalog/products/new" element={<ProductEditPage />} />
+              <Route path="/catalog/products/batch" element={<ProductBatchPage />} />
+              <Route path="/catalog/products/drafts" element={<ProductDraftsPage />} />
               <Route path="/catalog/products/:id" element={<ProductEditPage />} />
               <Route path="/catalog/categories" element={<CategoriesPage />} />
               <Route path="/content/articles" element={<ArticlesPage />} />

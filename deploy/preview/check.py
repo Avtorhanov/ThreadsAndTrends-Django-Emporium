@@ -8,6 +8,7 @@
 Сайт раздаётся локально по тому же пути, что на Pages (PREVIEW_BASE).
 """
 
+import base64
 import functools
 import http.server
 import json
@@ -246,6 +247,10 @@ def main(site: Path, shots: Path) -> None:
 
 
 PANEL_API = "/api/v1/admin"
+# Фото для «Добавить пачкой»: 1×1 PNG — имитация всё равно перерисует его на canvas.
+PIXEL_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+)
 
 
 def panel_shots(site: Path) -> list[tuple[str, str]]:
@@ -269,6 +274,8 @@ def panel_shots(site: Path) -> list[tuple[str, str]]:
         ("order", f"/panel/orders/{online}/"),
         ("products", "/panel/catalog/products/"),
         ("product", f"/panel/catalog/products/{first('catalog/products')}/"),
+        ("batch", "/panel/catalog/products/batch/"),
+        ("drafts", "/panel/catalog/products/drafts/"),
         ("categories", "/panel/catalog/categories/"),
         ("articles", "/panel/content/articles/"),
         ("customers", "/panel/customers/"),
@@ -335,6 +342,37 @@ def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[s
     page.wait_for_url(f"**{BASE}/panel/")
     page.wait_for_selector("main h1:has-text('Сводка')")
     print("Пароль сотрудника: смена в панели и сброс кодом: ок")
+
+    # «Добавить пачкой»: 4 фото → по 2 подряд → категория второму товару, первому — на шаге
+    # «Общее» → 2 черновика → цена одному → «Опубликовать готовые» → черновиком остался один.
+    page.goto(origin + BASE + "/panel/catalog/products/batch/", wait_until="load")
+    page.wait_for_selector(".batch-drop")
+    page.set_input_files(
+        ".batch-drop input[type=file]",
+        [{"name": f"p{n}.png", "mimeType": "image/png", "buffer": PIXEL_PNG} for n in range(4)],
+    )
+    page.click(".batch-chip:has-text('По 2 подряд')")
+    page.locator(".batch-tile").nth(2).click()
+    assert page.locator(".batch-tile.is-selected").count() == 2, "товар выделяется целиком"
+    page.click(".batch-action:has-text('Категория')")
+    page.locator(".sheet-row").nth(0).click()
+    page.screenshot(path=shots / "panel-batch-grid-iphone.png")
+    page.click(".batch-next .batch-cta")
+    page.wait_for_selector(".batch-common")
+    rest = "[role=radiogroup][aria-label='Категория для остальных'] button"
+    page.locator(f".batch-common {rest}").first.click()
+    page.click(".batch-next .batch-cta")
+    page.wait_for_selector(".draft-card", timeout=30_000)
+    assert page.locator(".draft-card").count() == 2, "черновиков не два"
+    page.locator(".draft-check input").nth(0).check()
+    page.fill("#mass-price", "1990")
+    page.click(".batch-price button[type=submit]")
+    page.wait_for_selector(".draft-card .badge-success")
+    page.click(".batch-next .batch-cta")
+    page.wait_for_selector(".note-success:has-text('Опубликовано: 1')")
+    assert page.locator(".draft-card").count() == 1, "опубликованный остался в черновиках"
+    page.screenshot(path=shots / "panel-batch-drafts-iphone.png")
+    print("Товары пачкой: раскладка, категории, черновики, цена и публикация: ок")
 
     screens = panel_shots(site)
     for theme in ("light", "dark"):

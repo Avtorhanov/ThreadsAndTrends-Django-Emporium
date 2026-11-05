@@ -318,7 +318,7 @@
     return {
       id: p.id, name: p.name, slug: p.slug, category: p.category, category_name: c ? c.name : "",
       price_kopecks: p.price_kopecks, compare_at_kopecks: p.compare_at_kopecks, status: p.status || null,
-      is_active: p.is_active, deleted_at: p.deleted_at, total_stock: totalStock(p), cover_url: coverUrl(p),
+      is_active: p.is_active, is_draft: !!p.is_draft, deleted_at: p.deleted_at, total_stock: totalStock(p), cover_url: coverUrl(p),
       created_at: p.created_at, updated_at: p.updated_at
     };
   }
@@ -573,7 +573,7 @@
 
   // --- Фото: файл → уменьшенная копия data:URL (localStorage вмещает несколько мегабайт) ---
 
-  function readImage(file, allowGif) {
+  function readImage(file, allowGif, maxSide) {
     return new Promise(function (resolve, reject) {
       if (!file || !/^image\//.test(file.type || "")) return reject(new Error("type"));
       if (file.type === "image/gif") {
@@ -589,7 +589,7 @@
       var url = URL.createObjectURL(file);
       var img = new Image();
       img.onload = function () {
-        var max = 900;
+        var max = maxSide || 900;
         var scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
         var canvas = document.createElement("canvas");
         canvas.width = Math.round(img.naturalWidth * scale);
@@ -1028,6 +1028,9 @@
     if (st === "deleted") list = list.filter(function (p) { return p.deleted_at; });
     else {
       list = list.filter(function (p) { return !p.deleted_at; });
+      // Черновики («Добавить пачкой») — только в своём списке, как в API.
+      if (st === "draft") list = list.filter(function (p) { return p.is_draft; });
+      else list = list.filter(function (p) { return !p.is_draft; });
       if (st === "active") list = list.filter(function (p) { return p.is_active; });
       if (st === "inactive") list = list.filter(function (p) { return !p.is_active; });
     }
@@ -1059,7 +1062,8 @@
       id: id, name: String(body.name).trim(), slug: body.slug || uniqueSlug(db.products, body.name), category: Number(body.category),
       price_kopecks: body.price_kopecks === undefined ? null : body.price_kopecks,
       compare_at_kopecks: body.compare_at_kopecks || null, status: body.status || null,
-      is_active: body.is_active !== false, deleted_at: null, description: String(body.description || ""),
+      is_active: !body.is_draft && body.is_active !== false, is_draft: !!body.is_draft,
+      deleted_at: null, description: String(body.description || ""),
       created_at: now(), updated_at: now(), variants: [], images: []
     };
     var sizes = Array.isArray(body.variants) && body.variants.length ? body.variants : [{ size: "" }];
@@ -1084,6 +1088,7 @@
     });
     if (body.category !== undefined) p.category = Number(body.category);
     if (p.price_kopecks === null) p.compare_at_kopecks = null;
+    if (p.is_active) p.is_draft = false; // показать черновик = опубликовать
     p.updated_at = now();
     return { status: 200, body: productDetail(db, p), save: true };
   });
@@ -1112,6 +1117,7 @@
       if (body.status !== undefined) p.status = body.status || null;
       if (body.category !== undefined && body.category !== null) p.category = Number(body.category);
       if (body.is_active !== undefined) p.is_active = !!body.is_active;
+      if (p.is_active) p.is_draft = false;
       p.updated_at = now();
       updated++;
     });
@@ -1401,6 +1407,8 @@
   var uploads = [
     {
       re: new RegExp("^" + A + "/catalog/products/(\\d+)/images/$"),
+      // Фото товаров мельче: «Добавить пачкой» грузит десятки фото, а хранилище браузера ~5 МБ.
+      max: 640,
       apply: function (db, m, url) {
         var p = byId(db.products, m[1]);
         if (!p) return fail(404, { detail: "Не найдено." });
@@ -1479,7 +1487,7 @@
           if (!um) continue;
           var file = body.get("image");
           var upload = uploads[u];
-          return readImage(file, upload.gif).then(function (dataUrl) {
+          return readImage(file, upload.gif, upload.max).then(function (dataUrl) {
             var fresh = load();
             return commit(fresh, upload.apply(fresh, um, dataUrl));
           }, function (error) {

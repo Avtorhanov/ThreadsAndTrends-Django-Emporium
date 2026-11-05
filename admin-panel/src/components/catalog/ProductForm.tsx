@@ -281,7 +281,7 @@ export function ProductForm({ product, categories, labels, photos, stock, extraD
             <label className="switch">
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
               <span className="switch-track" aria-hidden="true" />
-              Показывать на витрине
+              {product.is_draft ? "Опубликовать — показывать на витрине" : "Показывать на витрине"}
             </label>
           ) : null}
         </Group>
