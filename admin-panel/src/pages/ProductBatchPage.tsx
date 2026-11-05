@@ -1,4 +1,4 @@
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, type DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { imagesService, productsService } from "../api/catalog";
@@ -16,13 +16,14 @@ import {
   products as productsText,
 } from "../components/catalog/batch";
 import { CategorySheet } from "../components/catalog/CategorySheet";
+import { imagesFrom, normalizeImage, readClipboardImages, usePasteImages } from "../components/catalog/imageInput";
 import { MAX_PRODUCT_IMAGES } from "../components/catalog/PendingPhotos";
 import { useCategories, useLabels } from "../hooks/useCatalog";
 import { parseRublesToKopecks } from "../lib/money";
 
 const ACCEPT = "image/jpeg,image/png,image/webp";
-const MAX_BYTES = 5 * 1024 * 1024;
 
+type Incoming = { blob: Blob; name: string };
 type Photo = { key: string; file: File; url: string };
 type Group = { id: number; keys: string[]; category: number | null };
 type Step = "photos" | "common";
@@ -47,8 +48,10 @@ export function BatchSteps({ current }: { current: 0 | 1 | 2 }) {
 }
 
 /**
- * «Товары → Добавить пачкой»: фото раскладываются по товарам (по одному, группой или все
- * сразу), товарам задаются категории, затем общие поля — и создаются черновики.
+ * «Товары → Добавить товар»: начинается с фото — из галереи, вставкой (⌘/Ctrl+V, кнопка
+ * «Вставить») или перетаскиванием. Один товар — обычная карточка с этими фото; несколько —
+ * фото раскладываются по товарам (по одному, группой или все сразу), товарам задаются категории,
+ * затем общие поля — и создаются черновики. Без фото — сразу карточка.
  * Раскладка живёт в браузере до создания; черновики — на сервере.
  */
 export function ProductBatchPage() {
@@ -69,6 +72,7 @@ export function ProductBatchPage() {
   const [fallback, setFallback] = useState<number | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
   const seq = useRef(0);
   const photosRef = useRef<Photo[]>([]);
   photosRef.current = photos;
@@ -123,14 +127,15 @@ export function ProductBatchPage() {
     return seq.current;
   }
 
-  function pick(event: ChangeEvent<HTMLInputElement>) {
-    const picked = Array.from(event.target.files ?? []);
-    event.target.value = "";
-    const tooBig = picked.filter((file) => file.size > MAX_BYTES);
-    const fitting = picked.filter((file) => file.size <= MAX_BYTES);
-    const room = MAX_BATCH_PHOTOS - photos.length;
+  /** Фото из галереи, буфера или перетаскивания: крупные и другие форматы — в JPEG до 5 МБ. */
+  async function addImages(incoming: Incoming[]) {
+    if (!incoming.length) return;
+    const files = await Promise.all(incoming.map((item) => normalizeImage(item.blob, item.name)));
+    const fitting = files.filter((file): file is File => file !== null);
+    const skipped = incoming.filter((_, index) => files[index] === null).map((item) => item.name);
+    const room = MAX_BATCH_PHOTOS - photosRef.current.length;
     const messages: string[] = [];
-    if (tooBig.length) messages.push(`Больше 5 МБ, пропущено: ${tooBig.map((file) => file.name).join(", ")}.`);
+    if (skipped.length) messages.push(`Не получилось открыть как фото: ${skipped.join(", ")}.`);
     if (fitting.length > room) messages.push(`Не больше ${MAX_BATCH_PHOTOS} фото за раз — лишние не добавлены.`);
     setNotice(messages.length ? messages.join(" ") : null);
     const added = fitting.slice(0, Math.max(0, room)).map((file) => ({
@@ -138,7 +143,46 @@ export function ProductBatchPage() {
       file,
       url: URL.createObjectURL(file),
     }));
-    if (added.length) setPhotos((prev) => [...prev, ...added]);
+    if (added.length) {
+      photosRef.current = [...photosRef.current, ...added];
+      setPhotos(photosRef.current);
+    }
+  }
+
+  function pick(event: ChangeEvent<HTMLInputElement>) {
+    const picked = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    void addImages(picked.map((file) => ({ blob: file, name: file.name })));
+  }
+
+  async function pasteFromClipboard() {
+    try {
+      const { images, unsupported } = await readClipboardImages();
+      if (unsupported) setNotice("Браузер не даёт прочитать буфер кнопкой — нажмите ⌘V или Ctrl+V.");
+      else if (!images.length) setNotice("В буфере нет фото. Скопируйте фото (в галерее — «Скопировать») и нажмите «Вставить».");
+      else await addImages(images);
+    } catch {
+      setNotice("Нет доступа к буферу обмена — разрешите вставку или нажмите ⌘V / Ctrl+V.");
+    }
+  }
+
+  const collecting = step === "photos" && progress === null;
+  usePasteImages((images) => void addImages(images), collecting);
+
+  function onDrop(event: DragEvent) {
+    if (!collecting) return;
+    event.preventDefault();
+    setDragging(false);
+    void addImages(imagesFrom(event.dataTransfer));
+  }
+
+  /** Один товар — обычная карточка с этими фото (и категорией, если задана при раскладке). */
+  function openSingle(keys: string[], category: number | null) {
+    const files = keys
+      .map((key) => photos.find((photo) => photo.key === key)?.file)
+      .filter((file): file is File => file !== undefined)
+      .slice(0, MAX_PRODUCT_IMAGES);
+    navigate("/catalog/products/new", { state: { photos: files, category } });
   }
 
   /** Нажатие на фото товара выделяет весь товар, одиночное фото — только себя. */
@@ -333,13 +377,31 @@ export function ProductBatchPage() {
   }
 
   const ready = categories.data && labels.data;
+  // Один товар — дальше обычная карточка: одно фото без раскладки или единственный товар.
+  const single =
+    groups.length === 1 && groups[0]
+      ? { keys: groups[0].keys, category: groups[0].category }
+      : groups.length === 0 && photos.length === 1 && photos[0]
+        ? { keys: [photos[0].key], category: null }
+        : null;
   const statusOptions = [{ id: "", name: "Без статуса" }, ...(labels.data ?? []).map((item) => ({ id: String(item.id), name: item.name }))];
 
   return (
-    <section className="batch">
+    <section
+      className={dragging ? "batch is-dragging" : "batch"}
+      onDragOver={(event) => {
+        if (!collecting || !Array.from(event.dataTransfer.types).includes("Files")) return;
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
+      }}
+      onDrop={onDrop}
+    >
       <div className="page-header">
-        <BackLink to="/catalog/products" label="Товары" />
-        <h1>Добавить пачкой</h1>
+        <BackLink to="/catalog/products" />
+        <h1>Добавить товар</h1>
         {photos.length ? (
           <span className="muted">
             {photos.length} фото · {productsText(groups.length)}
@@ -358,13 +420,22 @@ export function ProductBatchPage() {
             <span className="batch-drop-icon" aria-hidden="true">
               <Icon name="photos" size={30} />
             </span>
-            <strong>Выберите фото из галереи</strong>
+            <strong>Выберите или вставьте фото</strong>
             <span className="muted">
-              До {MAX_BATCH_PHOTOS} фото за раз, JPEG, PNG или WebP до 5 МБ. Дальше разложите их по товарам.
+              Одно фото или несколько — один товар или сразу много. До {MAX_BATCH_PHOTOS} фото, крупные сожмутся
+              сами. Можно перетащить сюда или вставить ⌘V / Ctrl+V.
             </span>
             <span className="button button-accent batch-drop-button">Выбрать фото</span>
             <input className="sr-only" type="file" accept={ACCEPT} multiple onChange={pick} />
           </label>
+          <div className="batch-alt">
+            <button type="button" className="button button-ghost" onClick={() => void pasteFromClipboard()}>
+              <Icon name="paste" size={18} /> Вставить
+            </button>
+            <Link to="/catalog/products/new" className="button button-ghost">
+              Без фото — заполнить вручную
+            </Link>
+          </div>
           <div className="card batch-howto">
             <h2>Как это работает</h2>
             <ol>
@@ -439,11 +510,17 @@ export function ProductBatchPage() {
               );
             })}
             {photos.length < MAX_BATCH_PHOTOS ? (
-              <label className="batch-add-tile">
-                <Icon name="plus" size={24} />
-                <span>Ещё фото</span>
-                <input className="sr-only" type="file" accept={ACCEPT} multiple onChange={pick} />
-              </label>
+              <>
+                <label className="batch-add-tile">
+                  <Icon name="plus" size={24} />
+                  <span>Ещё фото</span>
+                  <input className="sr-only" type="file" accept={ACCEPT} multiple onChange={pick} />
+                </label>
+                <button type="button" className="batch-add-tile" onClick={() => void pasteFromClipboard()}>
+                  <Icon name="paste" size={24} />
+                  <span>Вставить</span>
+                </button>
+              </>
             ) : null}
           </div>
 
@@ -476,23 +553,35 @@ export function ProductBatchPage() {
           ) : (
             <div className="batch-dock batch-next">
               <span className="muted small">
-                {groups.length === 0
+                {single && groups.length === 0
+                  ? "Одно фото — один товар. Добавьте ещё, чтобы создать несколько"
+                  : groups.length === 0
                   ? "Отметьте фото или выберите способ разложить все"
                   : loose.length
                     ? `Не в товаре: ${loose.length} фото — они не войдут`
                     : "Все фото разложены по товарам"}
               </span>
-              <button
-                type="button"
-                className="button button-accent batch-cta"
-                disabled={!groups.length}
-                onClick={() => {
-                  setStep("common");
-                  window.scrollTo({ top: 0 });
-                }}
-              >
-                {groups.length ? `Дальше · ${productsText(groups.length)}` : "Дальше"}
-              </button>
+              {single ? (
+                <button
+                  type="button"
+                  className="button button-accent batch-cta"
+                  onClick={() => openSingle(single.keys, single.category)}
+                >
+                  Дальше · карточка товара
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="button button-accent batch-cta"
+                  disabled={!groups.length}
+                  onClick={() => {
+                    setStep("common");
+                    window.scrollTo({ top: 0 });
+                  }}
+                >
+                  {groups.length ? `Дальше · ${productsText(groups.length)}` : "Дальше"}
+                </button>
+              )}
             </div>
           )}
         </>

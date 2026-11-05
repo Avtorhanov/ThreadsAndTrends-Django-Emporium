@@ -35,7 +35,7 @@ export function HelpCard({ withContacts = true }: { withContacts?: boolean }) {
         <View style={s.divider} />
         {withContacts ? (
           <>
-            <Row icon="chat" title="Контакты и статьи" onPress={() => router.navigate("/contacts")} />
+            <Row icon="phone" title="Контакты и статьи" onPress={() => router.navigate("/contacts")} />
             <View style={s.divider} />
           </>
         ) : null}

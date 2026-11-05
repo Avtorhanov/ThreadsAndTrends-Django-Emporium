@@ -19,7 +19,6 @@ import { useOrders } from "../hooks/useOrders";
 import { formatKopecks } from "../lib/money";
 import { ADMIN_TARGETS, TARGET_LABELS } from "../lib/orderFlow";
 import { Table } from "../components/Table";
-import { BackLink } from "../components/BackLink";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
@@ -119,7 +118,6 @@ export function OrdersPage() {
   return (
     <section>
       <div className="page-header">
-        <BackLink to="/" label="Сводка" />
         <h1>Заказы</h1>
         {data ? <span className="muted">Найдено: {data.count}</span> : null}
       </div>

@@ -1,5 +1,6 @@
-import { PANEL_ACCENTS, PANEL_PALETTES, type PanelRadius, type PanelText } from "../theme/palettes";
-import { RADIUS_LABELS, TEXT_LABELS, THEME_LABELS, type ThemeChoice, useTheme } from "../theme/theme";
+import { ScalePicker } from "../components/ScalePicker";
+import { PANEL_ACCENTS, PANEL_PALETTES, type PanelRadius } from "../theme/palettes";
+import { RADIUS_LABELS, TEXT_VALUES, THEME_LABELS, type ThemeChoice, useTheme } from "../theme/theme";
 
 /** Сегментированный выбор из 3 вариантов. */
 function Seg<T extends string>({
@@ -31,7 +32,7 @@ function Seg<T extends string>({
   );
 }
 
-/** Оформление самой панели: тема, палитра (со «Своей» и акцентом), углы и размер текста.
+/** Оформление самой панели: тема, палитра (со «Своей» и акцентом), углы и масштаб.
  * Хранится в этом браузере и не влияет на магазин — вид витрины задаётся в «Тема магазина». */
 export function PanelLookPage() {
   const look = useTheme();
@@ -104,8 +105,9 @@ export function PanelLookPage() {
       <div className="card form-card">
         <h2>Углы</h2>
         <Seg<PanelRadius> label="Углы" labels={RADIUS_LABELS} value={look.radius} onChange={look.changeRadius} />
-        <h2>Размер текста</h2>
-        <Seg<PanelText> label="Размер текста" labels={TEXT_LABELS} value={look.text} onChange={look.changeText} />
+        <h2>Масштаб, %</h2>
+        <ScalePicker label="Масштаб панели" values={TEXT_VALUES} value={look.text} onChange={look.changeText} />
+        <p className="muted small">Весь интерфейс панели: текст, отступы, кнопки и фото — пропорционально.</p>
       </div>
 
       <div>

@@ -30,7 +30,7 @@ function errorText(error: unknown): string {
 
 type Filter = "all" | "todo" | "ready" | `c${number}`;
 
-/** Черновики из «Добавить пачкой»: правка по одному или сразу нескольким, публикация готовых. */
+/** Черновики из «Добавить товар» (несколько товаров по фото): правка по одному или сразу нескольким, публикация готовых. */
 export function ProductDraftsPage() {
   const location = useLocation();
   const result = location.state as BatchResult | null;
@@ -142,7 +142,7 @@ export function ProductDraftsPage() {
   return (
     <section className="batch">
       <div className="page-header">
-        <BackLink to="/catalog/products" label="Товары" />
+        <BackLink to="/catalog/products" />
         <h1>Черновики</h1>
         {rows.length ? (
           <span className="muted">
@@ -150,10 +150,10 @@ export function ProductDraftsPage() {
           </span>
         ) : null}
         <Link to="/catalog/products/batch" className="button button-ghost header-action">
-          <Icon name="plus" size={16} /> Добавить пачкой
+          <Icon name="plus" size={16} /> Добавить товар
         </Link>
       </div>
-      {/* Шаги — когда пришли из «Добавить пачкой»; открытым из «Товаров» спискам они ни к чему. */}
+      {/* Шаги — когда пришли из «Добавить товар» (пачкой); открытым из «Товаров» спискам они ни к чему. */}
       {result ? <BatchSteps current={2} /> : null}
 
       {result && (result.created || result.failed.length) ? (
@@ -176,7 +176,7 @@ export function ProductDraftsPage() {
           <h2>Черновиков нет</h2>
           <p className="muted">Добавьте сразу несколько товаров по фото — они появятся здесь до публикации.</p>
           <Link to="/catalog/products/batch" className="button button-accent">
-            Добавить пачкой
+            Добавить товары
           </Link>
         </div>
       ) : null}

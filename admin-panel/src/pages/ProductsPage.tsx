@@ -16,7 +16,6 @@ import { Table } from "../components/Table";
 import { isLeaf, sortCategoryTree, useCategories, useLabels, useProducts } from "../hooks/useCatalog";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { formatKopecks } from "../lib/money";
-import { BackLink } from "../components/BackLink";
 import { Icon } from "../components/Icon";
 
 // Черновики — отдельным экраном («Черновики · N» в шапке), не фильтром списка.
@@ -103,17 +102,12 @@ export function ProductsPage() {
   return (
     <section>
       <div className="page-header">
-        <BackLink to="/" label="Сводка" />
         <h1>Товары</h1>
         {data ? <span className="muted">Всего: {data.count}</span> : null}
-        <div className="header-actions">
-          <Link to="/catalog/products/batch" className="button button-ghost">
-            Добавить пачкой
-          </Link>
-          <Link to="/catalog/products/new" className="button">
-            Добавить товар
-          </Link>
-        </div>
+        {/* Одна кнопка: фото → один товар (обычная карточка) или сразу много (черновики). */}
+        <Link to="/catalog/products/batch" className="button header-action">
+          <Icon name="plus" size={16} /> Добавить товар
+        </Link>
       </div>
 
       {drafts.data?.count ? (

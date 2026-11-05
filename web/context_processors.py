@@ -5,6 +5,7 @@ from functools import cache
 
 from django.conf import settings
 
+from content import look
 from content import shop as shop_settings
 from orders.services import status as order_status
 from store.services.storefront import category_tree
@@ -77,4 +78,6 @@ def storefront(request):
         "android_apk_url": settings.ANDROID_APK_URL,
         "seller": seller,
         "seller_line": seller_line,
+        # Слово «shop» рядом с плашкой «DiDi» (панель → «Внешний вид» → «Тема магазина»).
+        "show_wordmark": look.shop_theme().show_wordmark,
     }

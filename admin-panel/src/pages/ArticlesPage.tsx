@@ -5,7 +5,6 @@ import { ARTICLES_PAGE_SIZE, type ArticleRow, type ArticleStatus } from "../api/
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useArticles } from "../hooks/useContent";
 import { Table } from "../components/Table";
-import { BackLink } from "../components/BackLink";
 
 const STATUS_LABELS: Record<ArticleStatus, string> = {
   published: "Опубликованные",
@@ -34,7 +33,6 @@ export function ArticlesPage() {
   return (
     <section>
       <div className="page-header">
-        <BackLink to="/" label="Сводка" />
         <h1>Статьи</h1>
         {data ? <span className="muted">Всего: {data.count}</span> : null}
         <Link to="/content/articles/new" className="button header-action">

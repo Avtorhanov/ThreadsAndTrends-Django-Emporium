@@ -121,7 +121,7 @@ export function ArticleEditPage() {
   return (
     <section className="stack">
       <div className="page-header">
-        <BackLink to="/content/articles" label="Статьи" />
+        <BackLink to="/content/articles" />
         <h1>{articleId === null ? "Новая статья" : (current?.title ?? "Статья")}</h1>
         {current?.deleted_at ? <span className="badge badge-deleted">Удалена</span> : null}
         {current && current.is_published && !current.deleted_at ? (

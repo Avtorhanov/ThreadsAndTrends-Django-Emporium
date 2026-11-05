@@ -5,4 +5,5 @@
   {% for block in help_blocks %}{% if tab != "contacts" or block.value != contacts_url %}
   <a class="menu__item" href="{{ block.value }}" data-block-index="{{ forloop.counter0 }}"{% if block.pk %} data-block-id="{{ block.pk }}"{% endif %} data-title="{{ block.title }}" data-value="{{ block.value }}"><svg class="ic" width="20" height="20"><use href="#i-{{ block.icon|default:'help' }}"/></svg>{{ block.title }}<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>
   {% endif %}{% endfor %}
+  {% if android_apk_url %}<a class="menu__item" href="{{ android_apk_url }}"><svg class="ic" width="20" height="20"><use href="#i-phone"/></svg>{% sitetext "footer.android" %}Приложение для Android{% endsitetext %}<svg class="ic menu__go" width="18" height="18"><use href="#i-chevron"/></svg></a>{% endif %}
 </nav>

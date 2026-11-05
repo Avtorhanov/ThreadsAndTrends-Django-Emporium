@@ -72,7 +72,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(-
 a, button, summary, label, input, select { touch-action: manipulation; }
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: calc(100 * var(--vh));
   background: var(--bg);
   color: var(--ink);
   font: 500 15px/1.45 var(--font-text);
@@ -157,6 +157,8 @@ a { color: var(--brand); }
 .word { font: 700 24px/1 var(--font-display); letter-spacing: -.5px; white-space: nowrap; transition: font-size .35s var(--ease-soft); }
 .word--sm { font-size: 16px; }
 .word__accent { color: var(--brand); }
+/* Демо на GitHub Pages: слово «shop» выключено в панели (на сервере его не рисует шаблон). */
+:root[data-wordmark="off"] .brand .word { display: none; }
 .is-compact .logo { width: var(--size-header-button-compact); height: var(--size-header-button-compact); border-radius: calc(9px * var(--radius-scale)); font-size: 10.5px; }
 .is-compact .word { font-size: 16px; }
 
@@ -491,7 +493,7 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .hero__zoom { display: block; height: 100%; cursor: zoom-in; -webkit-tap-highlight-color: transparent; }
 /* Уведомление «Ссылка скопирована» (site.js) — над нижним меню. */
 .toast {
-  position: fixed; left: 50%; bottom: calc(var(--tabbar-top, 0px) + 16px); z-index: 60; max-width: calc(100vw - 32px);
+  position: fixed; left: 50%; bottom: calc(var(--tabbar-top, 0px) + 16px); z-index: 60; max-width: calc(100 * var(--vw) - 32px);
   padding: 12px 18px; border-radius: calc(14px * var(--radius-scale)); background: var(--nav); color: var(--nav-ink, #fff);
   font: 700 14px var(--font-text); box-shadow: var(--shadow-nav); transform: translate(-50%, 12px); opacity: 0;
   transition: opacity .2s ease, transform .25s var(--ease-out); pointer-events: none;
@@ -703,6 +705,10 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .segment span { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 4px 8px; border-radius: var(--radius-seg); color: var(--muted); font: 800 13px/1.15 var(--font-text); text-align: center; transition: background-color .25s ease, color .25s ease; }
 .segment input:checked + span { background: var(--seg-on-bg); color: var(--seg-on-ink); }
 .segment input:focus-visible + span { outline: 2px solid var(--brand); outline-offset: 2px; }
+/* Масштаб: 7 вариантов в строку — узкие кнопки, цифры без переноса. */
+.segments--scale { gap: 2px; }
+.segments--scale .segment { flex: 1 1 0; }
+.segments--scale .segment span { padding-inline: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* Оформление в профиле: палитры, акценты «Своей», углы, размер текста */
 .look { display: grid; gap: 16px; }
 .look fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
@@ -899,14 +905,11 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 
 /* --- Подвал, нижняя панель, баннер приложения --- */
 .foot { padding: 28px var(--gutter) calc(var(--tabbar-top) + 24px); color: var(--muted); font: 600 13px/1.5 var(--font-text); }
-.foot__inner { display: grid; gap: 14px; max-width: var(--page-max); margin-inline: auto; padding-top: 22px; border-top: 1px solid var(--border); }
-.foot__brand { display: flex; align-items: center; gap: 10px; color: var(--ink); }
-.foot__links { display: grid; gap: 4px; }
-.foot__links a, .foot__seller a { color: var(--muted); }
+.foot__inner { display: grid; gap: 10px; max-width: var(--page-max); margin-inline: auto; padding-top: 18px; border-top: 1px solid var(--border); }
+.foot__seller a { color: var(--muted); }
 .foot__seller { text-wrap: balance; }
 /* Реквизит переносится целиком; длиннее строки (адрес на телефоне) — переносится внутри. */
 .foot__part { display: inline-block; max-width: 100%; }
-.foot__links a { display: inline-flex; align-items: center; min-height: 32px; }
 
 /* Нижняя панель (data-nav на <html>; вид для нового посетителя — панель → «Тема», свой —
    профиль → «Оформление»). --tabbar-top — сколько панель занимает снизу экрана: от неё отступ
@@ -1053,7 +1056,10 @@ a.hblock-photo__frame:active { transform: scale(.985); }
   [data-slides] .hblock-photo__slide.is-on .hblock-photo__img { animation: none; }
 }
 /* Баннеры подряд — карусель: листаются сами (site.js) и пальцем; точки — переход к баннеру. */
-.hblock-carousel { display: grid; gap: 10px; }
+/* Точки — вплотную под баннером, следующий блок подтянут: тень баннера (поле 90 px у ленты)
+   ложится под точки и заголовок подборки, а не обрезается и не раздвигает страницу. */
+.hblock-carousel { display: grid; gap: 4px; }
+.hblock-carousel + .hblock { margin-top: -10px; }
 .hblock-carousel__track {
   display: grid; grid-auto-flow: column; grid-auto-columns: 100%; gap: var(--gutter);
   overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
@@ -1064,7 +1070,7 @@ a.hblock-photo__frame:active { transform: scale(.985); }
 .hblock-carousel__slide > .hblock { min-width: 0; }
 .hblock-carousel__dots { display: flex; justify-content: center; gap: 2px; position: relative; z-index: 1; margin-top: -2px; }
 .hblock-carousel__dot {
-  display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 32px; margin-block: -4px;
+  display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-block: -6px;
   padding: 0; border: 0; background: transparent; cursor: pointer;
 }
 .hblock-carousel__dot::before {
@@ -1095,6 +1101,21 @@ a.hblock-photo__frame:active { transform: scale(.985); }
 .hblock-text { padding: 16px 18px 8px; border-radius: var(--radius-card); background: var(--card); box-shadow: var(--shadow-card); }
 .hblock-text .hblock-head__title { padding-bottom: 8px; }
 .hblock-text p { margin: 0 0 10px; color: var(--ink); font: 500 15px/1.55 var(--font-text); overflow-wrap: anywhere; }
+/* Текст с картинкой: на телефоне картинка сверху во всю ширину карточки; от 600 px — сбоку
+   (слева или справа, ~40 %), по высоте текста. */
+.hblock-text--img { display: grid; padding: 0; overflow: hidden; }
+.hblock-text__media { display: block; min-width: 0; background: var(--neutral-bg); }
+.hblock-text__img { display: block; width: 100%; height: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
+.hblock-text--img .hblock-text__body { min-width: 0; padding: 16px 18px 8px; }
+@media (min-width: 600px) {
+  .hblock-text--left, .hblock-text--right { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+  .hblock-text--right { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+  .hblock-text--right .hblock-text__media { order: 2; }
+  /* Высоту задаёт текст (не менее 200 px), картинка заполняет свою колонку. */
+  .hblock-text--left .hblock-text__media, .hblock-text--right .hblock-text__media { position: relative; min-height: 200px; }
+  .hblock-text--left .hblock-text__img, .hblock-text--right .hblock-text__img { position: absolute; inset: 0; aspect-ratio: auto; }
+  .hblock-text--left .hblock-text__body, .hblock-text--right .hblock-text__body { align-self: center; padding: 20px 22px 12px; }
+}
 @media (min-width: 600px) {
   .hblock-photo__frame { aspect-ratio: 16 / 9; }
   .hblock-photo__title { font-size: 28px; }
@@ -1138,9 +1159,6 @@ a.hblock-photo__frame:active { transform: scale(.985); }
   .tabbar, .appbar { display: none; }
   .main { padding-bottom: 48px; }
   .foot { padding-bottom: calc(32px + var(--safe-bottom)); }
-  .foot__inner { grid-template-columns: auto 1fr; align-items: start; column-gap: 48px; }
-  .foot__links { grid-template-columns: repeat(2, max-content); column-gap: 32px; }
-  .foot__seller, .foot__copy { grid-column: 2; }
   .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
   .h1 { font-size: 34px; }
   .card:active { transform: scale(.98); }
@@ -1151,7 +1169,7 @@ a.hblock-photo__frame:active { transform: scale(.985); }
   .channels { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .pd { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: start; }
   .pd__gallery { position: sticky; top: calc(var(--hdr-compact) + 18px); }
-  .hero { height: auto; aspect-ratio: 4 / 5; max-height: calc(100vh - var(--hdr-compact) - 48px); }
+  .hero { height: auto; aspect-ratio: 4 / 5; max-height: calc(100 * var(--vh) - var(--hdr-compact) - 48px); }
   .pd__info { margin-top: 0; padding: 24px 24px 26px; }
   .pd__title { font-size: 32px; }
   .price--detail .price__now { font-size: 30px; }
@@ -1232,7 +1250,7 @@ a.hblock-photo__frame:active { transform: scale(.985); }
   background: transparent; color: var(--brand); font: 800 13px var(--font-text); cursor: pointer;
 }
 .bx-dialog {
-  width: min(420px, calc(100vw - 32px)); padding: 20px; border: 0; border-radius: var(--radius-card);
+  width: min(420px, calc(100 * var(--vw) - 32px)); padding: 20px; border: 0; border-radius: var(--radius-card);
   background: var(--surface); color: var(--ink); box-shadow: var(--shadow-card);
 }
 .bx-dialog::backdrop { background: rgba(7, 14, 10, .45); }
@@ -1248,13 +1266,21 @@ a.hblock-photo__frame:active { transform: scale(.985); }
 /* iOS увеличивает страницу при фокусе на поле с текстом меньше 16 px и не возвращает масштаб.
    На сенсорных экранах поля — 16 px: ввод без приближения. */
 @media (pointer: coarse) {
-  .input, .search input, .quick input, .bx-field input, .bx-field select { font-size: 16px; }
+  /* При масштабе меньше 100 % — крупнее, чтобы на экране оставалось 16 px. */
+  .input, .search input, .quick input, .bx-field input, .bx-field select { font-size: max(16px, calc(16px / var(--text-scale, 1))); }
 }
 
-/* Размер текста покупателя (data-text=m|l на <html>, --text-scale из tokens.css):
-   телефон — увеличивается только текст (text-size-adjust), компьютер — масштаб страницы. */
-:root[data-text="m"] { -webkit-text-size-adjust: 115%; text-size-adjust: 115%; }
-:root[data-text="l"] { -webkit-text-size-adjust: 130%; text-size-adjust: 130%; }
-@media (hover: hover) and (pointer: fine) {
-  :root[data-text] body { zoom: var(--text-scale); }
-}
+/* Масштаб интерфейса покупателя (data-text=80…150 на <html>, --text-scale из tokens.css): весь
+   интерфейс — текст, отступы, кнопки, фото — пропорционально, вёрстка та же (CSS zoom: ширина
+   страницы в CSS-пикселях = экран / масштаб). Единицы vh/vw внутри body масштабируются вместе с
+   ним — поэтому они делятся на --text-scale (--vh, --vw). */
+:root { --vh: calc(1vh / var(--text-scale, 1)); --vw: calc(1vw / var(--text-scale, 1)); }
+:root[data-text] body { zoom: var(--text-scale); }
+/* Крупный масштаб на узком экране: строке шапки (экран / масштаб − поля) не хватает ~300 px на
+   «DiDi shop» и три кнопки — остаётся плашка «DiDi». Медиазапрос считает ширину без масштаба. */
+@media (max-width: 381px) { :root[data-text="115"] .brand .word { display: none; } }
+@media (max-width: 431px) { :root[data-text="130"] .brand .word { display: none; } }
+@media (max-width: 464px) { :root[data-text="140"] .brand .word { display: none; } }
+@media (max-width: 497px) { :root[data-text="150"] .brand .word { display: none; } }
+/* Фото на весь экран (PhotoSwipe, в <body>) считает размеры по окну — без масштаба. */
+:root[data-text] .pswp { zoom: calc(1 / var(--text-scale)); }

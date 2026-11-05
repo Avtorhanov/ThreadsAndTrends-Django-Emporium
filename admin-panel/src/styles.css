@@ -35,13 +35,87 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Масштаб панели («Внешний вид → Панель», data-text=80…150, --text-scale из tokens.css): весь
+   интерфейс пропорционально (CSS zoom), вёрстка та же. vh/vw внутри body масштабируются вместе
+   с ним — поэтому делятся на --text-scale (--vh, --vw). */
+:root {
+  --vh: calc(1vh / var(--text-scale, 1));
+  --vw: calc(1vw / var(--text-scale, 1));
+}
+
+:root[data-text] body {
+  zoom: var(--text-scale);
+}
+
+/* Масштаб: «A−», 7 вариантов, «A+». */
+.scale-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scale-step {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ctl);
+  background: var(--surface);
+  color: var(--ink);
+  font: 800 14px var(--font-text);
+  cursor: pointer;
+}
+
+.scale-step-up {
+  font-size: 18px;
+}
+
+.scale-step sup {
+  font-size: 0.7em;
+}
+
+.scale-step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.scale-options {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  min-width: 0;
+  padding: 4px;
+  border-radius: var(--radius-ctl);
+  background: var(--neutral-bg);
+}
+
+.scale-options button {
+  min-width: 0;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--radius-ctl) - 4px);
+  background: transparent;
+  color: var(--muted);
+  font: 800 12px var(--font-text);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.scale-options button.is-on {
+  background: var(--seg-on-bg);
+  color: var(--seg-on-ink);
+  box-shadow: var(--shadow-control);
+}
+
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: calc(100 * var(--vh));
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-text);
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   /* Фон — без перехода: Safari 26 красит полосы браузера в цвет фона и при плавной смене
@@ -60,7 +134,7 @@ h3 {
 
 h1 {
   margin: 0;
-  font-size: calc(24px * var(--text-scale, 1));
+  font-size: 24px;
 }
 
 a {
@@ -82,7 +156,7 @@ a {
 }
 
 .small {
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
 }
 
 .strong {
@@ -92,14 +166,14 @@ a {
 .eyebrow {
   margin: 0 0 4px;
   color: var(--muted);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .centered {
-  min-height: 100vh;
+  min-height: calc(100 * var(--vh));
   display: grid;
   place-content: center;
   justify-items: center;
@@ -120,7 +194,7 @@ a {
 
 .card h2 {
   margin: 0 0 12px;
-  font-size: calc(17px * var(--text-scale, 1));
+  font-size: 17px;
 }
 
 .card > p.muted {
@@ -146,7 +220,7 @@ a {
 /* --- Вход --- */
 
 .login-card {
-  width: min(400px, calc(100vw - 32px));
+  width: min(400px, calc(100 * var(--vw) - 32px));
   display: grid;
   gap: 16px;
   text-align: left;
@@ -162,7 +236,7 @@ a {
 }
 
 .login-head h1 {
-  font-size: calc(20px * var(--text-scale, 1));
+  font-size: 20px;
 }
 
 /* --- Поля --- */
@@ -171,7 +245,7 @@ a {
   display: grid;
   gap: 6px;
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -179,7 +253,7 @@ input,
 select,
 textarea {
   font: inherit;
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
   font-weight: 500;
   color: var(--ink);
   background: var(--surface);
@@ -231,7 +305,7 @@ textarea {
 
 .field-error {
   color: var(--danger);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -243,7 +317,7 @@ textarea {
 
 .button {
   font: inherit;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -333,7 +407,7 @@ textarea {
 /* --- Каркас: боковое меню (тёмная панель, как нижняя панель витрины) --- */
 
 .shell {
-  min-height: 100vh;
+  min-height: calc(100 * var(--vh));
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
 }
@@ -342,7 +416,7 @@ textarea {
   position: sticky;
   top: 12px;
   margin: 12px 0 12px 12px;
-  height: calc(100vh - 24px);
+  height: calc(100 * var(--vh) - 24px);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -378,7 +452,7 @@ textarea {
 
 .sidebar-caption {
   margin: 10px 8px 12px;
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -403,7 +477,7 @@ textarea {
   color: var(--on-accent);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: calc(11.5px * var(--text-scale, 1));
+  font-size: 11.5px;
   letter-spacing: -0.04em;
   box-shadow: var(--shadow-accent-glow);
 }
@@ -411,7 +485,7 @@ textarea {
 .brand-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: calc(22px * var(--text-scale, 1));
+  font-size: 22px;
   letter-spacing: -0.5px;
   line-height: 1;
   color: var(--accent);
@@ -524,13 +598,13 @@ textarea {
 }
 
 .user-email-label {
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
 .user-email-value {
   overflow: hidden;
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   opacity: 0.8;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -591,7 +665,7 @@ textarea {
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -605,7 +679,7 @@ textarea {
   border-radius: 10px;
   background: var(--accent);
   color: var(--on-accent);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
 }
 
 .date-range {
@@ -620,7 +694,7 @@ textarea {
   gap: 6px;
   color: var(--muted);
   font-weight: 600;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
 }
 
 .date-filter input {
@@ -629,9 +703,10 @@ textarea {
 
 .pagination {
   display: flex;
+  flex-wrap: wrap; /* крупный масштаб на узком экране — кнопки переносятся, а не выходят за край */
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 8px 16px;
   margin-top: 16px;
 }
 
@@ -679,7 +754,7 @@ textarea {
 
 .table th {
   color: var(--muted);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -744,7 +819,7 @@ textarea {
   align-items: center;
   padding: 3px 10px;
   border-radius: var(--radius-badge);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -819,7 +894,7 @@ textarea {
 
 .old-price {
   margin-left: 8px;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   color: var(--strike);
 }
 
@@ -945,13 +1020,13 @@ a.stat:hover {
 
 .stat-label {
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
 .stat-value {
   font-family: var(--font-display);
-  font-size: calc(28px * var(--text-scale, 1));
+  font-size: 28px;
   font-weight: 600;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
@@ -992,7 +1067,7 @@ a.stat:hover {
 
 .card-header a {
   font-weight: 700;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   text-decoration: none;
 }
 
@@ -1056,11 +1131,11 @@ a.stat:hover {
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    font-size: calc(10px * var(--text-scale, 1));
+    font-size: 10px;
   }
 
   .mobilebar .brand-name {
-    font-size: calc(18px * var(--text-scale, 1));
+    font-size: 18px;
   }
 
   .sidebar {
@@ -1068,7 +1143,7 @@ a.stat:hover {
     z-index: 40;
     inset: 8px auto 8px 8px;
     margin: 0;
-    width: min(300px, calc(100vw - 48px));
+    width: min(300px, calc(100 * var(--vw) - 48px));
     height: auto;
     transform: translateX(calc(-100% - 16px));
     transition: transform 0.32s var(--ease-soft);
@@ -1108,7 +1183,7 @@ a.stat:hover {
 
 @media (max-width: 720px) {
   h1 {
-    font-size: calc(21px * var(--text-scale, 1));
+    font-size: 21px;
   }
 
   .card {
@@ -1213,7 +1288,7 @@ a.stat:hover {
     margin-right: 12px;
     line-height: 22px;
     color: var(--muted);
-    font-size: calc(12px * var(--text-scale, 1));
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -1288,7 +1363,7 @@ a.stat:hover {
   }
 
   .stat-value {
-    font-size: calc(24px * var(--text-scale, 1));
+    font-size: 24px;
   }
 
 }
@@ -1347,7 +1422,7 @@ a.stat:hover {
 }
 
 .pf-title {
-  font-size: calc(17px * var(--text-scale, 1));
+  font-size: 17px;
   font-weight: 700;
 }
 
@@ -1386,7 +1461,7 @@ a.stat:hover {
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition:
@@ -1480,7 +1555,7 @@ a.stat:hover {
 .pf-more summary {
   cursor: pointer;
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
   padding: 4px 0;
 }
@@ -1501,7 +1576,7 @@ a.stat:hover {
 
 .saved {
   color: var(--success);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -1540,7 +1615,7 @@ a.stat:hover {
   border-radius: 9px;
   background: var(--tag);
   color: var(--tag-ink);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -1551,7 +1626,7 @@ a.stat:hover {
   border-radius: 7px;
   background: transparent;
   color: inherit;
-  font-size: calc(16px * var(--text-scale, 1));
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
 }
@@ -1574,7 +1649,7 @@ a.stat:hover {
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -1630,7 +1705,7 @@ a.stat:hover {
   margin: 0;
   padding: 10px 12px;
   border-radius: var(--radius-ctl);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -1650,7 +1725,7 @@ a.stat:hover {
 .seller-line {
   margin: 0;
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   line-height: 1.6;
   text-wrap: balance;
 }
@@ -1831,7 +1906,7 @@ a.stat:hover {
   align-items: center;
   gap: 6px;
   color: var(--nav-ink);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -1884,7 +1959,7 @@ a.stat:hover {
   align-items: center;
   gap: 8px;
   color: var(--warning);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -1922,7 +1997,7 @@ a.stat:hover {
 .pf-group-aside {
   margin-left: auto;
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
 }
 
 .pf-num {
@@ -1935,7 +2010,7 @@ a.stat:hover {
   background: var(--nav);
   color: var(--accent);
   font-family: var(--font-display);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -1980,7 +2055,7 @@ a.stat:hover {
 .variant-head {
   padding: 0 2px;
   color: var(--muted);
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2005,7 +2080,7 @@ a.stat:hover {
 .variant-row input {
   min-height: 40px;
   padding: 8px 10px;
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
 }
 
 .variant-size {
@@ -2073,7 +2148,7 @@ a.stat:hover {
   background: none;
   color: var(--ink);
   font: inherit;
-  font-size: calc(18px * var(--text-scale, 1));
+  font-size: 18px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -2123,12 +2198,12 @@ a.stat:hover {
 
   .variant-sku {
     min-height: 34px;
-    font-size: calc(14px * var(--text-scale, 1));
+    font-size: 14px;
   }
 
   .variant-sku::placeholder,
   .variant-size::placeholder {
-    font-size: calc(13px * var(--text-scale, 1));
+    font-size: 13px;
   }
 }
 
@@ -2146,6 +2221,10 @@ a.stat:hover {
 .pending-photos {
   display: grid;
   gap: 10px;
+}
+
+.pending-paste {
+  justify-self: start;
 }
 
 .photo-grid {
@@ -2177,7 +2256,7 @@ a.stat:hover {
   border-radius: 6px;
   background: var(--nav);
   color: var(--accent);
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -2231,7 +2310,7 @@ a.stat:hover {
 .status-last-comment {
   margin: 0;
   color: var(--muted);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 
@@ -2256,7 +2335,7 @@ a.stat:hover {
   align-items: center;
   gap: 10px;
   color: var(--ink);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -2276,7 +2355,7 @@ a.stat:hover {
   border-radius: var(--radius-ctl);
   border: 1px dashed var(--input-line);
   background: var(--surface);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 
@@ -2297,7 +2376,7 @@ a.stat:hover {
   border-radius: var(--radius-ctl);
   background: var(--surface);
   color: var(--ink);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   overflow-wrap: anywhere;
 }
 
@@ -2309,7 +2388,7 @@ a.stat:hover {
   gap: 6px;
   padding: 5px 10px;
   border-radius: 999px;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -2358,7 +2437,7 @@ a.stat:hover {
   padding: 10px 12px;
   border-radius: var(--radius-ctl);
   background: var(--surface);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -2451,7 +2530,7 @@ a.stat:hover {
   height: 26px;
   border-radius: 8px;
   background: var(--neutral-bg);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -2584,7 +2663,7 @@ a.stat:hover {
   padding: 0 10px 0 6px;
   background: var(--surface);
   color: var(--ink);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -2630,7 +2709,7 @@ a.stat:hover {
   align-items: center;
   gap: 4px;
   color: var(--ink);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -2653,7 +2732,7 @@ a.stat:hover {
   align-items: center;
   gap: 10px;
   color: var(--ink);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -2713,7 +2792,7 @@ a.stat:hover {
   justify-content: space-between;
   padding: 12px 16px 8px;
   font-family: var(--font-display);
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
 }
 
 .he-phone-logo {
@@ -2731,7 +2810,7 @@ a.stat:hover {
   background: var(--brand);
   color: var(--brand-ink);
   font-family: var(--font-display);
-  font-size: calc(8px * var(--text-scale, 1));
+  font-size: 8px;
   font-style: normal;
   font-weight: 700;
   letter-spacing: -0.04em;
@@ -2739,7 +2818,7 @@ a.stat:hover {
 
 .he-phone-logo strong {
   color: var(--brand);
-  font-size: calc(17px * var(--text-scale, 1));
+  font-size: 17px;
   letter-spacing: -0.4px;
 }
 
@@ -2798,14 +2877,14 @@ a.stat:hover {
   flex: 1;
   min-width: 0;
   padding: 12px 14px;
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
 .he-pv-banner-body strong {
   font-family: var(--font-display);
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
   line-height: 1.2;
 }
 
@@ -2823,7 +2902,7 @@ a.stat:hover {
 
 .he-pv-title {
   font-family: var(--font-display);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -2856,7 +2935,7 @@ a.stat:hover {
 
 .he-pv-name {
   overflow: hidden;
-  font-size: calc(10px * var(--text-scale, 1));
+  font-size: 10px;
   font-weight: 700;
   line-height: 1.25;
   display: -webkit-box;
@@ -2866,7 +2945,7 @@ a.stat:hover {
 
 .he-pv-price {
   font-family: var(--font-display);
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
 }
 
 .he-pv-note {
@@ -2884,7 +2963,7 @@ a.stat:hover {
   padding: 6px 10px;
   border-radius: 9px;
   background: var(--surface);
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -2897,8 +2976,41 @@ a.stat:hover {
   background: var(--card);
 }
 
+.he-pv-text.has-image {
+  overflow: hidden;
+}
+
+.he-pv-text-img {
+  display: block;
+  width: calc(100% + 24px);
+  aspect-ratio: 16 / 10;
+  margin: -10px -12px 4px;
+  object-fit: cover;
+}
+
+/* Картинка текстового блока в настройках: превью и «Заменить» / «Убрать». */
+.he-text-image {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.he-text-image img {
+  width: 120px;
+  aspect-ratio: 16 / 10;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.he-text-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .he-pv-par {
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
@@ -2959,7 +3071,7 @@ a.stat:hover {
 .theme-group h3 {
   margin: 16px 0 8px;
   color: var(--muted);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -3018,7 +3130,7 @@ a.stat:hover {
 
 .theme-default-btn {
   min-height: 36px;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
 }
 
 /* Три варианта поровну; длинная подпись («Как в системе») переносится на узком экране. */
@@ -3082,7 +3194,7 @@ a.stat:hover {
 .theme-preview-head strong {
   flex: 1;
   font-family: var(--font-display);
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -3093,7 +3205,7 @@ a.stat:hover {
   width: 32px;
   height: 32px;
   font-family: var(--font-display);
-  font-size: calc(8.5px * var(--text-scale, 1));
+  font-size: 8.5px;
   font-weight: 700;
   letter-spacing: -0.04em;
 }
@@ -3112,7 +3224,7 @@ a.stat:hover {
 
 .theme-preview-chips span {
   padding: 6px 10px;
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -3120,7 +3232,7 @@ a.stat:hover {
   display: flex;
   gap: 10px;
   padding: 6px 12px 6px 6px;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
 }
 
 .theme-preview-item > span:last-child {
@@ -3276,7 +3388,7 @@ a.stat:hover {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 800;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
@@ -3360,7 +3472,7 @@ a.stat:hover {
 
 .perm-presets .button {
   min-height: 36px;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
 }
 
 .perm-table {
@@ -3376,7 +3488,7 @@ a.stat:hover {
   gap: 6px 12px;
   padding: 6px 0;
   border-bottom: 1px solid var(--border);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -3397,7 +3509,7 @@ a.stat:hover {
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -3451,7 +3563,7 @@ a.stat:hover {
   display: grid;
   gap: 8px;
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.25;
 }
@@ -3487,7 +3599,7 @@ a.stat:hover {
 
 .status-box-title {
   font-weight: 700;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
 }
 
 .notify-chip {
@@ -3501,7 +3613,7 @@ a.stat:hover {
   border-radius: var(--radius-ctl);
   border: 1px solid var(--input-line);
   background: var(--card);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
   overflow-wrap: anywhere;
   cursor: pointer;
@@ -3534,7 +3646,7 @@ a.stat:hover {
   border-radius: var(--radius-ctl);
   background: var(--card);
   box-shadow: var(--shadow-control);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 
@@ -3624,7 +3736,7 @@ a.stat:hover {
 .order-sums .order-total {
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: calc(17px * var(--text-scale, 1));
+  font-size: 17px;
   font-weight: 700;
 }
 
@@ -3681,7 +3793,7 @@ a.stat:hover {
   border-radius: 99px;
   background: rgba(8, 16, 11, 0.6);
   color: #fff;
-  font-size: calc(10px * var(--text-scale, 1));
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -3693,14 +3805,14 @@ a.stat:hover {
   padding: 28px 12px 10px;
   background: linear-gradient(to top, rgba(8, 16, 11, 0.78), rgba(8, 16, 11, 0.38) 55%, transparent);
   color: #fff;
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
   font-weight: 700;
   line-height: 1.3;
 }
 
 .he-pv-shade strong {
   font-family: var(--font-display);
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
   line-height: 1.15;
 }
 
@@ -3792,7 +3904,7 @@ a.stat:hover {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -3818,7 +3930,7 @@ a.stat:hover {
   border-radius: 8px;
   background: var(--surface);
   color: var(--muted);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
 }
 
 .he-link-add {
@@ -3857,7 +3969,7 @@ a.stat:hover {
   padding: 0 14px;
   border-radius: calc(var(--radius-ctl) - 4px);
   color: var(--muted);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
   text-decoration: none;
@@ -3970,13 +4082,13 @@ a.stat:hover {
 
   .table td {
     padding: 7px 0;
-    font-size: calc(14px * var(--text-scale, 1));
+    font-size: 14px;
   }
 
   .table td[data-label]::before {
     margin-right: 10px;
     line-height: 20px;
-    font-size: calc(11px * var(--text-scale, 1));
+    font-size: 11px;
   }
 
   .table td.check-cell {
@@ -4020,7 +4132,7 @@ a.stat:hover {
   .table.table-orders td:nth-child(2) {
     grid-column: 1 / -1;
     padding-right: 44px;
-    font-size: calc(16px * var(--text-scale, 1));
+    font-size: 16px;
     font-weight: 700;
   }
 
@@ -4041,7 +4153,7 @@ a.stat:hover {
     grid-column: 1;
     grid-row: 3;
     color: var(--muted);
-    font-size: calc(13px * var(--text-scale, 1));
+    font-size: 13px;
   }
 
   .table.table-orders td:nth-child(5) {
@@ -4102,7 +4214,7 @@ a.stat:hover {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
   select,
   textarea {
-    font-size: calc(16px * var(--text-scale, 1)) !important;
+    font-size: max(16px, calc(16px / var(--text-scale, 1))) !important;
   }
 }
 
@@ -4147,7 +4259,7 @@ a.stat:hover {
 
 .account-facts dt {
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -4300,7 +4412,7 @@ a.stat:hover {
 
 .orders-toggle-chevron {
   display: inline-block;
-  font-size: calc(18px * var(--text-scale, 1));
+  font-size: 18px;
   line-height: 1;
   transition: transform 0.2s var(--ease-soft);
 }
@@ -4371,7 +4483,7 @@ a.stat:hover {
   border-radius: 99px;
   background: color-mix(in srgb, var(--accent) 22%, var(--surface));
   color: var(--ink);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
 }
 
 .filter-chip-clear {
@@ -4383,7 +4495,7 @@ a.stat:hover {
   border-radius: 50%;
   background: var(--surface);
   color: var(--ink);
-  font-size: calc(18px * var(--text-scale, 1));
+  font-size: 18px;
   line-height: 1;
   cursor: pointer;
 }
@@ -4446,7 +4558,7 @@ a.stat:hover {
 
 .contact-kind {
   color: var(--muted);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -4571,7 +4683,7 @@ a.stat:hover {
     grid-row: 2;
     align-self: end;
     color: var(--muted);
-    font-size: calc(13px * var(--text-scale, 1));
+    font-size: 13px;
     white-space: nowrap;
     text-align: right;
   }
@@ -4623,7 +4735,7 @@ a.stat:hover {
 
 .panel-accents-wrap h3 {
   margin: 0;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
 }
 
 .panel-accents {
@@ -4665,29 +4777,39 @@ a.stat:hover {
   gap: 12px;
 }
 
-/* «← Раздел» — своей строкой над заголовком экрана (components/BackLink). */
+/* «‹ Назад» — в строке заголовка вложенных экранов (components/BackLink), без отдельной строки. */
 .page-back {
   display: inline-flex;
-  flex-basis: 100%;
+  flex: none;
   align-items: center;
-  gap: 6px;
-  align-self: flex-start;
-  width: max-content;
-  min-height: 32px;
-  margin: -4px 0 -6px;
+  gap: 2px;
+  height: 34px;
+  padding: 0 12px 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
   color: var(--muted);
-  font-size: calc(14px * var(--text-scale, 1));
-  font-weight: 600;
-  text-decoration: none;
+  font: 700 13px var(--font-text);
+  cursor: pointer;
 }
 
 .page-back:hover {
   color: var(--ink);
 }
 
-.look-section > .page-back {
-  display: flex;
-  margin-bottom: 6px;
+/* С «Назад» заголовок — в той же строке и переносится сам (а не уходит строкой ниже);
+   бейджи и кнопки заголовка — следующей строкой. */
+.page-header > .page-back + h1,
+.page-header > .page-back ~ h1 {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  /* Остаток строки после «Назад» (~84 px и отступ) — заголовку; остальное — ниже. */
+  .page-header > .page-back ~ h1 {
+    flex: 1 1 calc(100% - 110px);
+  }
 }
 
 /* --- Товары пачкой и черновики (/catalog/products/batch, /drafts) --- */
@@ -4803,7 +4925,7 @@ a.stat:hover {
   border-radius: 8px;
   background: var(--neutral-bg);
   color: var(--muted);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   text-align: center;
 }
@@ -4820,6 +4942,7 @@ a.stat:hover {
 
 .batch-empty {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   max-width: 560px;
 }
@@ -4842,7 +4965,7 @@ a.stat:hover {
 }
 
 .batch-drop strong {
-  font-size: calc(17px * var(--text-scale, 1));
+  font-size: 17px;
 }
 
 .batch-drop-icon {
@@ -4859,7 +4982,29 @@ a.stat:hover {
   width: 100%;
   max-width: 320px;
   min-height: 52px;
-  font-size: calc(16px * var(--text-scale, 1));
+  font-size: 16px;
+}
+
+/* «Вставить» и «Без фото» — под зоной выбора, в строку; на телефоне — по половине. */
+.batch-alt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.batch-alt > * {
+  flex: 1 1 200px;
+  justify-content: center;
+  min-width: 0;
+  white-space: normal;
+  text-align: center;
+}
+
+/* Фото перетаскивают на экран — подсказка рамкой по всему экрану «Добавить товар». */
+.batch.is-dragging {
+  outline: 3px dashed var(--brand);
+  outline-offset: 6px;
+  border-radius: var(--radius-hero);
 }
 
 .batch-howto h2 {
@@ -4884,7 +5029,7 @@ a.stat:hover {
 
 .batch-toolbar-text {
   flex: 1 1 auto;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
 }
 
 .batch-more {
@@ -4922,7 +5067,7 @@ a.stat:hover {
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
@@ -5020,13 +5165,21 @@ a.stat:hover {
   border: 2px dashed var(--input-line);
   border-radius: 12px;
   color: var(--muted);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   text-align: center;
   cursor: pointer;
 }
 
-.batch-add-tile:focus-within {
+button.batch-add-tile {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  font-family: inherit;
+}
+
+.batch-add-tile:focus-within,
+button.batch-add-tile:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
@@ -5117,7 +5270,7 @@ a.stat:hover {
 .batch-cta {
   width: 100%;
   min-height: 52px;
-  font-size: calc(16px * var(--text-scale, 1));
+  font-size: 16px;
 }
 
 @media (min-width: 961px) {
@@ -5151,7 +5304,7 @@ a.stat:hover {
 .batch-actions-hint {
   padding: 2px 8px 0;
   color: var(--nav-ink);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -5177,7 +5330,7 @@ a.stat:hover {
   background: color-mix(in srgb, #ffffff 10%, transparent);
   color: #ffffff;
   font: inherit;
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.15;
   text-align: center;
@@ -5242,7 +5395,7 @@ a.stat:hover {
   padding: 6px 10px;
   border-radius: 10px;
   background: var(--neutral-bg);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -5359,7 +5512,7 @@ a.stat:hover {
 }
 
 .draft-title {
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
   overflow-wrap: anywhere;
 }
 
@@ -5370,11 +5523,11 @@ a.stat:hover {
   gap: 6px;
   color: var(--muted);
   font-family: var(--font-secondary);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
 }
 
 .draft-price {
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 800;
 }
 
@@ -5476,7 +5629,7 @@ a.stat:hover {
   gap: 8px;
   box-sizing: border-box;
   width: min(100%, 480px);
-  max-height: 85vh;
+  max-height: calc(85 * var(--vh));
   overflow-y: auto;
   padding: 10px 16px calc(20px + env(safe-area-inset-bottom, 0px));
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
@@ -5507,7 +5660,7 @@ a.stat:hover {
 .sheet h2 {
   margin: 6px 0 0;
   font-family: var(--font-display);
-  font-size: calc(16px * var(--text-scale, 1));
+  font-size: 16px;
 }
 
 .sheet p {
@@ -5531,7 +5684,7 @@ a.stat:hover {
   background: var(--neutral-bg);
   color: var(--ink);
   font: inherit;
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
   font-weight: 700;
   text-align: left;
   cursor: pointer;

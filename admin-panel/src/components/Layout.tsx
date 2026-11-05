@@ -5,6 +5,7 @@ import type { StaffUser } from "../auth/authService";
 import { useAuth } from "../auth/AuthProvider";
 import { STORE_URL } from "../lib/site";
 import { THEME_LABELS, type ThemeChoice, useTheme } from "../theme/theme";
+import { useWordmark } from "../theme/wordmark";
 import { Icon, type IconName } from "./Icon";
 import { PullToRefresh } from "./PullToRefresh";
 
@@ -53,16 +54,19 @@ function StoreLink() {
   );
 }
 
-/** Логотип как в магазине и приложении: плашка «DiDi» + «shop». */
+/** Логотип как в магазине и приложении: плашка «DiDi» + «shop» (слово можно убрать в «Теме магазина»). */
 function Brand() {
+  const wordmark = useWordmark();
   return (
-    <span className="brand" aria-label="DiDi shop">
+    <span className="brand" aria-label={wordmark ? "DiDi shop" : "DiDi"}>
       <span className="brand-mark" aria-hidden="true">
         DiDi
       </span>
-      <span className="brand-name" aria-hidden="true">
-        shop
-      </span>
+      {wordmark ? (
+        <span className="brand-name" aria-hidden="true">
+          shop
+        </span>
+      ) : null}
     </span>
   );
 }

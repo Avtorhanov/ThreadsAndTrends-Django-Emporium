@@ -39,7 +39,7 @@ import {
 
 export type ThemePreference = "system" | ThemeName;
 
-/** Выбор покупателя: палитра, акцент «Своей», углы, размер текста. */
+/** Выбор покупателя: палитра, акцент «Своей», углы, масштаб интерфейса (text — проценты). */
 export type Look = { palette: PaletteName; accent: AccentName; radius: RadiusMode; text: TextMode };
 
 export type Theme = {
@@ -62,11 +62,15 @@ type ThemeContextValue = Theme & {
   setLook: (changes: Partial<Look>) => void;
   /** Палитры, которые администратор разрешил покупателям (панель → «Тема»). */
   palettes: PaletteName[];
+  /** Слово «shop» рядом с плашкой «DiDi» (панель → «Тема магазина»). */
+  showWordmark: boolean;
 };
 
 const STORAGE_KEY = "didi:theme";
 const LOOK_KEY = "didi:look";
-const DEFAULT_LOOK: Look = { palette: "lime", accent: "lime", radius: "normal", text: "s" };
+const DEFAULT_LOOK: Look = { palette: "lime", accent: "lime", radius: "normal", text: "100" };
+// Прежний «Размер текста» (s/m/l) — в проценты масштаба.
+const LEGACY_TEXT: Record<string, TextMode> = { s: "100", m: "115", l: "130" };
 const ALL_PALETTES = paletteList.map((item) => item.key);
 
 const cache = new Map<string, Theme>();
@@ -103,7 +107,8 @@ function parseLook(raw: string | null): Partial<Look> {
     if (isKey(value.palette, ALL_PALETTES)) look.palette = value.palette;
     if (isKey(value.accent, ACCENT_KEYS)) look.accent = value.accent;
     if (isKey(value.radius, RADIUS_KEYS)) look.radius = value.radius;
-    if (isKey(value.text, TEXT_KEYS)) look.text = value.text;
+    const text = typeof value.text === "string" ? (LEGACY_TEXT[value.text] ?? value.text) : null;
+    if (isKey(text, TEXT_KEYS)) look.text = text;
     return look;
   } catch {
     return {};
@@ -171,9 +176,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setPreference,
       setLook,
       palettes,
+      showWordmark: shop?.show_wordmark ?? true,
       toggle: () => setPreference(theme.name === "dark" ? "light" : "dark"),
     }),
-    [theme, preference, setPreference, setLook, palettes],
+    [theme, preference, setPreference, setLook, palettes, shop],
   );
 
   return (
@@ -228,9 +234,42 @@ const RADIUS_PROPS = [
 
 type StyleRecord = Record<string, unknown>;
 
+// Размеры и отступы, которые растут вместе с масштабом (весь интерфейс пропорционально).
+const SIZE_PROPS = [
+  "width",
+  "height",
+  "minWidth",
+  "minHeight",
+  "maxWidth",
+  "maxHeight",
+  "padding",
+  "paddingHorizontal",
+  "paddingVertical",
+  "paddingTop",
+  "paddingBottom",
+  "paddingLeft",
+  "paddingRight",
+  "margin",
+  "marginHorizontal",
+  "marginVertical",
+  "marginTop",
+  "marginBottom",
+  "marginLeft",
+  "marginRight",
+  "gap",
+  "rowGap",
+  "columnGap",
+  "top",
+  "bottom",
+  "left",
+  "right",
+  "letterSpacing",
+] as const;
+
 /**
- * Углы и размер текста покупателя — одним местом для всех экранов: радиусы умножаются на
- * масштаб углов (круги остаются кругами), кегль и интерлиньяж — на масштаб текста.
+ * Углы и масштаб покупателя — одним местом для всех экранов: радиусы умножаются на масштаб
+ * углов (круги остаются кругами); при масштабе ≠ 100 % кегль, интерлиньяж, размеры, отступы и
+ * радиусы — на масштаб интерфейса, вёрстка та же. Проценты (строки) и толщина рамок не меняются.
  */
 function scaleStyles<T>(styles: T, look: Look): T {
   const r = radiusScale[look.radius];
@@ -244,13 +283,18 @@ function scaleStyles<T>(styles: T, look: Look): T {
     const side = width !== null && height !== null ? Math.min(width, height) : null;
     for (const prop of RADIUS_PROPS) {
       const value = style[prop];
-      if (typeof value !== "number" || r === 1) continue;
-      if (side !== null && value * 2 >= side) continue; // круг или «пилюля» — форма важнее
-      style[prop] = Math.round(value * r);
+      if (typeof value !== "number") continue;
+      // Круг или «пилюля» — форма важнее углов; масштаб интерфейса сохраняет форму.
+      const k = side !== null && value * 2 >= side ? t : r * t;
+      if (k !== 1) style[prop] = Math.round(value * k);
     }
     if (t !== 1) {
       if (typeof style.fontSize === "number") style.fontSize = Math.round(style.fontSize * t * 2) / 2;
       if (typeof style.lineHeight === "number") style.lineHeight = Math.round(style.lineHeight * t);
+      for (const prop of SIZE_PROPS) {
+        const value = style[prop];
+        if (typeof value === "number" && value !== 0) style[prop] = Math.round(value * t * 2) / 2;
+      }
     }
     result[name] = style;
   }

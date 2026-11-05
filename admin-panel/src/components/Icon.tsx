@@ -28,6 +28,7 @@ const PATHS = {
   up: "M6 15l6-6 6 6",
   down: "M6 9l6 6 6-6",
   left: "M15 6l-6 6 6 6",
+  paste: "M9 4h6v3H9zM9 5H6v16h12V5h-3M9 12h6M9 16h4",
   right: "M9 6l6 6-6 6",
   photos: "M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM8.5 10.5h.01M21 15l-5-5L5 19",
   merge: "M4 4h16v16H4zM9 12h6M12 9v6",

@@ -12,8 +12,14 @@ import { storeUrl } from "../lib/site";
 import { BackLink } from "../components/BackLink";
 import { Icon } from "../components/Icon";
 
-// photosFailed — после создания с фото; drafts — порядок черновиков для листания.
-type CreatedState = { photosFailed?: string[]; drafts?: number[] } | null;
+// photosFailed — после создания с фото; drafts — порядок черновиков для листания;
+// photos и category — из «Добавить товар»: фото одного товара (и категория из раскладки).
+type CreatedState = {
+  photosFailed?: string[];
+  drafts?: number[];
+  photos?: File[];
+  category?: number | null;
+} | null;
 
 export function ProductEditPage() {
   const params = useParams();
@@ -24,7 +30,10 @@ export function ProductEditPage() {
   const labels = useLabels();
   const product = useProduct(productId);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [pending, setPending] = useState<File[]>([]);
+  const [pending, setPending] = useState<File[]>(() =>
+    productId === null ? ((location.state as CreatedState)?.photos ?? []) : [],
+  );
+  const initialCategory = productId === null ? ((location.state as CreatedState)?.category ?? null) : null;
   const [uploading, setUploading] = useState<string | null>(null);
   const failed = (location.state as CreatedState)?.photosFailed ?? [];
   const draftOrder = (location.state as CreatedState)?.drafts ?? [];
@@ -82,9 +91,9 @@ export function ProductEditPage() {
     <section className="stack">
       <div className="page-header">
         {product.data?.is_draft ? (
-          <BackLink to="/catalog/products/drafts" label="Черновики" />
+          <BackLink to="/catalog/products/drafts" />
         ) : (
-          <BackLink to="/catalog/products" label="Товары" />
+          <BackLink to="/catalog/products" />
         )}
         <h1>{productId === null ? "Новый товар" : (product.data?.name ?? "Товар")}</h1>
         {product.data?.deleted_at ? <span className="badge badge-deleted">Удалён</span> : null}
@@ -152,6 +161,7 @@ export function ProductEditPage() {
           // Новый ключ после сохранения/восстановления — форма берёт свежие значения.
           key={product.data ? `${product.data.id}:${product.data.updated_at}` : "new"}
           product={product.data}
+          initialCategory={initialCategory}
           categories={categories.data}
           labels={labels.data}
           extraDirty={pending.length > 0}

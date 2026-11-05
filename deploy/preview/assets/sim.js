@@ -114,7 +114,7 @@
     var t = db.theme;
     var look = {
       palettes: t.enabled, palette: t.default_palette, mode: t.default_mode, radius: t.default_radius,
-      text: t.default_text || "s", nav: t.nav_style || "solid",
+      text: t.default_text || "100", nav: t.nav_style || "solid", wordmark: t.show_wordmark === false ? 0 : 1,
       // Вошёл ли покупатель: theme.js до отрисовки уводит на страницу нужного дерева (гость / /me/).
       user: db.session ? 1 : 0,
       out: db.loggedOut ? 1 : 0
@@ -138,7 +138,10 @@
         var db = load();
         // «База» из прошлой версии демо без контактов — берём их из снимка.
         if (!db.contacts) db.contacts = clone(res[0][CONTACTS_KEY] || []);
-        if (db.build !== BUILD) refreshMedia(db, res[0], res[1]);
+        if (db.build !== BUILD) {
+          refreshMedia(db, res[0], res[1]);
+          upgradeTheme(db, res[0]);
+        }
         db.build = BUILD;
         save(db);
         return db;
@@ -156,6 +159,22 @@
       return db;
     });
     return readyPromise;
+  }
+
+  /** Новая сборка демо — палитры и масштаб из свежего снимка (убранная палитра пропадает,
+   * прежний «Размер текста» s/m/l → проценты); выбор администратора сохраняется. */
+  function upgradeTheme(db, snap) {
+    var fresh = snap[A + "/content/theme/"];
+    if (!fresh || !db.theme) return;
+    var t = db.theme;
+    t.palettes = clone(fresh.palettes);
+    t.accents = clone(fresh.accents);
+    var keys = t.palettes.map(function (p) { return p.key; });
+    t.enabled = (t.enabled || []).filter(function (k) { return keys.indexOf(k) >= 0; });
+    if (!t.enabled.length) t.enabled = ["lime"];
+    if (t.enabled.indexOf(t.default_palette) < 0) t.default_palette = t.enabled[0];
+    t.default_text = ({ s: "100", m: "115", l: "130" })[t.default_text] || t.default_text || "100";
+    if (t.show_wordmark === undefined) t.show_wordmark = true;
   }
 
   /** Новая сборка демо — у фото каталога и статей могли смениться адреса файлов. Сверяем по id
@@ -233,7 +252,9 @@
     var home = clone(snap[A + "/content/home/"]);
     var theme = clone(snap[A + "/content/theme/"]);
     if (!theme.nav_style) theme.nav_style = "solid";
-    if (!theme.default_text) theme.default_text = "s";
+    // Масштаб вместо «Размера текста» (s/m/l), «Солнце» убрано (tokens.json 1.9.0).
+    theme.default_text = ({ s: "100", m: "115", l: "130" })[theme.default_text] || theme.default_text || "100";
+    if (theme.show_wordmark === undefined) theme.show_wordmark = true;
     var variants = [];
     products.forEach(function (p) { variants = variants.concat(p.variants); });
     var images = [];
@@ -557,7 +578,9 @@
     row.product = b.product || null;
     var product = b.kind === "banner" && b.product ? byId(db.products, b.product) : null;
     row.preview_product = product && isLive(db, product) ? publicProduct(db, product) : null;
-    row.preview_images = b.kind !== "banner" ? [] : images.length ? images.map(function (x) { return x.url; }) :
+    row.image_side = b.image_side || "top";
+    row.preview_images = b.kind === "text" ? images.slice(0, 1).map(function (x) { return x.url; }) :
+      b.kind !== "banner" ? [] : images.length ? images.map(function (x) { return x.url; }) :
       row.preview_product ? product.images.slice().sort(function (x, y) { return x.position - y.position; }).slice(0, 6).map(function (x) { return x.url; }) : [];
     row.links = clone(b.links || []);
     row.preview_links = b.kind === "categories" ? resolveLinks(db, b.links) : [];
@@ -1267,7 +1290,7 @@
       id: next(db, "block"), kind: body.kind, position: db.home.blocks.length, is_visible: true, title: titles[body.kind],
       text: body.kind === "banner" ? "Короткое описание" : body.kind === "text" ? "Первый абзац.\n\nВторой абзац." : "",
       color: body.kind === "banner" ? "#DDF38A" : "", ink: "#13261C", images: [], product: null, category: null,
-      source: "new", product_ids: [], links: []
+      source: "new", product_ids: [], links: [], image_side: "top"
     };
     db.home.blocks.push(b);
     touchHome(db);
@@ -1289,6 +1312,7 @@
       else b.images = body.image_ids.map(function (id) { return own[ownIds.indexOf(id)]; });
     }
     if (body.product !== undefined && body.product !== null && !byId(db.products, body.product)) errors.product = ["Товар не найден."];
+    if (body.image_side !== undefined && ["top", "left", "right"].indexOf(body.image_side) < 0) errors.image_side = ["Картинка — сверху, слева или справа."];
     if (body.links !== undefined) {
       if (body.links.length > 12) errors.links = ["В ленте — не больше 12 вкладок."];
       body.links.forEach(function (l) {
@@ -1297,7 +1321,7 @@
       });
     }
     if (Object.keys(errors).length) return fields(errors);
-    ["is_visible", "title", "text", "color", "category", "source", "product_ids", "product", "links"].forEach(function (k) { if (body[k] !== undefined) b[k] = body[k]; });
+    ["is_visible", "title", "text", "color", "category", "source", "product_ids", "product", "links", "image_side"].forEach(function (k) { if (body[k] !== undefined) b[k] = body[k]; });
     if (b.kind === "banner" && !b.title && !b.text && !bannerImages(b).length && !b.product) return fields({ title: ["У баннера нужен заголовок, описание, картинка или товар."] });
     if (b.color) b.color = b.color.toUpperCase();
     touchHome(db);
@@ -1333,6 +1357,13 @@
 
   // Тема
   route("GET", "/content/theme/", function (db) { return ok(themeState(db)); });
+  // Публичная тема (content/theme/): панель читает из неё слово «shop» в логотипе.
+  routes.push({ method: "GET", re: /^\/api\/v1\/content\/theme\/$/, handler: function (db) {
+    var t = themeState(db);
+    t.palettes = t.palettes.filter(function (p) { return t.enabled.indexOf(p.key) >= 0; });
+    delete t.enabled;
+    return ok(t);
+  } });
   route("PUT", "/content/theme/", function (db, m, q, body) {
     var keys = db.theme.palettes.map(function (p) { return p.key; });
     var palettes = (body.palettes || []).filter(function (k) { return keys.indexOf(k) >= 0; });
@@ -1344,6 +1375,7 @@
     db.theme.default_radius = body.default_radius || "normal";
     if (body.nav_style) db.theme.nav_style = body.nav_style;
     if (body.default_text) db.theme.default_text = body.default_text;
+    if (typeof body.show_wordmark === "boolean") db.theme.show_wordmark = body.show_wordmark;
     // Как на сервере: личный выбор оформления в этом браузере сбрасывается — магазин сразу
     // показывает то, что задал администратор.
     ["theme", "palette", "accent", "radius", "text_size"].forEach(function (name) {
@@ -1435,11 +1467,12 @@
       apply: function (db, m, url) {
         var b = byId(db.home.blocks, m[1]);
         if (!b) return fail(404, { detail: "Не найдено." });
-        if (b.kind !== "banner") return fields({ image: ["Картинка есть только у баннера."] });
+        if (b.kind !== "banner" && b.kind !== "text") return fields({ image: ["Картинка есть только у баннера и текста."] });
         var images = bannerImages(b);
-        if (images.length >= 6) return fields({ image: ["У баннера — не больше 6 картинок."] });
+        if (b.kind === "banner" && images.length >= 6) return fields({ image: ["У баннера — не больше 6 картинок."] });
         var img = { id: next(db, "homeImage"), url: url };
-        b.images = images.concat([img]);
+        // У текста одна картинка — новая заменяет прежнюю.
+        b.images = b.kind === "text" ? [img] : images.concat([img]);
         b.image_ids = b.images.map(function (x) { return x.id; });
         touchHome(db);
         return { status: 200, body: homeBlock(db, b), save: true };
@@ -1478,7 +1511,7 @@
       var parsed = new URL(url, location.href);
       var path = parsed.pathname;
       var q = parsed.searchParams;
-      if (path !== A + "/auth/login/" && path !== A + "/auth/csrf/" && path !== A + "/auth/me/" && !signedIn()) {
+      if (path.indexOf(A + "/") === 0 && path !== A + "/auth/login/" && path !== A + "/auth/csrf/" && path !== A + "/auth/me/" && !signedIn()) {
         return fail(401, { detail: "Нужен вход." });
       }
       if (method === "POST" && body instanceof FormData) {

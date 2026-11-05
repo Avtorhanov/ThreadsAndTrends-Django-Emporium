@@ -149,10 +149,30 @@ def test_banner_images_listed_and_orphan_removed_on_publish(django_capture_on_co
     assert HomeImage.objects.filter(pk=second.pk).exists()
 
 
-def test_image_only_for_banner():
-    text = home.add_block("text")
+def test_image_only_for_banner_and_text():
+    collection = home.add_block("collection")
     with pytest.raises(ValidationError):
-        home.add_banner_image(text, image_file())
+        home.add_banner_image(collection, image_file())
+
+
+def test_text_block_image_replaces_and_renders(client, django_capture_on_commit_callbacks):
+    text = home.add_block("text")
+    with django_capture_on_commit_callbacks(execute=True):
+        text = home.add_banner_image(text, image_file())
+        first = text.image_ids[0]
+        # У текста одна картинка: новая заменяет прежнюю.
+        text = home.add_banner_image(text, image_file())
+    assert len(text.image_ids) == 1 and text.image_ids[0] != first
+    text = home.update_block(text, title="", text="", image_side="right")
+    with pytest.raises(ValidationError):
+        home.update_block(text, image_side="bottom")
+    home.publish()
+    # Только картинка, без текста, — блок всё равно показывается.
+    html = client.get("/").content.decode()
+    assert "hblock-text--img hblock-text--right" in html and "hblock-text__img" in html
+    public = client.get(PUBLIC).json()["blocks"]
+    assert public[0]["kind"] == "text" and public[0]["image_side"] == "right"
+    assert len(public[0]["images"]) == 1
 
 
 def test_banner_image_limit_and_gif(django_capture_on_commit_callbacks):

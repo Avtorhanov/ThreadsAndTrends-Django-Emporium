@@ -9,6 +9,8 @@ export type ProductFormValues = Omit<ProductCreate, "variants"> & { sizes: strin
 
 type Props = {
   product: Product | null;
+  /** Категория нового товара, выбранная заранее (раскладка фото в «Добавить товар»). */
+  initialCategory?: number | null;
   categories: Category[];
   labels: ProductLabel[];
   /** Группа «Фото»: галерея товара или фото, выбранные до создания. */
@@ -113,10 +115,21 @@ function SizesInput({ sizes, onChange }: { sizes: string[]; onChange: (sizes: st
   );
 }
 
-export function ProductForm({ product, categories, labels, photos, stock, extraDirty = false, onSubmit }: Props) {
+export function ProductForm({
+  product,
+  initialCategory = null,
+  categories,
+  labels,
+  photos,
+  stock,
+  extraDirty = false,
+  onSubmit,
+}: Props) {
   const [name, setName] = useState(product?.name ?? "");
   const [slug, setSlug] = useState(product?.slug ?? "");
-  const [category, setCategory] = useState(product ? String(product.category) : "");
+  const [category, setCategory] = useState(
+    product ? String(product.category) : initialCategory !== null ? String(initialCategory) : "",
+  );
   const [status, setStatus] = useState(product?.status ? String(product.status) : "");
   const [price, setPrice] = useState(kopecksToInput(product?.price_kopecks));
   // Цена по запросу: на витрине вместо цены и корзины — «Узнать» (мессенджеры магазина).

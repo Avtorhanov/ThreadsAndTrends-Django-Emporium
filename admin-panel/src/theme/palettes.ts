@@ -1,12 +1,12 @@
 // Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать.
 
-export type PanelPalette = "lime" | "mint" | "sun" | "steel" | "olive" | "custom";
+export type PanelPalette = "lime" | "mint" | "steel" | "olive" | "custom";
 
 export type PanelAccent = "lime" | "mint" | "sun" | "sky" | "pink" | "lilac" | "steel" | "orange" | "olive" | "sand" | "navy" | "wine" | "graphite" | "forest";
 
 export type PanelRadius = "sharp" | "normal" | "soft";
 
-export type PanelText = "s" | "m" | "l";
+export type PanelText = "80" | "90" | "100" | "115" | "130" | "140" | "150";
 
 export type PanelPaletteInfo = {
   key: PanelPalette;
@@ -42,16 +42,6 @@ export const PANEL_PALETTES: readonly PanelPaletteInfo[] = [
     "bg": {
       "light": "#E6F2EC",
       "dark": "#06100D"
-    }
-  },
-  {
-    "key": "sun",
-    "name": "Солнце",
-    "accent": "#FFD23F",
-    "brand": "#6B4E0A",
-    "bg": {
-      "light": "#F4F0E2",
-      "dark": "#0E0C06"
     }
   },
   {
@@ -172,3 +162,6 @@ export const PANEL_ACCENTS: readonly PanelAccentInfo[] = [
     "on": "#FFFFFF"
   }
 ];
+
+/** Масштаб интерфейса, % — по порядку. */
+export const PANEL_TEXT: readonly PanelText[] = ["80", "90", "100", "115", "130", "140", "150"];

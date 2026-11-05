@@ -6,6 +6,8 @@ import {
   BANNER_TONES,
   type CollectionSource,
   HOME_LIMITS,
+  IMAGE_SIDE_LABELS,
+  type ImageSide,
   type HomeBlock,
   type HomeBlockChanges,
   type HomeLinkInput,
@@ -89,18 +91,21 @@ export function BlockSettings(props: Props) {
       {block.kind === "collection" ? <CollectionFields {...props} tree={tree} /> : null}
       {block.kind === "categories" ? <LinksFields {...props} tree={tree} /> : null}
       {block.kind === "text" ? (
-        <label className="field">
-          <span className="field-head">
-            Текст <Counter value={block.text} max={HOME_LIMITS.text} />
-          </span>
-          <textarea
-            rows={7}
-            value={block.text}
-            maxLength={HOME_LIMITS.text}
-            placeholder="Пустая строка — новый абзац"
-            onChange={(event) => onChange({ text: event.target.value })}
-          />
-        </label>
+        <>
+          <label className="field">
+            <span className="field-head">
+              Текст <Counter value={block.text} max={HOME_LIMITS.text} />
+            </span>
+            <textarea
+              rows={7}
+              value={block.text}
+              maxLength={HOME_LIMITS.text}
+              placeholder="Пустая строка — новый абзац"
+              onChange={(event) => onChange({ text: event.target.value })}
+            />
+          </label>
+          <TextImageFields {...props} />
+        </>
       ) : null}
 
       <div className="he-delete">
@@ -155,6 +160,70 @@ function CategorySelect({
 }
 
 const IMAGE_TYPES = "image/jpeg,image/png,image/webp,image/gif";
+
+/** Картинка текстового блока: одна (новая заменяет прежнюю) и место — сверху, слева, справа. */
+function TextImageFields({ block, busy, onChange, onUpload }: Props) {
+  const image = block.images[0];
+
+  function pick(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) onUpload(file);
+  }
+
+  return (
+    <div className="field">
+      <span className="field-head">
+        Картинка <span className="muted small">необязательно</span>
+      </span>
+      {image ? (
+        <div className="he-text-image">
+          <img src={image.url} alt="" />
+          <span className="he-text-image-actions">
+            <label className="button button-ghost">
+              Заменить
+              <input type="file" accept={IMAGE_TYPES} hidden disabled={busy} onChange={pick} />
+            </label>
+            <button
+              type="button"
+              className="button button-ghost"
+              disabled={busy}
+              onClick={() => onChange({ image_ids: [] }, 0)}
+            >
+              Убрать
+            </button>
+          </span>
+        </div>
+      ) : (
+        <label className="drop-zone">
+          <strong>Выбрать картинку</strong>
+          <span className="muted small">JPEG, PNG, WebP или GIF до 5 МБ</span>
+          <input type="file" accept={IMAGE_TYPES} hidden disabled={busy} onChange={pick} />
+        </label>
+      )}
+      {image ? (
+        <>
+          <div className="seg-switch seg-switch-3" role="radiogroup" aria-label="Где картинка">
+            {(Object.entries(IMAGE_SIDE_LABELS) as [ImageSide, string][]).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={block.image_side === value}
+                className={block.image_side === value ? "is-on" : undefined}
+                disabled={busy}
+                onClick={() => onChange({ image_side: value }, 0)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <span className="muted small">На телефоне покупателя картинка всегда сверху.</span>
+        </>
+      ) : null}
+    </div>
+  );
+}
 
 function BannerFields({ block, tree, busy, onChange, onUpload }: TreeProps) {
   const custom = !BANNER_TONES.some((tone) => tone.color === block.color.toUpperCase());

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { ApiError } from "../api/errors";
+import { ScalePicker } from "../components/ScalePicker";
 import {
   GROUP_TITLES,
   MODE_LABELS,
@@ -15,11 +16,11 @@ import {
   type ThemePalette,
   type ThemeRadius,
   type ThemeState,
-  type ThemeText,
-  TEXT_LABELS,
+  TEXT_VALUES,
   themeService,
 } from "../api/theme";
 import { useLoader } from "../hooks/useCatalog";
+import { setWordmark } from "../theme/wordmark";
 
 function message(error: unknown): string {
   if (!(error instanceof ApiError)) return "Не сохранено.";
@@ -34,6 +35,7 @@ function inputOf(state: ThemeState): ThemeInput {
     default_radius: state.default_radius,
     default_text: state.default_text,
     nav_style: state.nav_style,
+    show_wordmark: state.show_wordmark,
   };
 }
 
@@ -69,12 +71,15 @@ export function ThemePage() {
       default_radius: next.default_radius,
       default_text: next.default_text ?? state.default_text,
       nav_style: next.nav_style ?? state.nav_style,
+      show_wordmark: next.show_wordmark ?? state.show_wordmark,
     });
     setBusy(true);
     setError(null);
     setSaved(false);
     try {
-      setState(await themeService.save(next));
+      const result = await themeService.save(next);
+      setState(result);
+      setWordmark(result.show_wordmark);
       setSaved(true);
     } catch (err) {
       setState(previous);
@@ -185,27 +190,34 @@ export function ThemePage() {
                 </div>
               </div>
               <div className="field">
-                <span>Размер текста</span>
-                <div className="seg-switch seg-switch-3" role="radiogroup" aria-label="Размер текста по умолчанию">
-                  {(Object.entries(TEXT_LABELS) as [ThemeText, string][]).map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      role="radio"
-                      aria-checked={state.default_text === value}
-                      className={state.default_text === value ? "is-on" : undefined}
-                      disabled={busy}
-                      onClick={() => void save({ default_text: value })}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                <span>Масштаб, %</span>
+                <ScalePicker
+                  label="Масштаб по умолчанию"
+                  values={TEXT_VALUES}
+                  value={state.default_text}
+                  disabled={busy}
+                  onChange={(value) => void save({ default_text: value })}
+                />
               </div>
               <p className="muted small">
                 Действует у всех, кто не менял оформление в профиле. Ваш личный выбор в этом браузере
                 сбрасывается при сохранении — витрина сразу показывает настройки магазина.
               </p>
+            </div>
+
+            <div className="card form-card">
+              <h2>Логотип</h2>
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={state.show_wordmark}
+                  disabled={busy}
+                  onChange={(event) => void save({ show_wordmark: event.target.checked })}
+                />
+                <span className="switch-track" aria-hidden="true" />
+                Слово «shop» рядом с «DiDi»
+              </label>
+              <p className="muted small">В шапке сайта, в приложении и в панели. Выключено — только плашка «DiDi».</p>
             </div>
 
             <div className="card form-card">
@@ -238,8 +250,8 @@ export function ThemePage() {
             <div className="card theme-preview-card">
               <h2>Предпросмотр: {shown.name}</h2>
               <div className="theme-previews">
-                <ThemePreview palette={shown} dark={false} radius={state.default_radius} nav={state.nav_style} />
-                <ThemePreview palette={shown} dark radius={state.default_radius} nav={state.nav_style} />
+                <ThemePreview palette={shown} dark={false} radius={state.default_radius} nav={state.nav_style} wordmark={state.show_wordmark} />
+                <ThemePreview palette={shown} dark radius={state.default_radius} nav={state.nav_style} wordmark={state.show_wordmark} />
               </div>
               {shown.key === "custom" ? (
                 <p className="muted small">«Своя»: покупатель выбирает акцент из {state.accents.length} проверенных цветов.</p>
@@ -332,11 +344,13 @@ function ThemePreview({
   dark,
   radius,
   nav,
+  wordmark,
 }: {
   palette: ThemePalette;
   dark: boolean;
   radius: ThemeRadius;
   nav: ThemeNav;
+  wordmark: boolean;
 }) {
   const k = RADIUS_SCALE[radius];
   const r = (value: number) => `${Math.round(value * k)}px`;
@@ -351,7 +365,7 @@ function ThemePreview({
         <span className="theme-preview-logo" style={{ background: dark ? palette.accent : palette.brand, color: dark ? "#16191D" : palette.accent, borderRadius: r(10) }}>
           DiDi
         </span>
-        <strong style={{ color: dark ? palette.accent : palette.brand }}>shop</strong>
+        {wordmark ? <strong style={{ color: dark ? palette.accent : palette.brand }}>shop</strong> : null}
         <span className="theme-preview-btn" style={{ background: palette.accent, borderRadius: r(10) }} />
       </div>
       <div className="theme-preview-chips">

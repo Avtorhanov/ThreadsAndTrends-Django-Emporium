@@ -1,5 +1,5 @@
 {% comment %}
-Оформление: тема, палитра (что разрешил администратор), акцент «Своей», углы, размер текста,
+Оформление: тема, палитра (что разрешил администратор), акцент «Своей», углы, масштаб,
 вид нижнего меню.
 Выбор — в cookie: сервер сразу рисует нужный вид; с JS меняется без перезагрузки.
 {% endcomment %}
@@ -60,12 +60,13 @@
     </div>
   </fieldset>
   <fieldset class="look__group">
-    <legend class="look__legend">Размер текста</legend>
-    <div class="segments" role="radiogroup" aria-label="Размер текста">
+    <legend class="look__legend">Масштаб, %</legend>
+    {# Весь интерфейс пропорционально: текст, отступы, кнопки, фото. #}
+    <div class="segments segments--scale" role="radiogroup" aria-label="Масштаб">
       {% for value, label in text_choices %}
       <label class="segment">
         <input type="radio" name="text" value="{{ value }}"{% if look.text == value %} checked{% endif %}>
-        <span>{{ label }}</span>
+        <span aria-label="{{ label }}">{{ value }}</span>
       </label>
       {% endfor %}
     </div>

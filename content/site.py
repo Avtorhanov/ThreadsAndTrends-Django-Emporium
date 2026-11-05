@@ -93,7 +93,9 @@ def _defaults(area: str) -> list[BlockDefault]:
             BlockDefault(
                 BlockKind.LINK, "Доставка, оплата и возврат", reverse("web:delivery"), icon="box"
             ),
-            BlockDefault(BlockKind.LINK, "Контакты и статьи", reverse("web:contacts"), icon="chat"),
+            BlockDefault(
+                BlockKind.LINK, "Контакты и статьи", reverse("web:contacts"), icon="phone"
+            ),
             BlockDefault(BlockKind.LINK, "Публичная оферта", reverse("web:offer"), icon="help"),
             BlockDefault(
                 BlockKind.LINK, "Политика обработки данных", reverse("web:privacy"), icon="help"

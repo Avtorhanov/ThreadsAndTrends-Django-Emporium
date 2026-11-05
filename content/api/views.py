@@ -484,7 +484,7 @@ class AdminHomeBlockView(AdminAPIMixin, generics.GenericAPIView):
 @extend_schema(tags=[ADMIN_TAG])
 class AdminHomeBlockImageView(AdminAPIMixin, generics.GenericAPIView):
     """Картинки баннера: добавить ещё одну (до 6) или убрать все. Порядок и удаление
-    одной — PATCH блока с image_ids."""
+    одной — PATCH блока с image_ids. У текста — одна картинка: новая заменяет прежнюю."""
 
     section = "storefront"
 
@@ -497,7 +497,8 @@ class AdminHomeBlockImageView(AdminAPIMixin, generics.GenericAPIView):
         responses=AdminHomeBlockSerializer,
         description=(
             "Добавить картинку баннера (JPEG, PNG, WebP или GIF, до 5 МБ) в конец списка; "
-            "несколько картинок сменяют друг друга на витрине."
+            "несколько картинок сменяют друг друга на витрине. У текстового блока — одна "
+            "картинка: новая заменяет прежнюю."
         ),
     )
     def post(self, request, pk: int):
@@ -530,6 +531,7 @@ def _theme_data(*, all_palettes: bool = False) -> dict:
         "default_radius": theme.default_radius,
         "default_text": theme.default_text,
         "nav_style": theme.nav_style,
+        "show_wordmark": theme.show_wordmark,
         "enabled": list(theme.palettes),
     }
 
