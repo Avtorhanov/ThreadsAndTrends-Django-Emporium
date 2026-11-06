@@ -263,6 +263,25 @@ def test_wordmark_switch_hides_shop_everywhere(admin_api, client):
     assert admin_api.put(ADMIN, body, format="json").json()["show_wordmark"] is False
 
 
+def test_wordmark_text_editable_and_limited(admin_api, client):
+    body = {
+        "palettes": list(look.PALETTES),
+        "default_palette": "lime",
+        "default_mode": "system",
+        "default_radius": "normal",
+    }
+    assert admin_api.get(ADMIN).json()["wordmark"] == "shop"
+    saved = admin_api.put(ADMIN, {**body, "wordmark": "  Мода  "}, format="json")
+    assert saved.status_code == 200 and saved.json()["wordmark"] == "Мода"
+    assert 'class="word__accent">Мода<' in client.get("/").content.decode()
+    assert client.get("/api/v1/content/theme/").json()["wordmark"] == "Мода"
+    for bad in ("", "   ", "market1", "<b>", "shop!"):
+        response = admin_api.put(ADMIN, {**body, "wordmark": bad}, format="json")
+        assert response.status_code == 400 and "wordmark" in response.json(), bad
+    # Не передано — прежнее.
+    assert admin_api.put(ADMIN, body, format="json").json()["wordmark"] == "Мода"
+
+
 def test_sun_palette_removed():
     assert "sun" not in look.PALETTES
     assert look.resolve_look(palette="sun").palette == "lime"

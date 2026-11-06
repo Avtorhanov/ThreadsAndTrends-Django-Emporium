@@ -5,6 +5,7 @@ import { ARTICLES_PAGE_SIZE, type ArticleRow, type ArticleStatus } from "../api/
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useArticles } from "../hooks/useContent";
 import { Table } from "../components/Table";
+import { PageTools, ToolButton } from "../components/PageTools";
 
 const STATUS_LABELS: Record<ArticleStatus, string> = {
   published: "Опубликованные",
@@ -34,10 +35,10 @@ export function ArticlesPage() {
     <section>
       <div className="page-header">
         <h1>Статьи</h1>
-        {data ? <span className="muted">Всего: {data.count}</span> : null}
-        <Link to="/content/articles/new" className="button header-action">
-          Написать статью
-        </Link>
+        <PageTools>
+          <ToolButton icon="plus" label="Написать статью" tone="accent" to="/content/articles/new" />
+        </PageTools>
+        {data ? <span className="muted page-sub">Всего: {data.count}</span> : null}
       </div>
       <p className="muted">
         Статьи видны покупателям на вкладке «Контакты» на сайте и в приложении. Ссылки на мессенджеры

@@ -5704,3 +5704,393 @@ button.batch-add-tile:focus-visible {
   flex: 1 1 auto;
   min-width: 0;
 }
+
+/* --- Действия с отмеченными (товары, заказы): одна нижняя панель, как у черновиков ---
+   Строка «Выбрано: N · Все на странице · ×», под ней — кнопки с иконками. */
+.bulk-dock {
+  margin-top: 12px;
+}
+
+.bulk-dock-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  padding: 0 4px 0 10px;
+  color: var(--nav-ink);
+  font-size: 14px;
+}
+
+.bulk-dock-head strong {
+  color: #ffffff;
+}
+
+.bulk-dock-head .bulk-link {
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.bulk-close {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, #ffffff 10%, transparent);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.batch-actions-grid-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.batch-actions-grid-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.batch-action.is-danger {
+  color: #ffb4a8;
+}
+
+.batch-action.is-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, #ff6b57 22%, transparent);
+}
+
+/* Компактная строка параметров в нижней панели (заказы: статус, комментарий, письма). */
+.bulk-dock-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bulk-dock-row select,
+.bulk-dock-row input[type="text"] {
+  flex: 1 1 160px;
+  width: auto;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.bulk-dock-row .button {
+  flex: none;
+  min-height: 44px;
+}
+
+.bulk-toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, #ffffff 10%, transparent);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bulk-toggle input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* Удалить / восстановить у строки списка — рядом с отметкой видимости. */
+.row-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.row-tool {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.row-tool:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.row-tool-danger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--danger, #d4442e) 50%, transparent);
+  color: var(--danger, #d4442e);
+}
+
+.row-tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Точка тона статуса в шторке выбора. */
+.tone-dot {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--neutral);
+}
+
+.tone-dot-success {
+  background: var(--success);
+}
+
+.tone-dot-warning {
+  background: var(--warning);
+}
+
+.tone-dot-info {
+  background: var(--info);
+}
+
+.tone-dot-none {
+  box-sizing: border-box;
+  border: 2px dashed var(--muted);
+  background: transparent;
+}
+
+/* --- Действия в строке заголовка (components/PageTools): справа от названия, компактно ---
+   «Назад» · заголовок · кнопки — одной строкой; длинный заголовок переносится сам. */
+.page-tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.tool-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0 14px 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 700 13px var(--font-text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tool-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.tool-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.tool-button-danger {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  color: var(--danger);
+}
+
+.tool-button-accent {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.page-header > .page-back ~ h1:has(~ .page-tools) {
+  flex: 1 1 0;
+}
+
+/* Подпись под заголовком («Готово 3 из 8», «12 фото · 4 товара») — отдельной строкой. */
+.page-header > .page-sub {
+  flex-basis: 100%;
+}
+
+@media (max-width: 720px) {
+  .tool-button {
+    width: 40px;
+    padding: 0;
+  }
+
+  .tool-button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* Заголовок с кнопками — в одной строке, кнопки не уходят вниз. */
+  .page-header > h1:has(~ .page-tools) {
+    flex: 1 1 0;
+  }
+
+  /* Главное действие раздела («Добавить товар») — с подписью и на телефоне. */
+  .tool-button-accent {
+    width: auto;
+    padding: 0 14px 0 12px;
+  }
+
+  .tool-button-accent .tool-button-label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+}
+
+/* Черновики: что задать выбранным — цена или название. */
+.batch-field-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 0 2px;
+}
+
+.batch-field-tabs > button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--nav-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.batch-field-tabs > button.is-on {
+  background: color-mix(in srgb, #ffffff 16%, transparent);
+  color: #ffffff;
+}
+
+.batch-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding-right: 6px;
+  color: var(--nav-ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.batch-number input {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* Поле вставки фото (components/catalog/PasteZone): запасной путь для «Фото» iPhone. */
+.paste-zone-wrap {
+  position: relative;
+  grid-column: 1 / -1;
+}
+
+.paste-zone {
+  display: grid;
+  place-items: center;
+  min-height: 88px;
+  padding: 12px 44px;
+  border: 2px dashed color-mix(in srgb, var(--brand) 55%, transparent);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  caret-color: transparent;
+  outline: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.paste-zone:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.paste-zone:focus {
+  border-style: solid;
+}
+
+.paste-zone-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+/* «Тема магазина» → «Логотип»: своё слово рядом с «DiDi», счётчик символов в поле. */
+.wordmark-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.wordmark-input {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.wordmark-input input {
+  width: 100%;
+  padding-right: 48px;
+}
+
+.wordmark-input > span {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.brand-name {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.brand-name[data-len="5"],
+.brand-name[data-len="6"] {
+  font-size: 0.86em;
+}
+
+@media (max-width: 720px) {
+  /* Карточка товара на телефоне: «Активен» — обычное состояние, отметку не показываем (место
+     статусу и кнопке «Удалить»); «Скрыт», «Удалён», «Черновик» — видны. */
+  .table-wrap .table.table-products .row-tools .badge-active {
+    display: none;
+  }
+}

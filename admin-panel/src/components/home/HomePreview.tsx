@@ -29,7 +29,7 @@ export function HomePreview({ blocks, categories, selectedId, onSelect, onBack }
         <div className="he-phone-bar">
           <span className="he-phone-logo" aria-hidden="true">
             <i>DiDi</i>
-            {wordmark ? <strong>shop</strong> : null}
+            {wordmark ? <strong>{wordmark}</strong> : null}
           </span>
           <span className="he-phone-dot" />
         </div>

@@ -62,8 +62,10 @@ type ThemeContextValue = Theme & {
   setLook: (changes: Partial<Look>) => void;
   /** Палитры, которые администратор разрешил покупателям (панель → «Тема»). */
   palettes: PaletteName[];
-  /** Слово «shop» рядом с плашкой «DiDi» (панель → «Тема магазина»). */
+  /** Слово рядом с плашкой «DiDi» (панель → «Тема магазина»). */
   showWordmark: boolean;
+  /** Само слово, до 6 символов (по умолчанию «shop»). */
+  wordmark: string;
 };
 
 const STORAGE_KEY = "didi:theme";
@@ -177,6 +179,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setLook,
       palettes,
       showWordmark: shop?.show_wordmark ?? true,
+      wordmark: shop?.wordmark || "shop",
       toggle: () => setPreference(theme.name === "dark" ? "light" : "dark"),
     }),
     [theme, preference, setPreference, setLook, palettes, shop],

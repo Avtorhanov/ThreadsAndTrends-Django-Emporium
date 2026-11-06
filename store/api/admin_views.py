@@ -240,7 +240,10 @@ class AdminProductViewSet(
     @extend_schema(
         request=AdminProductBulkSerializer,
         responses={200: AdminProductBulkResultSerializer},
-        description="Массово: статус, категория или видимость у отмеченных товаров (до 200).",
+        description=(
+            "Массово: статус, категория, видимость, удаление или восстановление"
+            " у отмеченных товаров (до 200)."
+        ),
     )
     @action(detail=False, methods=["post"])
     def bulk(self, request):

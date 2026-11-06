@@ -92,29 +92,114 @@
   var cache = null;
   function load() {
     if (cache) return cache;
-    try { cache = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { cache = null; }
+    try { cache = JSON.parse(localStorage.getItem(KEY) || "null", media.revive); } catch (e) { cache = null; }
     return cache;
   }
   function save(db) {
     cache = db;
     try {
-      localStorage.setItem(KEY, JSON.stringify(db));
+      localStorage.setItem(KEY, JSON.stringify(db, media.replace));
     } catch (e) {
       return false;
     }
     writeLook(db);
     return true;
   }
+
+  // --- Фото, загруженные в демо: файлы — в IndexedDB, в «базе» — только ссылка «idb:N» ---
+  // localStorage вмещает ~5 МБ (Safari считает символы по 2 байта — ~2,5 млн символов): два-три
+  // десятка фото data:URL переполняли его, и фото новых товаров терялись. IndexedDB вмещает сотни
+  // мегабайт. В памяти «база» держит blob:-адреса (их понимают <img> и витрина), при записи они
+  // снова становятся «idb:N». Нет IndexedDB — фото остаются data:URL, как раньше.
+  var media = (function () {
+    var STORE = "media";
+    var urls = {};    // "idb:N" → blob:URL
+    var keys = {};    // blob:URL → "idb:N"
+    var dbPromise = null;
+    function open() {
+      if (dbPromise) return dbPromise;
+      dbPromise = new Promise(function (resolve) {
+        try {
+          var req = indexedDB.open("didi-sim-media", 1);
+          req.onupgradeneeded = function () { req.result.createObjectStore(STORE); };
+          req.onsuccess = function () { resolve(req.result); };
+          req.onerror = function () { resolve(null); };
+        } catch (e) { resolve(null); }
+      });
+      return dbPromise;
+    }
+    function tx(mode, fn) {
+      return open().then(function (idb) {
+        if (!idb) return null;
+        return new Promise(function (resolve) {
+          var t = idb.transaction(STORE, mode);
+          var result = fn(t.objectStore(STORE));
+          t.oncomplete = function () { resolve(result && "result" in result ? result.result : true); };
+          t.onerror = t.onabort = function () { resolve(null); };
+        });
+      });
+    }
+    function register(key, blob) {
+      var url = URL.createObjectURL(blob);
+      urls[key] = url;
+      keys[url] = key;
+      return url;
+    }
+    return {
+      revive: function (k, v) { return typeof v === "string" && v.indexOf("idb:") === 0 && urls[v] ? urls[v] : v; },
+      replace: function (k, v) { return typeof v === "string" && v.indexOf("blob:") === 0 && keys[v] ? keys[v] : v; },
+      /** Все фото из IndexedDB → blob:-адреса; неиспользуемые (удалённые товары, сброс) — стираются. */
+      ready: function () {
+        var raw = "";
+        try { raw = localStorage.getItem(KEY) || ""; } catch (e) { /* без хранилища */ }
+        var used = {};
+        (raw.match(/"idb:\d+"/g) || []).forEach(function (m) { used[m.slice(1, -1)] = true; });
+        return open().then(function (idb) {
+          if (!idb) return;
+          return new Promise(function (resolve) {
+            var t = idb.transaction(STORE, "readwrite");
+            var store = t.objectStore(STORE);
+            var req = store.openCursor();
+            req.onsuccess = function () {
+              var cursor = req.result;
+              if (!cursor) return;
+              var key = String(cursor.key);
+              if (used[key]) { if (!urls[key]) register(key, cursor.value); } else cursor.delete();
+              cursor.continue();
+            };
+            t.oncomplete = t.onerror = t.onabort = function () { resolve(); };
+          });
+        }).then(function () { cache = null; }); // перечитать «базу» уже с blob:-адресами
+      },
+      /** data:URL → файл в IndexedDB; ответ — blob:-адрес (или тот же data:URL без IndexedDB). */
+      put: function (dataUrl) {
+        var parts = dataUrl.split(",");
+        var mime = (parts[0].match(/data:([^;]+)/) || [])[1] || "image/jpeg";
+        var bin = atob(parts[1] || "");
+        var bytes = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        var blob = new Blob([bytes], { type: mime });
+        var key = "idb:" + Date.now() + Math.floor(Math.random() * 1000);
+        return tx("readwrite", function (store) { store.put(blob, key); }).then(function (done) {
+          return done ? register(key, blob) : dataUrl;
+        });
+      },
+      clear: function () { return tx("readwrite", function (store) { store.clear(); }); }
+    };
+  })();
   // Свежие данные из другой вкладки (панель и магазин открыты рядом).
   window.addEventListener("storage", function (event) {
-    if (event.key === KEY) cache = null;
+    if (event.key !== KEY) return;
+    cache = null;
+    // Другая вкладка могла загрузить фото — подтянуть их blob:-адреса (после — снова перечитать).
+    mediaReady = media.ready();
   });
 
   function writeLook(db) {
     var t = db.theme;
     var look = {
       palettes: t.enabled, palette: t.default_palette, mode: t.default_mode, radius: t.default_radius,
-      text: t.default_text || "100", nav: t.nav_style || "solid", wordmark: t.show_wordmark === false ? 0 : 1,
+      text: t.default_text || "100", nav: t.nav_style || "solid", wordmark: t.show_wordmark === false ? 0 : 1, word: t.wordmark || "shop",
       // Вошёл ли покупатель: theme.js до отрисовки уводит на страницу нужного дерева (гость / /me/).
       user: db.session ? 1 : 0,
       out: db.loggedOut ? 1 : 0
@@ -127,7 +212,32 @@
   // Метка сборки демо (build.py подставляет вместо __BUILD__): новая сборка — один раз
   // сверить «базу» со свежим снимком (фото, контакты прошлых версий).
   var BUILD = "__BUILD__";
+  var mediaReady = null;
   function ready() {
+    if (!mediaReady) mediaReady = media.ready();
+    return mediaReady.then(readyData).then(migrateMedia);
+  }
+  // Фото прошлых версий демо (data:URL в localStorage) — один раз переносятся в IndexedDB:
+  // освобождают место в хранилище, где их скопилось до переполнения.
+  var migrated = false;
+  function migrateMedia(db) {
+    if (migrated || !db) return db;
+    migrated = true;
+    var jobs = [];
+    (function walk(o) {
+      Object.keys(o).forEach(function (k) {
+        var v = o[k];
+        if (typeof v === "string") {
+          if (v.indexOf("data:image/") === 0 && v.length > 2000) {
+            jobs.push(media.put(v).then(function (url) { o[k] = url; }));
+          }
+        } else if (v && typeof v === "object") walk(v);
+      });
+    })(db);
+    if (!jobs.length) return db;
+    return Promise.all(jobs).then(function () { save(db); return db; }, function () { return db; });
+  }
+  function readyData() {
     if (load()) {
       if (cache.contacts && cache.build === BUILD) return Promise.resolve(cache);
       if (readyPromise) return readyPromise;
@@ -175,6 +285,7 @@
     if (t.enabled.indexOf(t.default_palette) < 0) t.default_palette = t.enabled[0];
     t.default_text = ({ s: "100", m: "115", l: "130" })[t.default_text] || t.default_text || "100";
     if (t.show_wordmark === undefined) t.show_wordmark = true;
+    if (!t.wordmark) t.wordmark = "shop";
   }
 
   /** Новая сборка демо — у фото каталога и статей могли смениться адреса файлов. Сверяем по id
@@ -233,6 +344,7 @@
       localStorage.removeItem(LOOK_KEY);
       localStorage.removeItem("didi-preview-cart");
     } catch (e) { /* без хранилища */ }
+    mediaReady = media.clear();
     return ready();
   }
 
@@ -255,6 +367,7 @@
     // Масштаб вместо «Размера текста» (s/m/l), «Солнце» убрано (tokens.json 1.9.0).
     theme.default_text = ({ s: "100", m: "115", l: "130" })[theme.default_text] || theme.default_text || "100";
     if (theme.show_wordmark === undefined) theme.show_wordmark = true;
+    if (!theme.wordmark) theme.wordmark = "shop";
     var variants = [];
     products.forEach(function (p) { variants = variants.concat(p.variants); });
     var images = [];
@@ -1135,8 +1248,18 @@
       if (!c) return fields({ category: ["Нет такой категории."] });
     }
     var updated = 0;
+    if (body.deleted !== undefined) {
+      // Удаление и восстановление пачкой (store.services.catalog._bulk_set_deleted).
+      db.products.forEach(function (p) {
+        if (ids.indexOf(p.id) < 0 || !!p.deleted_at === !!body.deleted) return;
+        p.deleted_at = body.deleted ? now() : null;
+        p.updated_at = now();
+        updated++;
+      });
+      return { status: 200, body: { updated: updated }, save: true };
+    }
     db.products.forEach(function (p) {
-      if (ids.indexOf(p.id) < 0) return;
+      if (ids.indexOf(p.id) < 0 || p.deleted_at) return;
       if (body.status !== undefined) p.status = body.status || null;
       if (body.category !== undefined && body.category !== null) p.category = Number(body.category);
       if (body.is_active !== undefined) p.is_active = !!body.is_active;
@@ -1357,7 +1480,7 @@
 
   // Тема
   route("GET", "/content/theme/", function (db) { return ok(themeState(db)); });
-  // Публичная тема (content/theme/): панель читает из неё слово «shop» в логотипе.
+  // Публичная тема (content/theme/): панель читает из неё слово рядом с «DiDi» в логотипе.
   routes.push({ method: "GET", re: /^\/api\/v1\/content\/theme\/$/, handler: function (db) {
     var t = themeState(db);
     t.palettes = t.palettes.filter(function (p) { return t.enabled.indexOf(p.key) >= 0; });
@@ -1375,6 +1498,14 @@
     db.theme.default_radius = body.default_radius || "normal";
     if (body.nav_style) db.theme.nav_style = body.nav_style;
     if (body.default_text) db.theme.default_text = body.default_text;
+    if (body.wordmark !== undefined) {
+      // Как content.look.clean_wordmark: до 6 символов, буквы, цифры, пробел, дефис, точка, «&».
+      var word = String(body.wordmark).split(/\s+/).filter(Boolean).join(" ");
+      if (!word) return fields({ wordmark: ["Введите слово или выключите его переключателем."] });
+      if (word.length > 6) return fields({ wordmark: ["Не длиннее 6 символов — иначе не поместится в шапку."] });
+      if (!/^[0-9A-Za-zА-Яа-яЁё][0-9A-Za-zА-Яа-яЁё .&-]*$/.test(word)) return fields({ wordmark: ["Буквы, цифры, пробел, дефис, точка или «&»."] });
+      db.theme.wordmark = word;
+    }
     if (typeof body.show_wordmark === "boolean") db.theme.show_wordmark = body.show_wordmark;
     // Как на сервере: личный выбор оформления в этом браузере сбрасывается — магазин сразу
     // показывает то, что задал администратор.
@@ -1439,8 +1570,8 @@
   var uploads = [
     {
       re: new RegExp("^" + A + "/catalog/products/(\\d+)/images/$"),
-      // Фото товаров мельче: «Добавить пачкой» грузит десятки фото, а хранилище браузера ~5 МБ.
-      max: 640,
+      // Фото товаров — в IndexedDB (media), но «пачка» грузит десятки фото: 1080 px хватает.
+      max: 1080,
       apply: function (db, m, url) {
         var p = byId(db.products, m[1]);
         if (!p) return fail(404, { detail: "Не найдено." });
@@ -1520,9 +1651,9 @@
           if (!um) continue;
           var file = body.get("image");
           var upload = uploads[u];
-          return readImage(file, upload.gif, upload.max).then(function (dataUrl) {
+          return readImage(file, upload.gif, upload.max).then(media.put).then(function (url) {
             var fresh = load();
-            return commit(fresh, upload.apply(fresh, um, dataUrl));
+            return commit(fresh, upload.apply(fresh, um, url));
           }, function (error) {
             if (error && error.message === "size") return fields({ image: ["GIF в демо — до 1,5 МБ."] });
             return fields({ image: [upload.gif ? "Загрузите JPEG, PNG, WebP или GIF." : "Загрузите JPEG, PNG или WebP."] });
@@ -1807,11 +1938,11 @@
     });
   }
   function setAvatar(file) {
-    return readAvatar(file).then(function (dataUrl) {
+    return readAvatar(file).then(media.put).then(function (url) {
       var db = load();
       var c = db.session && customerByEmail(db, db.session.email);
       if (!c) return false;
-      c.avatar = dataUrl;
+      c.avatar = url;
       return save(db);
     });
   }

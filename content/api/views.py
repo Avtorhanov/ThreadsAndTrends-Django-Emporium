@@ -532,6 +532,7 @@ def _theme_data(*, all_palettes: bool = False) -> dict:
         "default_text": theme.default_text,
         "nav_style": theme.nav_style,
         "show_wordmark": theme.show_wordmark,
+        "wordmark": theme.wordmark,
         "enabled": list(theme.palettes),
     }
 

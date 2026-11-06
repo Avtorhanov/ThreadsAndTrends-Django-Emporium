@@ -156,6 +156,12 @@ a { color: var(--brand); }
 .logo--sm { width: 38px; height: 38px; border-radius: calc(9px * var(--radius-scale)); font-size: 10.5px; }
 .word { font: 700 24px/1 var(--font-display); letter-spacing: -.5px; white-space: nowrap; transition: font-size .35s var(--ease-soft); }
 .word--sm { font-size: 16px; }
+/* Своё слово до 6 символов (панель → «Тема магазина»): длинное — чуть мельче; совсем широкое
+   обрезается, а не наезжает на кнопки шапки. */
+.brand .word { min-width: 0; overflow: hidden; }
+.word[data-len="5"] { font-size: 22px; }
+.word[data-len="6"] { font-size: 20px; }
+.is-compact .word[data-len="5"], .is-compact .word[data-len="6"] { font-size: 15px; }
 .word__accent { color: var(--brand); }
 /* Демо на GitHub Pages: слово «shop» выключено в панели (на сервере его не рисует шаблон). */
 :root[data-wordmark="off"] .brand .word { display: none; }
@@ -323,8 +329,10 @@ a { color: var(--brand); }
 
 /* --- Сетка и карточки --- */
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-grid-gap); }
+/* Карточки одного ряда — одной высоты: тело растягивается, цена прижата к низу,
+   название всегда 2 строки, цена — в одну строку. */
 .card {
-  display: block; padding: var(--space-card-pad); border-radius: var(--radius-card);
+  display: flex; flex-direction: column; height: 100%; padding: var(--space-card-pad); border-radius: var(--radius-card);
   background: var(--card); box-shadow: var(--shadow-card); color: var(--ink); text-decoration: none;
   transition: transform .22s var(--ease-out), box-shadow .3s ease;
 }
@@ -347,7 +355,10 @@ a { color: var(--brand); }
   position: absolute; left: 8px; bottom: 8px; z-index: 1; padding: 4px 8px; border-radius: var(--radius-badge);
   background: var(--neutral-bg); color: var(--neutral); font: 800 12px/1.2 var(--font-text);
 }
-.card__body { display: grid; gap: 6px; padding: 10px var(--space-card-text-pad) 8px; }
+.card__img { flex: none; }
+.card__body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px var(--space-card-text-pad) 8px; }
+.card__body > .card__title { align-self: stretch; }
+.card__body > .price { flex-wrap: nowrap; align-items: center; min-height: 18.7px; margin-top: auto; overflow: hidden; max-width: 100%; }
 .card__title {
   font: 700 var(--card-title, 15px)/1.25 var(--font-text);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em;
@@ -648,6 +659,7 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .mark--success::before { background: var(--success); }
 .mark--warning::before { background: var(--warning); }
 .mark--info::before { background: var(--info); }
+.mark--empty { visibility: hidden; } /* место под статус: карточки без статуса той же высоты */
 .pd__status { margin-top: 8px; }
 .pd__status-hint { margin-top: 4px; font-size: 13px; }
 .stepper { display: inline-flex; align-items: center; border-radius: calc(12px * var(--radius-scale)); background: var(--surface); box-shadow: var(--shadow-control); }
@@ -1088,6 +1100,15 @@ a.hblock-photo__frame:active { transform: scale(.985); }
   scroll-padding-inline: var(--gutter);
 }
 .hblock-rail__track::-webkit-scrollbar { display: none; }
+/* Поле под тень ленты (и ленты категорий) заходит на следующий блок. На iPhone прокручиваемая
+   область перехватывала нажатия под собой — «Все ›» следующей подборки, «Личные данные» в профиле
+   нажимались через раз. Сама лента нажатия пропускает (карточки — нет, свайп по ним листает),
+   следующий блок лежит над ней. */
+.hblock-rail__track, .hblock-cats__list { pointer-events: none; }
+.hblock-rail__cell, .hblock-cats__item { pointer-events: auto; }
+:is(.hblock, .box, section):has(> .hblock-rail__track, > .scroller > .hblock-rail__track, > .hblock-cats__list, > .scroller > .hblock-cats__list) + * {
+  position: relative; z-index: 1;
+}
 .hblock-rail__cell { scroll-snap-align: start; min-width: 0; }
 .hblock-cats__list { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin: -12px calc(-1 * var(--gutter)) -32px; padding: 12px var(--gutter) 32px; }
 .hblock-cats__list::-webkit-scrollbar { display: none; }

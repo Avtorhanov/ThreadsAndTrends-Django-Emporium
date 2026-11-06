@@ -171,9 +171,17 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         <Text style={s.name} numberOfLines={2}>
           {product.name}
         </Text>
-        {product.status ? <StatusMark status={product.status} /> : null}
-        <Price price={product.price_kopecks} compareAt={product.compare_at_kopecks} />
-        {product.in_stock ? null : <Text style={s.outOfStock}>Нет в наличии</Text>}
+        {/* Строка статуса резервируется всегда — карточки ленты одной высоты. */}
+        <View style={s.markSlot}>
+          {!product.in_stock ? (
+            <Text style={s.outOfStock}>Нет в наличии</Text>
+          ) : product.status ? (
+            <StatusMark status={product.status} />
+          ) : null}
+        </View>
+        <View style={s.priceSlot}>
+          <Price price={product.price_kopecks} compareAt={product.compare_at_kopecks} />
+        </View>
       </View>
     </PressScale>
   );
@@ -278,7 +286,9 @@ const useStyles = makeStyles(({ c, shadow, dark }) => ({
   },
   cardImage: { width: "100%", aspectRatio: 0.82, borderRadius: radius.image },
   cardBody: { paddingHorizontal: space.cardTextPad, gap: 6 },
-  name: { fontFamily: fonts.text700, fontSize: 15, lineHeight: 19, color: c.ink },
+  name: { minHeight: 38, fontFamily: fonts.text700, fontSize: 15, lineHeight: 19, color: c.ink },
+  markSlot: { minHeight: 16, justifyContent: "center" },
+  priceSlot: { minHeight: 22, justifyContent: "flex-end" },
   outOfStock: { fontFamily: fonts.text700, fontSize: 12, color: c.muted },
   mark: { flexDirection: "row", alignItems: "center", gap: 6 },
   markDot: { width: 6, height: 6, borderRadius: 3 },

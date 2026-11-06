@@ -1,6 +1,7 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { normalizeImage, readClipboardImages, usePasteImages } from "./imageInput";
+import { PasteZone } from "./PasteZone";
 
 export const MAX_PRODUCT_IMAGES = 10;
 const ACCEPT = "image/jpeg,image/png,image/webp";
@@ -13,6 +14,7 @@ const MAX_BYTES = 5 * 1024 * 1024;
  */
 export function PendingPhotos({ files, onChange }: { files: File[]; onChange: (files: File[]) => void }) {
   const [error, setError] = useState<string | null>(null);
+  const [pasteZone, setPasteZone] = useState(false);
   const previews = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files]);
   useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews]);
   const filesRef = useRef(files);
@@ -24,19 +26,25 @@ export function PendingPhotos({ files, onChange }: { files: File[]; onChange: (f
     );
     const room = MAX_PRODUCT_IMAGES - filesRef.current.length;
     setError(ready.length > room ? `Не больше ${MAX_PRODUCT_IMAGES} фото — лишние не добавлены.` : null);
-    if (room > 0 && ready.length) onChange([...filesRef.current, ...ready.slice(0, room)]);
+    if (room > 0 && ready.length) {
+      onChange([...filesRef.current, ...ready.slice(0, room)]);
+      setPasteZone(false);
+    }
   }
 
   usePasteImages((images) => void addPasted(images));
 
   async function paste() {
+    const fallback = "Удерживайте палец в поле ниже и выберите «Вставить» (на компьютере — ⌘V / Ctrl+V).";
     try {
       const { images, unsupported } = await readClipboardImages();
-      if (unsupported) setError("Браузер не даёт прочитать буфер кнопкой — нажмите ⌘V или Ctrl+V.");
-      else if (!images.length) setError("В буфере нет фото.");
-      else await addPasted(images);
+      if (unsupported || !images.length) {
+        setError(unsupported ? fallback : `Кнопка не получила фото из буфера. ${fallback}`);
+        setPasteZone(true);
+      } else await addPasted(images);
     } catch {
-      setError("Нет доступа к буферу обмена — разрешите вставку или нажмите ⌘V / Ctrl+V.");
+      setError(fallback);
+      setPasteZone(true);
     }
   }
 
@@ -94,6 +102,7 @@ export function PendingPhotos({ files, onChange }: { files: File[]; onChange: (f
         Вставить из буфера
       </button>
       {error ? <p className="field-error">{error}</p> : null}
+      {pasteZone ? <PasteZone onClose={() => setPasteZone(false)} /> : null}
       {files.length ? (
         <div className="photo-grid">
           {files.map((file, index) => (

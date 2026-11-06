@@ -556,8 +556,8 @@ paths:
   /api/v1/admin/catalog/products/bulk/:
     post:
       operationId: admin_catalog_products_bulk_create
-      description: 'Массово: статус, категория или видимость у отмеченных товаров
-        (до 200).'
+      description: 'Массово: статус, категория, видимость, удаление или восстановление
+        у отмеченных товаров (до 200).'
       tags:
       - admin-catalog
       requestBody:
@@ -3756,6 +3756,9 @@ components:
         is_active:
           type: boolean
           description: Показывать на витрине; true у черновиков — опубликовать
+        deleted:
+          type: boolean
+          description: true — удалить (мягко), false — восстановить; без других полей
       required:
       - ids
     AdminProductBulkResult:
@@ -4290,7 +4293,10 @@ components:
             * `bar` - Нижняя панель
         show_wordmark:
           type: boolean
-          description: Показывать слово «shop» рядом с плашкой «DiDi» в логотипе
+          description: Показывать слово рядом с плашкой «DiDi» в логотипе
+        wordmark:
+          type: string
+          description: Слово рядом с плашкой «DiDi» (до 6 символов)
         enabled:
           type: array
           items:
@@ -4306,6 +4312,7 @@ components:
       - nav_style
       - palettes
       - show_wordmark
+      - wordmark
     AdminThemeWriteRequest:
       type: object
       properties:
@@ -4345,7 +4352,12 @@ components:
             * `bar` - Нижняя панель
         show_wordmark:
           type: boolean
-          description: Слово «shop» в логотипе; не передано — прежнее
+          description: Слово в логотипе; не передано — прежнее
+        wordmark:
+          type: string
+          minLength: 1
+          description: Слово рядом с «DiDi», до 6 символов; не передано — прежнее
+          maxLength: 40
       required:
       - default_mode
       - default_palette
@@ -6368,7 +6380,10 @@ components:
             * `bar` - Нижняя панель
         show_wordmark:
           type: boolean
-          description: Показывать слово «shop» рядом с плашкой «DiDi» в логотипе
+          description: Показывать слово рядом с плашкой «DiDi» в логотипе
+        wordmark:
+          type: string
+          description: Слово рядом с плашкой «DiDi» (до 6 символов)
       required:
       - accents
       - default_mode
@@ -6378,6 +6393,7 @@ components:
       - nav_style
       - palettes
       - show_wordmark
+      - wordmark
     StaffInviteRequest:
       type: object
       properties:

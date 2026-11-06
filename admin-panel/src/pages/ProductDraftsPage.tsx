@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router";
 import { type ProductRow, productsService } from "../api/catalog";
 import { ApiError } from "../api/errors";
 import { BackLink } from "../components/BackLink";
+import { PageTools, ToolButton } from "../components/PageTools";
 import { Icon } from "../components/Icon";
 import { type BatchCategory, batchCategories, categoryLabel, drafts as draftsText, isReady } from "../components/catalog/batch";
 import { CategorySheet } from "../components/catalog/CategorySheet";
@@ -39,7 +40,11 @@ export function ProductDraftsPage() {
   const list = useLoader(loadDrafts, "drafts", "Не удалось загрузить черновики.");
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  // Поле для выбранных: цена или название (название нескольким — с номером: «Худи 1», «Худи 2»…).
+  const [massField, setMassField] = useState<"price" | "name">("price");
   const [massPrice, setMassPrice] = useState("");
+  const [massName, setMassName] = useState("");
+  const [numbered, setNumbered] = useState(true);
   const [sheet, setSheet] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -114,6 +119,21 @@ export function ProductDraftsPage() {
     });
   }
 
+  function applyName() {
+    const name = massName.trim().replace(/\s+/g, " ");
+    if (!name) return;
+    const withNumber = numbered && checked.length > 1;
+    void run(async () => {
+      for (const [index, row] of checked.entries()) {
+        await productsService.update(row.id, { name: withNumber ? `${name} ${index + 1}` : name });
+      }
+      setMassName("");
+      return withNumber
+        ? `Названия «${name} 1…${checked.length}» заданы: ${draftsText(checked.length)}`
+        : `Название «${name}» задано: ${draftsText(checked.length)}`;
+    });
+  }
+
   function applyCategory(category: BatchCategory) {
     setSheet(false);
     void run(async () => {
@@ -132,8 +152,8 @@ export function ProductDraftsPage() {
   function remove() {
     if (!window.confirm(`Удалить ${draftsText(checked.length)}? Их можно будет восстановить в «Товары → Удалённые».`)) return;
     void run(async () => {
-      for (const row of checked) await productsService.remove(row.id);
-      return `Удалено: ${draftsText(checked.length)}`;
+      const done = await productsService.bulk({ ids: checked.map((row) => row.id), deleted: true });
+      return `Удалено: ${draftsText(done.updated)}`;
     });
   }
 
@@ -144,14 +164,14 @@ export function ProductDraftsPage() {
       <div className="page-header">
         <BackLink to="/catalog/products" />
         <h1>Черновики</h1>
+        <PageTools>
+          <ToolButton icon="plus" label="Добавить" to="/catalog/products/batch" />
+        </PageTools>
         {rows.length ? (
-          <span className="muted">
+          <span className="muted page-sub">
             Готово {readyRows.length} из {rows.length}
           </span>
         ) : null}
-        <Link to="/catalog/products/batch" className="button button-ghost header-action">
-          <Icon name="plus" size={16} /> Добавить товар
-        </Link>
       </div>
       {/* Шаги — когда пришли из «Добавить товар» (пачкой); открытым из «Товаров» спискам они ни к чему. */}
       {result ? <BatchSteps current={2} /> : null}
@@ -260,33 +280,83 @@ export function ProductDraftsPage() {
 
           {checked.length ? (
             <div className="batch-dock batch-actions" role="region" aria-label="Действия с отмеченными черновиками">
-              <form
-                className="batch-price"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  applyPrice();
-                }}
-              >
-                <label className="sr-only" htmlFor="mass-price">
-                  Цена для выбранных, ₽
-                </label>
-                <input
-                  id="mass-price"
-                  inputMode="decimal"
-                  value={massPrice}
-                  placeholder="Цена для выбранных, ₽"
-                  onChange={(event) => setMassPrice(event.target.value)}
-                />
-                <button type="submit" className="button button-accent" disabled={busy || !massPrice.trim()}>
-                  Задать
+              <div className="batch-field-tabs" role="tablist" aria-label="Что задать выбранным">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={massField === "price"}
+                  className={massField === "price" ? "is-on" : undefined}
+                  onClick={() => setMassField("price")}
+                >
+                  Цена
                 </button>
-              </form>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={massField === "name"}
+                  className={massField === "name" ? "is-on" : undefined}
+                  onClick={() => setMassField("name")}
+                >
+                  Название
+                </button>
+                {massField === "name" && checked.length > 1 ? (
+                  <label className="batch-number">
+                    <input type="checkbox" checked={numbered} onChange={(event) => setNumbered(event.target.checked)} />
+                    + № по порядку
+                  </label>
+                ) : null}
+              </div>
+              {massField === "price" ? (
+                <form
+                  className="batch-price"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    applyPrice();
+                  }}
+                >
+                  <label className="sr-only" htmlFor="mass-price">
+                    Цена для выбранных, ₽
+                  </label>
+                  <input
+                    id="mass-price"
+                    inputMode="decimal"
+                    value={massPrice}
+                    placeholder="Цена для выбранных, ₽"
+                    onChange={(event) => setMassPrice(event.target.value)}
+                  />
+                  <button type="submit" className="button button-accent" disabled={busy || !massPrice.trim()}>
+                    Задать
+                  </button>
+                </form>
+              ) : (
+                <form
+                  className="batch-price"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    applyName();
+                  }}
+                >
+                  <label className="sr-only" htmlFor="mass-name">
+                    Название для выбранных
+                  </label>
+                  <input
+                    id="mass-name"
+                    value={massName}
+                    maxLength={190}
+                    placeholder="Название для выбранных"
+                    onChange={(event) => setMassName(event.target.value)}
+                  />
+                  <button type="submit" className="button button-accent" disabled={busy || !massName.trim()}>
+                    Задать
+                  </button>
+                </form>
+              )}
               <div className="batch-actions-grid batch-actions-grid-3">
                 <button type="button" className="batch-action" disabled={busy} onClick={() => setSheet(true)}>
                   <Icon name="folder" />
                   Категория
                 </button>
-                <button type="button" className="batch-action" disabled={busy} onClick={remove}>
+                <button type="button" className="batch-action is-danger" disabled={busy} onClick={remove}>
                   <Icon name="trash" />
                   Удалить
                 </button>

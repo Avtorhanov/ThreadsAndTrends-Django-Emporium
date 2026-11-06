@@ -343,6 +343,10 @@ class AdminProductBulkSerializer(serializers.Serializer):
     is_active = serializers.BooleanField(
         required=False, help_text="Показывать на витрине; true у черновиков — опубликовать"
     )
+    deleted = serializers.BooleanField(
+        required=False,
+        help_text="true — удалить (мягко), false — восстановить; без других полей",
+    )
 
 
 class AdminProductBulkResultSerializer(serializers.Serializer):

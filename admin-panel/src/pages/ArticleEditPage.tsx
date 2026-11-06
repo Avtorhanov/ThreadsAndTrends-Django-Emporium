@@ -7,6 +7,7 @@ import { ImagesEditor } from "../components/catalog/ImagesEditor";
 import { useArticle } from "../hooks/useContent";
 import { storeUrl } from "../lib/site";
 import { BackLink } from "../components/BackLink";
+import { PageTools, ToolButton } from "../components/PageTools";
 
 function FieldError({ errors, name }: { errors: FieldErrors; name: string }) {
   const message = errors[name]?.[0];
@@ -123,20 +124,18 @@ export function ArticleEditPage() {
       <div className="page-header">
         <BackLink to="/content/articles" />
         <h1>{articleId === null ? "Новая статья" : (current?.title ?? "Статья")}</h1>
-        {current?.deleted_at ? <span className="badge badge-deleted">Удалена</span> : null}
-        {current && current.is_published && !current.deleted_at ? (
-          <a className="button button-ghost" href={storeUrl(`articles/${current.slug}/`)} target="_blank" rel="noreferrer">
-            Открыть на сайте
-          </a>
-        ) : null}
         {current ? (
-          <button
-            type="button"
-            className={current.deleted_at ? "button header-action" : "button button-danger header-action"}
-            onClick={() => void toggleDeleted()}
-          >
-            {current.deleted_at ? "Восстановить" : "Удалить"}
-          </button>
+          <PageTools>
+            {current.deleted_at ? <span className="badge badge-deleted">Удалена</span> : null}
+            {current.is_published && !current.deleted_at ? (
+              <ToolButton icon="external" label="На сайте" href={storeUrl(`articles/${current.slug}/`)} />
+            ) : null}
+            {current.deleted_at ? (
+              <ToolButton icon="undo" label="Восстановить" onClick={() => void toggleDeleted()} />
+            ) : (
+              <ToolButton icon="trash" label="Удалить" tone="danger" onClick={() => void toggleDeleted()} />
+            )}
+          </PageTools>
         ) : null}
       </div>
 

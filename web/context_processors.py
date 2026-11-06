@@ -78,6 +78,7 @@ def storefront(request):
         "android_apk_url": settings.ANDROID_APK_URL,
         "seller": seller,
         "seller_line": seller_line,
-        # Слово «shop» рядом с плашкой «DiDi» (панель → «Внешний вид» → «Тема магазина»).
+        # Слово рядом с плашкой «DiDi» (панель → «Внешний вид» → «Тема магазина»).
         "show_wordmark": look.shop_theme().show_wordmark,
+        "wordmark": look.shop_theme().wordmark,
     }

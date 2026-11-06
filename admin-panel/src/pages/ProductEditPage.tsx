@@ -11,6 +11,7 @@ import { useCategories, useLabels, useProduct } from "../hooks/useCatalog";
 import { storeUrl } from "../lib/site";
 import { BackLink } from "../components/BackLink";
 import { Icon } from "../components/Icon";
+import { PageTools, ToolButton } from "../components/PageTools";
 
 // photosFailed — после создания с фото; drafts — порядок черновиков для листания;
 // photos и category — из «Добавить товар»: фото одного товара (и категория из раскладки).
@@ -96,20 +97,18 @@ export function ProductEditPage() {
           <BackLink to="/catalog/products" />
         )}
         <h1>{productId === null ? "Новый товар" : (product.data?.name ?? "Товар")}</h1>
-        {product.data?.deleted_at ? <span className="badge badge-deleted">Удалён</span> : null}
-        {product.data && !product.data.deleted_at && product.data.is_active ? (
-          <a className="button button-ghost" href={storeUrl(`product/${product.data.slug}/`)} target="_blank" rel="noreferrer">
-            Открыть на сайте
-          </a>
-        ) : null}
         {product.data ? (
-          <button
-            type="button"
-            className={product.data.deleted_at ? "button header-action" : "button button-danger header-action"}
-            onClick={() => void toggleDeleted()}
-          >
-            {product.data.deleted_at ? "Восстановить" : "Удалить"}
-          </button>
+          <PageTools>
+            {product.data.deleted_at ? <span className="badge badge-deleted">Удалён</span> : null}
+            {!product.data.deleted_at && product.data.is_active ? (
+              <ToolButton icon="external" label="На сайте" href={storeUrl(`product/${product.data.slug}/`)} />
+            ) : null}
+            {product.data.deleted_at ? (
+              <ToolButton icon="undo" label="Восстановить" onClick={() => void toggleDeleted()} />
+            ) : (
+              <ToolButton icon="trash" label="Удалить" tone="danger" onClick={() => void toggleDeleted()} />
+            )}
+          </PageTools>
         ) : null}
       </div>
 

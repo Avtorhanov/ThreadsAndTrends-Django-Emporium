@@ -41,7 +41,8 @@ export async function normalizeImage(blob: Blob, name: string): Promise<File | n
   if (accepted(blob.type) && blob.size <= MAX_IMAGE_BYTES) {
     return blob instanceof File ? blob : new File([blob], name, { type: blob.type });
   }
-  if (!blob.type.startsWith("image/")) return null;
+  // Пустой тип — файл из «Фото» iPhone иногда приходит без MIME: пробуем открыть как картинку.
+  if (blob.type && !blob.type.startsWith("image/")) return null;
   try {
     const source = await decode(blob);
     const k = Math.min(1, MAX_SIDE / Math.max(source.width, source.height));
@@ -66,18 +67,19 @@ export async function normalizeImage(blob: Blob, name: string): Promise<File | n
 let pasteCounter = 0;
 function pastedName(type: string): string {
   pasteCounter += 1;
-  const ext = type.split("/")[1]?.replace("jpeg", "jpg") ?? "png";
+  const ext = type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
   return `Вставка-${pasteCounter}.${ext}`;
 }
 
 /** Картинки из события вставки (⌘/Ctrl+V) или перетаскивания. */
 export function imagesFrom(data: DataTransfer | null): { blob: Blob; name: string }[] {
   if (!data) return [];
-  const files = Array.from(data.files).filter((file) => file.type.startsWith("image/"));
+  const isImage = (type: string) => type === "" || type.startsWith("image/");
+  const files = Array.from(data.files).filter((file) => isImage(file.type));
   if (files.length) return files.map((file) => ({ blob: file, name: file.name || pastedName(file.type) }));
   // Скриншот из буфера бывает только в items, без files.
   return Array.from(data.items)
-    .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+    .filter((item) => item.kind === "file" && isImage(item.type))
     .map((item) => item.getAsFile())
     .filter((file): file is File => file !== null)
     .map((file) => ({ blob: file, name: pastedName(file.type) }));

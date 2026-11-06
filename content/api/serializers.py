@@ -516,8 +516,9 @@ class ShopThemeSerializer(serializers.Serializer):
         choices=look.NAV_CHOICES, help_text="Вид нижнего меню витрины на телефоне"
     )
     show_wordmark = serializers.BooleanField(
-        help_text="Показывать слово «shop» рядом с плашкой «DiDi» в логотипе"
+        help_text="Показывать слово рядом с плашкой «DiDi» в логотипе"
     )
+    wordmark = serializers.CharField(help_text="Слово рядом с плашкой «DiDi» (до 6 символов)")
 
 
 class AdminThemeSerializer(ShopThemeSerializer):
@@ -546,5 +547,11 @@ class AdminThemeWriteSerializer(serializers.Serializer):
         help_text="Вид нижнего меню витрины; не передан — прежний",
     )
     show_wordmark = serializers.BooleanField(
-        required=False, help_text="Слово «shop» в логотипе; не передано — прежнее"
+        required=False, help_text="Слово в логотипе; не передано — прежнее"
+    )
+    wordmark = serializers.CharField(
+        required=False,
+        max_length=40,
+        trim_whitespace=False,
+        help_text="Слово рядом с «DiDi», до 6 символов; не передано — прежнее",
     )

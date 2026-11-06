@@ -19,6 +19,7 @@ import { useOrders } from "../hooks/useOrders";
 import { formatKopecks } from "../lib/money";
 import { ADMIN_TARGETS, TARGET_LABELS } from "../lib/orderFlow";
 import { Table } from "../components/Table";
+import { Icon } from "../components/Icon";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
@@ -214,57 +215,6 @@ export function OrdersPage() {
       {actionError ? <p className="alert">{actionError}</p> : null}
       {notice ? <p className="note note-success">{notice}</p> : null}
 
-      {selected.size > 0 ? (
-        <div className="bulk-bar" role="region" aria-label="Обработка отмеченных заказов">
-          <strong>Выбрано: {selected.size}</strong>
-          {allChecked ? null : (
-            <button
-              type="button"
-              className="bulk-link"
-              onClick={() => setSelected(new Set(rows.map((row) => row.id)))}
-            >
-              Выбрать все
-            </button>
-          )}
-          <button type="button" className="bulk-link" onClick={() => setSelected(new Set())}>
-            Снять выбор
-          </button>
-          <span className="bulk-gap" />
-          <label className="bulk-field">
-            Отметить
-            <select value={target} onChange={(event) => setTarget(event.target.value as OrderStatus | "")}>
-              <option value="">Выберите…</option>
-              {ADMIN_TARGETS.map((value) => (
-                <option key={value} value={value}>
-                  {TARGET_LABELS[value]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <input
-            className="bulk-comment"
-            type="text"
-            maxLength={500}
-            placeholder="Комментарий для покупателей"
-            aria-label="Комментарий для покупателей"
-            value={bulkComment}
-            onChange={(event) => setBulkComment(event.target.value)}
-          />
-          <label className="bulk-field">
-            <input type="checkbox" checked={bulkNotify} onChange={(event) => setBulkNotify(event.target.checked)} />
-            Письма
-          </label>
-          <button
-            type="button"
-            className={target === "cancelled" ? "button button-danger-solid" : "button button-accent"}
-            disabled={busy || !target}
-            onClick={() => void applyBulk()}
-          >
-            Применить
-          </button>
-        </div>
-      ) : null}
-
       <Table loading={loading} className="table-orders">
         <thead>
           <tr>
@@ -351,6 +301,56 @@ export function OrdersPage() {
           Вперёд →
         </button>
       </div>
+
+      {selected.size > 0 ? (
+        <div className="batch-dock batch-actions bulk-dock" role="region" aria-label="Обработка отмеченных заказов">
+          <div className="bulk-dock-head">
+            <strong>Выбрано: {selected.size}</strong>
+            {allChecked ? null : (
+              <button type="button" className="bulk-link" onClick={() => setSelected(new Set(rows.map((row) => row.id)))}>
+                Все на странице
+              </button>
+            )}
+            <button type="button" className="bulk-close" aria-label="Снять выбор" onClick={() => setSelected(new Set())}>
+              <Icon name="close" size={18} />
+            </button>
+          </div>
+          <div className="bulk-dock-row">
+            <select
+              value={target}
+              aria-label="Новый статус заказов"
+              onChange={(event) => setTarget(event.target.value as OrderStatus | "")}
+            >
+              <option value="">Отметить как…</option>
+              {ADMIN_TARGETS.map((value) => (
+                <option key={value} value={value}>
+                  {TARGET_LABELS[value]}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              maxLength={500}
+              placeholder="Комментарий покупателям"
+              aria-label="Комментарий для покупателей"
+              value={bulkComment}
+              onChange={(event) => setBulkComment(event.target.value)}
+            />
+            <label className="bulk-toggle">
+              <input type="checkbox" checked={bulkNotify} onChange={(event) => setBulkNotify(event.target.checked)} />
+              Письма
+            </label>
+            <button
+              type="button"
+              className={target === "cancelled" ? "button button-danger-solid" : "button button-accent"}
+              disabled={busy || !target}
+              onClick={() => void applyBulk()}
+            >
+              Применить
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

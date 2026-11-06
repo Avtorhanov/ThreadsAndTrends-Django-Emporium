@@ -69,6 +69,16 @@
   // Слово «shop» в логотипе (панель → «Тема магазина»); на сервере его просто не рисует шаблон.
   if (shop.wordmark === 0) root.setAttribute("data-wordmark", "off");
   else root.removeAttribute("data-wordmark");
+  // Своё слово вместо «shop» (сайт рисует его шаблоном; демо — снимок с «shop»).
+  if (shop.word && shop.word !== "shop") {
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".brand .word").forEach(function (el) {
+        el.setAttribute("data-len", String(shop.word.length));
+        var accent = el.querySelector(".word__accent");
+        if (accent) accent.textContent = shop.word;
+      });
+    });
+  }
   // Нижнее меню: выбор покупателя (cookie), иначе — что задал администратор; «Сплошное» — без атрибута.
   var nav = cookie("nav");
   if (["solid", "floating", "glass", "bar"].indexOf(nav) < 0) nav = shop.nav || "";

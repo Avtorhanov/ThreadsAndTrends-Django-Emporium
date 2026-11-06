@@ -35,6 +35,10 @@ const PATHS = {
   split: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
   folder: "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
   ungroup: "M4 4h6v6H4zM14 14h6v6h-6zM14 4h6M17 4v6M4 17h6",
+  tag: "M3 12V4h8l10 10-7 7zM7.5 8.5h.01",
+  pencil: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4",
+  external: "M14 4h6v6M20 4l-9 9M18 14v6H4V6h6",
+  undo: "M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3",
 } as const;
 
 export type IconName = keyof typeof PATHS;

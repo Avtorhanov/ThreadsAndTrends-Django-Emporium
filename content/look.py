@@ -7,6 +7,7 @@ tokens.json): значения от покупателя принимаются 
 """
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -53,6 +54,11 @@ NAV_HINTS = {
 }
 NAV: tuple[str, ...] = tuple(NAV_LABELS)
 DEFAULT_NAV = "solid"
+# Слово рядом с плашкой «DiDi»: до 6 символов — шире логотип не помещается в шапку телефона
+# рядом с поиском, темой и корзиной (360 px). Буквы, цифры, пробел, дефис, точка, «&».
+DEFAULT_WORDMARK = "shop"
+WORDMARK_MAX = 6
+WORDMARK_RE = re.compile(r"^[0-9A-Za-zА-Яа-яЁё][0-9A-Za-zА-Яа-яЁё .&-]*$")
 
 # Варианты для API (имена перечислений в схеме — SPECTACULAR_SETTINGS.ENUM_NAME_OVERRIDES).
 PALETTE_CHOICES = [(key, item["name"]) for key, item in PALETTES.items()]
@@ -78,6 +84,7 @@ class ShopTheme:
     nav_style: str = DEFAULT_NAV
     default_text: str = DEFAULT_TEXT
     show_wordmark: bool = True
+    wordmark: str = DEFAULT_WORDMARK
 
 
 def _from_row(row: ThemeSettings | None) -> ShopTheme:
@@ -90,7 +97,22 @@ def _from_row(row: ThemeSettings | None) -> ShopTheme:
     radius = row.default_radius if row.default_radius in RADIUS else DEFAULT_RADIUS
     nav = row.nav_style if row.nav_style in NAV else DEFAULT_NAV
     text = _text(row.default_text, DEFAULT_TEXT)
-    return ShopTheme(palettes, default, mode, radius, nav, text, row.show_wordmark)
+    word = row.wordmark if row.wordmark and WORDMARK_RE.match(row.wordmark) else DEFAULT_WORDMARK
+    return ShopTheme(palettes, default, mode, radius, nav, text, row.show_wordmark, word)
+
+
+def clean_wordmark(value: str) -> str:
+    """Пробелы по краям убираются, внутри — один; пусто, длиннее 6 или чужие символы — ошибка."""
+    word = " ".join(str(value).split())
+    if not word:
+        raise ValidationError({"wordmark": "Введите слово или выключите его переключателем."})
+    if len(word) > WORDMARK_MAX:
+        raise ValidationError(
+            {"wordmark": f"Не длиннее {WORDMARK_MAX} символов — иначе не поместится в шапку."}
+        )
+    if not WORDMARK_RE.match(word):
+        raise ValidationError({"wordmark": "Буквы, цифры, пробел, дефис, точка или «&»."})
+    return word
 
 
 def shop_theme() -> ShopTheme:
@@ -116,6 +138,7 @@ def update(
     nav_style: str | None = None,
     default_text: str | None = None,
     show_wordmark: bool | None = None,
+    wordmark: str | None = None,
 ):
     unknown = [key for key in palettes if key not in PALETTES]
     if unknown:
@@ -134,6 +157,8 @@ def update(
         raise ValidationError({"nav_style": "Неизвестный вид нижнего меню."})
     if default_text is not None and default_text not in TEXT:
         raise ValidationError({"default_text": "Неизвестный масштаб."})
+    if wordmark is not None:
+        wordmark = clean_wordmark(wordmark)
     row = get_row()
     # Порядок — как в tokens.json, без повторов.
     row.palettes = [key for key in PALETTES if key in set(palettes)]
@@ -146,6 +171,8 @@ def update(
         row.default_text = default_text
     if show_wordmark is not None:
         row.show_wordmark = show_wordmark
+    if wordmark is not None:
+        row.wordmark = wordmark
     row.save()
     cache.delete(CACHE_KEY)
     transaction.on_commit(lambda: cache.delete(CACHE_KEY))

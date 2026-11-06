@@ -17,6 +17,7 @@ import {
 } from "../components/catalog/batch";
 import { CategorySheet } from "../components/catalog/CategorySheet";
 import { imagesFrom, normalizeImage, readClipboardImages, usePasteImages } from "../components/catalog/imageInput";
+import { PasteZone } from "../components/catalog/PasteZone";
 import { MAX_PRODUCT_IMAGES } from "../components/catalog/PendingPhotos";
 import { useCategories, useLabels } from "../hooks/useCatalog";
 import { parseRublesToKopecks } from "../lib/money";
@@ -67,6 +68,8 @@ export function ProductBatchPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [price, setPrice] = useState("");
+  const [baseName, setBaseName] = useState("");
+  const [pasteZone, setPasteZone] = useState(false);
   const [sizes, setSizes] = useState<string[]>(DEFAULT_BATCH_SIZES);
   const [stock, setStock] = useState(0);
   const [fallback, setFallback] = useState<number | null>(null);
@@ -146,6 +149,7 @@ export function ProductBatchPage() {
     if (added.length) {
       photosRef.current = [...photosRef.current, ...added];
       setPhotos(photosRef.current);
+      setPasteZone(false);
     }
   }
 
@@ -156,13 +160,18 @@ export function ProductBatchPage() {
   }
 
   async function pasteFromClipboard() {
+    // Кнопка читает буфер (Clipboard API); фото из «Фото» iPhone Safari кнопке часто не отдаёт —
+    // тогда поле для обычной вставки удержанием пальца.
+    const fallback = "Удерживайте палец в поле ниже и выберите «Вставить» (на компьютере — ⌘V / Ctrl+V).";
     try {
       const { images, unsupported } = await readClipboardImages();
-      if (unsupported) setNotice("Браузер не даёт прочитать буфер кнопкой — нажмите ⌘V или Ctrl+V.");
-      else if (!images.length) setNotice("В буфере нет фото. Скопируйте фото (в галерее — «Скопировать») и нажмите «Вставить».");
-      else await addImages(images);
+      if (unsupported || !images.length) {
+        setNotice(unsupported ? fallback : `Кнопка не получила фото из буфера. ${fallback}`);
+        setPasteZone(true);
+      } else await addImages(images);
     } catch {
-      setNotice("Нет доступа к буферу обмена — разрешите вставку или нажмите ⌘V / Ctrl+V.");
+      setNotice(fallback);
+      setPasteZone(true);
     }
   }
 
@@ -300,8 +309,10 @@ export function ProductBatchPage() {
       return;
     }
     setFormError(null);
-    // Названия — «Категория + №»: номер продолжает счёт товаров категории.
+    // Названия — «Категория + №» (номер продолжает счёт товаров категории) или общее название
+    // из «Названия для всех» + № по порядку пачки.
     const counters = new Map(leaf.map((item) => [item.id, item.products_count]));
+    const commonName = baseName.trim().replace(/\s+/g, " ");
     const failed: string[] = [];
     let created = 0;
     for (const [index, group] of groups.entries()) {
@@ -310,7 +321,11 @@ export function ProductBatchPage() {
       if (!category) continue;
       const number = (counters.get(category.id) ?? 0) + 1;
       counters.set(category.id, number);
-      const name = `${category.name} ${number}`;
+      const name = commonName
+        ? groups.length > 1
+          ? `${commonName} ${index + 1}`
+          : commonName
+        : `${category.name} ${number}`;
       setProgress(`Создаю товар ${index + 1} из ${groups.length}…`);
       try {
         const product = await productsService.create({
@@ -403,7 +418,7 @@ export function ProductBatchPage() {
         <BackLink to="/catalog/products" />
         <h1>Добавить товар</h1>
         {photos.length ? (
-          <span className="muted">
+          <span className="muted page-sub">
             {photos.length} фото · {productsText(groups.length)}
           </span>
         ) : null}
@@ -412,6 +427,7 @@ export function ProductBatchPage() {
 
       {categories.error || labels.error ? <p className="alert">{categories.error ?? labels.error}</p> : null}
       {notice ? <p className="note note-warning">{notice}</p> : null}
+      {pasteZone && collecting ? <PasteZone onClose={() => setPasteZone(false)} /> : null}
       {!ready ? <p className="muted">Загрузка…</p> : null}
 
       {ready && step === "photos" && photos.length === 0 ? (
@@ -626,7 +642,27 @@ export function ProductBatchPage() {
                 </div>
               </>
             ) : null}
-            <p className="muted small">Названия — «Категория + №», поправите в карточке черновика.</p>
+          </section>
+
+          <section className="card batch-field">
+            <h2>
+              <label htmlFor="batch-name">Название для всех</label>
+            </h2>
+            <input
+              id="batch-name"
+              value={baseName}
+              maxLength={190}
+              placeholder="Можно оставить пустым"
+              onChange={(event) => setBaseName(event.target.value)}
+            />
+            <p className="muted small">
+              {baseName.trim()
+                ? groups.length > 1
+                  ? `«${baseName.trim()} 1», «${baseName.trim()} 2»… — по порядку.`
+                  : "Одно название."
+                : "Пусто — «Категория + №»."}{" "}
+              Поменять сразу нескольким можно и в «Черновиках».
+            </p>
           </section>
 
           <section className="card batch-field">

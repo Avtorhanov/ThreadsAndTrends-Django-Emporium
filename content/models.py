@@ -389,6 +389,9 @@ class ThemeSettings(models.Model):
     )
     nav_style = models.CharField(max_length=10, default="solid", verbose_name="Нижнее меню")
     show_wordmark = models.BooleanField(default=True, verbose_name="Слово «shop» в логотипе")
+    wordmark = models.CharField(
+        max_length=6, default="shop", db_default="shop", verbose_name="Слово рядом с «DiDi»"
+    )
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменены")
 
     class Meta:

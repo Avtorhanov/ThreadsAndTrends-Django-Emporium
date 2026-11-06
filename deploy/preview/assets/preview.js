@@ -259,7 +259,7 @@
     if (!p.in_stock) html += '<span class="soldout">Нет в наличии</span>';
     if (inCart && inCart[p.slug]) html += '<span class="incart">' + icon("bag", 14) + "В корзине</span>";
     html += '</span><span class="card__body"><span class="card__title">' + esc(p.name) + "</span>";
-    if (p.status) html += '<span class="mark mark--' + esc(p.status.tone) + '">' + esc(p.status.name) + "</span>";
+    html += p.status ? '<span class="mark mark--' + esc(p.status.tone) + '">' + esc(p.status.name) + "</span>" : '<span class="mark mark--empty" aria-hidden="true">&nbsp;</span>';
     html += '<span class="price">';
     html += p.price_on_request ? '<span class="price__now price__now--ask">По запросу</span>' : '<span class="price__now">' + rub(p.price_kopecks) + "&nbsp;₽</span>";
     if (p.compare_at_kopecks && !p.price_on_request) html += '<s class="price__old"><span class="sr">Старая цена </span>' + rub(p.compare_at_kopecks) + "&nbsp;₽</s>";

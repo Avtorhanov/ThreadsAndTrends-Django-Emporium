@@ -31,7 +31,7 @@ PRODUCT_FIELDS = {
 }
 MAX_STATUSES = 20
 MAX_BULK = 200
-BULK_FIELDS = {"status", "category", "is_active"}
+BULK_FIELDS = {"status", "category", "is_active", "deleted"}
 VARIANT_FIELDS = {"size", "sku", "stock", "position"}
 
 
@@ -202,9 +202,10 @@ def update_product(product: Product, **changes) -> Product:
 
 @transaction.atomic
 def bulk_update_products(ids: list[int], **changes) -> int:
-    """Массовое изменение в списке товаров панели: статус, категория, видимость.
+    """Массовое изменение в списке товаров панели: статус, категория, видимость, удаление.
     is_active=True у черновиков — публикация (отметка черновика снимается).
-    Возвращает число изменённых товаров (удалённые не трогаются)."""
+    deleted=True — мягкое удаление, deleted=False — восстановление; вместе с другими полями нельзя.
+    Возвращает число изменённых товаров (остальные поля удалённых товаров не трогаются)."""
     unknown = set(changes) - BULK_FIELDS
     if unknown:
         raise ValueError(f"Неизвестные поля: {sorted(unknown)}")
@@ -215,6 +216,10 @@ def bulk_update_products(ids: list[int], **changes) -> int:
         raise ValidationError({"ids": "Отметьте хотя бы один товар."})
     if len(ids) > MAX_BULK:
         raise ValidationError({"ids": f"Не больше {MAX_BULK} товаров за раз."})
+    if "deleted" in changes:
+        if len(changes) > 1:
+            raise ValidationError("Удаление нельзя совмещать с другими изменениями.")
+        return _bulk_set_deleted(ids, deleted=changes["deleted"])
     if "category" in changes:
         _validate_product_fields(
             category=changes["category"], price_kopecks=None, compare_at_kopecks=None
@@ -232,10 +237,30 @@ def bulk_update_products(ids: list[int], **changes) -> int:
             product.is_draft = False
         product.updated_at = now
     Product.objects.bulk_update(products, fields)
+    _notify_bulk(products)
+    return len(products)
+
+
+def _bulk_set_deleted(ids: list[int], *, deleted: bool) -> int:
+    """Мягкое удаление или восстановление пачкой; уже удалённые (восстановленные) не считаются."""
+    products = list(
+        Product.all_objects.select_for_update()
+        .filter(pk__in=ids, deleted_at__isnull=deleted)
+        .order_by("pk")
+    )
+    now = timezone.now()
+    for product in products:
+        product.deleted_at = now if deleted else None
+        product.updated_at = now
+    Product.all_objects.bulk_update(products, ["deleted_at", "updated_at"])
+    _notify_bulk(products)
+    return len(products)
+
+
+def _notify_bulk(products: list[Product]) -> None:
     from store.signals import products_bulk_updated
 
     products_bulk_updated.send(sender=Product, ids=[p.pk for p in products])
-    return len(products)
 
 
 def soft_delete_product(product: Product) -> Product:

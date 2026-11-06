@@ -54,17 +54,17 @@ function StoreLink() {
   );
 }
 
-/** Логотип как в магазине и приложении: плашка «DiDi» + «shop» (слово можно убрать в «Теме магазина»). */
+/** Логотип как в магазине и приложении: плашка «DiDi» + слово («shop»; меняется и убирается в «Теме магазина»). */
 function Brand() {
   const wordmark = useWordmark();
   return (
-    <span className="brand" aria-label={wordmark ? "DiDi shop" : "DiDi"}>
+    <span className="brand" aria-label={wordmark ? `DiDi ${wordmark}` : "DiDi"}>
       <span className="brand-mark" aria-hidden="true">
         DiDi
       </span>
       {wordmark ? (
-        <span className="brand-name" aria-hidden="true">
-          shop
+        <span className="brand-name" data-len={wordmark.length} aria-hidden="true">
+          {wordmark}
         </span>
       ) : null}
     </span>
