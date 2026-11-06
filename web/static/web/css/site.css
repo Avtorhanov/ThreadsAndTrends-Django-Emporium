@@ -356,7 +356,7 @@ a { color: var(--brand); }
   background: var(--neutral-bg); color: var(--neutral); font: 800 12px/1.2 var(--font-text);
 }
 .card__img { flex: none; }
-.card__body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px var(--space-card-text-pad) 8px; }
+.card__body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 5px; padding: 8px var(--space-card-text-pad) 6px; }
 .card__body > .card__title { align-self: stretch; }
 .card__body > .price { flex-wrap: nowrap; align-items: center; min-height: 18.7px; margin-top: auto; overflow: hidden; max-width: 100%; }
 .card__title {
@@ -1094,7 +1094,7 @@ a.hblock-photo__frame:active { transform: scale(.985); }
 /* Прокрутка вбок обрезает и по вертикали: поле под тень карточек (до 70 px вниз) компенсировано
    отрицательным отступом — размеры блока те же, тень не срезается прямой линией. */
 .hblock-rail__track {
-  display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - var(--space-grid-gap)) / 2.15);
+  display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 2 * var(--space-grid-gap)) / 2.35);
   gap: var(--space-grid-gap); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
   margin: -16px calc(-1 * var(--gutter)) -58px; padding: 16px var(--gutter) 64px;
   scroll-padding-inline: var(--gutter);
@@ -1102,10 +1102,8 @@ a.hblock-photo__frame:active { transform: scale(.985); }
 .hblock-rail__track::-webkit-scrollbar { display: none; }
 /* Поле под тень ленты (и ленты категорий) заходит на следующий блок. На iPhone прокручиваемая
    область перехватывала нажатия под собой — «Все ›» следующей подборки, «Личные данные» в профиле
-   нажимались через раз. Сама лента нажатия пропускает (карточки — нет, свайп по ним листает),
-   следующий блок лежит над ней. */
-.hblock-rail__track, .hblock-cats__list { pointer-events: none; }
-.hblock-rail__cell, .hblock-cats__item { pointer-events: auto; }
+   нажимались через раз: следующий блок лежит над полем ленты. pointer-events у ленты не трогать —
+   без них прокручиваемый контейнер не листается свайпом. */
 :is(.hblock, .box, section):has(> .hblock-rail__track, > .scroller > .hblock-rail__track, > .hblock-cats__list, > .scroller > .hblock-cats__list) + * {
   position: relative; z-index: 1;
 }

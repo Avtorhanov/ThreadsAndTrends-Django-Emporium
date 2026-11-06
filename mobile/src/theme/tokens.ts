@@ -1485,8 +1485,8 @@ export type TextMode = keyof typeof textScale;
 export const space = {
   "feedSide": 10,
   "gridGap": 10,
-  "cardPad": 6,
-  "cardTextPad": 8,
+  "cardPad": 4,
+  "cardTextPad": 6,
   "headerSide": 18,
   "screen": 24
 } as const;
