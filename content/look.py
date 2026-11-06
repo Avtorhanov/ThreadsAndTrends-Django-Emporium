@@ -97,15 +97,17 @@ def _from_row(row: ThemeSettings | None) -> ShopTheme:
     radius = row.default_radius if row.default_radius in RADIUS else DEFAULT_RADIUS
     nav = row.nav_style if row.nav_style in NAV else DEFAULT_NAV
     text = _text(row.default_text, DEFAULT_TEXT)
-    word = row.wordmark if row.wordmark and WORDMARK_RE.match(row.wordmark) else DEFAULT_WORDMARK
+    # Пустое слово — логотип только из плашки «DiDi» (как выключенный переключатель).
+    word = row.wordmark if not row.wordmark or WORDMARK_RE.match(row.wordmark) else DEFAULT_WORDMARK
     return ShopTheme(palettes, default, mode, radius, nav, text, row.show_wordmark, word)
 
 
 def clean_wordmark(value: str) -> str:
-    """Пробелы по краям убираются, внутри — один; пусто, длиннее 6 или чужие символы — ошибка."""
+    """Пробелы по краям убираются, внутри — один; пусто — без слова; длиннее 6 или чужие
+    символы — ошибка."""
     word = " ".join(str(value).split())
     if not word:
-        raise ValidationError({"wordmark": "Введите слово или выключите его переключателем."})
+        return ""
     if len(word) > WORDMARK_MAX:
         raise ValidationError(
             {"wordmark": f"Не длиннее {WORDMARK_MAX} символов — иначе не поместится в шапку."}

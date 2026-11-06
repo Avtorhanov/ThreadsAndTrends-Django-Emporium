@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 
-import { imagesService, productsService } from "../api/catalog";
+import { imagesService, productsService, variantsService } from "../api/catalog";
 import { ApiError } from "../api/errors";
 import { ImagesEditor } from "../components/catalog/ImagesEditor";
 import { MAX_PRODUCT_IMAGES, PendingPhotos } from "../components/catalog/PendingPhotos";
 import { ProductForm, type ProductFormValues } from "../components/catalog/ProductForm";
-import { VariantsEditor } from "../components/catalog/VariantsEditor";
+import { type VariantEdits, VariantsEditor } from "../components/catalog/VariantsEditor";
 import { useCategories, useLabels, useProduct } from "../hooks/useCatalog";
 import { storeUrl } from "../lib/site";
 import { BackLink } from "../components/BackLink";
@@ -36,6 +36,8 @@ export function ProductEditPage() {
   );
   const initialCategory = productId === null ? ((location.state as CreatedState)?.category ?? null) : null;
   const [uploading, setUploading] = useState<string | null>(null);
+  // Несохранённые строки вариантов (остатки, размеры): общая «Сохранить» сохраняет и их.
+  const [variantEdits, setVariantEdits] = useState<VariantEdits>(new Map());
   const failed = (location.state as CreatedState)?.photosFailed ?? [];
   const draftOrder = (location.state as CreatedState)?.drafts ?? [];
   const draftIndex = productId === null ? -1 : draftOrder.indexOf(productId);
@@ -63,7 +65,12 @@ export function ProductEditPage() {
       setPending([]);
       navigate(`/catalog/products/${created.id}`, { replace: true, state: { photosFailed } });
     } else {
-      product.set(await productsService.update(productId, values));
+      const updated = await productsService.update(productId, values);
+      for (const [id, patch] of variantEdits) await variantsService.update(id, patch);
+      if (variantEdits.size) {
+        setVariantEdits(new Map());
+        product.reload();
+      } else product.set(updated);
     }
   }
 
@@ -163,7 +170,7 @@ export function ProductEditPage() {
           initialCategory={initialCategory}
           categories={categories.data}
           labels={labels.data}
-          extraDirty={pending.length > 0}
+          extraDirty={pending.length > 0 || variantEdits.size > 0}
           onSubmit={save}
           photos={
             current ? (
@@ -183,7 +190,12 @@ export function ProductEditPage() {
           }
           stock={
             current ? (
-              <VariantsEditor productId={current.id} variants={current.variants} onChanged={product.reload} />
+              <VariantsEditor
+                productId={current.id}
+                variants={current.variants}
+                onChanged={product.reload}
+                onPendingChange={setVariantEdits}
+              />
             ) : null
           }
         />

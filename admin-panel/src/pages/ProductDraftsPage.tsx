@@ -231,7 +231,7 @@ export function ProductDraftsPage() {
               </button>
             ) : null}
             {checked.length ? (
-              <button type="button" className="bulk-text" onClick={() => setSelected(new Set())}>
+              <button type="button" className="button button-ghost button-small" onClick={() => setSelected(new Set())}>
                 Снять
               </button>
             ) : null}

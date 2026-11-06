@@ -199,7 +199,7 @@
     var t = db.theme;
     var look = {
       palettes: t.enabled, palette: t.default_palette, mode: t.default_mode, radius: t.default_radius,
-      text: t.default_text || "100", nav: t.nav_style || "solid", wordmark: t.show_wordmark === false ? 0 : 1, word: t.wordmark || "shop",
+      text: t.default_text || "100", nav: t.nav_style || "solid", wordmark: t.show_wordmark === false || t.wordmark === "" ? 0 : 1, word: t.wordmark || "shop",
       // Вошёл ли покупатель: theme.js до отрисовки уводит на страницу нужного дерева (гость / /me/).
       user: db.session ? 1 : 0,
       out: db.loggedOut ? 1 : 0
@@ -285,7 +285,7 @@
     if (t.enabled.indexOf(t.default_palette) < 0) t.default_palette = t.enabled[0];
     t.default_text = ({ s: "100", m: "115", l: "130" })[t.default_text] || t.default_text || "100";
     if (t.show_wordmark === undefined) t.show_wordmark = true;
-    if (!t.wordmark) t.wordmark = "shop";
+    if (t.wordmark === undefined) t.wordmark = "shop";
   }
 
   /** Новая сборка демо — у фото каталога и статей могли смениться адреса файлов. Сверяем по id
@@ -367,7 +367,7 @@
     // Масштаб вместо «Размера текста» (s/m/l), «Солнце» убрано (tokens.json 1.9.0).
     theme.default_text = ({ s: "100", m: "115", l: "130" })[theme.default_text] || theme.default_text || "100";
     if (theme.show_wordmark === undefined) theme.show_wordmark = true;
-    if (!theme.wordmark) theme.wordmark = "shop";
+    if (theme.wordmark === undefined) theme.wordmark = "shop";
     var variants = [];
     products.forEach(function (p) { variants = variants.concat(p.variants); });
     var images = [];
@@ -1499,11 +1499,10 @@
     if (body.nav_style) db.theme.nav_style = body.nav_style;
     if (body.default_text) db.theme.default_text = body.default_text;
     if (body.wordmark !== undefined) {
-      // Как content.look.clean_wordmark: до 6 символов, буквы, цифры, пробел, дефис, точка, «&».
+      // Как content.look.clean_wordmark: пусто — без слова; до 6 символов, буквы, цифры, пробел, дефис, точка, «&».
       var word = String(body.wordmark).split(/\s+/).filter(Boolean).join(" ");
-      if (!word) return fields({ wordmark: ["Введите слово или выключите его переключателем."] });
       if (word.length > 6) return fields({ wordmark: ["Не длиннее 6 символов — иначе не поместится в шапку."] });
-      if (!/^[0-9A-Za-zА-Яа-яЁё][0-9A-Za-zА-Яа-яЁё .&-]*$/.test(word)) return fields({ wordmark: ["Буквы, цифры, пробел, дефис, точка или «&»."] });
+      if (word && !/^[0-9A-Za-zА-Яа-яЁё][0-9A-Za-zА-Яа-яЁё .&-]*$/.test(word)) return fields({ wordmark: ["Буквы, цифры, пробел, дефис, точка или «&»."] });
       db.theme.wordmark = word;
     }
     if (typeof body.show_wordmark === "boolean") db.theme.show_wordmark = body.show_wordmark;

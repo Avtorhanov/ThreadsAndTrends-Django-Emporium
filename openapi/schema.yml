@@ -4296,7 +4296,7 @@ components:
           description: Показывать слово рядом с плашкой «DiDi» в логотипе
         wordmark:
           type: string
-          description: Слово рядом с плашкой «DiDi» (до 6 символов)
+          description: Слово рядом с плашкой «DiDi» (до 6 символов; пусто — без слова)
         enabled:
           type: array
           items:
@@ -4355,8 +4355,8 @@ components:
           description: Слово в логотипе; не передано — прежнее
         wordmark:
           type: string
-          minLength: 1
-          description: Слово рядом с «DiDi», до 6 символов; не передано — прежнее
+          description: Слово рядом с «DiDi», до 6 символов, пусто — без слова; не
+            передано — прежнее
           maxLength: 40
       required:
       - default_mode
@@ -6383,7 +6383,7 @@ components:
           description: Показывать слово рядом с плашкой «DiDi» в логотипе
         wordmark:
           type: string
-          description: Слово рядом с плашкой «DiDi» (до 6 символов)
+          description: Слово рядом с плашкой «DiDi» (до 6 символов; пусто — без слова)
       required:
       - accents
       - default_mode

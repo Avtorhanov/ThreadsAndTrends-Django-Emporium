@@ -243,7 +243,7 @@ export function ThemePage() {
                   onSubmit={(event) => {
                     event.preventDefault();
                     const word = wordDraft.trim().replace(/\s+/g, " ");
-                    if (word && word !== state.wordmark) void save({ wordmark: word });
+                    if (word !== state.wordmark) void save({ wordmark: word });
                   }}
                 >
                   <span className="wordmark-input">
@@ -251,6 +251,7 @@ export function ThemePage() {
                       value={wordDraft}
                       maxLength={WORDMARK_MAX}
                       aria-label="Слово рядом с «DiDi»"
+                      placeholder="Пусто — только «DiDi»"
                       aria-describedby="wordmark-hint"
                       onChange={(event) => setWordDraft(event.target.value)}
                     />
@@ -261,7 +262,7 @@ export function ThemePage() {
                   <button
                     type="submit"
                     className="button button-accent"
-                    disabled={busy || !wordDraft.trim() || wordDraft.trim() === state.wordmark}
+                    disabled={busy || wordDraft.trim().replace(/\s+/g, " ") === state.wordmark}
                   >
                     Сохранить
                   </button>
@@ -270,7 +271,7 @@ export function ThemePage() {
               <p id="wordmark-hint" className="muted small">
                 {state.show_wordmark && wordDraft.trim() && !wordmarkFits(wordDraft.trim())
                   ? "Широкие буквы: на узком телефоне слово обрежется — короче или уже буквы будет аккуратнее."
-                  : `До ${WORDMARK_MAX} символов: буквы, цифры, пробел, дефис, точка, «&». В шапке сайта, в приложении и в панели; выключено — только плашка «DiDi».`}
+                  : `До ${WORDMARK_MAX} символов: буквы, цифры, пробел, дефис, точка, «&». В шапке сайта, в приложении и в панели; пусто или выключено — только плашка «DiDi».`}
               </p>
             </div>
 
@@ -304,8 +305,8 @@ export function ThemePage() {
             <div className="card theme-preview-card">
               <h2>Предпросмотр: {shown.name}</h2>
               <div className="theme-previews">
-                <ThemePreview palette={shown} dark={false} radius={state.default_radius} nav={state.nav_style} wordmark={state.show_wordmark ? state.wordmark : null} />
-                <ThemePreview palette={shown} dark radius={state.default_radius} nav={state.nav_style} wordmark={state.show_wordmark ? state.wordmark : null} />
+                <ThemePreview palette={shown} dark={false} radius={state.default_radius} nav={state.nav_style} wordmark={state.show_wordmark && state.wordmark ? state.wordmark : null} />
+                <ThemePreview palette={shown} dark radius={state.default_radius} nav={state.nav_style} wordmark={state.show_wordmark && state.wordmark ? state.wordmark : null} />
               </div>
               {shown.key === "custom" ? (
                 <p className="muted small">«Своя»: покупатель выбирает акцент из {state.accents.length} проверенных цветов.</p>

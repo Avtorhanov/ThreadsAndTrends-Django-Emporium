@@ -518,7 +518,9 @@ class ShopThemeSerializer(serializers.Serializer):
     show_wordmark = serializers.BooleanField(
         help_text="Показывать слово рядом с плашкой «DiDi» в логотипе"
     )
-    wordmark = serializers.CharField(help_text="Слово рядом с плашкой «DiDi» (до 6 символов)")
+    wordmark = serializers.CharField(
+        help_text="Слово рядом с плашкой «DiDi» (до 6 символов; пусто — без слова)"
+    )
 
 
 class AdminThemeSerializer(ShopThemeSerializer):
@@ -551,7 +553,8 @@ class AdminThemeWriteSerializer(serializers.Serializer):
     )
     wordmark = serializers.CharField(
         required=False,
+        allow_blank=True,
         max_length=40,
         trim_whitespace=False,
-        help_text="Слово рядом с «DiDi», до 6 символов; не передано — прежнее",
+        help_text="Слово рядом с «DiDi», до 6 символов, пусто — без слова; не передано — прежнее",
     )

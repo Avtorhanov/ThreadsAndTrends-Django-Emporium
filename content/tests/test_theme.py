@@ -275,7 +275,12 @@ def test_wordmark_text_editable_and_limited(admin_api, client):
     assert saved.status_code == 200 and saved.json()["wordmark"] == "Мода"
     assert 'class="word__accent">Мода<' in client.get("/").content.decode()
     assert client.get("/api/v1/content/theme/").json()["wordmark"] == "Мода"
-    for bad in ("", "   ", "market1", "<b>", "shop!"):
+    # Пусто — без слова: в шапке только плашка «DiDi».
+    empty = admin_api.put(ADMIN, {**body, "wordmark": "  "}, format="json")
+    assert empty.status_code == 200 and empty.json()["wordmark"] == ""
+    assert 'class="word__accent"' not in client.get("/").content.decode()
+    admin_api.put(ADMIN, {**body, "wordmark": "Мода"}, format="json")
+    for bad in ("market1", "<b>", "shop!"):
         response = admin_api.put(ADMIN, {**body, "wordmark": bad}, format="json")
         assert response.status_code == 400 and "wordmark" in response.json(), bad
     # Не передано — прежнее.

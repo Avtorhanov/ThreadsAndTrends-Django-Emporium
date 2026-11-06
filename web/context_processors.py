@@ -79,6 +79,6 @@ def storefront(request):
         "seller": seller,
         "seller_line": seller_line,
         # Слово рядом с плашкой «DiDi» (панель → «Внешний вид» → «Тема магазина»).
-        "show_wordmark": look.shop_theme().show_wordmark,
+        "show_wordmark": look.shop_theme().show_wordmark and bool(look.shop_theme().wordmark),
         "wordmark": look.shop_theme().wordmark,
     }

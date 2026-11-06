@@ -1,18 +1,35 @@
-import { type FormEvent, useState } from "react";
+import { type KeyboardEvent, useEffect, useState } from "react";
 
 import { type Variant, variantsService } from "../../api/catalog";
 import { ApiError } from "../../api/errors";
 import { Icon } from "../Icon";
 
+/** Изменение одного варианта, ещё не сохранённое. */
+export type VariantPatch = { size: string; sku: string; stock: number };
+export type VariantEdits = Map<number, VariantPatch>;
+
+type Draft = { size: string; sku: string; stock: string };
+
 type Props = {
   productId: number;
   variants: Variant[];
   onChanged: () => void;
+  /** Несохранённые строки — наверх: их сохраняет и общая кнопка «Сохранить» товара. */
+  onPendingChange?: (edits: VariantEdits) => void;
 };
 
 function message(error: unknown): string {
   if (!(error instanceof ApiError)) return "Действие не выполнено.";
   return Object.values(error.fieldErrors)[0]?.[0] ?? error.message;
+}
+
+function draftOf(variant: Variant): Draft {
+  return { size: variant.size ?? "", sku: variant.sku ?? "", stock: String(variant.stock ?? 0) };
+}
+
+function validStock(value: string): boolean {
+  const number = Number(value);
+  return value.trim() !== "" && Number.isInteger(number) && number >= 0;
 }
 
 /** Остаток: поле и «−/+» по краям — на телефоне не нужно вызывать цифровую клавиатуру ради ±1. */
@@ -39,78 +56,58 @@ function StockInput({ value, onChange, label }: { value: string; onChange: (valu
   );
 }
 
-function VariantRow({ variant, busy, onSave, onDelete }: {
-  variant: Variant;
-  busy: boolean;
-  onSave: (patch: { size: string; sku: string; stock: number }) => void;
-  onDelete: () => void;
-}) {
-  const [size, setSize] = useState(variant.size ?? "");
-  const [sku, setSku] = useState(variant.sku ?? "");
-  const [stock, setStock] = useState(String(variant.stock ?? 0));
-  const stockNumber = Number(stock);
-  const valid = Number.isInteger(stockNumber) && stockNumber >= 0;
-  const dirty =
-    size !== (variant.size ?? "") || sku !== (variant.sku ?? "") || stockNumber !== (variant.stock ?? 0);
-  const title = variant.size || "Без размера";
-
-  function submit(event: FormEvent) {
+/** Enter в поле строки — действие строки, а не отправка формы товара (строки — не формы:
+ * редактор стоит внутри формы товара, вложенные <form> браузер не поддерживает). */
+function onEnter(action: () => void) {
+  return (event: KeyboardEvent) => {
+    if (event.key !== "Enter") return;
     event.preventDefault();
-    if (dirty && valid) onSave({ size, sku, stock: stockNumber });
-  }
-
-  // Строка — своя форма: Enter в любом поле сохраняет только её.
-  return (
-    <form className={dirty ? "variant-row is-dirty" : "variant-row"} onSubmit={submit}>
-      <input
-        className="variant-size"
-        value={size}
-        placeholder="Без размера"
-        maxLength={50}
-        aria-label={`Размер: ${title}`}
-        onChange={(e) => setSize(e.target.value)}
-      />
-      <input
-        className="variant-sku"
-        value={sku}
-        maxLength={64}
-        aria-label={`Артикул: ${title}`}
-        onChange={(e) => setSku(e.target.value)}
-      />
-      <StockInput value={stock} onChange={setStock} label={`Остаток: ${title}`} />
-      {dirty ? (
-        <button
-          type="submit"
-          className="icon-button variant-action is-save"
-          disabled={busy || !valid}
-          aria-label={`Сохранить ${title}`}
-          title="Сохранить"
-        >
-          <Icon name="check" size={18} />
-        </button>
-      ) : (
-        <button
-          type="button"
-          className="icon-button variant-action is-delete"
-          disabled={busy}
-          aria-label={`Удалить ${title}`}
-          title="Удалить"
-          onClick={onDelete}
-        >
-          <Icon name="trash" size={18} />
-        </button>
-      )}
-    </form>
-  );
+    action();
+  };
 }
 
-export function VariantsEditor({ productId, variants, onChanged }: Props) {
+export function VariantsEditor({ productId, variants, onChanged, onPendingChange }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<number, Draft>>({});
+  const [all, setAll] = useState("1");
   const [size, setSize] = useState("");
   const [sku, setSku] = useState("");
   const [stock, setStock] = useState("0");
   const single = variants.length === 1 && !variants[0]?.size;
+
+  // Данные с сервера обновились (сохранение, перезагрузка) — черновики строк сбрасываются.
+  const version = variants.map((v) => `${v.id}:${v.size}:${v.sku}:${v.stock}`).join("|");
+  useEffect(() => {
+    setDrafts({});
+  }, [version]);
+
+  const rows = variants.map((variant) => {
+    const original = draftOf(variant);
+    const draft = drafts[variant.id] ?? original;
+    const dirty = draft.size !== original.size || draft.sku !== original.sku || Number(draft.stock) !== variant.stock;
+    return { variant, draft, dirty, valid: validStock(draft.stock) };
+  });
+
+  const pendingKey = rows
+    .filter((row) => row.dirty && row.valid)
+    .map((row) => `${row.variant.id}:${row.draft.size}:${row.draft.sku}:${row.draft.stock}`)
+    .join("|");
+  useEffect(() => {
+    if (!onPendingChange) return;
+    const edits: VariantEdits = new Map();
+    for (const row of rows) {
+      if (row.dirty && row.valid) {
+        edits.set(row.variant.id, { size: row.draft.size, sku: row.draft.sku, stock: Number(row.draft.stock) });
+      }
+    }
+    onPendingChange(edits);
+    // rows пересчитываются каждый рендер; меняется только содержимое — pendingKey.
+  }, [pendingKey]);
+
+  function edit(id: number, base: Draft, patch: Partial<Draft>) {
+    setDrafts((current) => ({ ...current, [id]: { ...(current[id] ?? base), ...patch } }));
+  }
 
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
@@ -127,8 +124,23 @@ export function VariantsEditor({ productId, variants, onChanged }: Props) {
     }
   }
 
-  async function add(event: FormEvent) {
-    event.preventDefault();
+  function saveRow(id: number, draft: Draft) {
+    if (!validStock(draft.stock)) return;
+    void run(() => variantsService.update(id, { size: draft.size, sku: draft.sku, stock: Number(draft.stock) }));
+  }
+
+  /** «Всем размерам»: остаток у каждой строки — сохраняется вместе с товаром или ✓ у строк. */
+  function applyAll() {
+    if (!validStock(all)) return;
+    setDrafts((current) => {
+      const next = { ...current };
+      for (const variant of variants) next[variant.id] = { ...(current[variant.id] ?? draftOf(variant)), stock: all };
+      return next;
+    });
+  }
+
+  async function add() {
+    if (busy) return;
     const ok = await run(() =>
       variantsService.create(productId, { size: size.trim(), sku: sku.trim(), stock: Number(stock) || 0 }),
     );
@@ -139,36 +151,100 @@ export function VariantsEditor({ productId, variants, onChanged }: Props) {
     }
   }
 
+  const anyDirty = rows.some((row) => row.dirty);
+
   return (
     <div className="card variants-card">
       <h2>Варианты и остатки</h2>
       <p className="muted small">
         {single
           ? "Товар без размеров — один вариант «Без размера». Чтобы добавить размеры, сначала впишите размер ему."
-          : "Изменения строки сохраняет ✓ справа — отдельно от кнопки «Сохранить» товара."}
+          : "Изменённые строки сохраняет «Сохранить» товара (или ✓ у строки)."}
       </p>
+      {variants.length > 1 ? (
+        <div className="variants-all">
+          <span className="variants-all-label">Всем размерам</span>
+          <StockInput value={all} onChange={setAll} label="Остаток всем размерам" />
+          <button type="button" className="button button-ghost" disabled={busy || !validStock(all)} onClick={applyAll}>
+            Задать
+          </button>
+        </div>
+      ) : null}
       {error ? <p className="alert">{error}</p> : null}
+      {anyDirty ? (
+        <p className="note note-warning small" role="status">
+          Остатки изменены — нажмите «Сохранить».
+        </p>
+      ) : null}
       <div className={busy ? "variants is-loading" : "variants"}>
         <div className="variant-head" aria-hidden="true">
           <span>Размер</span>
           <span>Артикул</span>
           <span>Остаток</span>
         </div>
-        {variants.map((variant) => (
-          <VariantRow
-            // Ключ с версией данных: после сохранения строка инициализируется заново.
-            key={`${variant.id}:${variant.size}:${variant.sku}:${variant.stock}`}
-            variant={variant}
-            busy={busy}
-            onSave={(patch) => void run(() => variantsService.update(variant.id, patch))}
-            onDelete={() => {
-              if (window.confirm(`Удалить вариант «${variant.size || "Без размера"}»?`)) {
-                void run(() => variantsService.remove(variant.id));
-              }
-            }}
-          />
-        ))}
-        <form className="variant-row variant-new" onSubmit={add}>
+        {rows.map(({ variant, draft, dirty, valid }) => {
+          const title = variant.size || "Без размера";
+          const base = draftOf(variant);
+          const save = () => {
+            if (dirty && valid) saveRow(variant.id, draft);
+          };
+          return (
+            <div
+              key={variant.id}
+              className={dirty ? "variant-row is-dirty" : "variant-row"}
+              role="group"
+              aria-label={`Вариант ${title}`}
+              onKeyDown={onEnter(save)}
+            >
+              <input
+                className="variant-size"
+                value={draft.size}
+                placeholder="Без размера"
+                maxLength={50}
+                aria-label={`Размер: ${title}`}
+                onChange={(e) => edit(variant.id, base, { size: e.target.value })}
+              />
+              <input
+                className="variant-sku"
+                value={draft.sku}
+                maxLength={64}
+                aria-label={`Артикул: ${title}`}
+                onChange={(e) => edit(variant.id, base, { sku: e.target.value })}
+              />
+              <StockInput
+                value={draft.stock}
+                onChange={(value) => edit(variant.id, base, { stock: value })}
+                label={`Остаток: ${title}`}
+              />
+              {dirty ? (
+                <button
+                  type="button"
+                  className="icon-button variant-action is-save"
+                  disabled={busy || !valid}
+                  aria-label={`Сохранить ${title}`}
+                  title="Сохранить строку"
+                  onClick={save}
+                >
+                  <Icon name="check" size={18} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="icon-button variant-action is-delete"
+                  disabled={busy}
+                  aria-label={`Удалить ${title}`}
+                  title="Удалить"
+                  onClick={() => {
+                    if (window.confirm(`Удалить вариант «${title}»?`)) void run(() => variantsService.remove(variant.id));
+                  }}
+                >
+                  <Icon name="trash" size={18} />
+                </button>
+              )}
+            </div>
+          );
+        })}
+        <div className="variant-row variant-new" role="group" aria-label="Новый вариант" onKeyDown={onEnter(() => void add())}>
           <input
             className="variant-size"
             placeholder="Размер"
@@ -187,15 +263,16 @@ export function VariantsEditor({ productId, variants, onChanged }: Props) {
           />
           <StockInput value={stock} onChange={setStock} label="Остаток нового варианта" />
           <button
-            type="submit"
+            type="button"
             className="icon-button variant-action is-add"
             disabled={busy}
             aria-label="Добавить вариант"
             title="Добавить вариант"
+            onClick={() => void add()}
           >
             <Icon name="plus" size={18} />
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );

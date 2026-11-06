@@ -352,6 +352,7 @@ export function ProductsPage() {
             <strong>Выбрано: {selected.size}</strong>
             {allChecked ? null : (
               <button type="button" className="bulk-link" onClick={() => setSelected(new Set(rows.map((row) => row.id)))}>
+                <Icon name="check" size={14} />
                 Все на странице
               </button>
             )}

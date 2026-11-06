@@ -71,7 +71,8 @@ export function ProductBatchPage() {
   const [baseName, setBaseName] = useState("");
   const [pasteZone, setPasteZone] = useState(false);
   const [sizes, setSizes] = useState<string[]>(DEFAULT_BATCH_SIZES);
-  const [stock, setStock] = useState(0);
+  // По умолчанию 1: с нулём новые товары со статусом «В наличии» приходили «нет в наличии».
+  const [stock, setStock] = useState(1);
   const [fallback, setFallback] = useState<number | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);

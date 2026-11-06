@@ -248,9 +248,10 @@ const useStyles = makeStyles(({ c }) => ({
   chipText: { fontFamily: fonts.text700, fontSize: 14, color: c.ink },
   pressed: { opacity: 0.7 },
   text: { padding: 18, borderRadius: radius.card, backgroundColor: c.card },
-  textWithImage: { padding: 0, overflow: "hidden" },
-  textImage: { width: "100%", aspectRatio: 16 / 10 },
+  // Картинка — в рамке, как фото на карточках товара.
+  textWithImage: { padding: 6, overflow: "hidden" },
+  textImage: { width: "100%", aspectRatio: 16 / 10, borderRadius: radius.image },
   textPlain: { gap: 8 },
-  textBody: { gap: 8, padding: 18 },
+  textBody: { gap: 8, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12 },
   paragraph: { fontFamily: fonts.text600, fontSize: 15, lineHeight: 22, color: c.ink },
 }));

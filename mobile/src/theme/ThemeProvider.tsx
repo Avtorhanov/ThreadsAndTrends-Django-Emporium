@@ -178,8 +178,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setPreference,
       setLook,
       palettes,
-      showWordmark: shop?.show_wordmark ?? true,
-      wordmark: shop?.wordmark || "shop",
+      // Пустое слово — только плашка «DiDi», как выключенный переключатель.
+      showWordmark: (shop?.show_wordmark ?? true) && shop?.wordmark !== "",
+      wordmark: shop?.wordmark ?? "shop",
       toggle: () => setPreference(theme.name === "dark" ? "light" : "dark"),
     }),
     [theme, preference, setPreference, setLook, palettes, shop],
