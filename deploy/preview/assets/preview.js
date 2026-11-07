@@ -514,11 +514,13 @@
     var pd = document.querySelector(".pd");
     var main = document.getElementById("main");
     if (!full || !sim.isLive(full)) {
-      var target = pd || main;
-      if (target) {
-        target.outerHTML = '<section class="page">' + emptyHTML("Товар недоступен", "Его сняли с продажи или скрыли. Посмотрите другие товары.", "box",
-          '<a class="btn btn--dark" href="' + link("/") + '">В каталог</a>') + "</section>";
-      }
+      // Меняется содержимое <main>, а не он сам: у .main — отступ под фиксированную шапку
+      // (без него заглушка уходит под шапку, а короткая страница не прокручивается).
+      var section = '<section class="page page--narrow">' + emptyHTML("Товар недоступен", "Его сняли с продажи или скрыли. Посмотрите другие товары.", "box",
+        '<a class="btn btn--dark" href="' + link("/") + '">В каталог</a>') + "</section>";
+      if (main) main.innerHTML = section;
+      else if (pd) pd.outerHTML = section;
+      document.body.classList.remove("page-product");
       document.title = "Товар недоступен — DiDi-shop";
       return;
     }
@@ -550,7 +552,8 @@
     var gallery = '<div class="pd__gallery"><a class="glass-btn pd__back" href="' + link("/category/" + cat.slug + "/") + '" data-back aria-label="Назад к категории ' + esc(cat.name) + '">' +
       icon("back", 22) + '</a>' +
       // «Поделиться» и просмотр фото на весь экран — как web/catalog/product.html.
-      '<a class="glass-btn pd__share" href="' + esc(location.origin + location.pathname) + '" data-share data-share-title="' + esc(p.name) +
+      // Публичный адрес товара, без ветки «/me» вошедшего покупателя демо (как product.html на сервере).
+      '<a class="glass-btn pd__share" href="' + esc(location.origin + BASE + "/product/" + p.slug + "/") + '" data-share data-share-title="' + esc(p.name) +
       '" aria-label="Поделиться ссылкой на товар">' + icon("share", 22) + "</a>" +
       '<div class="pd__frame"><div class="hero tone-' + t + '">';
     if (images.length) {
