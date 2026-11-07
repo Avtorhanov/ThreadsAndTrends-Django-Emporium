@@ -3,6 +3,7 @@ import { type FormEvent, useState } from "react";
 import { type Category, categoriesService } from "../api/catalog";
 import { ApiError } from "../api/errors";
 import { sortCategoryTree, useCategories } from "../hooks/useCatalog";
+import { Icon } from "../components/Icon";
 import { Table } from "../components/Table";
 
 function message(error: unknown): string {
@@ -89,7 +90,7 @@ export function CategoriesPage() {
       {error ? <p className="alert">{error}</p> : null}
       {actionError ? <p className="alert">{actionError}</p> : null}
 
-      <Table loading={loading || busy}>
+      <Table loading={loading || busy} className="table-categories">
         <thead>
           <tr>
             <th>Название</th>
@@ -110,6 +111,7 @@ export function CategoriesPage() {
                 <input
                   className="input-narrow"
                   type="number"
+                  aria-label={`Порядок: ${category.name}`}
                   min={0}
                   defaultValue={category.position ?? 0}
                   disabled={busy}
@@ -128,7 +130,8 @@ export function CategoriesPage() {
               </td>
               <td className="actions">
                 <button type="button" className="button button-ghost" disabled={busy} onClick={() => rename(category)}>
-                  Переименовать
+                  <Icon name="pencil" size={18} />
+                  <span className="cat-action-label">Переименовать</span>
                 </button>
                 <button
                   type="button"
@@ -140,7 +143,8 @@ export function CategoriesPage() {
                     )
                   }
                 >
-                  {category.is_active ? "Скрыть" : "Показать"}
+                  <Icon name={category.is_active ? "eyeOff" : "eye"} size={18} />
+                  <span className="cat-action-label">{category.is_active ? "Скрыть" : "Показать"}</span>
                 </button>
                 <button
                   type="button"
@@ -149,7 +153,8 @@ export function CategoriesPage() {
                   title={category.children_count > 0 ? "Сначала удалите подкатегории" : undefined}
                   onClick={() => remove(category)}
                 >
-                  Удалить
+                  <Icon name="trash" size={18} />
+                  <span className="cat-action-label">Удалить</span>
                 </button>
               </td>
             </tr>

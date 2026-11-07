@@ -1,0 +1,14 @@
+{# Таблица размеров обуви (store/sizes.py): раскрывается без JavaScript. #}
+<details class="size-guide">
+  <summary class="size-guide__toggle"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="#i-ruler"/></svg>Таблица размеров</summary>
+  <div class="size-guide__body">
+    <p class="size-guide__hint">Длина стопы — от пятки до большого пальца, стоя.</p>
+    <table class="size-guide__table">
+      <thead><tr><th scope="col">RU</th><th scope="col">Стопа, см</th><th scope="col">US жен.</th><th scope="col">US муж.</th></tr></thead>
+      <tbody>
+        {% for row in size_chart %}<tr><th scope="row">{{ row.ru }}</th><td>{{ row.cm }}</td><td>{{ row.women|default:"—" }}</td><td>{{ row.men|default:"—" }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>

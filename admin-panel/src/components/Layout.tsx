@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Navigate, NavLink, Outlet, useLocation } from "react-router";
 
 import type { StaffUser } from "../auth/authService";
@@ -203,7 +203,10 @@ export function Layout() {
               <p className="note note-info view-only">Только просмотр: изменения в этом разделе вам недоступны.</p>
             ) : null}
             <div key={refreshKey} className="screen">
-              <Outlet />
+              {/* Экран грузится отдельным куском (lib/lazyPage.ts): меню и шапка остаются на месте. */}
+              <Suspense fallback={<div className="centered">Загрузка…</div>}>
+                <Outlet />
+              </Suspense>
             </div>
           </>
         )}

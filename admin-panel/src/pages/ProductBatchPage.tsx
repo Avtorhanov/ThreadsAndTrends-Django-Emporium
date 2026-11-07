@@ -6,9 +6,7 @@ import { ApiError } from "../api/errors";
 import { BackLink } from "../components/BackLink";
 import { Icon } from "../components/Icon";
 import {
-  BATCH_SIZES,
   type BatchCategory,
-  DEFAULT_BATCH_SIZES,
   MAX_BATCH_PHOTOS,
   batchCategories,
   categoryLabel,
@@ -18,6 +16,8 @@ import {
 import { CategorySheet } from "../components/catalog/CategorySheet";
 import { imagesFrom, normalizeImage, readClipboardImages, usePasteImages } from "../components/catalog/imageInput";
 import { PasteZone } from "../components/catalog/PasteZone";
+import { SizeChartSheet } from "../components/catalog/SizeChartSheet";
+import { SIZE_TYPES, type SizeType } from "../components/catalog/sizes";
 import { MAX_PRODUCT_IMAGES } from "../components/catalog/PendingPhotos";
 import { useCategories, useLabels } from "../hooks/useCatalog";
 import { parseRublesToKopecks } from "../lib/money";
@@ -70,7 +70,9 @@ export function ProductBatchPage() {
   const [price, setPrice] = useState("");
   const [baseName, setBaseName] = useState("");
   const [pasteZone, setPasteZone] = useState(false);
-  const [sizes, setSizes] = useState<string[]>(DEFAULT_BATCH_SIZES);
+  const [sizeType, setSizeType] = useState<SizeType>(SIZE_TYPES[0]!);
+  const [sizes, setSizes] = useState<string[]>(SIZE_TYPES[0]!.defaults);
+  const [sizeChart, setSizeChart] = useState(false);
   // По умолчанию 1: с нулём новые товары со статусом «В наличии» приходили «нет в наличии».
   const [stock, setStock] = useState(1);
   const [fallback, setFallback] = useState<number | null>(null);
@@ -293,10 +295,17 @@ export function ProductBatchPage() {
     setSheet(false);
   }
 
+  // Порядок отмеченных — как в сетке типа: в том же порядке встанут варианты товара.
   function toggleSize(size: string) {
     setSizes((prev) =>
-      prev.includes(size) ? prev.filter((item) => item !== size) : BATCH_SIZES.filter((item) => item === size || prev.includes(item)),
+      prev.includes(size) ? prev.filter((item) => item !== size) : sizeType.sizes.filter((item) => item === size || prev.includes(item)),
     );
+  }
+
+  function pickSizeType(next: SizeType) {
+    if (next.id === sizeType.id) return;
+    setSizeType(next);
+    setSizes(next.defaults);
   }
 
   async function create() {
@@ -702,9 +711,30 @@ export function ProductBatchPage() {
           </section>
 
           <section className="card batch-field">
-            <h2>Размеры</h2>
-            <div className="batch-options" role="group" aria-label="Размеры">
-              {BATCH_SIZES.map((size) => (
+            <div className="batch-field-head">
+              <h2>Размеры</h2>
+              {sizeType.shoes ? (
+                <button type="button" className="link-button" onClick={() => setSizeChart(true)}>
+                  <Icon name="ruler" size={16} /> Таблица размеров
+                </button>
+              ) : null}
+            </div>
+            <div className="seg-switch seg-switch-4" role="radiogroup" aria-label="Тип размеров">
+              {SIZE_TYPES.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={sizeType.id === item.id}
+                  className={sizeType.id === item.id ? "is-on" : undefined}
+                  onClick={() => pickSizeType(item)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <div className="batch-options" role="group" aria-label={`Размеры: ${sizeType.label}`}>
+              {sizeType.sizes.map((size) => (
                 <button
                   key={size}
                   type="button"
@@ -729,6 +759,7 @@ export function ProductBatchPage() {
               </span>
             </div>
             <p className="muted small">
+              {sizeType.id === "kids" ? "Рост ребёнка, см. " : ""}
               {sizes.length
                 ? "0 публикации не мешает: товар будет «нет в наличии», пока не впишете остаток."
                 : "Без размеров — один вариант «Без размера»."}
@@ -774,6 +805,8 @@ export function ProductBatchPage() {
           onClose={() => setSheet(false)}
         />
       ) : null}
+
+      {sizeChart ? <SizeChartSheet onClose={() => setSizeChart(false)} /> : null}
 
       {ready && leaf.length === 0 ? (
         <p className="note note-warning">

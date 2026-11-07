@@ -81,7 +81,10 @@ body {
   /* Фон — без перехода: Safari 26 красит полосы браузера (адрес, статус-бар) в цвет фона body
      и при плавной смене темы оставлял цвет прежней темы. */
   transition: color .45s ease;
+  /* Подвал прижат к низу экрана и на короткой странице (пустая корзина, 404, вход). */
+  display: flex; flex-direction: column;
 }
+body > .main { flex: 1 0 auto; }
 h1, h2, h3, p, ul, ol, figure, fieldset { margin: 0; }
 fieldset { border: 0; padding: 0; min-width: 0; }
 legend { padding: 0; }
@@ -598,6 +601,23 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .ask__link:active { transform: scale(.97); }
 .ask__link .channel__icon { width: 46px; height: 46px; border-radius: calc(11px * var(--radius-scale)); }
 @keyframes ask-in { from { opacity: 0; transform: translateY(-8px); } }
+
+/* Таблица размеров обуви (_size_chart.html): ссылка под размерами, раскрывается без JS. */
+.size-guide { margin-top: 10px; }
+.size-guide__toggle {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; list-style: none; cursor: pointer;
+  font: 700 14px var(--font-text); color: var(--ink);
+  text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); text-underline-offset: 3px;
+}
+.size-guide__toggle::-webkit-details-marker { display: none; }
+.size-guide__body { margin-top: 6px; padding: 12px 14px; border-radius: var(--radius-control); background: var(--card); box-shadow: var(--shadow-control); }
+.size-guide[open] .size-guide__body { animation: ask-in .32s var(--ease-out) both; }
+.size-guide__hint { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+.size-guide__table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; text-align: center; }
+.size-guide__table th, .size-guide__table td { padding: 7px 4px; border-bottom: 1px solid var(--border); }
+.size-guide__table tbody tr:last-child > * { border-bottom: 0; }
+.size-guide__table thead th { color: var(--muted); font-size: 12px; font-weight: 700; }
+.size-guide__table tbody th { font-weight: 800; }
 
 /* Блоки карточки появляются по очереди. */
 .rise { animation: rise .32s var(--ease-out) both; }

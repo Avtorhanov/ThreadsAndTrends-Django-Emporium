@@ -508,6 +508,20 @@
       '<svg class="ic ask__chev" width="20" height="20" aria-hidden="true"><use href="#i-chevron"/></svg></summary><div class="ask__body">' + links + "</div></details>";
   }
 
+  // Таблица размеров обуви — как web/catalog/_size_chart.html (данные — store/sizes.py).
+  var SHOE_CHART = [[35, "22,5", "5,5", null], [36, "23", "6", null], [37, "24", "7,5", null], [38, "24,5", "8", "6,5"],
+    [39, "25", "8,5", "7"], [40, "26", "10", "8"], [41, "26,5", "10,5", "9"], [42, "27", "11", "9,5"],
+    [43, "28", null, "10,5"], [44, "28,5", null, "11"], [45, "29", null, "12"], [46, "30", null, "13"]];
+
+  function sizeChartHTML() {
+    return '<details class="size-guide"><summary class="size-guide__toggle">' + icon("ruler", 18) + "Таблица размеров</summary>" +
+      '<div class="size-guide__body"><p class="size-guide__hint">Длина стопы — от пятки до большого пальца, стоя.</p>' +
+      '<table class="size-guide__table"><thead><tr><th scope="col">RU</th><th scope="col">Стопа, см</th><th scope="col">US жен.</th><th scope="col">US муж.</th></tr></thead><tbody>' +
+      SHOE_CHART.map(function (r) {
+        return '<tr><th scope="row">' + r[0] + "</th><td>" + r[1] + "</td><td>" + (r[2] || "—") + "</td><td>" + (r[3] || "—") + "</td></tr>";
+      }).join("") + "</tbody></table></div></details>";
+  }
+
   function renderProduct(data) {
     var slug = HERE.split("/")[2];
     var full = sim.product(slug);
@@ -602,7 +616,7 @@
         buy += '<fieldset class="rise r2 sizes"><legend class="label">Размер</legend><div class="sizes__list">' + sizes.map(function (s) {
           return '<label class="sz' + (s.available ? "" : " is-off") + '"><input type="radio" name="variant" value="' + s.v.id + '"' +
             (s.available ? "" : " disabled") + (s.v.id === chosen ? " checked" : "") + ' required><span>' + esc(s.v.size || "Без размера") + "</span></label>";
-        }).join("") + "</div></fieldset>";
+        }).join("") + "</div>" + (sizes.some(function (s) { return / US$/.test(s.v.size || ""); }) ? sizeChartHTML() : "") + "</fieldset>";
       }
       buy += descHTML + '<div class="rise r4 buy__bar">';
       if (inStock) {

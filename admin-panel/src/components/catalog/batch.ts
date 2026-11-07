@@ -1,9 +1,6 @@
 import type { Category, ProductRow } from "../../api/catalog";
 import { isLeaf, sortCategoryTree } from "../../hooks/useCatalog";
 
-/** Размеры, из которых собирается сетка пачки; по умолчанию — S–XL. */
-export const BATCH_SIZES = ["XS", "S", "M", "L", "XL", "XXL"] as const;
-export const DEFAULT_BATCH_SIZES = ["S", "M", "L", "XL"];
 export const MAX_BATCH_PHOTOS = 60;
 
 /** Цветовая метка категории в пачке: по порядку категорий, по кругу (8 тонов в styles.css). */

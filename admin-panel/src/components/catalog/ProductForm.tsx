@@ -4,6 +4,8 @@ import type { Category, Product, ProductCreate, ProductLabel } from "../../api/c
 import { ApiError, type FieldErrors } from "../../api/errors";
 import { isLeaf, sortCategoryTree } from "../../hooks/useCatalog";
 import { kopecksToInput, parseRublesToKopecks } from "../../lib/money";
+import { SizeChartSheet } from "./SizeChartSheet";
+import { SIZE_TYPES, hasShoeSizes } from "./sizes";
 
 export type ProductFormValues = Omit<ProductCreate, "variants"> & { sizes: string[] };
 
@@ -37,13 +39,6 @@ function Group({ number, title, aside, children }: { number: number; title: stri
   );
 }
 
-// Готовые наборы размеров: одним нажатием, потом можно убрать лишние.
-const SIZE_PRESETS: { label: string; sizes: string[] }[] = [
-  { label: "Одежда", sizes: ["XS", "S", "M", "L", "XL"] },
-  { label: "Обувь", sizes: ["36", "37", "38", "39", "40", "41", "42", "43", "44"] },
-  { label: "Дети, рост", sizes: ["116", "122", "128", "134", "140", "146", "152", "158", "164"] },
-];
-
 function FieldError({ errors, name }: { errors: FieldErrors; name: string }) {
   const message = errors[name]?.[0];
   return message ? <span className="field-error">{message}</span> : null;
@@ -52,6 +47,7 @@ function FieldError({ errors, name }: { errors: FieldErrors; name: string }) {
 /** Размеры чипами: Enter или запятая — добавить, × — убрать. Пусто — товар без размера. */
 function SizesInput({ sizes, onChange }: { sizes: string[]; onChange: (sizes: string[]) => void }) {
   const [draft, setDraft] = useState("");
+  const [chart, setChart] = useState(false);
   const add = (values: string[]) => {
     const next = [...sizes];
     for (const raw of values) {
@@ -100,17 +96,24 @@ function SizesInput({ sizes, onChange }: { sizes: string[]; onChange: (sizes: st
         />
       </div>
       <div className="presets">
-        {SIZE_PRESETS.map((preset) => (
-          <button key={preset.label} type="button" className="preset" onClick={() => add(preset.sizes)}>
+        {/* Готовые наборы по типам (как в пачке): одним нажатием, потом можно убрать лишние. */}
+        {SIZE_TYPES.map((preset) => (
+          <button key={preset.id} type="button" className="preset" onClick={() => add(preset.defaults)}>
             + {preset.label}
           </button>
         ))}
+        {hasShoeSizes(sizes) ? (
+          <button type="button" className="preset" onClick={() => setChart(true)}>
+            Таблица размеров
+          </button>
+        ) : null}
         {sizes.length ? (
           <button type="button" className="preset preset-clear" onClick={() => onChange([])}>
             Очистить
           </button>
         ) : null}
       </div>
+      {chart ? <SizeChartSheet onClose={() => setChart(false)} /> : null}
     </div>
   );
 }

@@ -38,6 +38,7 @@ const PATHS = {
   tag: "M3 12V4h8l10 10-7 7zM7.5 8.5h.01",
   pencil: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4",
   external: "M14 4h6v6M20 4l-9 9M18 14v6H4V6h6",
+  ruler: "M3 17 17 3l4 4L7 21zM7 13l2 2M10 10l2 2M13 7l2 2",
   undo: "M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3",
 } as const;
 
