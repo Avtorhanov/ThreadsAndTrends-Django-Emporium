@@ -1,0 +1,14 @@
+/* Магазин на GitHub Pages (демо): всплывающие подсказки имитации. На сайте не подключается. */
+.pv-toast {
+  position: fixed; left: 50%; bottom: calc(110px + env(safe-area-inset-bottom, 0px)); z-index: 70;
+  max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 16px;
+  background: var(--ink); color: var(--bg); box-shadow: var(--shadow-card);
+  font: 700 14px/1.35 var(--font-text); text-align: center;
+  transform: translate(-50%, 12px); opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+}
+.pv-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+@media (min-width: 900px) { .pv-toast { bottom: 32px; } }
+@media (prefers-reduced-motion: reduce) { .pv-toast { transition: opacity .15s ease; transform: translate(-50%, 0); } }
+
+/* Новый товар или заказ (страница-образец через 404): содержимое — после подстановки данных. */
+html[data-sim-pending] #main { visibility: hidden; }

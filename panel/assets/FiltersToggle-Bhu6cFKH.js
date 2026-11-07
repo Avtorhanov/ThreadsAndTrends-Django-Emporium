@@ -1,0 +1,1 @@
+import{n as e}from"./index-B3FJUFVs.js";var t=e();function n({open:e,active:n,onToggle:r}){return(0,t.jsxs)(`button`,{type:`button`,className:`filters-toggle`,"aria-expanded":e,onClick:r,children:[e?`Скрыть фильтры`:`Ещё фильтры`,!e&&n?(0,t.jsx)(`span`,{className:`filters-count`,children:n}):null]})}export{n as t};
