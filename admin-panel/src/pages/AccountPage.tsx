@@ -5,7 +5,6 @@ import { type EmailPending, authService } from "../auth/authService";
 import { useAuth } from "../auth/AuthProvider";
 import { Icon } from "../components/Icon";
 import { storeUrl } from "../lib/site";
-import { BackLink } from "../components/BackLink";
 
 function FieldError({ errors, name }: { errors: FieldErrors; name: string }) {
   const message = errors[name]?.[0];
@@ -338,7 +337,6 @@ export function AccountPage() {
   return (
     <section className="stack account-page">
       <div className="page-header">
-        <BackLink to="/" label="Сводка" />
         <h1>Аккаунт</h1>
         <span className="muted small">{role}</span>
       </div>

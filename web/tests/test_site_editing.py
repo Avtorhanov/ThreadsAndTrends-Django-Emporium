@@ -9,7 +9,7 @@ pytestmark = pytest.mark.django_db
 
 
 def test_footer_and_help_use_blocks_and_texts(client, settings):
-    site.add_block(area="footer", title="Таблица размеров", value="/articles/razmery/")
+    site.add_block(area="help", title="Таблица размеров", value="/articles/razmery/")
     site.set_text("footer.copy", "DiDi — одежда и не только")
     site.set_text("help.title", "Покупателям")
     html = client.get(reverse("web:contacts")).content.decode()
@@ -35,7 +35,9 @@ def test_editor_only_for_staff(client, customer, staff):
     html = client.get(reverse("web:contacts")).content.decode()
     assert "edit.js" in html and 'name="csrf-token"' in html
     assert 'data-text="contacts.title"' in html
-    assert 'data-blocks="help"' in html and 'data-blocks="footer"' in html
+    assert 'data-blocks="help"' in html
+    # Ссылки подвала перенесены в «Помощь»: в подвале только реквизиты и ©.
+    assert 'data-blocks="footer"' not in html
 
 
 def test_contacts_page_marks_blocks_for_editor(client, staff, settings):

@@ -33,8 +33,9 @@ TAG = "admin-catalog"
 class Visibility:
     ACTIVE = "active"
     INACTIVE = "inactive"
+    DRAFT = "draft"
     DELETED = "deleted"
-    CHOICES = [ACTIVE, INACTIVE, DELETED]
+    CHOICES = [ACTIVE, INACTIVE, DRAFT, DELETED]
 
 
 class StockFilter:
@@ -143,11 +144,14 @@ class AdminProductViewSet(
         if visibility == Visibility.ACTIVE:
             queryset = queryset.filter(deleted_at__isnull=True, is_active=True)
         elif visibility == Visibility.INACTIVE:
-            queryset = queryset.filter(deleted_at__isnull=True, is_active=False)
+            queryset = queryset.filter(deleted_at__isnull=True, is_active=False, is_draft=False)
+        elif visibility == Visibility.DRAFT:
+            queryset = queryset.filter(deleted_at__isnull=True, is_draft=True)
         elif visibility == Visibility.DELETED:
             queryset = queryset.filter(deleted_at__isnull=False)
         else:
-            queryset = queryset.filter(deleted_at__isnull=True)
+            # Черновики — отдельным списком («Товары → Черновики»).
+            queryset = queryset.filter(deleted_at__isnull=True, is_draft=False)
 
         label = params.get("label")
         if label == "none":
@@ -187,7 +191,7 @@ class AdminProductViewSet(
                 "status",
                 str,
                 enum=Visibility.CHOICES,
-                description="По умолчанию — кроме удалённых",
+                description="По умолчанию — кроме удалённых и черновиков",
             ),
             OpenApiParameter("label", str, description="id статуса товара; none — без статуса"),
             OpenApiParameter("category", int, description="id категории (с подкатегориями)"),
@@ -236,7 +240,10 @@ class AdminProductViewSet(
     @extend_schema(
         request=AdminProductBulkSerializer,
         responses={200: AdminProductBulkResultSerializer},
-        description="Массово: статус, категория или видимость у отмеченных товаров (до 200).",
+        description=(
+            "Массово: статус, категория, видимость, удаление или восстановление"
+            " у отмеченных товаров (до 200)."
+        ),
     )
     @action(detail=False, methods=["post"])
     def bulk(self, request):

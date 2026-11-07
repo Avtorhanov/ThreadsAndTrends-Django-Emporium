@@ -8,6 +8,7 @@
 Сайт раздаётся локально по тому же пути, что на Pages (PREVIEW_BASE).
 """
 
+import base64
 import functools
 import http.server
 import json
@@ -126,6 +127,24 @@ def main(site: Path, shots: Path) -> None:
         assert page.locator("[data-header].is-revealed:not(.is-compact)").count() == 1
         page.screenshot(path=shots / "scroll-up-bars-iphone.png")
         print("Меню при прокрутке: прячутся вниз, возвращаются вверх: ок")
+
+        # 1б. Масштаб интерфейса (профиль → «Оформление»): весь интерфейс пропорционально,
+        # страница не шире экрана ни на 80 %, ни на 150 %.
+        for scale in ("80", "150"):
+            page = page_for(IPHONE)
+            page.context.add_cookies([{"name": "text_size", "value": scale, "url": origin}])
+            for path in ("/", "/cart/", "/profile/look/"):
+                page.goto(origin + BASE + path, wait_until="load")
+                assert page.get_attribute("html", "data-text") == scale, (
+                    f"масштаб {scale} не применён"
+                )
+                wide = page.evaluate(
+                    "document.documentElement.scrollWidth - document.documentElement.clientWidth"
+                )
+                assert wide <= 1, f"{path} при {scale} %: шире экрана на {wide} px"
+            page.goto(origin + BASE + "/", wait_until="load")
+            page.screenshot(path=shots / f"scale-{scale}-iphone.png")
+        print("Масштаб 80 % и 150 %: вёрстка в ширину экрана: ок")
 
         # 2. Покупатель: товар → корзина (+1) → вход → оформление → страница заказа.
         page = page_for(IPHONE, pages_404=True)
@@ -246,6 +265,10 @@ def main(site: Path, shots: Path) -> None:
 
 
 PANEL_API = "/api/v1/admin"
+# Фото для «Добавить пачкой»: 1×1 PNG — имитация всё равно перерисует его на canvas.
+PIXEL_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+)
 
 
 def panel_shots(site: Path) -> list[tuple[str, str]]:
@@ -269,6 +292,8 @@ def panel_shots(site: Path) -> list[tuple[str, str]]:
         ("order", f"/panel/orders/{online}/"),
         ("products", "/panel/catalog/products/"),
         ("product", f"/panel/catalog/products/{first('catalog/products')}/"),
+        ("batch", "/panel/catalog/products/batch/"),
+        ("drafts", "/panel/catalog/products/drafts/"),
         ("categories", "/panel/catalog/categories/"),
         ("articles", "/panel/content/articles/"),
         ("customers", "/panel/customers/"),
@@ -335,6 +360,63 @@ def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[s
     page.wait_for_url(f"**{BASE}/panel/")
     page.wait_for_selector("main h1:has-text('Сводка')")
     print("Пароль сотрудника: смена в панели и сброс кодом: ок")
+
+    # «Добавить товар»: одно фото — обычная карточка с этим фото; «Назад» — к списку товаров.
+    page.goto(origin + BASE + "/panel/catalog/products/", wait_until="load")
+    page.click("main .page-header a:has-text('Добавить товар')")
+    page.wait_for_selector(".batch-drop")
+    page.set_input_files(
+        ".batch-drop input[type=file]",
+        [{"name": "one.png", "mimeType": "image/png", "buffer": PIXEL_PNG}],
+    )
+    page.click(".batch-next .batch-cta:has-text('карточка товара')")
+    page.wait_for_selector("main h1:has-text('Новый товар')")
+    assert page.locator(".pending-photos .photo-tile").count() == 1, "фото не перешло в карточку"
+    # Вставка ⌘V: картинка из буфера добавляется к фото карточки.
+    page.evaluate(
+        """async (png) => {
+          const blob = await (await fetch(`data:image/png;base64,${png}`)).blob();
+          const data = new DataTransfer();
+          data.items.add(new File([blob], "paste.png", { type: "image/png" }));
+          window.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data }));
+        }""",
+        base64.b64encode(PIXEL_PNG).decode(),
+    )
+    page.wait_for_function("document.querySelectorAll('.pending-photos .photo-tile').length === 2")
+    page.click("main .page-back")
+    page.wait_for_selector(".batch-drop")
+    print("Добавить товар: одно фото → карточка, вставка ⌘V, «Назад»: ок")
+
+    # «Добавить товар» пачкой: 4 фото → по 2 подряд → категория второму товару, первому — на шаге
+    # «Общее» → 2 черновика → цена одному → «Опубликовать готовые» → черновиком остался один.
+    page.goto(origin + BASE + "/panel/catalog/products/batch/", wait_until="load")
+    page.wait_for_selector(".batch-drop")
+    page.set_input_files(
+        ".batch-drop input[type=file]",
+        [{"name": f"p{n}.png", "mimeType": "image/png", "buffer": PIXEL_PNG} for n in range(4)],
+    )
+    page.click(".batch-chip:has-text('По 2 подряд')")
+    page.locator(".batch-tile").nth(2).click()
+    assert page.locator(".batch-tile.is-selected").count() == 2, "товар выделяется целиком"
+    page.click(".batch-action:has-text('Категория')")
+    page.locator(".sheet-row").nth(0).click()
+    page.screenshot(path=shots / "panel-batch-grid-iphone.png")
+    page.click(".batch-next .batch-cta")
+    page.wait_for_selector(".batch-common")
+    rest = "[role=radiogroup][aria-label='Категория для остальных'] button"
+    page.locator(f".batch-common {rest}").first.click()
+    page.click(".batch-next .batch-cta")
+    page.wait_for_selector(".draft-card", timeout=30_000)
+    assert page.locator(".draft-card").count() == 2, "черновиков не два"
+    page.locator(".draft-check input").nth(0).check()
+    page.fill("#mass-price", "1990")
+    page.click(".batch-price button[type=submit]")
+    page.wait_for_selector(".draft-card .badge-success")
+    page.click(".batch-next .batch-cta")
+    page.wait_for_selector(".note-success:has-text('Опубликовано: 1')")
+    assert page.locator(".draft-card").count() == 1, "опубликованный остался в черновиках"
+    page.screenshot(path=shots / "panel-batch-drafts-iphone.png")
+    print("Товары пачкой: раскладка, категории, черновики, цена и публикация: ок")
 
     screens = panel_shots(site)
     for theme in ("light", "dark"):

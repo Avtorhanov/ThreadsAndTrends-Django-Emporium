@@ -23,6 +23,7 @@ from content.models import (
     HomeBlockKind,
     HomeImage,
     HomePage,
+    ImageSide,
 )
 from store.models import Category, Product
 from store.services.catalog import inspect_image
@@ -47,6 +48,8 @@ MAX_MANUAL_PRODUCTS = 12
 COLLECTION_SIZE = 8
 # Баннер: до 6 картинок (сменяют друг друга); у баннера товара без своих картинок — фото товара.
 MAX_BANNER_IMAGES = 6
+# Текст: одна картинка сверху, слева или справа; новая заменяет прежнюю.
+MAX_TEXT_IMAGES = 1
 # Лента категорий: свои вкладки вместо корневых категорий.
 MAX_LINKS = 12
 LINK_TITLE_MAX = 40
@@ -90,6 +93,7 @@ UPDATE_FIELDS = {
     "source",
     "product_ids",
     "image_ids",
+    "image_side",
     "product",
     "links",
 }
@@ -172,7 +176,7 @@ def update_block(block: HomeBlock, **changes) -> HomeBlock:
         # Порядок и удаление — только среди уже загруженных картинок этого баннера.
         ids = list(changes["image_ids"] or [])
         if len(ids) != len(set(ids)) or not set(ids) <= set(block.image_ids or []):
-            raise ValidationError({"image_ids": "Картинки — только из загруженных к баннеру."})
+            raise ValidationError({"image_ids": "Картинки — только из загруженных к блоку."})
         changes["image_ids"] = ids
     for name, value in changes.items():
         setattr(block, name, value)
@@ -202,6 +206,8 @@ def _validate(block: HomeBlock) -> None:
         block.text = _clean_text(block.text)
         if len(block.text) > TEXT_MAX:
             raise ValidationError({"text": f"Текст — не больше {TEXT_MAX} символов."})
+        if block.image_side not in ImageSide.values:
+            raise ValidationError({"image_side": "Картинка — сверху, слева или справа."})
     elif block.kind == K.COLLECTION:
         if block.source not in CollectionSource.values:
             raise ValidationError({"source": "Выберите, какие товары показывать."})
@@ -286,17 +292,19 @@ def reorder_blocks(ids: list[int]) -> list[HomeBlock]:
 
 @transaction.atomic
 def add_banner_image(block: HomeBlock, uploaded) -> HomeBlock:
-    """Картинка (JPEG, PNG, WebP или GIF) — в конец списка картинок баннера."""
+    """Картинка (JPEG, PNG, WebP или GIF): у баннера — в конец списка, у текста — вместо прежней
+    (прежняя удаляется при публикации, как любая неиспользуемая)."""
     block = HomeBlock.objects.select_for_update().get(pk=block.pk)
-    if block.kind != K.BANNER:
-        raise ValidationError({"image": "Картинка есть только у баннера."})
-    if len(block.image_ids or []) >= MAX_BANNER_IMAGES:
+    if block.kind not in (K.BANNER, K.TEXT):
+        raise ValidationError({"image": "Картинка есть только у баннера и текста."})
+    if block.kind == K.BANNER and len(block.image_ids or []) >= MAX_BANNER_IMAGES:
         raise ValidationError({"image": f"У баннера — не больше {MAX_BANNER_IMAGES} картинок."})
     extension = inspect_image(uploaded, allow_gif=True)
     # Имя от клиента не доверяем: путь строит home_image_path, расширение — по формату.
     uploaded.name = f"upload{extension}"
     image = HomeImage.objects.create(image=uploaded)
-    block.image_ids = [*(block.image_ids or []), image.pk]
+    kept = (block.image_ids or []) if block.kind == K.BANNER else []
+    block.image_ids = [*kept, image.pk]
     block.save(update_fields=["image_ids", "updated_at"])
     _touch()
     transaction.on_commit(lambda: make_home_image_thumbnails.enqueue(image.pk))
@@ -321,6 +329,7 @@ def snapshot_of(block: HomeBlock) -> dict:
         "text": block.text,
         "color": block.color,
         "image_ids": list(block.image_ids or []),
+        "image_side": block.image_side,
         "product_id": block.product_id,
         "category_id": block.category_id,
         "source": block.source,
@@ -390,8 +399,10 @@ class ResolvedBlock:
     text: str
     color: str = ""
     ink: str = INK_DARK
-    # Картинки баннера (HomeImage или фото товара — у обоих .sources) по порядку.
+    # Картинки баннера (HomeImage или фото товара — у обоих .sources) по порядку; у текста — одна.
     images: list = field(default_factory=list)
+    # Текст: где картинка — сверху, слева или справа (на телефоне всегда сверху).
+    image_side: str = ImageSide.TOP
     product: Product | None = None
     category: Category | None = None
     products: list[Product] = field(default_factory=list)
@@ -467,8 +478,12 @@ def resolve(items: list[dict], *, keep_empty: bool = False) -> list[ResolvedBloc
             block.links = _resolve_links(item.get("links") or [])
             if not (roots or block.links) and not keep_empty:
                 continue
-        elif kind == K.TEXT and not (block.title or block.text) and not keep_empty:
-            continue
+        elif kind == K.TEXT:
+            block.images = [images[pk] for pk in _image_ids(item) if pk in images][:MAX_TEXT_IMAGES]
+            side = item.get("image_side")
+            block.image_side = side if side in ImageSide.values else ImageSide.TOP
+            if not (block.title or block.text or block.images) and not keep_empty:
+                continue
         result.append(block)
     return result
 

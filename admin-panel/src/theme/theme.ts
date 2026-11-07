@@ -6,11 +6,12 @@ import {
   type PanelAccent,
   type PanelPalette,
   type PanelRadius,
+  PANEL_TEXT,
   type PanelText,
 } from "./palettes";
 
 /** Оформление панели — личный выбор сотрудника в этом браузере: тема, палитра (те же, что у
- * покупателей, включая «Свою» с акцентом), углы и размер текста. Значение по умолчанию не
+ * покупателей, включая «Свою» с акцентом), углы и масштаб всего интерфейса. Значение по умолчанию не
  * хранится и атрибута на <html> не ставит. До загрузки React выбор применяет
  * public/theme-init.js — без вспышки (белые списки там те же). */
 export type ThemeChoice = "system" | "light" | "dark";
@@ -24,7 +25,7 @@ export const TEXT_KEY = "didi-panel-text";
 export const DEFAULT_PALETTE: PanelPalette = "lime";
 export const DEFAULT_ACCENT: PanelAccent = "lime";
 export const DEFAULT_RADIUS: PanelRadius = "normal";
-export const DEFAULT_TEXT: PanelText = "s";
+export const DEFAULT_TEXT: PanelText = "100";
 
 export const THEME_LABELS: Record<ThemeChoice, string> = {
   system: "Как в системе",
@@ -38,11 +39,10 @@ export const RADIUS_LABELS: Record<PanelRadius, string> = {
   soft: "Мягкие",
 };
 
-export const TEXT_LABELS: Record<PanelText, string> = {
-  s: "Обычный",
-  m: "Крупнее",
-  l: "Крупный",
-};
+export { PANEL_TEXT as TEXT_VALUES };
+
+// Прежний «Размер текста» (s/m/l) — в проценты масштаба.
+const LEGACY_TEXT: Record<string, PanelText> = { s: "100", m: "115", l: "130" };
 
 type Look = {
   choice: ThemeChoice;
@@ -70,7 +70,7 @@ function readLook(): Look {
     palette: pick(read(PALETTE_KEY), PANEL_PALETTES.map((item) => item.key), DEFAULT_PALETTE),
     accent: pick(read(ACCENT_KEY), PANEL_ACCENTS.map((item) => item.key), DEFAULT_ACCENT),
     radius: pick(read(RADIUS_KEY), Object.keys(RADIUS_LABELS) as PanelRadius[], DEFAULT_RADIUS),
-    text: pick(read(TEXT_KEY), Object.keys(TEXT_LABELS) as PanelText[], DEFAULT_TEXT),
+    text: pick(LEGACY_TEXT[read(TEXT_KEY) ?? ""] ?? read(TEXT_KEY), PANEL_TEXT, DEFAULT_TEXT),
   };
 }
 

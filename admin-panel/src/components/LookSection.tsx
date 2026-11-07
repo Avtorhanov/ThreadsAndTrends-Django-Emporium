@@ -1,7 +1,6 @@
 import { Navigate, NavLink, Outlet, useLocation } from "react-router";
 
 import { useAuth } from "../auth/AuthProvider";
-import { BackLink } from "./BackLink";
 
 /** Раздел «Внешний вид»: всё, что меняет вид магазина и панели, — в одном месте.
  * «Главная витрины» и «Тема витрины» — по праву «Главная и тема»; «Оформление панели» —
@@ -24,7 +23,6 @@ export function LookSection() {
 
   return (
     <div className="look-section">
-      <BackLink to="/" label="Сводка" />
       <nav className="subnav" aria-label="Внешний вид">
         {tabs.map((tab) => (
           <NavLink key={tab.to} to={tab.to}>

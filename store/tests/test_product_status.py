@@ -61,6 +61,24 @@ def test_bulk_rejects_category_with_children_and_empty_selection():
         catalog.bulk_update_products([], is_active=False)
 
 
+def test_bulk_delete_and_restore():
+    first, second, kept = make_product(), make_product(), make_product()
+    assert catalog.bulk_update_products([first.pk, second.pk], deleted=True) == 2
+    # Уже удалённый второй раз не считается.
+    assert catalog.bulk_update_products([first.pk], deleted=True) == 0
+    assert set(Product.objects.values_list("pk", flat=True)) == {kept.pk}
+    assert catalog.bulk_update_products([first.pk, kept.pk], deleted=False) == 1
+    assert set(Product.objects.values_list("pk", flat=True)) == {first.pk, kept.pk}
+
+
+def test_bulk_delete_not_combined_with_other_changes():
+    product = make_product()
+    with pytest.raises(ValidationError):
+        catalog.bulk_update_products([product.pk], deleted=True, is_active=False)
+    product.refresh_from_db()
+    assert product.deleted_at is None and product.is_active
+
+
 # --- API панели ---
 
 
@@ -92,6 +110,16 @@ def test_admin_bulk_and_label_filter(admin_client):
     cleared = admin_client.post(f"{PRODUCTS}bulk/", body, format="json")
     assert cleared.status_code == 200
     assert Product.objects.get(pk=first.pk).status is None
+
+
+def test_admin_bulk_delete(admin_client):
+    first, second = make_product(), make_product()
+    body = {"ids": [first.pk, second.pk], "deleted": True}
+    response = admin_client.post(f"{PRODUCTS}bulk/", body, format="json")
+    assert response.status_code == 200 and response.json() == {"updated": 2}
+    deleted = admin_client.get(PRODUCTS, {"status": "deleted"}).json()["results"]
+    assert {row["id"] for row in deleted} == {first.pk, second.pk}
+    assert admin_client.get(PRODUCTS).json()["count"] == 0
 
 
 def test_admin_api_rejects_customer(api_client, customer):

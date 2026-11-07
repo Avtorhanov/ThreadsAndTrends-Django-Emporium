@@ -82,7 +82,7 @@ type Props = {
  */
 export function GlassHeader({ progress, search, onSearchChange, onTitlePress, categories }: Props) {
   const s = useStyles();
-  const { c, dark, toggle } = useTheme();
+  const { c, dark, toggle, showWordmark, wordmark: word } = useTheme();
   const { count } = useCart();
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
@@ -211,10 +211,12 @@ export function GlassHeader({ progress, search, onSearchChange, onTitlePress, ca
           <Animated.View style={[s.logo, button]}>
             <Text style={s.logoText}>DiDi</Text>
           </Animated.View>
-          {/* Логотип как на сайте и в панели: плашка «DiDi» + «shop». */}
-          <Animated.Text style={[s.word, wordmark]}>
-            <Text style={s.wordAccent}>shop</Text>
-          </Animated.Text>
+          {/* Логотип как на сайте и в панели: плашка «DiDi» + слово (меняется и убирается в панели). */}
+          {showWordmark ? (
+            <Animated.Text style={[s.word, wordmark]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+              <Text style={s.wordAccent}>{word}</Text>
+            </Animated.Text>
+          ) : null}
         </Pressable>
         <View style={s.actions}>
           <Animated.View style={[s.searchButtonWrap, button]}>
@@ -418,7 +420,7 @@ const useStyles = makeStyles(({ c, shadow }) => ({
     boxShadow: "0 12px 22px -8px rgba(31,77,58,.75), inset 0 1px 0 rgba(255,255,255,.3)",
   },
   logoText: { fontFamily: fonts.display700, fontSize: 12, letterSpacing: -0.5, color: c.brandInk },
-  word: { fontFamily: fonts.display700, letterSpacing: -0.5, color: c.ink },
+  word: { flexShrink: 1, fontFamily: fonts.display700, letterSpacing: -0.5, color: c.ink },
   wordAccent: { color: c.brand },
   actions: { flexDirection: "row", alignItems: "center", gap: 10 },
   searchButtonWrap: { overflow: "hidden", boxShadow: shadow.accentGlow },

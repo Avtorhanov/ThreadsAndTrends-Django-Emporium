@@ -61,9 +61,24 @@
   var radius = cookie("radius") || shop.radius || "";
   if (radius === "sharp" || radius === "soft") root.setAttribute("data-radius", radius);
   else if (radius === "normal") root.removeAttribute("data-radius");
+  // Масштаб, %: 100 — без атрибута; прежние s/m/l — 100/115/130.
   var text = cookie("text_size") || shop.text || "";
-  if (text === "m" || text === "l") root.setAttribute("data-text", text);
-  else if (text === "s") root.removeAttribute("data-text");
+  text = { s: "100", m: "115", l: "130" }[text] || text;
+  if (["80", "90", "115", "130", "140", "150"].indexOf(text) >= 0) root.setAttribute("data-text", text);
+  else if (text === "100") root.removeAttribute("data-text");
+  // Слово «shop» в логотипе (панель → «Тема магазина»); на сервере его просто не рисует шаблон.
+  if (shop.wordmark === 0) root.setAttribute("data-wordmark", "off");
+  else root.removeAttribute("data-wordmark");
+  // Своё слово вместо «shop» (сайт рисует его шаблоном; демо — снимок с «shop»).
+  if (shop.word && shop.word !== "shop") {
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".brand .word").forEach(function (el) {
+        el.setAttribute("data-len", String(shop.word.length));
+        var accent = el.querySelector(".word__accent");
+        if (accent) accent.textContent = shop.word;
+      });
+    });
+  }
   // Нижнее меню: выбор покупателя (cookie), иначе — что задал администратор; «Сплошное» — без атрибута.
   var nav = cookie("nav");
   if (["solid", "floating", "glass", "bar"].indexOf(nav) < 0) nav = shop.nav || "";

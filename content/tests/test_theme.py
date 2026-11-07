@@ -54,7 +54,7 @@ def test_unknown_values_fall_back():
         "lime",
         look.DEFAULT_ACCENT,
         "normal",
-        "s",
+        "100",
     )
 
 
@@ -95,9 +95,9 @@ def test_storefront_renders_choice_from_cookies(client):
     client.cookies["palette"] = "custom"
     client.cookies["accent"] = "navy"
     client.cookies["radius"] = "sharp"
-    client.cookies["text_size"] = "l"
+    client.cookies["text_size"] = "130"
     html = client.get(reverse("web:home")).content.decode()
-    attrs = 'data-palette="custom" data-accent="navy" data-radius="sharp" data-text="l"'
+    attrs = 'data-palette="custom" data-accent="navy" data-radius="sharp" data-text="130"'
     assert f'<html lang="ru" {attrs}>' in html
     # Строка состояния — фон палитры, а не «Лайм-тек».
     assert look.PALETTES["custom"]["bg"]["light"] in html
@@ -129,11 +129,11 @@ def test_shop_default_mode_and_palette_for_new_visitor(client):
 def test_theme_form_saves_look_without_javascript(client):
     response = client.post(
         reverse("web:theme"),
-        {"theme": "light", "palette": "olive", "radius": "soft", "text": "m", "accent": "bad"},
+        {"theme": "light", "palette": "olive", "radius": "soft", "text": "90", "accent": "bad"},
     )
     assert response.cookies["palette"].value == "olive"
     assert response.cookies["radius"].value == "soft"
-    assert response.cookies["text_size"].value == "m"
+    assert response.cookies["text_size"].value == "90"
     assert "accent" not in response.cookies
 
 
@@ -228,16 +228,68 @@ def test_default_text_size_for_new_visitor(admin_api, client):
         "default_palette": "lime",
         "default_mode": "system",
         "default_radius": "normal",
-        "default_text": "l",
+        "default_text": "130",
     }
     saved = admin_api.put(ADMIN, body, format="json")
     assert saved.status_code == 200, saved.content
-    assert saved.json()["default_text"] == "l"
-    assert '<html lang="ru" data-text="l">' in client.get("/").content.decode()
-    # Выбор покупателя важнее: «Обычный» — без атрибута.
-    client.cookies["text_size"] = "s"
+    assert saved.json()["default_text"] == "130"
+    assert '<html lang="ru" data-text="130">' in client.get("/").content.decode()
+    # Выбор покупателя важнее: 100 % — без атрибута.
+    client.cookies["text_size"] = "100"
     assert '<html lang="ru">' in client.get("/").content.decode()
-    assert admin_api.put(ADMIN, {**body, "default_text": "xl"}, format="json").status_code == 400
+    # Прежние значения «Размера текста» (s/m/l) переводятся в проценты.
+    client.cookies["text_size"] = "m"
+    assert '<html lang="ru" data-text="115">' in client.get("/").content.decode()
+    client.cookies["text_size"] = "80"
+    assert '<html lang="ru" data-text="80">' in client.get("/").content.decode()
+    for bad in ("xl", "l", "75"):
+        assert admin_api.put(ADMIN, {**body, "default_text": bad}, format="json").status_code == 400
+
+
+def test_wordmark_switch_hides_shop_everywhere(admin_api, client):
+    body = {
+        "palettes": list(look.PALETTES),
+        "default_palette": "lime",
+        "default_mode": "system",
+        "default_radius": "normal",
+    }
+    assert admin_api.get(ADMIN).json()["show_wordmark"] is True
+    assert 'class="word__accent">shop<' in client.get("/").content.decode()
+    saved = admin_api.put(ADMIN, {**body, "show_wordmark": False}, format="json")
+    assert saved.status_code == 200 and saved.json()["show_wordmark"] is False
+    assert 'class="word__accent">shop<' not in client.get("/").content.decode()
+    assert client.get("/api/v1/content/theme/").json()["show_wordmark"] is False
+    # Не передано — прежнее значение.
+    assert admin_api.put(ADMIN, body, format="json").json()["show_wordmark"] is False
+
+
+def test_wordmark_text_editable_and_limited(admin_api, client):
+    body = {
+        "palettes": list(look.PALETTES),
+        "default_palette": "lime",
+        "default_mode": "system",
+        "default_radius": "normal",
+    }
+    assert admin_api.get(ADMIN).json()["wordmark"] == "shop"
+    saved = admin_api.put(ADMIN, {**body, "wordmark": "  Мода  "}, format="json")
+    assert saved.status_code == 200 and saved.json()["wordmark"] == "Мода"
+    assert 'class="word__accent">Мода<' in client.get("/").content.decode()
+    assert client.get("/api/v1/content/theme/").json()["wordmark"] == "Мода"
+    # Пусто — без слова: в шапке только плашка «DiDi».
+    empty = admin_api.put(ADMIN, {**body, "wordmark": "  "}, format="json")
+    assert empty.status_code == 200 and empty.json()["wordmark"] == ""
+    assert 'class="word__accent"' not in client.get("/").content.decode()
+    admin_api.put(ADMIN, {**body, "wordmark": "Мода"}, format="json")
+    for bad in ("market1", "<b>", "shop!"):
+        response = admin_api.put(ADMIN, {**body, "wordmark": bad}, format="json")
+        assert response.status_code == 400 and "wordmark" in response.json(), bad
+    # Не передано — прежнее.
+    assert admin_api.put(ADMIN, body, format="json").json()["wordmark"] == "Мода"
+
+
+def test_sun_palette_removed():
+    assert "sun" not in look.PALETTES
+    assert look.resolve_look(palette="sun").palette == "lime"
 
 
 def test_admin_save_resets_own_look_cookies(admin_api):

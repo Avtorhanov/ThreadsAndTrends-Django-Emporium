@@ -429,13 +429,13 @@
       applyTheme(effectiveTheme() === "dark" ? "light" : "dark");
     });
   });
-  // Палитра, акцент «Своей», углы, размер текста, нижнее меню: атрибут <html> + cookie (сервер проверяет
+  // Палитра, акцент «Своей», углы, масштаб, нижнее меню: атрибут <html> + cookie (сервер проверяет
   // значения по белому списку; значение по умолчанию — без атрибута).
   var LOOK = {
     palette: { attr: "data-palette", cookie: "palette", plain: "lime" },
     accent: { attr: "data-accent", cookie: "accent", plain: null },
     radius: { attr: "data-radius", cookie: "radius", plain: "normal" },
-    text: { attr: "data-text", cookie: "text_size", plain: "s" },
+    text: { attr: "data-text", cookie: "text_size", plain: "100" },
     nav: { attr: "data-nav", cookie: "nav", plain: "solid" }
   };
 

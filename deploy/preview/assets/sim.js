@@ -92,29 +92,114 @@
   var cache = null;
   function load() {
     if (cache) return cache;
-    try { cache = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { cache = null; }
+    try { cache = JSON.parse(localStorage.getItem(KEY) || "null", media.revive); } catch (e) { cache = null; }
     return cache;
   }
   function save(db) {
     cache = db;
     try {
-      localStorage.setItem(KEY, JSON.stringify(db));
+      localStorage.setItem(KEY, JSON.stringify(db, media.replace));
     } catch (e) {
       return false;
     }
     writeLook(db);
     return true;
   }
+
+  // --- Фото, загруженные в демо: файлы — в IndexedDB, в «базе» — только ссылка «idb:N» ---
+  // localStorage вмещает ~5 МБ (Safari считает символы по 2 байта — ~2,5 млн символов): два-три
+  // десятка фото data:URL переполняли его, и фото новых товаров терялись. IndexedDB вмещает сотни
+  // мегабайт. В памяти «база» держит blob:-адреса (их понимают <img> и витрина), при записи они
+  // снова становятся «idb:N». Нет IndexedDB — фото остаются data:URL, как раньше.
+  var media = (function () {
+    var STORE = "media";
+    var urls = {};    // "idb:N" → blob:URL
+    var keys = {};    // blob:URL → "idb:N"
+    var dbPromise = null;
+    function open() {
+      if (dbPromise) return dbPromise;
+      dbPromise = new Promise(function (resolve) {
+        try {
+          var req = indexedDB.open("didi-sim-media", 1);
+          req.onupgradeneeded = function () { req.result.createObjectStore(STORE); };
+          req.onsuccess = function () { resolve(req.result); };
+          req.onerror = function () { resolve(null); };
+        } catch (e) { resolve(null); }
+      });
+      return dbPromise;
+    }
+    function tx(mode, fn) {
+      return open().then(function (idb) {
+        if (!idb) return null;
+        return new Promise(function (resolve) {
+          var t = idb.transaction(STORE, mode);
+          var result = fn(t.objectStore(STORE));
+          t.oncomplete = function () { resolve(result && "result" in result ? result.result : true); };
+          t.onerror = t.onabort = function () { resolve(null); };
+        });
+      });
+    }
+    function register(key, blob) {
+      var url = URL.createObjectURL(blob);
+      urls[key] = url;
+      keys[url] = key;
+      return url;
+    }
+    return {
+      revive: function (k, v) { return typeof v === "string" && v.indexOf("idb:") === 0 && urls[v] ? urls[v] : v; },
+      replace: function (k, v) { return typeof v === "string" && v.indexOf("blob:") === 0 && keys[v] ? keys[v] : v; },
+      /** Все фото из IndexedDB → blob:-адреса; неиспользуемые (удалённые товары, сброс) — стираются. */
+      ready: function () {
+        var raw = "";
+        try { raw = localStorage.getItem(KEY) || ""; } catch (e) { /* без хранилища */ }
+        var used = {};
+        (raw.match(/"idb:\d+"/g) || []).forEach(function (m) { used[m.slice(1, -1)] = true; });
+        return open().then(function (idb) {
+          if (!idb) return;
+          return new Promise(function (resolve) {
+            var t = idb.transaction(STORE, "readwrite");
+            var store = t.objectStore(STORE);
+            var req = store.openCursor();
+            req.onsuccess = function () {
+              var cursor = req.result;
+              if (!cursor) return;
+              var key = String(cursor.key);
+              if (used[key]) { if (!urls[key]) register(key, cursor.value); } else cursor.delete();
+              cursor.continue();
+            };
+            t.oncomplete = t.onerror = t.onabort = function () { resolve(); };
+          });
+        }).then(function () { cache = null; }); // перечитать «базу» уже с blob:-адресами
+      },
+      /** data:URL → файл в IndexedDB; ответ — blob:-адрес (или тот же data:URL без IndexedDB). */
+      put: function (dataUrl) {
+        var parts = dataUrl.split(",");
+        var mime = (parts[0].match(/data:([^;]+)/) || [])[1] || "image/jpeg";
+        var bin = atob(parts[1] || "");
+        var bytes = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        var blob = new Blob([bytes], { type: mime });
+        var key = "idb:" + Date.now() + Math.floor(Math.random() * 1000);
+        return tx("readwrite", function (store) { store.put(blob, key); }).then(function (done) {
+          return done ? register(key, blob) : dataUrl;
+        });
+      },
+      clear: function () { return tx("readwrite", function (store) { store.clear(); }); }
+    };
+  })();
   // Свежие данные из другой вкладки (панель и магазин открыты рядом).
   window.addEventListener("storage", function (event) {
-    if (event.key === KEY) cache = null;
+    if (event.key !== KEY) return;
+    cache = null;
+    // Другая вкладка могла загрузить фото — подтянуть их blob:-адреса (после — снова перечитать).
+    mediaReady = media.ready();
   });
 
   function writeLook(db) {
     var t = db.theme;
     var look = {
       palettes: t.enabled, palette: t.default_palette, mode: t.default_mode, radius: t.default_radius,
-      text: t.default_text || "s", nav: t.nav_style || "solid",
+      text: t.default_text || "100", nav: t.nav_style || "solid", wordmark: t.show_wordmark === false || t.wordmark === "" ? 0 : 1, word: t.wordmark || "shop",
       // Вошёл ли покупатель: theme.js до отрисовки уводит на страницу нужного дерева (гость / /me/).
       user: db.session ? 1 : 0,
       out: db.loggedOut ? 1 : 0
@@ -127,7 +212,32 @@
   // Метка сборки демо (build.py подставляет вместо __BUILD__): новая сборка — один раз
   // сверить «базу» со свежим снимком (фото, контакты прошлых версий).
   var BUILD = "__BUILD__";
+  var mediaReady = null;
   function ready() {
+    if (!mediaReady) mediaReady = media.ready();
+    return mediaReady.then(readyData).then(migrateMedia);
+  }
+  // Фото прошлых версий демо (data:URL в localStorage) — один раз переносятся в IndexedDB:
+  // освобождают место в хранилище, где их скопилось до переполнения.
+  var migrated = false;
+  function migrateMedia(db) {
+    if (migrated || !db) return db;
+    migrated = true;
+    var jobs = [];
+    (function walk(o) {
+      Object.keys(o).forEach(function (k) {
+        var v = o[k];
+        if (typeof v === "string") {
+          if (v.indexOf("data:image/") === 0 && v.length > 2000) {
+            jobs.push(media.put(v).then(function (url) { o[k] = url; }));
+          }
+        } else if (v && typeof v === "object") walk(v);
+      });
+    })(db);
+    if (!jobs.length) return db;
+    return Promise.all(jobs).then(function () { save(db); return db; }, function () { return db; });
+  }
+  function readyData() {
     if (load()) {
       if (cache.contacts && cache.build === BUILD) return Promise.resolve(cache);
       if (readyPromise) return readyPromise;
@@ -138,7 +248,10 @@
         var db = load();
         // «База» из прошлой версии демо без контактов — берём их из снимка.
         if (!db.contacts) db.contacts = clone(res[0][CONTACTS_KEY] || []);
-        if (db.build !== BUILD) refreshMedia(db, res[0], res[1]);
+        if (db.build !== BUILD) {
+          refreshMedia(db, res[0], res[1]);
+          upgradeTheme(db, res[0]);
+        }
         db.build = BUILD;
         save(db);
         return db;
@@ -156,6 +269,23 @@
       return db;
     });
     return readyPromise;
+  }
+
+  /** Новая сборка демо — палитры и масштаб из свежего снимка (убранная палитра пропадает,
+   * прежний «Размер текста» s/m/l → проценты); выбор администратора сохраняется. */
+  function upgradeTheme(db, snap) {
+    var fresh = snap[A + "/content/theme/"];
+    if (!fresh || !db.theme) return;
+    var t = db.theme;
+    t.palettes = clone(fresh.palettes);
+    t.accents = clone(fresh.accents);
+    var keys = t.palettes.map(function (p) { return p.key; });
+    t.enabled = (t.enabled || []).filter(function (k) { return keys.indexOf(k) >= 0; });
+    if (!t.enabled.length) t.enabled = ["lime"];
+    if (t.enabled.indexOf(t.default_palette) < 0) t.default_palette = t.enabled[0];
+    t.default_text = ({ s: "100", m: "115", l: "130" })[t.default_text] || t.default_text || "100";
+    if (t.show_wordmark === undefined) t.show_wordmark = true;
+    if (t.wordmark === undefined) t.wordmark = "shop";
   }
 
   /** Новая сборка демо — у фото каталога и статей могли смениться адреса файлов. Сверяем по id
@@ -214,6 +344,7 @@
       localStorage.removeItem(LOOK_KEY);
       localStorage.removeItem("didi-preview-cart");
     } catch (e) { /* без хранилища */ }
+    mediaReady = media.clear();
     return ready();
   }
 
@@ -233,7 +364,10 @@
     var home = clone(snap[A + "/content/home/"]);
     var theme = clone(snap[A + "/content/theme/"]);
     if (!theme.nav_style) theme.nav_style = "solid";
-    if (!theme.default_text) theme.default_text = "s";
+    // Масштаб вместо «Размера текста» (s/m/l), «Солнце» убрано (tokens.json 1.9.0).
+    theme.default_text = ({ s: "100", m: "115", l: "130" })[theme.default_text] || theme.default_text || "100";
+    if (theme.show_wordmark === undefined) theme.show_wordmark = true;
+    if (theme.wordmark === undefined) theme.wordmark = "shop";
     var variants = [];
     products.forEach(function (p) { variants = variants.concat(p.variants); });
     var images = [];
@@ -318,7 +452,7 @@
     return {
       id: p.id, name: p.name, slug: p.slug, category: p.category, category_name: c ? c.name : "",
       price_kopecks: p.price_kopecks, compare_at_kopecks: p.compare_at_kopecks, status: p.status || null,
-      is_active: p.is_active, deleted_at: p.deleted_at, total_stock: totalStock(p), cover_url: coverUrl(p),
+      is_active: p.is_active, is_draft: !!p.is_draft, deleted_at: p.deleted_at, total_stock: totalStock(p), cover_url: coverUrl(p),
       created_at: p.created_at, updated_at: p.updated_at
     };
   }
@@ -557,7 +691,9 @@
     row.product = b.product || null;
     var product = b.kind === "banner" && b.product ? byId(db.products, b.product) : null;
     row.preview_product = product && isLive(db, product) ? publicProduct(db, product) : null;
-    row.preview_images = b.kind !== "banner" ? [] : images.length ? images.map(function (x) { return x.url; }) :
+    row.image_side = b.image_side || "top";
+    row.preview_images = b.kind === "text" ? images.slice(0, 1).map(function (x) { return x.url; }) :
+      b.kind !== "banner" ? [] : images.length ? images.map(function (x) { return x.url; }) :
       row.preview_product ? product.images.slice().sort(function (x, y) { return x.position - y.position; }).slice(0, 6).map(function (x) { return x.url; }) : [];
     row.links = clone(b.links || []);
     row.preview_links = b.kind === "categories" ? resolveLinks(db, b.links) : [];
@@ -573,7 +709,7 @@
 
   // --- Фото: файл → уменьшенная копия data:URL (localStorage вмещает несколько мегабайт) ---
 
-  function readImage(file, allowGif) {
+  function readImage(file, allowGif, maxSide) {
     return new Promise(function (resolve, reject) {
       if (!file || !/^image\//.test(file.type || "")) return reject(new Error("type"));
       if (file.type === "image/gif") {
@@ -589,7 +725,7 @@
       var url = URL.createObjectURL(file);
       var img = new Image();
       img.onload = function () {
-        var max = 900;
+        var max = maxSide || 900;
         var scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
         var canvas = document.createElement("canvas");
         canvas.width = Math.round(img.naturalWidth * scale);
@@ -1028,6 +1164,9 @@
     if (st === "deleted") list = list.filter(function (p) { return p.deleted_at; });
     else {
       list = list.filter(function (p) { return !p.deleted_at; });
+      // Черновики («Добавить пачкой») — только в своём списке, как в API.
+      if (st === "draft") list = list.filter(function (p) { return p.is_draft; });
+      else list = list.filter(function (p) { return !p.is_draft; });
       if (st === "active") list = list.filter(function (p) { return p.is_active; });
       if (st === "inactive") list = list.filter(function (p) { return !p.is_active; });
     }
@@ -1059,7 +1198,8 @@
       id: id, name: String(body.name).trim(), slug: body.slug || uniqueSlug(db.products, body.name), category: Number(body.category),
       price_kopecks: body.price_kopecks === undefined ? null : body.price_kopecks,
       compare_at_kopecks: body.compare_at_kopecks || null, status: body.status || null,
-      is_active: body.is_active !== false, deleted_at: null, description: String(body.description || ""),
+      is_active: !body.is_draft && body.is_active !== false, is_draft: !!body.is_draft,
+      deleted_at: null, description: String(body.description || ""),
       created_at: now(), updated_at: now(), variants: [], images: []
     };
     var sizes = Array.isArray(body.variants) && body.variants.length ? body.variants : [{ size: "" }];
@@ -1084,6 +1224,7 @@
     });
     if (body.category !== undefined) p.category = Number(body.category);
     if (p.price_kopecks === null) p.compare_at_kopecks = null;
+    if (p.is_active) p.is_draft = false; // показать черновик = опубликовать
     p.updated_at = now();
     return { status: 200, body: productDetail(db, p), save: true };
   });
@@ -1107,11 +1248,22 @@
       if (!c) return fields({ category: ["Нет такой категории."] });
     }
     var updated = 0;
+    if (body.deleted !== undefined) {
+      // Удаление и восстановление пачкой (store.services.catalog._bulk_set_deleted).
+      db.products.forEach(function (p) {
+        if (ids.indexOf(p.id) < 0 || !!p.deleted_at === !!body.deleted) return;
+        p.deleted_at = body.deleted ? now() : null;
+        p.updated_at = now();
+        updated++;
+      });
+      return { status: 200, body: { updated: updated }, save: true };
+    }
     db.products.forEach(function (p) {
-      if (ids.indexOf(p.id) < 0) return;
+      if (ids.indexOf(p.id) < 0 || p.deleted_at) return;
       if (body.status !== undefined) p.status = body.status || null;
       if (body.category !== undefined && body.category !== null) p.category = Number(body.category);
       if (body.is_active !== undefined) p.is_active = !!body.is_active;
+      if (p.is_active) p.is_draft = false;
       p.updated_at = now();
       updated++;
     });
@@ -1261,7 +1413,7 @@
       id: next(db, "block"), kind: body.kind, position: db.home.blocks.length, is_visible: true, title: titles[body.kind],
       text: body.kind === "banner" ? "Короткое описание" : body.kind === "text" ? "Первый абзац.\n\nВторой абзац." : "",
       color: body.kind === "banner" ? "#DDF38A" : "", ink: "#13261C", images: [], product: null, category: null,
-      source: "new", product_ids: [], links: []
+      source: "new", product_ids: [], links: [], image_side: "top"
     };
     db.home.blocks.push(b);
     touchHome(db);
@@ -1283,6 +1435,7 @@
       else b.images = body.image_ids.map(function (id) { return own[ownIds.indexOf(id)]; });
     }
     if (body.product !== undefined && body.product !== null && !byId(db.products, body.product)) errors.product = ["Товар не найден."];
+    if (body.image_side !== undefined && ["top", "left", "right"].indexOf(body.image_side) < 0) errors.image_side = ["Картинка — сверху, слева или справа."];
     if (body.links !== undefined) {
       if (body.links.length > 12) errors.links = ["В ленте — не больше 12 вкладок."];
       body.links.forEach(function (l) {
@@ -1291,7 +1444,7 @@
       });
     }
     if (Object.keys(errors).length) return fields(errors);
-    ["is_visible", "title", "text", "color", "category", "source", "product_ids", "product", "links"].forEach(function (k) { if (body[k] !== undefined) b[k] = body[k]; });
+    ["is_visible", "title", "text", "color", "category", "source", "product_ids", "product", "links", "image_side"].forEach(function (k) { if (body[k] !== undefined) b[k] = body[k]; });
     if (b.kind === "banner" && !b.title && !b.text && !bannerImages(b).length && !b.product) return fields({ title: ["У баннера нужен заголовок, описание, картинка или товар."] });
     if (b.color) b.color = b.color.toUpperCase();
     touchHome(db);
@@ -1327,6 +1480,13 @@
 
   // Тема
   route("GET", "/content/theme/", function (db) { return ok(themeState(db)); });
+  // Публичная тема (content/theme/): панель читает из неё слово рядом с «DiDi» в логотипе.
+  routes.push({ method: "GET", re: /^\/api\/v1\/content\/theme\/$/, handler: function (db) {
+    var t = themeState(db);
+    t.palettes = t.palettes.filter(function (p) { return t.enabled.indexOf(p.key) >= 0; });
+    delete t.enabled;
+    return ok(t);
+  } });
   route("PUT", "/content/theme/", function (db, m, q, body) {
     var keys = db.theme.palettes.map(function (p) { return p.key; });
     var palettes = (body.palettes || []).filter(function (k) { return keys.indexOf(k) >= 0; });
@@ -1338,6 +1498,14 @@
     db.theme.default_radius = body.default_radius || "normal";
     if (body.nav_style) db.theme.nav_style = body.nav_style;
     if (body.default_text) db.theme.default_text = body.default_text;
+    if (body.wordmark !== undefined) {
+      // Как content.look.clean_wordmark: пусто — без слова; до 6 символов, буквы, цифры, пробел, дефис, точка, «&».
+      var word = String(body.wordmark).split(/\s+/).filter(Boolean).join(" ");
+      if (word.length > 6) return fields({ wordmark: ["Не длиннее 6 символов — иначе не поместится в шапку."] });
+      if (word && !/^[0-9A-Za-zА-Яа-яЁё][0-9A-Za-zА-Яа-яЁё .&-]*$/.test(word)) return fields({ wordmark: ["Буквы, цифры, пробел, дефис, точка или «&»."] });
+      db.theme.wordmark = word;
+    }
+    if (typeof body.show_wordmark === "boolean") db.theme.show_wordmark = body.show_wordmark;
     // Как на сервере: личный выбор оформления в этом браузере сбрасывается — магазин сразу
     // показывает то, что задал администратор.
     ["theme", "palette", "accent", "radius", "text_size"].forEach(function (name) {
@@ -1401,6 +1569,8 @@
   var uploads = [
     {
       re: new RegExp("^" + A + "/catalog/products/(\\d+)/images/$"),
+      // Фото товаров — в IndexedDB (media), но «пачка» грузит десятки фото: 1080 px хватает.
+      max: 1080,
       apply: function (db, m, url) {
         var p = byId(db.products, m[1]);
         if (!p) return fail(404, { detail: "Не найдено." });
@@ -1427,11 +1597,12 @@
       apply: function (db, m, url) {
         var b = byId(db.home.blocks, m[1]);
         if (!b) return fail(404, { detail: "Не найдено." });
-        if (b.kind !== "banner") return fields({ image: ["Картинка есть только у баннера."] });
+        if (b.kind !== "banner" && b.kind !== "text") return fields({ image: ["Картинка есть только у баннера и текста."] });
         var images = bannerImages(b);
-        if (images.length >= 6) return fields({ image: ["У баннера — не больше 6 картинок."] });
+        if (b.kind === "banner" && images.length >= 6) return fields({ image: ["У баннера — не больше 6 картинок."] });
         var img = { id: next(db, "homeImage"), url: url };
-        b.images = images.concat([img]);
+        // У текста одна картинка — новая заменяет прежнюю.
+        b.images = b.kind === "text" ? [img] : images.concat([img]);
         b.image_ids = b.images.map(function (x) { return x.id; });
         touchHome(db);
         return { status: 200, body: homeBlock(db, b), save: true };
@@ -1470,7 +1641,7 @@
       var parsed = new URL(url, location.href);
       var path = parsed.pathname;
       var q = parsed.searchParams;
-      if (path !== A + "/auth/login/" && path !== A + "/auth/csrf/" && path !== A + "/auth/me/" && !signedIn()) {
+      if (path.indexOf(A + "/") === 0 && path !== A + "/auth/login/" && path !== A + "/auth/csrf/" && path !== A + "/auth/me/" && !signedIn()) {
         return fail(401, { detail: "Нужен вход." });
       }
       if (method === "POST" && body instanceof FormData) {
@@ -1479,9 +1650,9 @@
           if (!um) continue;
           var file = body.get("image");
           var upload = uploads[u];
-          return readImage(file, upload.gif).then(function (dataUrl) {
+          return readImage(file, upload.gif, upload.max).then(media.put).then(function (url) {
             var fresh = load();
-            return commit(fresh, upload.apply(fresh, um, dataUrl));
+            return commit(fresh, upload.apply(fresh, um, url));
           }, function (error) {
             if (error && error.message === "size") return fields({ image: ["GIF в демо — до 1,5 МБ."] });
             return fields({ image: [upload.gif ? "Загрузите JPEG, PNG, WebP или GIF." : "Загрузите JPEG, PNG или WebP."] });
@@ -1766,11 +1937,11 @@
     });
   }
   function setAvatar(file) {
-    return readAvatar(file).then(function (dataUrl) {
+    return readAvatar(file).then(media.put).then(function (url) {
       var db = load();
       var c = db.session && customerByEmail(db, db.session.email);
       if (!c) return false;
-      c.avatar = dataUrl;
+      c.avatar = url;
       return save(db);
     });
   }

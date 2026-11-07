@@ -1,5 +1,5 @@
 // Сгенерировано scripts/gen_tokens.py из docs/design/lime-tech/tokens.json — не редактировать.
-// Версия токенов: 1.8.0 (2026-10-30).
+// Версия токенов: 1.9.0 (2026-11-06).
 
 export type ThemeName = "light" | "dark";
 
@@ -201,7 +201,7 @@ export const radius = {
   "sheet": 28
 } as const;
 
-export type PaletteName = "lime" | "mint" | "sun" | "steel" | "olive" | "custom";
+export type PaletteName = "lime" | "mint" | "steel" | "olive" | "custom";
 export type AccentName = "lime" | "mint" | "sun" | "sky" | "pink" | "lilac" | "steel" | "orange" | "olive" | "sand" | "navy" | "wine" | "graphite" | "forest";
 export type PaletteGroup = "bright" | "calm" | "custom";
 
@@ -234,12 +234,6 @@ export const paletteList: readonly PaletteInfo[] = [
     "name": "Мята",
     "group": "bright",
     "note": "Холоднее и спокойнее"
-  },
-  {
-    "key": "sun",
-    "name": "Солнце",
-    "group": "bright",
-    "note": "Тёплая"
   },
   {
     "key": "steel",
@@ -428,90 +422,6 @@ export const paletteThemes: Record<PaletteName, ByTheme<Palette>> = {
         "#2F4437",
         "#22342A",
         "#18241D"
-      ]
-    }
-  },
-  "sun": {
-    "light": {
-      "bg": "#F4F0E2",
-      "surface": "#FFFFFF",
-      "ink": "#2A220D",
-      "muted": "#69624F",
-      "strike": "#8F8978",
-      "brand": "#6B4E0A",
-      "brandInk": "#FFD23F",
-      "accent": "#FFD23F",
-      "onAccent": "#2A220D",
-      "segOnBg": "#2A220D",
-      "segOnInk": "#FFD23F",
-      "tag": "#FFE38F",
-      "tagInk": "#6B4E0A",
-      "glass": "rgba(244,240,226,0.74)",
-      "glassLine": "rgba(255,255,255,0.80)",
-      "btnGlass": "rgba(255,255,255,0.82)",
-      "nav": "#2A220D",
-      "navInk": "#A3A097",
-      "navActiveInk": "#2A220D",
-      "ctaBg": "#2A220D",
-      "ctaInk": "#FFFFFF",
-      "ctaFill": "#FFD23F",
-      "ctaDoneInk": "#2A220D",
-      "border": "#E2DDCF",
-      "inputLine": "#D4CFC0",
-      "neutral": "#69624F",
-      "neutralBg": "#ECE8D9",
-      "danger": "#B3261E",
-      "dangerBg": "#FBE7E4",
-      "success": "#24703F",
-      "successBg": "#DFF2D2",
-      "warning": "#8A5300",
-      "warningBg": "#FFEFC7",
-      "info": "#1E5FA6",
-      "infoBg": "#E2EDF9",
-      "card": "#FFFFFF",
-      "cardStops": null
-    },
-    "dark": {
-      "bg": "#0E0C06",
-      "surface": "#2D2A1E",
-      "ink": "#F2F2F0",
-      "muted": "#B2B2AE",
-      "strike": "#959490",
-      "brand": "#FFD23F",
-      "brandInk": "#2A220D",
-      "accent": "#FFD23F",
-      "onAccent": "#2A220D",
-      "segOnBg": "#FFD23F",
-      "segOnInk": "#2A220D",
-      "tag": "#4E4318",
-      "tagInk": "#FFD23F",
-      "glass": "rgba(14,12,6,0.74)",
-      "glassLine": "rgba(255,210,63,0.14)",
-      "btnGlass": "rgba(45,42,30,0.85)",
-      "nav": "#0A0804",
-      "navInk": "#83827F",
-      "navActiveInk": "#2A220D",
-      "ctaBg": "#FFD23F",
-      "ctaInk": "#2A220D",
-      "ctaFill": "#F2F2F0",
-      "ctaDoneInk": "#2A220D",
-      "border": "#39372F",
-      "inputLine": "#4D4C45",
-      "neutral": "#B2B2AE",
-      "neutralBg": "#353226",
-      "danger": "#FF9A8F",
-      "dangerBg": "#3B1F1B",
-      "success": "#A6E38A",
-      "successBg": "#1C3522",
-      "warning": "#FFCB6B",
-      "warningBg": "#3A2E12",
-      "info": "#9CCBFF",
-      "infoBg": "#172A3D",
-      "card": "#343022",
-      "cardStops": [
-        "#44402F",
-        "#343022",
-        "#24221A"
       ]
     }
   },
@@ -804,24 +714,6 @@ export const paletteShadows: Record<PaletteName, ByTheme<Shadows>> = {
       "imageInset": "inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.05), inset 0 -34px 52px -26px rgba(0,0,0,.6), 0 10px 18px -12px rgba(0,0,0,.75)",
       "nav": "0 0 0 1px rgba(94,230,168,.16), 0 0 30px -6px rgba(94,230,168,.24), 0 22px 40px -14px rgba(0,0,0,.9)",
       "accentGlow": "0 10px 22px -6px rgba(94,230,168,.55)"
-    }
-  },
-  "sun": {
-    "light": {
-      "card": "0 1px 0 #FFFFFF inset, 0 3px 6px rgba(42,34,13,.10), 0 18px 30px -12px rgba(107,78,10,.48), 0 40px 60px -30px rgba(107,78,10,.55)",
-      "control": "0 1px 0 #FFFFFF inset, 0 3px 5px rgba(42,34,13,.09), 0 14px 22px -10px rgba(107,78,10,.5)",
-      "header": "0 1px 0 rgba(255,255,255,.9) inset, 0 22px 38px -18px rgba(107,78,10,.68)",
-      "imageInset": "inset 0 -28px 46px -26px rgba(42,34,13,.32)",
-      "nav": "0 22px 40px -14px rgba(42,34,13,.82)",
-      "accentGlow": "0 10px 22px -6px rgba(255,210,63,.55)"
-    },
-    "dark": {
-      "card": "0 1px 0 rgba(255,255,255,.22) inset, 0 0 0 1px rgba(255,255,255,.06) inset, 0 -3px 0 rgba(0,0,0,.38) inset, 0 0 0 1px rgba(255,210,63,.12), 0 0 26px -4px rgba(255,210,63,.22), 0 2px 4px rgba(0,0,0,.6), 0 14px 24px -10px rgba(0,0,0,.85), 0 34px 50px -24px rgba(0,0,0,.95)",
-      "control": "0 1px 0 rgba(255,255,255,.13) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,210,63,.10), 0 0 18px -4px rgba(255,210,63,.18), 0 2px 3px rgba(0,0,0,.55), 0 12px 22px -10px rgba(0,0,0,.85)",
-      "header": "0 1px 0 rgba(255,255,255,.06) inset, 0 0 0 1px rgba(255,210,63,.10), 0 0 30px -8px rgba(255,210,63,.20), 0 22px 38px -14px rgba(0,0,0,.9)",
-      "imageInset": "inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.05), inset 0 -34px 52px -26px rgba(0,0,0,.6), 0 10px 18px -12px rgba(0,0,0,.75)",
-      "nav": "0 0 0 1px rgba(255,210,63,.16), 0 0 30px -6px rgba(255,210,63,.24), 0 22px 40px -14px rgba(0,0,0,.9)",
-      "accentGlow": "0 10px 22px -6px rgba(255,210,63,.55)"
     }
   },
   "steel": {
@@ -1579,9 +1471,13 @@ export const radiusScale = {
 export type RadiusMode = keyof typeof radiusScale;
 
 export const textScale = {
-  "s": 1,
-  "m": 1.15,
-  "l": 1.3
+  "80": 0.8,
+  "90": 0.9,
+  "100": 1,
+  "115": 1.15,
+  "130": 1.3,
+  "140": 1.4,
+  "150": 1.5
 } as const;
 
 export type TextMode = keyof typeof textScale;
@@ -1589,8 +1485,8 @@ export type TextMode = keyof typeof textScale;
 export const space = {
   "feedSide": 10,
   "gridGap": 10,
-  "cardPad": 6,
-  "cardTextPad": 8,
+  "cardPad": 4,
+  "cardTextPad": 6,
   "headerSide": 18,
   "screen": 24
 } as const;

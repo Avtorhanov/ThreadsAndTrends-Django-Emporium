@@ -1,15 +1,5 @@
-{% load storefront %}<footer class="foot">
+{% load storefront %}{# Подвал — только реквизиты и ©: логотип в шапке, ссылки «Доставка», «Оферта», «Политика» и Android-приложение — в «Помощи» на «Контактах» и в профиле. #}<footer class="foot">
   <div class="foot__inner">
-    <div class="foot__brand">
-      <span class="logo logo--sm" aria-hidden="true">DiDi</span>
-      <span class="word word--sm" aria-label="DiDi shop"><span class="word__accent">shop</span></span>
-    </div>
-    {% site_blocks "footer" as footer_blocks %}
-    <nav class="foot__links" aria-label="Покупателям"{% blocks_attrs "footer" %}>
-      {% for block in footer_blocks %}<a href="{{ block.value }}" data-block-index="{{ forloop.counter0 }}"{% if block.pk %} data-block-id="{{ block.pk }}"{% endif %} data-title="{{ block.title }}" data-value="{{ block.value }}">{{ block.title }}</a>
-      {% endfor %}
-      {% if android_apk_url %}<a href="{{ android_apk_url }}">{% sitetext "footer.android" %}Приложение для Android{% endsitetext %}</a>{% endif %}
-    </nav>
     {# Реквизиты одной строкой: пустые не показываются, перенос — только между реквизитами. #}
     {% if seller_line %}
     <p class="foot__seller">{% for part in seller_line %}<span class="foot__part">{% if part.href %}<a href="{{ part.href }}">{{ part.text }}</a>{% else %}{{ part.text }}{% endif %}</span>{% if not forloop.last %}&nbsp;· {% endif %}{% endfor %}</p>

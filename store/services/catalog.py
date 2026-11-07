@@ -31,7 +31,7 @@ PRODUCT_FIELDS = {
 }
 MAX_STATUSES = 20
 MAX_BULK = 200
-BULK_FIELDS = {"status", "category", "is_active"}
+BULK_FIELDS = {"status", "category", "is_active", "deleted"}
 VARIANT_FIELDS = {"size", "sku", "stock", "position"}
 
 
@@ -147,6 +147,7 @@ def create_product(
     description: str = "",
     compare_at_kopecks: int | None = None,
     is_active: bool = True,
+    is_draft: bool = False,
     slug: str = "",
     status: ProductStatus | None = None,
     variants: list[dict] | None = None,
@@ -167,7 +168,9 @@ def create_product(
         price_kopecks=price_kopecks,
         compare_at_kopecks=compare_at_kopecks,
         status=status,
-        is_active=is_active,
+        # Черновик всегда скрыт: показывается только после публикации.
+        is_active=is_active and not is_draft,
+        is_draft=is_draft,
     )
     # Товар без вариантов не продаётся: по умолчанию создаётся «Без размера».
     for variant in variants or [{"size": ""}]:
@@ -191,14 +194,18 @@ def update_product(product: Product, **changes) -> Product:
         changes.pop("slug")
     for field, value in changes.items():
         setattr(product, field, value)
+    if product.is_active:
+        product.is_draft = False  # показать черновик = опубликовать
     product.save()
     return product
 
 
 @transaction.atomic
 def bulk_update_products(ids: list[int], **changes) -> int:
-    """Массовое изменение в списке товаров панели: статус, категория, видимость.
-    Возвращает число изменённых товаров (удалённые не трогаются)."""
+    """Массовое изменение в списке товаров панели: статус, категория, видимость, удаление.
+    is_active=True у черновиков — публикация (отметка черновика снимается).
+    deleted=True — мягкое удаление, deleted=False — восстановление; вместе с другими полями нельзя.
+    Возвращает число изменённых товаров (остальные поля удалённых товаров не трогаются)."""
     unknown = set(changes) - BULK_FIELDS
     if unknown:
         raise ValueError(f"Неизвестные поля: {sorted(unknown)}")
@@ -209,6 +216,10 @@ def bulk_update_products(ids: list[int], **changes) -> int:
         raise ValidationError({"ids": "Отметьте хотя бы один товар."})
     if len(ids) > MAX_BULK:
         raise ValidationError({"ids": f"Не больше {MAX_BULK} товаров за раз."})
+    if "deleted" in changes:
+        if len(changes) > 1:
+            raise ValidationError("Удаление нельзя совмещать с другими изменениями.")
+        return _bulk_set_deleted(ids, deleted=changes["deleted"])
     if "category" in changes:
         _validate_product_fields(
             category=changes["category"], price_kopecks=None, compare_at_kopecks=None
@@ -216,15 +227,40 @@ def bulk_update_products(ids: list[int], **changes) -> int:
     # Блокировка в порядке id — параллельная правка тех же товаров идёт по очереди.
     products = list(Product.objects.select_for_update().filter(pk__in=ids).order_by("pk"))
     now = timezone.now()  # bulk_update не заполняет auto_now
+    fields = [*changes, "updated_at"]
+    if changes.get("is_active"):
+        fields.append("is_draft")
     for product in products:
         for field, value in changes.items():
             setattr(product, field, value)
+        if product.is_active:
+            product.is_draft = False
         product.updated_at = now
-    Product.objects.bulk_update(products, [*changes, "updated_at"])
+    Product.objects.bulk_update(products, fields)
+    _notify_bulk(products)
+    return len(products)
+
+
+def _bulk_set_deleted(ids: list[int], *, deleted: bool) -> int:
+    """Мягкое удаление или восстановление пачкой; уже удалённые (восстановленные) не считаются."""
+    products = list(
+        Product.all_objects.select_for_update()
+        .filter(pk__in=ids, deleted_at__isnull=deleted)
+        .order_by("pk")
+    )
+    now = timezone.now()
+    for product in products:
+        product.deleted_at = now if deleted else None
+        product.updated_at = now
+    Product.all_objects.bulk_update(products, ["deleted_at", "updated_at"])
+    _notify_bulk(products)
+    return len(products)
+
+
+def _notify_bulk(products: list[Product]) -> None:
     from store.signals import products_bulk_updated
 
     products_bulk_updated.send(sender=Product, ids=[p.pk for p in products])
-    return len(products)
 
 
 def soft_delete_product(product: Product) -> Product:

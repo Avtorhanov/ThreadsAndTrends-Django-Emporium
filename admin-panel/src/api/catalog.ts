@@ -22,8 +22,8 @@ export type ProductLabelPatch = Schemas["PatchedAdminProductStatusRequest"];
 export type ProductBulk = Schemas["AdminProductBulkRequest"];
 export type LabelTone = "success" | "warning" | "info" | "neutral";
 
-/** Видимость в списке панели (фильтр status API). */
-export type ProductStatus = "active" | "inactive" | "deleted";
+/** Видимость в списке панели (фильтр status API); черновики — отдельным списком. */
+export type ProductStatus = "active" | "inactive" | "draft" | "deleted";
 export type StockFilter = "in_stock" | "out_of_stock";
 
 export type ProductQuery = {

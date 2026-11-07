@@ -1,6 +1,7 @@
 {% load storefront %}{% comment %}Блоки главной (панель → «Главная»): так же, как в предпросмотре панели
    (admin-panel/src/components/home/HomePreview.tsx) — баннер (несколько подряд — карусель),
-   подборка с прокруткой вбок, лента категорий (свои вкладки или корневые категории), текст.{% endcomment %}
+   подборка с прокруткой вбок, лента категорий (свои вкладки или корневые категории), текст
+   (с картинкой или без).{% endcomment %}
 {% for b in blocks %}
 {% if b.kind == "carousel" %}
 <section class="hblock hblock-carousel" data-carousel aria-roledescription="карусель" aria-label="Баннеры">
@@ -33,9 +34,13 @@
   </div>
 </nav>
 {% elif b.kind == "text" %}
-<section class="hblock hblock-text">
-  {% if b.title %}<h2 class="hblock-head__title">{{ b.title }}</h2>{% endif %}
-  {% for paragraph in b.paragraphs %}<p>{{ paragraph|linebreaksbr }}</p>{% endfor %}
+{# Текст с картинкой: сверху, слева или справа (на телефоне — всегда сверху). #}
+<section class="hblock hblock-text{% if b.image %} hblock-text--img hblock-text--{{ b.image_side }}{% endif %}">
+  {% if b.image %}<span class="hblock-text__media">{% product_img b.image "(min-width: 900px) 440px, (min-width: 600px) 40vw, 100vw" css="hblock-text__img" %}</span>{% endif %}
+  <div class="hblock-text__body">
+    {% if b.title %}<h2 class="hblock-head__title">{{ b.title }}</h2>{% endif %}
+    {% for paragraph in b.paragraphs %}<p>{{ paragraph|linebreaksbr }}</p>{% endfor %}
+  </div>
 </section>
 {% endif %}
 {% endfor %}

@@ -11,6 +11,14 @@ export type HomeBlockChanges = Schemas["PatchedAdminHomeBlockUpdateRequest"];
 export type HomeLinkInput = Schemas["AdminHomeLinkRequest"];
 export type HomeLinkKind = Schemas["HomeLinkKindEnum"];
 export type HomeLinkPage = Schemas["HomeLinkPageEnum"];
+export type ImageSide = Schemas["ImageSideEnum"];
+
+/** Где картинка текстового блока (на телефоне покупателя — всегда сверху). */
+export const IMAGE_SIDE_LABELS: Record<ImageSide, string> = {
+  top: "Сверху",
+  left: "Слева",
+  right: "Справа",
+};
 
 /** Лимиты — как content.home на сервере. */
 export const HOME_LIMITS = {
@@ -56,7 +64,7 @@ export const BLOCK_TYPES: { kind: HomeBlockKind; label: string; hint: string }[]
   { kind: "banner", label: "Баннер", hint: "Фото товара или свои картинки (и GIF), заголовок на фото" },
   { kind: "collection", label: "Подборка товаров", hint: "Ряд товаров: новинки, категория или вручную" },
   { kind: "categories", label: "Лента категорий", hint: "Категории, статьи, страницы и ссылки" },
-  { kind: "text", label: "Текст", hint: "Заголовок и пара абзацев" },
+  { kind: "text", label: "Текст", hint: "Заголовок, пара абзацев и картинка" },
 ];
 
 export const KIND_LABELS: Record<HomeBlockKind, string> = {

@@ -278,6 +278,14 @@ class CollectionSource(models.TextChoices):
     MANUAL = "manual", "Вручную"
 
 
+class ImageSide(models.TextChoices):
+    """Где картинка текстового блока главной (на телефоне — всегда сверху)."""
+
+    TOP = "top", "Сверху"
+    LEFT = "left", "Слева"
+    RIGHT = "right", "Справа"
+
+
 class HomeBlock(models.Model):
     """Черновик главной: блоки в порядке position. Покупатель видит снимок из HomePage."""
 
@@ -288,8 +296,15 @@ class HomeBlock(models.Model):
     text = models.CharField(max_length=1000, blank=True, verbose_name="Текст")
     # Фон баннера: #RRGGBB (проверяется сервисом — значение попадает в style).
     color = models.CharField(max_length=7, blank=True, verbose_name="Цвет")
-    # Картинки баннера (HomeImage.id) по порядку: несколько — сменяют друг друга сами.
+    # Картинки (HomeImage.id) по порядку: у баннера несколько — сменяют друг друга сами,
+    # у текста — одна.
     image_ids = models.JSONField(default=list, blank=True, verbose_name="Картинки")
+    image_side = models.CharField(
+        max_length=5,
+        choices=ImageSide.choices,
+        default=ImageSide.TOP,
+        verbose_name="Картинка текста",
+    )
     # Баннер товара: фото товара в рамке карточки и переход на товар.
     product = models.ForeignKey(
         "store.Product",
@@ -370,9 +385,13 @@ class ThemeSettings(models.Model):
         max_length=10, default="normal", verbose_name="Углы по умолчанию"
     )
     default_text = models.CharField(
-        max_length=2, default="s", verbose_name="Размер текста по умолчанию"
+        max_length=3, default="100", verbose_name="Масштаб по умолчанию"
     )
     nav_style = models.CharField(max_length=10, default="solid", verbose_name="Нижнее меню")
+    show_wordmark = models.BooleanField(default=True, verbose_name="Слово «shop» в логотипе")
+    wordmark = models.CharField(
+        max_length=6, default="shop", db_default="shop", verbose_name="Слово рядом с «DiDi»"
+    )
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменены")
 
     class Meta:

@@ -55,7 +55,7 @@ export function OrderDetailPage() {
   return (
     <section className="stack">
       <div className="page-header">
-        <BackLink to="/orders" label="Заказы" />
+        <BackLink to="/orders" />
         <h1>{data ? `Заказ ${data.number}` : "Заказ"}</h1>
         {data ? <OrderStatusBadge status={data.status} label={data.status_display} /> : null}
       </div>

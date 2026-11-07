@@ -15,7 +15,8 @@
 Палитры покупателя (tokens.json → palettes): переопределения цветов базовой «Лайм-тек»;
 «Своя» (custom) — нейтральная основа + один из проверенных акцентов (accents). Тени палитр
 тонируются автоматически: зелёные оттенки базы заменяются на accent/brand/ink палитры.
-На сайте палитру выбирают атрибуты <html>: data-palette, data-accent, data-radius, data-text.
+На сайте палитру выбирают атрибуты <html>: data-palette, data-accent, data-radius,
+data-text (масштаб).
 
 Единственный источник значений — tokens.json; сгенерированные файлы руками не правятся.
 """
@@ -419,7 +420,7 @@ def render_scales_css(tokens: dict) -> str:
         ]
         lines.append(f"  --radius-scale: {scale};")
         parts.append(f':root[data-radius="{mode}"]' + " {\n" + "\n".join(lines) + "\n}\n")
-    parts.append("\n/* Размер текста: data-text=m|l (s — без атрибута). */\n")
+    parts.append("\n/* Масштаб интерфейса: data-text=80…150 (100 — без атрибута). */\n")
     for mode, scale in entries(tokens["textScale"]).items():
         if scale == 1:
             continue
@@ -513,6 +514,10 @@ def render_panel_palettes_ts(tokens: dict) -> str:
         + ";\n\n"
         "export const PANEL_ACCENTS: readonly PanelAccentInfo[] = "
         + json.dumps(accents, ensure_ascii=False, indent=2)
+        + ";\n\n"
+        "/** Масштаб интерфейса, % — по порядку. */\n"
+        "export const PANEL_TEXT: readonly PanelText[] = "
+        + json.dumps(list(entries(tokens["textScale"])))
         + ";\n"
     )
 

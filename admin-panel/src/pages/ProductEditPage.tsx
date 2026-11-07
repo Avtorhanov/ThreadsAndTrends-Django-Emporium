@@ -1,17 +1,26 @@
 import { useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 
-import { imagesService, productsService } from "../api/catalog";
+import { imagesService, productsService, variantsService } from "../api/catalog";
 import { ApiError } from "../api/errors";
 import { ImagesEditor } from "../components/catalog/ImagesEditor";
 import { MAX_PRODUCT_IMAGES, PendingPhotos } from "../components/catalog/PendingPhotos";
 import { ProductForm, type ProductFormValues } from "../components/catalog/ProductForm";
-import { VariantsEditor } from "../components/catalog/VariantsEditor";
+import { type VariantEdits, VariantsEditor } from "../components/catalog/VariantsEditor";
 import { useCategories, useLabels, useProduct } from "../hooks/useCatalog";
 import { storeUrl } from "../lib/site";
 import { BackLink } from "../components/BackLink";
+import { Icon } from "../components/Icon";
+import { PageTools, ToolButton } from "../components/PageTools";
 
-type CreatedState = { photosFailed?: string[] } | null;
+// photosFailed — после создания с фото; drafts — порядок черновиков для листания;
+// photos и category — из «Добавить товар»: фото одного товара (и категория из раскладки).
+type CreatedState = {
+  photosFailed?: string[];
+  drafts?: number[];
+  photos?: File[];
+  category?: number | null;
+} | null;
 
 export function ProductEditPage() {
   const params = useParams();
@@ -22,9 +31,18 @@ export function ProductEditPage() {
   const labels = useLabels();
   const product = useProduct(productId);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [pending, setPending] = useState<File[]>([]);
+  const [pending, setPending] = useState<File[]>(() =>
+    productId === null ? ((location.state as CreatedState)?.photos ?? []) : [],
+  );
+  const initialCategory = productId === null ? ((location.state as CreatedState)?.category ?? null) : null;
   const [uploading, setUploading] = useState<string | null>(null);
+  // Несохранённые строки вариантов (остатки, размеры): общая «Сохранить» сохраняет и их.
+  const [variantEdits, setVariantEdits] = useState<VariantEdits>(new Map());
   const failed = (location.state as CreatedState)?.photosFailed ?? [];
+  const draftOrder = (location.state as CreatedState)?.drafts ?? [];
+  const draftIndex = productId === null ? -1 : draftOrder.indexOf(productId);
+  const prevDraft = draftIndex > 0 ? draftOrder[draftIndex - 1] : undefined;
+  const nextDraft = draftIndex >= 0 ? draftOrder[draftIndex + 1] : undefined;
 
   async function save({ sizes, ...values }: ProductFormValues) {
     if (productId === null) {
@@ -47,7 +65,12 @@ export function ProductEditPage() {
       setPending([]);
       navigate(`/catalog/products/${created.id}`, { replace: true, state: { photosFailed } });
     } else {
-      product.set(await productsService.update(productId, values));
+      const updated = await productsService.update(productId, values);
+      for (const [id, patch] of variantEdits) await variantsService.update(id, patch);
+      if (variantEdits.size) {
+        setVariantEdits(new Map());
+        product.reload();
+      } else product.set(updated);
     }
   }
 
@@ -75,25 +98,60 @@ export function ProductEditPage() {
   return (
     <section className="stack">
       <div className="page-header">
-        <BackLink to="/catalog/products" label="Товары" />
+        {product.data?.is_draft ? (
+          <BackLink to="/catalog/products/drafts" />
+        ) : (
+          <BackLink to="/catalog/products" />
+        )}
         <h1>{productId === null ? "Новый товар" : (product.data?.name ?? "Товар")}</h1>
-        {product.data?.deleted_at ? <span className="badge badge-deleted">Удалён</span> : null}
-        {product.data && !product.data.deleted_at && product.data.is_active ? (
-          <a className="button button-ghost" href={storeUrl(`product/${product.data.slug}/`)} target="_blank" rel="noreferrer">
-            Открыть на сайте
-          </a>
-        ) : null}
         {product.data ? (
-          <button
-            type="button"
-            className={product.data.deleted_at ? "button header-action" : "button button-danger header-action"}
-            onClick={() => void toggleDeleted()}
-          >
-            {product.data.deleted_at ? "Восстановить" : "Удалить"}
-          </button>
+          <PageTools>
+            {product.data.deleted_at ? <span className="badge badge-deleted">Удалён</span> : null}
+            {!product.data.deleted_at && product.data.is_active ? (
+              <ToolButton icon="external" label="На сайте" href={storeUrl(`product/${product.data.slug}/`)} />
+            ) : null}
+            {product.data.deleted_at ? (
+              <ToolButton icon="undo" label="Восстановить" onClick={() => void toggleDeleted()} />
+            ) : (
+              <ToolButton icon="trash" label="Удалить" tone="danger" onClick={() => void toggleDeleted()} />
+            )}
+          </PageTools>
         ) : null}
       </div>
 
+      {product.data?.is_draft && !product.data.deleted_at ? (
+        <div className="draft-nav" role="region" aria-label="Черновик">
+          <span className="draft-nav-text">
+            <span className="badge badge-warning">Черновик</span>
+            <span className="muted small">Не виден покупателям. Включите «Опубликовать» в группе 1 и сохраните.</span>
+          </span>
+          {draftIndex >= 0 ? (
+            <span className="draft-nav-pager">
+              {prevDraft !== undefined ? (
+                <Link className="icon-button" to={`/catalog/products/${prevDraft}`} state={{ drafts: draftOrder }} aria-label="Предыдущий черновик">
+                  <Icon name="left" />
+                </Link>
+              ) : (
+                <span className="icon-button is-disabled" aria-hidden="true">
+                  <Icon name="left" />
+                </span>
+              )}
+              <strong>
+                {draftIndex + 1} из {draftOrder.length}
+              </strong>
+              {nextDraft !== undefined ? (
+                <Link className="icon-button" to={`/catalog/products/${nextDraft}`} state={{ drafts: draftOrder }} aria-label="Следующий черновик">
+                  <Icon name="right" />
+                </Link>
+              ) : (
+                <span className="icon-button is-disabled" aria-hidden="true">
+                  <Icon name="right" />
+                </span>
+              )}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       {error ? <p className="alert">{error}</p> : null}
       {actionError ? <p className="alert">{actionError}</p> : null}
       {failed.length ? (
@@ -109,9 +167,10 @@ export function ProductEditPage() {
           // Новый ключ после сохранения/восстановления — форма берёт свежие значения.
           key={product.data ? `${product.data.id}:${product.data.updated_at}` : "new"}
           product={product.data}
+          initialCategory={initialCategory}
           categories={categories.data}
           labels={labels.data}
-          extraDirty={pending.length > 0}
+          extraDirty={pending.length > 0 || variantEdits.size > 0}
           onSubmit={save}
           photos={
             current ? (
@@ -131,7 +190,12 @@ export function ProductEditPage() {
           }
           stock={
             current ? (
-              <VariantsEditor productId={current.id} variants={current.variants} onChanged={product.reload} />
+              <VariantsEditor
+                productId={current.id}
+                variants={current.variants}
+                onChanged={product.reload}
+                onPendingChange={setVariantEdits}
+              />
             ) : null
           }
         />

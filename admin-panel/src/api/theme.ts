@@ -30,7 +30,8 @@ export const RADIUS_LABELS: Record<ThemeRadius, string> = {
   soft: "Мягкие",
 };
 
-export const TEXT_LABELS: Record<ThemeText, string> = { s: "Обычный", m: "Крупнее", l: "Крупный" };
+/** Масштаб интерфейса для нового посетителя, % (как content.look.TEXT). */
+export const TEXT_VALUES: readonly ThemeText[] = ["80", "90", "100", "115", "130", "140", "150"];
 
 export const RADIUS_SCALE: Record<ThemeRadius, number> = { sharp: 0.6, normal: 1, soft: 1.35 };
 

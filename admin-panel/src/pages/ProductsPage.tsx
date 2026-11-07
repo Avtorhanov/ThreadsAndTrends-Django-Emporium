@@ -10,22 +10,30 @@ import {
   productsService,
 } from "../api/catalog";
 import { ApiError } from "../api/errors";
+import { batchCategories } from "../components/catalog/batch";
+import { CategorySheet } from "../components/catalog/CategorySheet";
 import { LabelsManager } from "../components/catalog/LabelsManager";
 import { FiltersToggle } from "../components/FiltersToggle";
+import { PageTools, ToolButton } from "../components/PageTools";
+import { PickSheet } from "../components/PickSheet";
 import { Table } from "../components/Table";
-import { isLeaf, sortCategoryTree, useCategories, useLabels, useProducts } from "../hooks/useCatalog";
+import { sortCategoryTree, useCategories, useLabels, useProducts } from "../hooks/useCatalog";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { formatKopecks } from "../lib/money";
-import { BackLink } from "../components/BackLink";
+import { Icon } from "../components/Icon";
 
-const VISIBILITY_LABELS: Record<ProductStatus, string> = {
+// Черновики — отдельным экраном («Черновики · N» в шапке), не фильтром списка.
+const VISIBILITY_LABELS: Record<Exclude<ProductStatus, "draft">, string> = {
   active: "Активные",
   inactive: "Скрытые",
   deleted: "Удалённые",
 };
 
+const DRAFTS_QUERY = { search: "", status: "draft", label: "", category: null, stock: "", page: 1 } as const;
+
 function visibilityBadge(product: ProductRow) {
   if (product.deleted_at) return <span className="badge badge-deleted">Удалён</span>;
+  if (product.is_draft) return <span className="badge badge-warning">Черновик</span>;
   if (!product.is_active) return <span className="badge badge-blocked">Скрыт</span>;
   return <span className="badge badge-active">Активен</span>;
 }
@@ -44,8 +52,7 @@ export function ProductsPage() {
   const [moreFilters, setMoreFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [bulkLabel, setBulkLabel] = useState("");
-  const [bulkCategory, setBulkCategory] = useState("");
+  const [sheet, setSheet] = useState<"status" | "category" | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -54,6 +61,7 @@ export function ProductsPage() {
   const labels = useLabels();
   const query = { search: debouncedSearch, status: visibility, label, category, stock, page };
   const products = useProducts(query);
+  const drafts = useProducts(DRAFTS_QUERY);
   const { data, loading, error } = products;
 
   // Другая страница или фильтр — выбор сбрасывается: действие касается только видимых строк.
@@ -65,7 +73,8 @@ export function ProductsPage() {
   const rows = data?.results ?? [];
   const labelById = new Map((labels.data ?? []).map((item) => [item.id, item]));
   const allChecked = rows.length > 0 && rows.every((row) => selected.has(row.id));
-  const leafCategories = sortCategoryTree(categories.data ?? []).filter(isLeaf);
+  const leafCategories = batchCategories(categories.data ?? []);
+  const showingDeleted = visibility === "deleted";
 
   function toggle(id: number) {
     setSelected((prev) => {
@@ -83,6 +92,8 @@ export function ProductsPage() {
     try {
       const result = await productsService.bulk({ ids, ...changes });
       setNotice(`${done}: ${result.updated}`);
+      // Удалённые и восстановленные уходят из текущего списка — выбор с них снимается.
+      if (changes.deleted !== undefined) setSelected(new Set());
       products.reload();
       labels.reload();
     } catch (err) {
@@ -92,18 +103,32 @@ export function ProductsPage() {
     }
   }
 
+  function removeProducts(ids: number[], name?: string) {
+    const what = name ? `«${name}»` : `товары (${ids.length})`;
+    if (!window.confirm(`Удалить ${what}? Пропадут с витрины, история заказов сохранится. Вернуть — фильтр «Удалённые».`)) return;
+    void apply({ deleted: true }, "Удалено товаров", ids);
+  }
+
   const labelValue = (value: string) => (value === "none" ? null : Number(value));
 
   return (
     <section>
       <div className="page-header">
-        <BackLink to="/" label="Сводка" />
         <h1>Товары</h1>
-        {data ? <span className="muted">Всего: {data.count}</span> : null}
-        <Link to="/catalog/products/new" className="button header-action">
-          Добавить товар
-        </Link>
+        {/* Одна кнопка: фото → один товар (обычная карточка) или сразу много (черновики). */}
+        <PageTools>
+          <ToolButton icon="plus" label="Добавить товар" tone="accent" to="/catalog/products/batch" />
+        </PageTools>
+        {data ? <span className="muted page-sub">Всего: {data.count}</span> : null}
       </div>
+
+      {drafts.data?.count ? (
+        <Link to="/catalog/products/drafts" className="drafts-banner">
+          <span className="badge badge-warning">Черновики · {drafts.data.count}</span>
+          <span className="drafts-banner-text">Допишите цену и опубликуйте</span>
+          <Icon name="right" size={18} />
+        </Link>
+      ) : null}
 
       <div className={moreFilters ? "filters is-open" : "filters"}>
         <input
@@ -187,80 +212,6 @@ export function ProductsPage() {
       {actionError ? <p className="alert">{actionError}</p> : null}
       {notice ? <p className="note note-success">{notice}</p> : null}
 
-      {selected.size > 0 ? (
-        <div className="bulk-bar" role="region" aria-label="Действия с отмеченными товарами">
-          <strong>Выбрано: {selected.size}</strong>
-          {allChecked ? null : (
-            <button
-              type="button"
-              className="bulk-link"
-              onClick={() => setSelected(new Set(rows.map((row) => row.id)))}
-            >
-              Выбрать все
-            </button>
-          )}
-          <button type="button" className="bulk-link" onClick={() => setSelected(new Set())}>
-            Снять выбор
-          </button>
-          <span className="bulk-gap" />
-          <label className="bulk-field">
-            Статус
-            <select value={bulkLabel} onChange={(e) => setBulkLabel(e.target.value)}>
-              <option value="">Выберите…</option>
-              {(labels.data ?? []).map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-              <option value="none">Без статуса</option>
-            </select>
-          </label>
-          <button
-            type="button"
-            className="button button-accent"
-            disabled={busy || !bulkLabel}
-            onClick={() => void apply({ status: labelValue(bulkLabel) }, "Статус изменён у товаров")}
-          >
-            Сменить статус
-          </button>
-          <label className="bulk-field">
-            Категория
-            <select value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)}>
-              <option value="">Выберите…</option>
-              {leafCategories.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.depth ? `— ${item.name}` : item.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
-            className="button button-outline"
-            disabled={busy || !bulkCategory}
-            onClick={() => void apply({ category: Number(bulkCategory) }, "Перенесено товаров")}
-          >
-            Перенести
-          </button>
-          <button
-            type="button"
-            className="button button-outline"
-            disabled={busy}
-            onClick={() => void apply({ is_active: false }, "Скрыто товаров")}
-          >
-            Скрыть
-          </button>
-          <button
-            type="button"
-            className="button button-outline"
-            disabled={busy}
-            onClick={() => void apply({ is_active: true }, "Показано товаров")}
-          >
-            Показать
-          </button>
-        </div>
-      ) : null}
-
       <Table loading={loading} className="table-products">
         <thead>
           <tr>
@@ -332,7 +283,34 @@ export function ProductsPage() {
                     ))}
                   </select>
                 </td>
-                <td>{visibilityBadge(product)}</td>
+                <td>
+                  <span className="row-tools">
+                    {visibilityBadge(product)}
+                    {product.deleted_at ? (
+                      <button
+                        type="button"
+                        className="row-tool"
+                        disabled={busy}
+                        aria-label={`Восстановить ${product.name}`}
+                        title="Восстановить"
+                        onClick={() => void apply({ deleted: false }, "Восстановлено товаров", [product.id])}
+                      >
+                        <Icon name="undo" size={18} />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="row-tool row-tool-danger"
+                        disabled={busy}
+                        aria-label={`Удалить ${product.name}`}
+                        title="Удалить"
+                        onClick={() => removeProducts([product.id], product.name)}
+                      >
+                        <Icon name="trash" size={18} />
+                      </button>
+                    )}
+                  </span>
+                </td>
               </tr>
             );
           })}
@@ -367,6 +345,102 @@ export function ProductsPage() {
           Вперёд →
         </button>
       </div>
+
+      {selected.size > 0 ? (
+        <div className="batch-dock batch-actions bulk-dock" role="region" aria-label="Действия с отмеченными товарами">
+          <div className="bulk-dock-head">
+            <strong>Выбрано: {selected.size}</strong>
+            {allChecked ? null : (
+              <button type="button" className="bulk-link" onClick={() => setSelected(new Set(rows.map((row) => row.id)))}>
+                <Icon name="check" size={14} />
+                Все на странице
+              </button>
+            )}
+            <button type="button" className="bulk-close" aria-label="Снять выбор" onClick={() => setSelected(new Set())}>
+              <Icon name="close" size={18} />
+            </button>
+          </div>
+          {showingDeleted ? (
+            <div className="batch-actions-grid batch-actions-grid-1">
+              <button
+                type="button"
+                className="batch-action is-primary"
+                disabled={busy}
+                onClick={() => void apply({ deleted: false }, "Восстановлено товаров")}
+              >
+                <Icon name="undo" />
+                Восстановить
+              </button>
+            </div>
+          ) : (
+            <div className="batch-actions-grid batch-actions-grid-5">
+              <button type="button" className="batch-action" disabled={busy} onClick={() => setSheet("status")}>
+                <Icon name="tag" />
+                Статус
+              </button>
+              <button type="button" className="batch-action" disabled={busy} onClick={() => setSheet("category")}>
+                <Icon name="folder" />
+                Категория
+              </button>
+              <button
+                type="button"
+                className="batch-action"
+                disabled={busy}
+                onClick={() => void apply({ is_active: false }, "Скрыто товаров")}
+              >
+                <Icon name="eyeOff" />
+                Скрыть
+              </button>
+              <button
+                type="button"
+                className="batch-action"
+                disabled={busy}
+                onClick={() => void apply({ is_active: true }, "Показано товаров")}
+              >
+                <Icon name="eye" />
+                Показать
+              </button>
+              <button
+                type="button"
+                className="batch-action is-danger"
+                disabled={busy}
+                onClick={() => removeProducts([...selected])}
+              >
+                <Icon name="trash" />
+                Удалить
+              </button>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {sheet === "status" ? (
+        <PickSheet
+          title={`Статус · товаров: ${selected.size}`}
+          options={[
+            ...(labels.data ?? []).map((item) => ({ value: String(item.id), label: item.name, tone: item.tone })),
+            { value: "none", label: "Без статуса" },
+          ]}
+          onPick={(value) => {
+            setSheet(null);
+            void apply({ status: labelValue(value) }, "Статус изменён у товаров");
+          }}
+          onClose={() => setSheet(null)}
+        />
+      ) : null}
+      {sheet === "category" && categories.data ? (
+        <CategorySheet
+          title={`Категория · товаров: ${selected.size}`}
+          categories={leafCategories}
+          all={categories.data}
+          counts={new Map(leafCategories.map((item) => [item.id, item.products_count]))}
+          onPick={(item) => {
+            setSheet(null);
+            void apply({ category: item.id }, "Перенесено товаров");
+          }}
+          onClose={() => setSheet(null)}
+        />
+      ) : null}
 
       {labels.data ? <LabelsManager labels={labels.data} onChanged={labels.reload} /> : null}
     </section>

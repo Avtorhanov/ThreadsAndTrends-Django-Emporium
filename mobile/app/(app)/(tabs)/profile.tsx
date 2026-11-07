@@ -23,6 +23,7 @@ import {
   radius,
   type RadiusMode,
   type TextMode,
+  textScale,
 } from "../../../src/theme/tokens";
 
 const RADIUS_SEGMENTS: { value: RadiusMode; label: string }[] = [
@@ -31,13 +32,13 @@ const RADIUS_SEGMENTS: { value: RadiusMode; label: string }[] = [
   { value: "soft", label: "Мягкие" },
 ];
 
-const TEXT_SEGMENTS: { value: TextMode; label: string }[] = [
-  { value: "s", label: "Обычный" },
-  { value: "m", label: "Крупнее" },
-  { value: "l", label: "Крупный" },
-];
+// Масштаб интерфейса, % (ключи — из tokens.json): весь интерфейс пропорционально.
+const TEXT_SEGMENTS: { value: TextMode; label: string }[] = (Object.keys(textScale) as TextMode[]).map((value) => ({
+  value,
+  label: value,
+}));
 
-/** Оформление: тема, палитра (что разрешил магазин), акцент «Своей», углы, размер текста. */
+/** Оформление: тема, палитра (что разрешил магазин), акцент «Своей», углы, масштаб. */
 function ThemeCard() {
   const s = useStyles();
   const { preference, setPreference, look, setLook, palettes, c } = useTheme();
@@ -124,9 +125,9 @@ function ThemeCard() {
         />
       </View>
       <View style={s.lookGroup}>
-        <Text style={s.lookLabel}>Размер текста</Text>
+        <Text style={s.lookLabel}>Масштаб, %</Text>
         <Segmented<TextMode>
-          label="Размер текста"
+          label="Масштаб"
           segments={TEXT_SEGMENTS}
           value={look.text}
           onChange={(text) => setLook({ text })}

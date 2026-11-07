@@ -55,7 +55,7 @@
     <div class="rise r1">
       <a class="tag" href="{% url 'web:category' product.category.slug %}">{{ product.category.name }}</a>
       <h1 class="pd__title">{{ product.name }}</h1>
-      {% if product.status %}<p class="status status--{{ product.status.tone }} pd__status"{% if product.status.hint %} title="{{ product.status.hint }}"{% endif %}>{{ product.status.name }}</p>{% if product.status.hint %}<p class="muted pd__status-hint">{{ product.status.hint }}</p>{% endif %}{% endif %}
+      {% if product.status and in_stock %}<p class="status status--{{ product.status.tone }} pd__status"{% if product.status.hint %} title="{{ product.status.hint }}"{% endif %}>{{ product.status.name }}</p>{% if product.status.hint %}<p class="muted pd__status-hint">{{ product.status.hint }}</p>{% endif %}{% endif %}
       <p class="price price--detail">
         {% if product.price_on_request %}<span class="price__now price__now--ask">Цена по запросу</span>{% else %}
         <span class="price__now">{{ product.price_kopecks|rub }}&nbsp;₽</span>{% endif %}

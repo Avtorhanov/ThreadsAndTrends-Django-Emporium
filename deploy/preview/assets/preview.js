@@ -234,7 +234,7 @@
       palette: palette,
       accent: cookieValue("accent"),
       radius: cookieValue("radius") || t.default_radius,
-      text: cookieValue("text_size") || t.default_text || "s",
+      text: ({ s: "100", m: "115", l: "130" })[cookieValue("text_size")] || cookieValue("text_size") || t.default_text || "100",
       nav: cookieValue("nav") || t.nav_style || "solid"
     };
     Object.keys(current).forEach(function (name) {
@@ -259,7 +259,7 @@
     if (!p.in_stock) html += '<span class="soldout">Нет в наличии</span>';
     if (inCart && inCart[p.slug]) html += '<span class="incart">' + icon("bag", 14) + "В корзине</span>";
     html += '</span><span class="card__body"><span class="card__title">' + esc(p.name) + "</span>";
-    if (p.status) html += '<span class="mark mark--' + esc(p.status.tone) + '">' + esc(p.status.name) + "</span>";
+    html += p.status && p.in_stock ? '<span class="mark mark--' + esc(p.status.tone) + '">' + esc(p.status.name) + "</span>" : '<span class="mark mark--empty" aria-hidden="true">&nbsp;</span>';
     html += '<span class="price">';
     html += p.price_on_request ? '<span class="price__now price__now--ask">По запросу</span>' : '<span class="price__now">' + rub(p.price_kopecks) + "&nbsp;₽</span>";
     if (p.compare_at_kopecks && !p.price_on_request) html += '<s class="price__old"><span class="sr">Старая цена </span>' + rub(p.compare_at_kopecks) + "&nbsp;₽</s>";
@@ -357,9 +357,13 @@
           (b.title ? '<h2 class="hblock-head__title">' + esc(b.title) + "</h2>" : "") + '<div class="hblock-cats__list">' + items.join("") + "</div></nav>";
       }
       var pars = paragraphs(b.text);
-      if (!b.title && !pars.length) return "";
-      return '<section class="hblock hblock-text">' + (b.title ? '<h2 class="hblock-head__title">' + esc(b.title) + "</h2>" : "") +
-        pars.map(function (p) { return "<p>" + esc(p).replace(/\n/g, "<br>") + "</p>"; }).join("") + "</section>";
+      var picture = (b.preview_images || [])[0];
+      if (!b.title && !pars.length && !picture) return "";
+      var side = ["left", "right"].indexOf(b.image_side) >= 0 ? b.image_side : "top";
+      return '<section class="hblock hblock-text' + (picture ? " hblock-text--img hblock-text--" + side : "") + '">' +
+        (picture ? '<span class="hblock-text__media">' + img(picture, "(min-width: 900px) 440px, 100vw", "hblock-text__img", false, "") + "</span>" : "") +
+        '<div class="hblock-text__body">' + (b.title ? '<h2 class="hblock-head__title">' + esc(b.title) + "</h2>" : "") +
+        pars.map(function (p) { return "<p>" + esc(p).replace(/\n/g, "<br>") + "</p>"; }).join("") + "</div></section>";
   }
 
   function renderHome() {
@@ -539,7 +543,7 @@
     var chosen = single ? single.id : (inCartIds.length === 1 && state[inCartIds[0]].max > 0 ? inCartIds[0] : null);
     var chosenState = chosen ? state[chosen] : null;
     var inCartTotal = inCartIds.reduce(function (n, id) { return n + state[id].q; }, 0);
-    var st = p.status;
+    var st = p.in_stock ? p.status : null; // нет в наличии — статус не показываем (как product.html)
     var off = discount(p);
     var t = tone(p.slug);
 

@@ -1,6 +1,7 @@
 import type { Category } from "../../api/catalog";
 import { type HomeBlock, inkFor } from "../../api/home";
 import { formatKopecks } from "../../lib/money";
+import { useWordmark } from "../../theme/wordmark";
 
 type Props = {
   blocks: HomeBlock[];
@@ -14,6 +15,7 @@ type Props = {
 export function HomePreview({ blocks, categories, selectedId, onSelect, onBack }: Props) {
   const visible = blocks.filter((block) => block.is_visible);
   const roots = categories.filter((item) => item.parent === null && item.is_active);
+  const wordmark = useWordmark();
 
   return (
     <div className="he-preview-wrap">
@@ -27,7 +29,7 @@ export function HomePreview({ blocks, categories, selectedId, onSelect, onBack }
         <div className="he-phone-bar">
           <span className="he-phone-logo" aria-hidden="true">
             <i>DiDi</i>
-            <strong>shop</strong>
+            {wordmark ? <strong>{wordmark}</strong> : null}
           </span>
           <span className="he-phone-dot" />
         </div>
@@ -149,8 +151,10 @@ function PreviewBlock({ block, roots }: { block: HomeBlock; roots: Category[] })
       </>
     );
   }
+  // Телефон: картинка текста всегда сверху (слева/справа — на широком экране).
   return (
-    <span className="he-pv-text">
+    <span className={block.preview_images.length ? "he-pv-text has-image" : "he-pv-text"}>
+      {block.preview_images[0] ? <img className="he-pv-text-img" src={block.preview_images[0]} alt="" /> : null}
       {block.title ? <span className="he-pv-title">{block.title}</span> : null}
       {block.text
         .split("\n\n")

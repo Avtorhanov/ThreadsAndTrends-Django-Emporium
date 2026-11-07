@@ -13,6 +13,7 @@ from content.models import (
     HomeBlock,
     HomeBlockKind,
     HomeImage,
+    ImageSide,
     ShopSettings,
 )
 from content.services import MAX_BODY_LENGTH
@@ -267,9 +268,14 @@ class HomeBlockSerializer(serializers.Serializer):
     text = serializers.CharField(help_text="Баннер — описание; текст — абзацы через пустую строку")
     color = serializers.CharField(help_text="Фон баннера #RRGGBB; у других блоков пусто")
     ink = serializers.CharField(help_text="Цвет текста на фоне баннера")
-    image_url = serializers.SerializerMethodField(help_text="Первая картинка баннера")
+    image_url = serializers.SerializerMethodField(help_text="Первая картинка баннера или текста")
     images = serializers.SerializerMethodField(
-        help_text="Картинки баннера по порядку (сменяют друг друга); у баннера товара — его фото"
+        help_text="Картинки баннера по порядку (сменяют друг друга); у баннера товара — его фото; "
+        "у текста — одна"
+    )
+    image_side = serializers.ChoiceField(
+        choices=ImageSide.choices,
+        help_text="Текст: картинка сверху, слева или справа (на узком экране — сверху)",
     )
     product = CatalogProductSerializer(
         allow_null=True, help_text="Баннер товара — переход на товар"
@@ -339,6 +345,7 @@ class AdminHomeBlockSerializer(serializers.ModelSerializer):
             "image_url",
             "image_ids",
             "images",
+            "image_side",
             "product",
             "preview_product",
             "preview_images",
@@ -391,7 +398,7 @@ class AdminHomeBlockSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_preview_images(self, block):
-        if block.kind != HomeBlockKind.BANNER:
+        if block.kind not in (HomeBlockKind.BANNER, HomeBlockKind.TEXT):
             return []
         return [_image_url(self.context, image) for image in self._resolved(block).images]
 
@@ -445,6 +452,11 @@ class AdminHomeBlockUpdateSerializer(serializers.Serializer):
         max_length=home.MAX_BANNER_IMAGES,
         required=False,
         help_text="Порядок картинок баннера; без id — картинка убрана",
+    )
+    image_side = serializers.ChoiceField(
+        choices=ImageSide.choices,
+        required=False,
+        help_text="Текст: картинка сверху, слева или справа",
     )
     product = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(),
@@ -503,6 +515,12 @@ class ShopThemeSerializer(serializers.Serializer):
     nav_style = serializers.ChoiceField(
         choices=look.NAV_CHOICES, help_text="Вид нижнего меню витрины на телефоне"
     )
+    show_wordmark = serializers.BooleanField(
+        help_text="Показывать слово рядом с плашкой «DiDi» в логотипе"
+    )
+    wordmark = serializers.CharField(
+        help_text="Слово рядом с плашкой «DiDi» (до 6 символов; пусто — без слова)"
+    )
 
 
 class AdminThemeSerializer(ShopThemeSerializer):
@@ -523,10 +541,20 @@ class AdminThemeWriteSerializer(serializers.Serializer):
     default_text = serializers.ChoiceField(
         choices=look.TEXT_CHOICES,
         required=False,
-        help_text="Размер текста для нового посетителя; не передан — прежний",
+        help_text="Масштаб интерфейса для нового посетителя, %; не передан — прежний",
     )
     nav_style = serializers.ChoiceField(
         choices=look.NAV_CHOICES,
         required=False,
         help_text="Вид нижнего меню витрины; не передан — прежний",
+    )
+    show_wordmark = serializers.BooleanField(
+        required=False, help_text="Слово в логотипе; не передано — прежнее"
+    )
+    wordmark = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=40,
+        trim_whitespace=False,
+        help_text="Слово рядом с «DiDi», до 6 символов, пусто — без слова; не передано — прежнее",
     )

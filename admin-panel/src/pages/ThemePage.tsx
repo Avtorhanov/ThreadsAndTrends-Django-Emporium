@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { ApiError } from "../api/errors";
+import { ScalePicker } from "../components/ScalePicker";
 import {
   GROUP_TITLES,
   MODE_LABELS,
@@ -15,11 +16,11 @@ import {
   type ThemePalette,
   type ThemeRadius,
   type ThemeState,
-  type ThemeText,
-  TEXT_LABELS,
+  TEXT_VALUES,
   themeService,
 } from "../api/theme";
 import { useLoader } from "../hooks/useCatalog";
+import { setWordmark } from "../theme/wordmark";
 
 function message(error: unknown): string {
   if (!(error instanceof ApiError)) return "Не сохранено.";
@@ -34,7 +35,24 @@ function inputOf(state: ThemeState): ThemeInput {
     default_radius: state.default_radius,
     default_text: state.default_text,
     nav_style: state.nav_style,
+    show_wordmark: state.show_wordmark,
+    wordmark: state.wordmark,
   };
+}
+
+/** Слово рядом с «DiDi»: до 6 символов — как look.WORDMARK_MAX на сервере. */
+const WORDMARK_MAX = 6;
+// Место под слово в шапке витрины на узком телефоне (360 px) между «DiDi» и кнопками.
+const WORDMARK_ROOM = 108;
+
+/** Поместится ли слово в шапку узкого телефона: ширина шрифтом витрины (длинное — мельче, как в site.css). */
+function wordmarkFits(word: string): boolean {
+  const size = word.length >= 6 ? 20 : word.length === 5 ? 22 : 24;
+  const family = getComputedStyle(document.documentElement).getPropertyValue("--font-display").trim() || "sans-serif";
+  const context = document.createElement("canvas").getContext("2d");
+  if (!context) return true;
+  context.font = `700 ${size}px ${family}`;
+  return context.measureText(word).width - 0.5 * word.length <= WORDMARK_ROOM; // letter-spacing −0,5 px
 }
 
 /**
@@ -48,10 +66,12 @@ export function ThemePage() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [wordDraft, setWordDraft] = useState("");
 
   useEffect(() => {
     if (loader.data) {
       setState(loader.data);
+      setWordDraft(loader.data.wordmark);
       setView((prev) => prev ?? loader.data?.default_palette ?? null);
     }
   }, [loader.data]);
@@ -69,12 +89,17 @@ export function ThemePage() {
       default_radius: next.default_radius,
       default_text: next.default_text ?? state.default_text,
       nav_style: next.nav_style ?? state.nav_style,
+      show_wordmark: next.show_wordmark ?? state.show_wordmark,
+      wordmark: next.wordmark ?? state.wordmark,
     });
     setBusy(true);
     setError(null);
     setSaved(false);
     try {
-      setState(await themeService.save(next));
+      const result = await themeService.save(next);
+      setState(result);
+      setWordmark(result.show_wordmark, result.wordmark);
+      setWordDraft(result.wordmark);
       setSaved(true);
     } catch (err) {
       setState(previous);
@@ -185,26 +210,68 @@ export function ThemePage() {
                 </div>
               </div>
               <div className="field">
-                <span>Размер текста</span>
-                <div className="seg-switch seg-switch-3" role="radiogroup" aria-label="Размер текста по умолчанию">
-                  {(Object.entries(TEXT_LABELS) as [ThemeText, string][]).map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      role="radio"
-                      aria-checked={state.default_text === value}
-                      className={state.default_text === value ? "is-on" : undefined}
-                      disabled={busy}
-                      onClick={() => void save({ default_text: value })}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                <span>Масштаб, %</span>
+                <ScalePicker
+                  label="Масштаб по умолчанию"
+                  values={TEXT_VALUES}
+                  value={state.default_text}
+                  disabled={busy}
+                  onChange={(value) => void save({ default_text: value })}
+                />
               </div>
               <p className="muted small">
                 Действует у всех, кто не менял оформление в профиле. Ваш личный выбор в этом браузере
                 сбрасывается при сохранении — витрина сразу показывает настройки магазина.
+              </p>
+            </div>
+
+            <div className="card form-card">
+              <h2>Логотип</h2>
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={state.show_wordmark}
+                  disabled={busy}
+                  onChange={(event) => void save({ show_wordmark: event.target.checked })}
+                />
+                <span className="switch-track" aria-hidden="true" />
+                Слово рядом с «DiDi»
+              </label>
+              {state.show_wordmark ? (
+                <form
+                  className="wordmark-form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const word = wordDraft.trim().replace(/\s+/g, " ");
+                    if (word !== state.wordmark) void save({ wordmark: word });
+                  }}
+                >
+                  <span className="wordmark-input">
+                    <input
+                      value={wordDraft}
+                      maxLength={WORDMARK_MAX}
+                      aria-label="Слово рядом с «DiDi»"
+                      placeholder="Пусто — только «DiDi»"
+                      aria-describedby="wordmark-hint"
+                      onChange={(event) => setWordDraft(event.target.value)}
+                    />
+                    <span className="muted small" aria-hidden="true">
+                      {wordDraft.length}/{WORDMARK_MAX}
+                    </span>
+                  </span>
+                  <button
+                    type="submit"
+                    className="button button-accent"
+                    disabled={busy || wordDraft.trim().replace(/\s+/g, " ") === state.wordmark}
+                  >
+                    Сохранить
+                  </button>
+                </form>
+              ) : null}
+              <p id="wordmark-hint" className="muted small">
+                {state.show_wordmark && wordDraft.trim() && !wordmarkFits(wordDraft.trim())
+                  ? "Широкие буквы: на узком телефоне слово обрежется — короче или уже буквы будет аккуратнее."
+                  : `До ${WORDMARK_MAX} символов: буквы, цифры, пробел, дефис, точка, «&». В шапке сайта, в приложении и в панели; пусто или выключено — только плашка «DiDi».`}
               </p>
             </div>
 
@@ -238,8 +305,8 @@ export function ThemePage() {
             <div className="card theme-preview-card">
               <h2>Предпросмотр: {shown.name}</h2>
               <div className="theme-previews">
-                <ThemePreview palette={shown} dark={false} radius={state.default_radius} nav={state.nav_style} />
-                <ThemePreview palette={shown} dark radius={state.default_radius} nav={state.nav_style} />
+                <ThemePreview palette={shown} dark={false} radius={state.default_radius} nav={state.nav_style} wordmark={state.show_wordmark && state.wordmark ? state.wordmark : null} />
+                <ThemePreview palette={shown} dark radius={state.default_radius} nav={state.nav_style} wordmark={state.show_wordmark && state.wordmark ? state.wordmark : null} />
               </div>
               {shown.key === "custom" ? (
                 <p className="muted small">«Своя»: покупатель выбирает акцент из {state.accents.length} проверенных цветов.</p>
@@ -332,11 +399,13 @@ function ThemePreview({
   dark,
   radius,
   nav,
+  wordmark,
 }: {
   palette: ThemePalette;
   dark: boolean;
   radius: ThemeRadius;
   nav: ThemeNav;
+  wordmark: string | null;
 }) {
   const k = RADIUS_SCALE[radius];
   const r = (value: number) => `${Math.round(value * k)}px`;
@@ -351,7 +420,7 @@ function ThemePreview({
         <span className="theme-preview-logo" style={{ background: dark ? palette.accent : palette.brand, color: dark ? "#16191D" : palette.accent, borderRadius: r(10) }}>
           DiDi
         </span>
-        <strong style={{ color: dark ? palette.accent : palette.brand }}>shop</strong>
+        {wordmark ? <strong style={{ color: dark ? palette.accent : palette.brand }}>{wordmark}</strong> : null}
         <span className="theme-preview-btn" style={{ background: palette.accent, borderRadius: r(10) }} />
       </div>
       <div className="theme-preview-chips">

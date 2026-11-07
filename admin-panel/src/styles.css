@@ -35,13 +35,87 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Масштаб панели («Внешний вид → Панель», data-text=80…150, --text-scale из tokens.css): весь
+   интерфейс пропорционально (CSS zoom), вёрстка та же. vh/vw внутри body масштабируются вместе
+   с ним — поэтому делятся на --text-scale (--vh, --vw). */
+:root {
+  --vh: calc(1vh / var(--text-scale, 1));
+  --vw: calc(1vw / var(--text-scale, 1));
+}
+
+:root[data-text] body {
+  zoom: var(--text-scale);
+}
+
+/* Масштаб: «A−», 7 вариантов, «A+». */
+.scale-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scale-step {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-ctl);
+  background: var(--surface);
+  color: var(--ink);
+  font: 800 14px var(--font-text);
+  cursor: pointer;
+}
+
+.scale-step-up {
+  font-size: 18px;
+}
+
+.scale-step sup {
+  font-size: 0.7em;
+}
+
+.scale-step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.scale-options {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  min-width: 0;
+  padding: 4px;
+  border-radius: var(--radius-ctl);
+  background: var(--neutral-bg);
+}
+
+.scale-options button {
+  min-width: 0;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--radius-ctl) - 4px);
+  background: transparent;
+  color: var(--muted);
+  font: 800 12px var(--font-text);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.scale-options button.is-on {
+  background: var(--seg-on-bg);
+  color: var(--seg-on-ink);
+  box-shadow: var(--shadow-control);
+}
+
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: calc(100 * var(--vh));
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-text);
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   /* Фон — без перехода: Safari 26 красит полосы браузера в цвет фона и при плавной смене
@@ -60,7 +134,7 @@ h3 {
 
 h1 {
   margin: 0;
-  font-size: calc(24px * var(--text-scale, 1));
+  font-size: 24px;
 }
 
 a {
@@ -82,7 +156,7 @@ a {
 }
 
 .small {
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
 }
 
 .strong {
@@ -92,14 +166,14 @@ a {
 .eyebrow {
   margin: 0 0 4px;
   color: var(--muted);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .centered {
-  min-height: 100vh;
+  min-height: calc(100 * var(--vh));
   display: grid;
   place-content: center;
   justify-items: center;
@@ -120,7 +194,7 @@ a {
 
 .card h2 {
   margin: 0 0 12px;
-  font-size: calc(17px * var(--text-scale, 1));
+  font-size: 17px;
 }
 
 .card > p.muted {
@@ -146,7 +220,7 @@ a {
 /* --- Вход --- */
 
 .login-card {
-  width: min(400px, calc(100vw - 32px));
+  width: min(400px, calc(100 * var(--vw) - 32px));
   display: grid;
   gap: 16px;
   text-align: left;
@@ -162,7 +236,7 @@ a {
 }
 
 .login-head h1 {
-  font-size: calc(20px * var(--text-scale, 1));
+  font-size: 20px;
 }
 
 /* --- Поля --- */
@@ -171,7 +245,7 @@ a {
   display: grid;
   gap: 6px;
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -179,7 +253,7 @@ input,
 select,
 textarea {
   font: inherit;
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
   font-weight: 500;
   color: var(--ink);
   background: var(--surface);
@@ -231,7 +305,7 @@ textarea {
 
 .field-error {
   color: var(--danger);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -243,7 +317,7 @@ textarea {
 
 .button {
   font: inherit;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -333,7 +407,7 @@ textarea {
 /* --- Каркас: боковое меню (тёмная панель, как нижняя панель витрины) --- */
 
 .shell {
-  min-height: 100vh;
+  min-height: calc(100 * var(--vh));
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
 }
@@ -342,7 +416,7 @@ textarea {
   position: sticky;
   top: 12px;
   margin: 12px 0 12px 12px;
-  height: calc(100vh - 24px);
+  height: calc(100 * var(--vh) - 24px);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -378,7 +452,7 @@ textarea {
 
 .sidebar-caption {
   margin: 10px 8px 12px;
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -403,7 +477,7 @@ textarea {
   color: var(--on-accent);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: calc(11.5px * var(--text-scale, 1));
+  font-size: 11.5px;
   letter-spacing: -0.04em;
   box-shadow: var(--shadow-accent-glow);
 }
@@ -411,7 +485,7 @@ textarea {
 .brand-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: calc(22px * var(--text-scale, 1));
+  font-size: 22px;
   letter-spacing: -0.5px;
   line-height: 1;
   color: var(--accent);
@@ -524,13 +598,13 @@ textarea {
 }
 
 .user-email-label {
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
 .user-email-value {
   overflow: hidden;
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   opacity: 0.8;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -591,7 +665,7 @@ textarea {
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -605,7 +679,7 @@ textarea {
   border-radius: 10px;
   background: var(--accent);
   color: var(--on-accent);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
 }
 
 .date-range {
@@ -620,7 +694,7 @@ textarea {
   gap: 6px;
   color: var(--muted);
   font-weight: 600;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
 }
 
 .date-filter input {
@@ -629,9 +703,10 @@ textarea {
 
 .pagination {
   display: flex;
+  flex-wrap: wrap; /* крупный масштаб на узком экране — кнопки переносятся, а не выходят за край */
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 8px 16px;
   margin-top: 16px;
 }
 
@@ -679,7 +754,7 @@ textarea {
 
 .table th {
   color: var(--muted);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -744,7 +819,7 @@ textarea {
   align-items: center;
   padding: 3px 10px;
   border-radius: var(--radius-badge);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -819,7 +894,7 @@ textarea {
 
 .old-price {
   margin-left: 8px;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   color: var(--strike);
 }
 
@@ -945,13 +1020,13 @@ a.stat:hover {
 
 .stat-label {
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
 .stat-value {
   font-family: var(--font-display);
-  font-size: calc(28px * var(--text-scale, 1));
+  font-size: 28px;
   font-weight: 600;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
@@ -992,7 +1067,7 @@ a.stat:hover {
 
 .card-header a {
   font-weight: 700;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   text-decoration: none;
 }
 
@@ -1056,11 +1131,11 @@ a.stat:hover {
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    font-size: calc(10px * var(--text-scale, 1));
+    font-size: 10px;
   }
 
   .mobilebar .brand-name {
-    font-size: calc(18px * var(--text-scale, 1));
+    font-size: 18px;
   }
 
   .sidebar {
@@ -1068,7 +1143,7 @@ a.stat:hover {
     z-index: 40;
     inset: 8px auto 8px 8px;
     margin: 0;
-    width: min(300px, calc(100vw - 48px));
+    width: min(300px, calc(100 * var(--vw) - 48px));
     height: auto;
     transform: translateX(calc(-100% - 16px));
     transition: transform 0.32s var(--ease-soft);
@@ -1108,7 +1183,7 @@ a.stat:hover {
 
 @media (max-width: 720px) {
   h1 {
-    font-size: calc(21px * var(--text-scale, 1));
+    font-size: 21px;
   }
 
   .card {
@@ -1213,7 +1288,7 @@ a.stat:hover {
     margin-right: 12px;
     line-height: 22px;
     color: var(--muted);
-    font-size: calc(12px * var(--text-scale, 1));
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -1288,7 +1363,7 @@ a.stat:hover {
   }
 
   .stat-value {
-    font-size: calc(24px * var(--text-scale, 1));
+    font-size: 24px;
   }
 
 }
@@ -1347,7 +1422,7 @@ a.stat:hover {
 }
 
 .pf-title {
-  font-size: calc(17px * var(--text-scale, 1));
+  font-size: 17px;
   font-weight: 700;
 }
 
@@ -1386,7 +1461,7 @@ a.stat:hover {
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition:
@@ -1480,7 +1555,7 @@ a.stat:hover {
 .pf-more summary {
   cursor: pointer;
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
   padding: 4px 0;
 }
@@ -1501,7 +1576,7 @@ a.stat:hover {
 
 .saved {
   color: var(--success);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -1540,7 +1615,7 @@ a.stat:hover {
   border-radius: 9px;
   background: var(--tag);
   color: var(--tag-ink);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -1551,7 +1626,7 @@ a.stat:hover {
   border-radius: 7px;
   background: transparent;
   color: inherit;
-  font-size: calc(16px * var(--text-scale, 1));
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
 }
@@ -1574,7 +1649,7 @@ a.stat:hover {
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -1630,7 +1705,7 @@ a.stat:hover {
   margin: 0;
   padding: 10px 12px;
   border-radius: var(--radius-ctl);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -1650,7 +1725,7 @@ a.stat:hover {
 .seller-line {
   margin: 0;
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   line-height: 1.6;
   text-wrap: balance;
 }
@@ -1831,7 +1906,7 @@ a.stat:hover {
   align-items: center;
   gap: 6px;
   color: var(--nav-ink);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -1884,7 +1959,7 @@ a.stat:hover {
   align-items: center;
   gap: 8px;
   color: var(--warning);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -1922,7 +1997,7 @@ a.stat:hover {
 .pf-group-aside {
   margin-left: auto;
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
 }
 
 .pf-num {
@@ -1935,7 +2010,7 @@ a.stat:hover {
   background: var(--nav);
   color: var(--accent);
   font-family: var(--font-display);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -1980,7 +2055,7 @@ a.stat:hover {
 .variant-head {
   padding: 0 2px;
   color: var(--muted);
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2005,7 +2080,7 @@ a.stat:hover {
 .variant-row input {
   min-height: 40px;
   padding: 8px 10px;
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
 }
 
 .variant-size {
@@ -2073,7 +2148,7 @@ a.stat:hover {
   background: none;
   color: var(--ink);
   font: inherit;
-  font-size: calc(18px * var(--text-scale, 1));
+  font-size: 18px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -2123,12 +2198,12 @@ a.stat:hover {
 
   .variant-sku {
     min-height: 34px;
-    font-size: calc(14px * var(--text-scale, 1));
+    font-size: 14px;
   }
 
   .variant-sku::placeholder,
   .variant-size::placeholder {
-    font-size: calc(13px * var(--text-scale, 1));
+    font-size: 13px;
   }
 }
 
@@ -2146,6 +2221,10 @@ a.stat:hover {
 .pending-photos {
   display: grid;
   gap: 10px;
+}
+
+.pending-paste {
+  justify-self: start;
 }
 
 .photo-grid {
@@ -2177,7 +2256,7 @@ a.stat:hover {
   border-radius: 6px;
   background: var(--nav);
   color: var(--accent);
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -2231,7 +2310,7 @@ a.stat:hover {
 .status-last-comment {
   margin: 0;
   color: var(--muted);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 
@@ -2256,7 +2335,7 @@ a.stat:hover {
   align-items: center;
   gap: 10px;
   color: var(--ink);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -2276,7 +2355,7 @@ a.stat:hover {
   border-radius: var(--radius-ctl);
   border: 1px dashed var(--input-line);
   background: var(--surface);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 
@@ -2297,7 +2376,7 @@ a.stat:hover {
   border-radius: var(--radius-ctl);
   background: var(--surface);
   color: var(--ink);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   overflow-wrap: anywhere;
 }
 
@@ -2309,7 +2388,7 @@ a.stat:hover {
   gap: 6px;
   padding: 5px 10px;
   border-radius: 999px;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -2358,7 +2437,7 @@ a.stat:hover {
   padding: 10px 12px;
   border-radius: var(--radius-ctl);
   background: var(--surface);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -2451,7 +2530,7 @@ a.stat:hover {
   height: 26px;
   border-radius: 8px;
   background: var(--neutral-bg);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -2584,7 +2663,7 @@ a.stat:hover {
   padding: 0 10px 0 6px;
   background: var(--surface);
   color: var(--ink);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -2630,7 +2709,7 @@ a.stat:hover {
   align-items: center;
   gap: 4px;
   color: var(--ink);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -2653,7 +2732,7 @@ a.stat:hover {
   align-items: center;
   gap: 10px;
   color: var(--ink);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -2713,7 +2792,7 @@ a.stat:hover {
   justify-content: space-between;
   padding: 12px 16px 8px;
   font-family: var(--font-display);
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
 }
 
 .he-phone-logo {
@@ -2731,7 +2810,7 @@ a.stat:hover {
   background: var(--brand);
   color: var(--brand-ink);
   font-family: var(--font-display);
-  font-size: calc(8px * var(--text-scale, 1));
+  font-size: 8px;
   font-style: normal;
   font-weight: 700;
   letter-spacing: -0.04em;
@@ -2739,7 +2818,7 @@ a.stat:hover {
 
 .he-phone-logo strong {
   color: var(--brand);
-  font-size: calc(17px * var(--text-scale, 1));
+  font-size: 17px;
   letter-spacing: -0.4px;
 }
 
@@ -2798,14 +2877,14 @@ a.stat:hover {
   flex: 1;
   min-width: 0;
   padding: 12px 14px;
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
 .he-pv-banner-body strong {
   font-family: var(--font-display);
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
   line-height: 1.2;
 }
 
@@ -2823,7 +2902,7 @@ a.stat:hover {
 
 .he-pv-title {
   font-family: var(--font-display);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -2856,7 +2935,7 @@ a.stat:hover {
 
 .he-pv-name {
   overflow: hidden;
-  font-size: calc(10px * var(--text-scale, 1));
+  font-size: 10px;
   font-weight: 700;
   line-height: 1.25;
   display: -webkit-box;
@@ -2866,7 +2945,7 @@ a.stat:hover {
 
 .he-pv-price {
   font-family: var(--font-display);
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
 }
 
 .he-pv-note {
@@ -2884,7 +2963,7 @@ a.stat:hover {
   padding: 6px 10px;
   border-radius: 9px;
   background: var(--surface);
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -2897,8 +2976,43 @@ a.stat:hover {
   background: var(--card);
 }
 
+.he-pv-text.has-image {
+  overflow: hidden;
+}
+
+/* Картинка в рамке, как фото на карточках (витрина: .hblock-text--img). */
+.he-pv-text-img {
+  display: block;
+  width: calc(100% + 16px);
+  aspect-ratio: 16 / 10;
+  margin: -6px -8px 4px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+/* Картинка текстового блока в настройках: превью и «Заменить» / «Убрать». */
+.he-text-image {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.he-text-image img {
+  width: 120px;
+  aspect-ratio: 16 / 10;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.he-text-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .he-pv-par {
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
@@ -2959,7 +3073,7 @@ a.stat:hover {
 .theme-group h3 {
   margin: 16px 0 8px;
   color: var(--muted);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -3018,7 +3132,7 @@ a.stat:hover {
 
 .theme-default-btn {
   min-height: 36px;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
 }
 
 /* Три варианта поровну; длинная подпись («Как в системе») переносится на узком экране. */
@@ -3082,7 +3196,7 @@ a.stat:hover {
 .theme-preview-head strong {
   flex: 1;
   font-family: var(--font-display);
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -3093,7 +3207,7 @@ a.stat:hover {
   width: 32px;
   height: 32px;
   font-family: var(--font-display);
-  font-size: calc(8.5px * var(--text-scale, 1));
+  font-size: 8.5px;
   font-weight: 700;
   letter-spacing: -0.04em;
 }
@@ -3112,7 +3226,7 @@ a.stat:hover {
 
 .theme-preview-chips span {
   padding: 6px 10px;
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -3120,7 +3234,7 @@ a.stat:hover {
   display: flex;
   gap: 10px;
   padding: 6px 12px 6px 6px;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
 }
 
 .theme-preview-item > span:last-child {
@@ -3276,7 +3390,7 @@ a.stat:hover {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 800;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
@@ -3360,7 +3474,7 @@ a.stat:hover {
 
 .perm-presets .button {
   min-height: 36px;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
 }
 
 .perm-table {
@@ -3376,7 +3490,7 @@ a.stat:hover {
   gap: 6px 12px;
   padding: 6px 0;
   border-bottom: 1px solid var(--border);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -3397,7 +3511,7 @@ a.stat:hover {
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -3451,7 +3565,7 @@ a.stat:hover {
   display: grid;
   gap: 8px;
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.25;
 }
@@ -3487,7 +3601,7 @@ a.stat:hover {
 
 .status-box-title {
   font-weight: 700;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
 }
 
 .notify-chip {
@@ -3501,7 +3615,7 @@ a.stat:hover {
   border-radius: var(--radius-ctl);
   border: 1px solid var(--input-line);
   background: var(--card);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
   overflow-wrap: anywhere;
   cursor: pointer;
@@ -3534,7 +3648,7 @@ a.stat:hover {
   border-radius: var(--radius-ctl);
   background: var(--card);
   box-shadow: var(--shadow-control);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 
@@ -3624,7 +3738,7 @@ a.stat:hover {
 .order-sums .order-total {
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: calc(17px * var(--text-scale, 1));
+  font-size: 17px;
   font-weight: 700;
 }
 
@@ -3681,7 +3795,7 @@ a.stat:hover {
   border-radius: 99px;
   background: rgba(8, 16, 11, 0.6);
   color: #fff;
-  font-size: calc(10px * var(--text-scale, 1));
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -3693,14 +3807,14 @@ a.stat:hover {
   padding: 28px 12px 10px;
   background: linear-gradient(to top, rgba(8, 16, 11, 0.78), rgba(8, 16, 11, 0.38) 55%, transparent);
   color: #fff;
-  font-size: calc(11px * var(--text-scale, 1));
+  font-size: 11px;
   font-weight: 700;
   line-height: 1.3;
 }
 
 .he-pv-shade strong {
   font-family: var(--font-display);
-  font-size: calc(15px * var(--text-scale, 1));
+  font-size: 15px;
   line-height: 1.15;
 }
 
@@ -3792,7 +3906,7 @@ a.stat:hover {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -3818,7 +3932,7 @@ a.stat:hover {
   border-radius: 8px;
   background: var(--surface);
   color: var(--muted);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
 }
 
 .he-link-add {
@@ -3857,7 +3971,7 @@ a.stat:hover {
   padding: 0 14px;
   border-radius: calc(var(--radius-ctl) - 4px);
   color: var(--muted);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
   text-decoration: none;
@@ -3970,13 +4084,13 @@ a.stat:hover {
 
   .table td {
     padding: 7px 0;
-    font-size: calc(14px * var(--text-scale, 1));
+    font-size: 14px;
   }
 
   .table td[data-label]::before {
     margin-right: 10px;
     line-height: 20px;
-    font-size: calc(11px * var(--text-scale, 1));
+    font-size: 11px;
   }
 
   .table td.check-cell {
@@ -4020,7 +4134,7 @@ a.stat:hover {
   .table.table-orders td:nth-child(2) {
     grid-column: 1 / -1;
     padding-right: 44px;
-    font-size: calc(16px * var(--text-scale, 1));
+    font-size: 16px;
     font-weight: 700;
   }
 
@@ -4041,7 +4155,7 @@ a.stat:hover {
     grid-column: 1;
     grid-row: 3;
     color: var(--muted);
-    font-size: calc(13px * var(--text-scale, 1));
+    font-size: 13px;
   }
 
   .table.table-orders td:nth-child(5) {
@@ -4102,7 +4216,7 @@ a.stat:hover {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
   select,
   textarea {
-    font-size: calc(16px * var(--text-scale, 1)) !important;
+    font-size: max(16px, calc(16px / var(--text-scale, 1))) !important;
   }
 }
 
@@ -4147,7 +4261,7 @@ a.stat:hover {
 
 .account-facts dt {
   color: var(--muted);
-  font-size: calc(13px * var(--text-scale, 1));
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -4300,7 +4414,7 @@ a.stat:hover {
 
 .orders-toggle-chevron {
   display: inline-block;
-  font-size: calc(18px * var(--text-scale, 1));
+  font-size: 18px;
   line-height: 1;
   transition: transform 0.2s var(--ease-soft);
 }
@@ -4371,7 +4485,7 @@ a.stat:hover {
   border-radius: 99px;
   background: color-mix(in srgb, var(--accent) 22%, var(--surface));
   color: var(--ink);
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
 }
 
 .filter-chip-clear {
@@ -4383,7 +4497,7 @@ a.stat:hover {
   border-radius: 50%;
   background: var(--surface);
   color: var(--ink);
-  font-size: calc(18px * var(--text-scale, 1));
+  font-size: 18px;
   line-height: 1;
   cursor: pointer;
 }
@@ -4446,7 +4560,7 @@ a.stat:hover {
 
 .contact-kind {
   color: var(--muted);
-  font-size: calc(12px * var(--text-scale, 1));
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -4571,7 +4685,7 @@ a.stat:hover {
     grid-row: 2;
     align-self: end;
     color: var(--muted);
-    font-size: calc(13px * var(--text-scale, 1));
+    font-size: 13px;
     white-space: nowrap;
     text-align: right;
   }
@@ -4623,7 +4737,7 @@ a.stat:hover {
 
 .panel-accents-wrap h3 {
   margin: 0;
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: 14px;
 }
 
 .panel-accents {
@@ -4665,27 +4779,1701 @@ a.stat:hover {
   gap: 12px;
 }
 
-/* «← Раздел» — своей строкой над заголовком экрана (components/BackLink). */
+/* «‹ Назад» — в строке заголовка вложенных экранов (components/BackLink), без отдельной строки. */
 .page-back {
   display: inline-flex;
-  flex-basis: 100%;
+  flex: none;
   align-items: center;
-  gap: 6px;
-  align-self: flex-start;
-  width: max-content;
-  min-height: 32px;
-  margin: -4px 0 -6px;
+  gap: 2px;
+  height: 34px;
+  padding: 0 12px 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
   color: var(--muted);
-  font-size: calc(14px * var(--text-scale, 1));
-  font-weight: 600;
-  text-decoration: none;
+  font: 700 13px var(--font-text);
+  cursor: pointer;
 }
 
 .page-back:hover {
   color: var(--ink);
 }
 
-.look-section > .page-back {
+/* С «Назад» заголовок — в той же строке и переносится сам (а не уходит строкой ниже);
+   бейджи и кнопки заголовка — следующей строкой. */
+.page-header > .page-back + h1,
+.page-header > .page-back ~ h1 {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  /* Остаток строки после «Назад» (~84 px и отступ) — заголовку; остальное — ниже. */
+  .page-header > .page-back ~ h1 {
+    flex: 1 1 calc(100% - 110px);
+  }
+}
+
+/* --- Товары пачкой и черновики (/catalog/products/batch, /drafts) --- */
+
+.header-actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+@media (max-width: 600px) {
+  .header-actions {
+    flex: 1 1 100%;
+  }
+
+  .header-actions > * {
+    flex: 1 1 0;
+  }
+}
+
+.button-small {
+  min-height: 40px;
+  padding: 6px 12px;
+}
+
+.bulk-text {
+  min-height: 40px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Метка категории в пачке: шесть тонов по кругу, светлые и тёмные отличаются и яркостью. */
+.cat-tone-0 {
+  --tone-bg: var(--seg-on-bg);
+  --tone-ink: var(--seg-on-ink);
+}
+.cat-tone-1 {
+  --tone-bg: #2d5da8;
+  --tone-ink: #ffffff;
+}
+.cat-tone-2 {
+  --tone-bg: #f2b33d;
+  --tone-ink: #13261c;
+}
+.cat-tone-3 {
+  --tone-bg: #7a4a8c;
+  --tone-ink: #ffffff;
+}
+.cat-tone-4 {
+  --tone-bg: #c2562e;
+  --tone-ink: #ffffff;
+}
+.cat-tone-5 {
+  --tone-bg: #1e8a7a;
+  --tone-ink: #ffffff;
+}
+.cat-tone-6 {
+  --tone-bg: #b23a6b;
+  --tone-ink: #ffffff;
+}
+.cat-tone-7 {
+  --tone-bg: #8a6d1e;
+  --tone-ink: #ffffff;
+}
+.cat-none {
+  --tone-bg: var(--surface);
+  --tone-ink: var(--ink);
+}
+
+.cat-dot {
+  display: inline-block;
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tone-bg);
+}
+
+.cat-dot.cat-none {
+  box-sizing: border-box;
+  border: 2px dashed var(--muted);
+}
+
+.batch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  max-width: 1180px;
+}
+
+.batch > .page-header {
+  margin-bottom: 0;
+}
+
+.batch-steps {
+  display: flex;
+  gap: 6px;
+  max-width: 520px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.batch-steps li {
+  flex: 1 1 0;
+  padding: 6px 4px;
+  border-radius: 8px;
+  background: var(--neutral-bg);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.batch-steps li.is-done {
+  background: var(--tag);
+  color: var(--tag-ink);
+}
+
+.batch-steps li.is-current {
+  background: var(--seg-on-bg);
+  color: var(--seg-on-ink);
+}
+
+.batch-empty {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  max-width: 560px;
+}
+
+.batch-drop {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 32px 20px;
+  border: 2px dashed var(--input-line);
+  border-radius: var(--radius-hero);
+  background: var(--surface);
+  text-align: center;
+  cursor: pointer;
+}
+
+.batch-drop:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.batch-drop strong {
+  font-size: 17px;
+}
+
+.batch-drop-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: var(--seg-on-bg);
+  color: var(--seg-on-ink);
+}
+
+.batch-drop-button {
+  width: 100%;
+  max-width: 320px;
+  min-height: 52px;
+  font-size: 16px;
+}
+
+/* «Вставить» и «Без фото» — под зоной выбора, в строку; на телефоне — по половине. */
+.batch-alt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.batch-alt > * {
+  flex: 1 1 200px;
+  justify-content: center;
+  min-width: 0;
+  white-space: normal;
+  text-align: center;
+}
+
+/* Фото перетаскивают на экран — подсказка рамкой по всему экрану «Добавить товар». */
+.batch.is-dragging {
+  outline: 3px dashed var(--brand);
+  outline-offset: 6px;
+  border-radius: var(--radius-hero);
+}
+
+.batch-howto h2 {
+  margin: 0 0 8px;
+}
+
+.batch-howto ol {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+}
+
+.batch-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.batch-toolbar-text {
+  flex: 1 1 auto;
+  font-size: 14px;
+}
+
+.batch-more {
+  cursor: pointer;
+}
+
+.batch-more:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Чипы лентой: на телефоне листаются, не переносятся и не сжимаются. */
+.batch-chips {
+  display: flex;
+  gap: 6px;
+  padding: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.batch-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.batch-chip,
+.batch-option {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--input-line);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.batch-chip[aria-pressed="true"],
+.batch-option[aria-pressed="true"],
+.batch-option[aria-checked="true"] {
+  border-color: var(--seg-on-bg);
+  background: var(--seg-on-bg);
+  color: var(--seg-on-ink);
+}
+
+.batch-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+@media (min-width: 600px) {
+  .batch-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+  }
+}
+
+.batch-tile {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: var(--neutral-bg);
+  cursor: pointer;
+  transition: transform 0.12s var(--ease-out);
+}
+
+.batch-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.batch-tile.is-grouped {
+  box-shadow: 0 0 0 2px var(--tone-bg);
+}
+
+.batch-tile.is-grouped.cat-none {
+  box-shadow: 0 0 0 2px var(--muted);
+}
+
+.batch-tile.is-selected {
+  transform: scale(0.92);
+  box-shadow:
+    0 0 0 3px var(--accent),
+    0 0 0 5px var(--ink);
+}
+
+.batch-tile:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.batch-badge {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 7px;
+  background: var(--tone-bg);
+  color: var(--tone-ink);
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.cat-none > .batch-badge {
+  border: 1.5px solid var(--ink);
+}
+
+.batch-add-tile {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 2px;
+  aspect-ratio: 1 / 1;
+  border: 2px dashed var(--input-line);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+}
+
+button.batch-add-tile {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  font-family: inherit;
+}
+
+.batch-add-tile:focus-within,
+button.batch-add-tile:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.batch-next-row {
+  display: flex;
+  gap: 8px;
+}
+
+.batch-next-row .batch-cta {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.batch-back {
+  flex: 0 0 auto;
+  min-height: 52px;
+}
+
+.batch-progress {
+  font-weight: 700;
+  color: var(--info);
+}
+
+.drafts-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-card);
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.drafts-banner-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.drafts-banner:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.batch-check {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.batch-check .icon {
+  stroke-width: 3;
+}
+
+/* Нижняя панель шага: прилипает к низу экрана, пока прокручивается сетка или список. */
+.batch-dock {
+  position: sticky;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 12;
+  justify-self: center;
+  width: min(100%, 680px);
+  box-sizing: border-box;
+}
+
+.batch-next {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: var(--shadow-control);
+  text-align: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.batch-cta {
+  width: 100%;
+  min-height: 52px;
+  font-size: 16px;
+}
+
+@media (min-width: 961px) {
+  .batch-next {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    text-align: left;
+  }
+
+  .batch-next > :first-child:not(:only-child) {
+    margin-right: auto;
+  }
+
+  .batch-cta {
+    width: auto;
+  }
+}
+
+.batch-actions {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 22px;
+  background: var(--nav);
+  color: #ffffff;
+  box-shadow: var(--shadow-nav);
+}
+
+.batch-actions-hint {
+  padding: 2px 8px 0;
+  color: var(--nav-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.batch-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.batch-actions-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.batch-action {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  min-height: 60px;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 14px;
+  background: color-mix(in srgb, #ffffff 10%, transparent);
+  color: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+}
+
+.batch-action:hover:not(:disabled) {
+  background: color-mix(in srgb, #ffffff 16%, transparent);
+}
+
+.batch-action.is-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.batch-action:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.batch-price {
+  display: flex;
+  gap: 6px;
+}
+
+.batch-price input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 46px;
+  border: 0;
+}
+
+.batch-common {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+}
+
+.batch-field {
+  display: grid;
+  gap: 10px;
+}
+
+.batch-field h2 {
+  margin: 0;
+}
+
+.batch-field p {
+  margin: 0;
+}
+
+.batch-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.batch-summary-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--neutral-bg);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.batch-summary-item.is-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.batch-label {
+  font-weight: 700;
+}
+
+.batch-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.batch-stock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.batch-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.batch-stepper button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-ctl);
+  background: var(--neutral-bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.batch-stepper button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.batch-stepper output {
+  min-width: 32px;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.draft-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 720px) {
+  .draft-list {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+.draft-card {
+  position: relative;
+  border-radius: var(--radius-card);
+  background: var(--card);
+  box-shadow: var(--shadow-control);
+}
+
+.draft-card.is-selected {
+  box-shadow:
+    0 0 0 2px var(--ink),
+    var(--shadow-control);
+}
+
+.draft-open {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  border-radius: inherit;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.draft-open:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.draft-cover {
+  display: block;
+  flex: 0 0 84px;
+  width: 84px;
+  height: 104px;
+  border-radius: 12px;
+  background: var(--neutral-bg);
+  object-fit: cover;
+}
+
+.draft-body {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  padding-right: 34px;
+}
+
+.draft-title {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.draft-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-family: var(--font-secondary);
+  font-size: 12px;
+}
+
+.draft-price {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.draft-body .badge {
+  justify-self: start;
+}
+
+.draft-check {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+}
+
+.draft-check input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--seg-on-bg);
+  cursor: pointer;
+}
+
+.batch-empty-list {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.batch-empty-list h2,
+.batch-empty-list p {
+  margin: 0;
+}
+
+.draft-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+  padding: 8px 8px 8px 12px;
+  border-radius: var(--radius-card);
+  background: var(--warning-bg);
+}
+
+.draft-nav-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.draft-nav-text .muted {
+  color: var(--warning);
+}
+
+.draft-nav-pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--warning);
+}
+
+.draft-nav-pager .icon-button {
+  color: var(--warning);
+}
+
+.icon-button.is-disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Выбор категории: шторка снизу на телефоне, окно по центру на компьютере. */
+.sheet-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(10, 20, 14, 0.45);
+  cursor: pointer;
+}
+
+.sheet {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  box-sizing: border-box;
+  width: min(100%, 480px);
+  max-height: calc(85 * var(--vh));
+  overflow-y: auto;
+  padding: 10px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-nav);
+}
+
+@media (min-width: 961px) {
+  .sheet-layer {
+    align-items: center;
+  }
+
+  .sheet {
+    padding-bottom: 20px;
+    border-radius: var(--radius-sheet);
+  }
+}
+
+.sheet-grip {
+  justify-self: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--input-line);
+}
+
+.sheet h2 {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+.sheet p {
+  margin: 0;
+}
+
+.sheet-list {
+  display: grid;
+  gap: 4px;
+  padding-top: 4px;
+}
+
+.sheet-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--neutral-bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sheet-row:hover {
+  filter: brightness(0.97);
+}
+
+.sheet-row .cat-dot {
+  flex-basis: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+.sheet-row-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* --- Действия с отмеченными (товары, заказы): одна нижняя панель, как у черновиков ---
+   Строка «Выбрано: N · Все на странице · ×», под ней — кнопки с иконками. */
+.bulk-dock {
+  margin-top: 12px;
+}
+
+.bulk-dock-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  padding: 0 4px 0 10px;
+  color: var(--nav-ink);
+  font-size: 14px;
+}
+
+.bulk-dock-head strong {
+  color: #ffffff;
+}
+
+/* «Все на странице» — пилюля-кнопка той же высоты, что строка: видно, что нажимается. */
+.bulk-dock-head .bulk-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, #ffffff 28%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, #ffffff 12%, transparent);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.bulk-dock-head .bulk-link:hover {
+  background: color-mix(in srgb, #ffffff 20%, transparent);
+}
+
+.bulk-dock-head .bulk-link:active {
+  transform: scale(0.97);
+}
+
+.bulk-close {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, #ffffff 10%, transparent);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.batch-actions-grid-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.batch-actions-grid-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.batch-action.is-danger {
+  color: #ffb4a8;
+}
+
+.batch-action.is-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, #ff6b57 22%, transparent);
+}
+
+/* Компактная строка параметров в нижней панели (заказы: статус, комментарий, письма). */
+.bulk-dock-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bulk-dock-row select,
+.bulk-dock-row input[type="text"] {
+  flex: 1 1 160px;
+  width: auto;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.bulk-dock-row .button {
+  flex: none;
+  min-height: 44px;
+}
+
+.bulk-toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, #ffffff 10%, transparent);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bulk-toggle input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* Удалить / восстановить у строки списка — рядом с отметкой видимости. */
+.row-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.row-tool {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.row-tool:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.row-tool-danger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--danger, #d4442e) 50%, transparent);
+  color: var(--danger, #d4442e);
+}
+
+.row-tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Точка тона статуса в шторке выбора. */
+.tone-dot {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--neutral);
+}
+
+.tone-dot-success {
+  background: var(--success);
+}
+
+.tone-dot-warning {
+  background: var(--warning);
+}
+
+.tone-dot-info {
+  background: var(--info);
+}
+
+.tone-dot-none {
+  box-sizing: border-box;
+  border: 2px dashed var(--muted);
+  background: transparent;
+}
+
+/* --- Действия в строке заголовка (components/PageTools): справа от названия, компактно ---
+   «Назад» · заголовок · кнопки — одной строкой; длинный заголовок переносится сам. */
+.page-tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.tool-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0 14px 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 700 13px var(--font-text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tool-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.tool-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.tool-button-danger {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  color: var(--danger);
+}
+
+.tool-button-accent {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.page-header > .page-back ~ h1:has(~ .page-tools) {
+  flex: 1 1 0;
+}
+
+/* Подпись под заголовком («Готово 3 из 8», «12 фото · 4 товара») — отдельной строкой. */
+.page-header > .page-sub {
+  flex-basis: 100%;
+}
+
+@media (max-width: 720px) {
+  .tool-button {
+    width: 40px;
+    padding: 0;
+  }
+
+  .tool-button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* Заголовок с кнопками — в одной строке, кнопки не уходят вниз. */
+  .page-header > h1:has(~ .page-tools) {
+    flex: 1 1 0;
+  }
+
+  /* Главное действие раздела («Добавить товар») — с подписью и на телефоне. */
+  .tool-button-accent {
+    width: auto;
+    padding: 0 14px 0 12px;
+  }
+
+  .tool-button-accent .tool-button-label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+}
+
+/* Черновики: что задать выбранным — цена или название. */
+.batch-field-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 0 2px;
+}
+
+.batch-field-tabs > button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--nav-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.batch-field-tabs > button.is-on {
+  background: color-mix(in srgb, #ffffff 16%, transparent);
+  color: #ffffff;
+}
+
+.batch-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding-right: 6px;
+  color: var(--nav-ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.batch-number input {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* Поле вставки фото (components/catalog/PasteZone): запасной путь для «Фото» iPhone. */
+.paste-zone-wrap {
+  position: relative;
+  grid-column: 1 / -1;
+}
+
+.paste-zone {
+  display: grid;
+  place-items: center;
+  min-height: 88px;
+  padding: 12px 44px;
+  border: 2px dashed color-mix(in srgb, var(--brand) 55%, transparent);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  caret-color: transparent;
+  outline: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.paste-zone:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.paste-zone:focus {
+  border-style: solid;
+}
+
+.paste-zone-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+/* «Тема магазина» → «Логотип»: своё слово рядом с «DiDi», счётчик символов в поле. */
+.wordmark-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.wordmark-input {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.wordmark-input input {
+  width: 100%;
+  padding-right: 48px;
+}
+
+.wordmark-input > span {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.brand-name {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.brand-name[data-len="5"],
+.brand-name[data-len="6"] {
+  font-size: 0.86em;
+}
+
+@media (max-width: 720px) {
+  /* Карточка товара на телефоне: «Активен» — обычное состояние, отметку не показываем (место
+     статусу и кнопке «Удалить»); «Скрыт», «Удалён», «Черновик» — видны. */
+  .table-wrap .table.table-products .row-tools .badge-active {
+    display: none;
+  }
+}
+
+/* «Всем размерам»: один остаток каждой строке (сохраняется общей «Сохранить»). */
+.variants-all {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px;
+  border-radius: var(--radius-ctl);
+  background: var(--bg);
+}
+
+.variants-all-label {
+  flex: 1 1 auto;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.variants-all .stock-input {
+  width: 118px;
+}
+
+.variants-all .button {
+  min-height: 40px;
+}
+
+/* --- Сводка: блоки на сетке (pages/SummaryPage + summaryLayout) ---
+   4 колонки на компьютере, 2 на телефоне; размер блока: s — ¼ (на телефоне ½), m — ½ (вся),
+   l — вся ширина. «Настроить» — стрелки и S · M · L над каждым блоком. */
+.dash {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-flow: row dense;
+  gap: 12px;
+}
+
+.dash-cell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+}
+
+.dash-cell > :last-child {
+  grid-row: 2;
+}
+
+.dash-s {
+  grid-column: span 1;
+}
+
+.dash-m {
+  grid-column: span 2;
+}
+
+.dash-l {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .dash {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .dash-m {
+    grid-column: 1 / -1;
+  }
+}
+
+.dash.is-editing .dash-cell > :last-child {
+  outline: 2px dashed color-mix(in srgb, var(--brand) 55%, transparent);
+  outline-offset: 2px;
+  pointer-events: none;
+}
+
+.dash-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin-bottom: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--nav);
+  color: #ffffff;
+}
+
+.dash-edit button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, #ffffff 10%, transparent);
+  color: #ffffff;
+  font: 700 12px var(--font-text);
+  cursor: pointer;
+}
+
+.dash-edit button.is-on {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.dash-edit button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.dash-edit-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* «Сегодня» — тёмная карточка в цвет меню, крупная сумма акцентом. */
+.dash-hero {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-height: 150px;
+  padding: 18px;
+  border-radius: var(--radius-panel);
+  background: var(--nav);
+  box-shadow: var(--shadow-nav);
+  color: #ffffff;
+}
+
+.dash-hero-label {
+  color: var(--nav-ink);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dash-hero-value {
+  overflow-wrap: anywhere;
+  color: var(--accent);
+  font: 700 clamp(26px, 6vw, 36px) / 1.05 var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+
+.dash-hero-note {
+  color: var(--nav-ink);
+  font-size: 13px;
+}
+
+.dash-meter {
+  display: block;
+  height: 8px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, #ffffff 14%, transparent);
+}
+
+.dash-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+/* Плитки очереди: иконка в кружке, большое число, подпись. */
+.dash-tile {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-height: 150px;
+  padding: 16px;
+  border-radius: var(--radius-panel);
+  background: var(--card);
+  box-shadow: var(--shadow-control);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.15s var(--ease-out);
+}
+
+a.dash-tile:hover {
+  transform: translateY(-2px);
+}
+
+a.dash-tile:active {
+  transform: scale(0.97);
+}
+
+.dash-tile-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  background: var(--seg-on-bg);
+  color: var(--seg-on-ink);
+}
+
+.dash-tile-value {
+  font: 700 30px / 1.05 var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-tile-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dash-tile-note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.dash-tile.is-alert .dash-tile-icon {
+  background: color-mix(in srgb, var(--warning) 22%, var(--card));
+  color: var(--warning);
+}
+
+.dash-tile.is-alert .dash-tile-value {
+  color: var(--warning);
+}
+
+/* Карточки со списками и оборотом. */
+.dash-card {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 18px;
+  border-radius: var(--radius-panel);
+  background: var(--card);
+  box-shadow: var(--shadow-control);
+}
+
+.dash-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dash-card-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.dash-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.dash-note {
+  margin: 0;
+}
+
+.dash-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dash-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 10px;
+  border-radius: var(--radius-ctl);
+  color: inherit;
+  text-decoration: none;
+}
+
+.dash-row:hover {
+  background: var(--bg);
+}
+
+.dash-row-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dash-row-main strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-row-end {
+  display: grid;
+  flex: none;
+  justify-items: end;
+  gap: 4px;
+}
+
+.dash-bars {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dash-bars li {
+  display: grid;
+  grid-template-columns: minmax(84px, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-bars-label {
+  display: grid;
+  font-weight: 700;
+}
+
+.dash-bars-track {
+  display: block;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg);
+}
+
+.dash-bars-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+}
+
+.dash-bars-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Маленькие плитки не тянутся по высоте соседнего большого блока. */
+.dash-s {
+  align-self: start;
 }

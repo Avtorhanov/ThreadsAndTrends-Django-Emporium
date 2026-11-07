@@ -1,4 +1,4 @@
-"""Оформление витрины для покупателя: палитра, акцент «Своей», углы, размер текста, тема.
+"""Оформление витрины для покупателя: палитра, акцент «Своей», углы, масштаб, тема.
 
 Палитры и акценты — из content/palettes.json (генерирует scripts/gen_tokens.py из
 tokens.json): значения от покупателя принимаются только из этого белого списка — они
@@ -7,6 +7,7 @@ tokens.json): значения от покупателя принимаются 
 """
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -26,12 +27,15 @@ MODES = ("system", "light", "dark")
 DEFAULT_PALETTE = "lime"
 DEFAULT_ACCENT = next(iter(ACCENTS))
 DEFAULT_RADIUS = "normal"
-DEFAULT_TEXT = "s"
+DEFAULT_TEXT = "100"
 CUSTOM = "custom"
 
 PALETTE_GROUPS = {"bright": "Яркие", "calm": "Сдержанные", "custom": "Свой цвет"}
 RADIUS_LABELS = {"sharp": "Острые", "normal": "Средние", "soft": "Мягкие"}
-TEXT_LABELS = {"s": "Обычный", "m": "Крупнее", "l": "Крупный"}
+# Масштаб всего интерфейса (ключ — проценты; имена text/data-text/cookie text_size остались от
+# «Размера текста»). Прежние значения s/m/l из cookie и приложения переводятся в проценты.
+TEXT_LABELS = {key: f"{key} %" for key in TEXT}
+LEGACY_TEXT = {"s": "100", "m": "115", "l": "130"}
 MODE_LABELS = {"system": "Как в системе", "light": "Светлая", "dark": "Тёмная"}
 # Нижнее меню витрины на телефоне: сплошная полоса-футер, плавающая тёмная капсула, капсула
 # из стекла в цвет темы, нижняя панель с подписями у всех вкладок. Администратор задаёт вид
@@ -50,6 +54,11 @@ NAV_HINTS = {
 }
 NAV: tuple[str, ...] = tuple(NAV_LABELS)
 DEFAULT_NAV = "solid"
+# Слово рядом с плашкой «DiDi»: до 6 символов — шире логотип не помещается в шапку телефона
+# рядом с поиском, темой и корзиной (360 px). Буквы, цифры, пробел, дефис, точка, «&».
+DEFAULT_WORDMARK = "shop"
+WORDMARK_MAX = 6
+WORDMARK_RE = re.compile(r"^[0-9A-Za-zА-Яа-яЁё][0-9A-Za-zА-Яа-яЁё .&-]*$")
 
 # Варианты для API (имена перечислений в схеме — SPECTACULAR_SETTINGS.ENUM_NAME_OVERRIDES).
 PALETTE_CHOICES = [(key, item["name"]) for key, item in PALETTES.items()]
@@ -59,7 +68,7 @@ RADIUS_CHOICES = [(key, RADIUS_LABELS[key]) for key in RADIUS]
 TEXT_CHOICES = [(key, TEXT_LABELS[key]) for key in TEXT]
 NAV_CHOICES = list(NAV_LABELS.items())
 
-CACHE_KEY = "content:theme-settings:v3"
+CACHE_KEY = "content:theme-settings:v4"
 
 # Cookie личного выбора покупателя (пишут web/theme.py и site.js). Сохранение темы в панели
 # удаляет их в браузере администратора — он сразу видит витрину как новый посетитель.
@@ -74,6 +83,8 @@ class ShopTheme:
     default_radius: str
     nav_style: str = DEFAULT_NAV
     default_text: str = DEFAULT_TEXT
+    show_wordmark: bool = True
+    wordmark: str = DEFAULT_WORDMARK
 
 
 def _from_row(row: ThemeSettings | None) -> ShopTheme:
@@ -85,8 +96,25 @@ def _from_row(row: ThemeSettings | None) -> ShopTheme:
     mode = row.default_mode if row.default_mode in MODES else "system"
     radius = row.default_radius if row.default_radius in RADIUS else DEFAULT_RADIUS
     nav = row.nav_style if row.nav_style in NAV else DEFAULT_NAV
-    text = row.default_text if row.default_text in TEXT else DEFAULT_TEXT
-    return ShopTheme(palettes, default, mode, radius, nav, text)
+    text = _text(row.default_text, DEFAULT_TEXT)
+    # Пустое слово — логотип только из плашки «DiDi» (как выключенный переключатель).
+    word = row.wordmark if not row.wordmark or WORDMARK_RE.match(row.wordmark) else DEFAULT_WORDMARK
+    return ShopTheme(palettes, default, mode, radius, nav, text, row.show_wordmark, word)
+
+
+def clean_wordmark(value: str) -> str:
+    """Пробелы по краям убираются, внутри — один; пусто — без слова; длиннее 6 или чужие
+    символы — ошибка."""
+    word = " ".join(str(value).split())
+    if not word:
+        return ""
+    if len(word) > WORDMARK_MAX:
+        raise ValidationError(
+            {"wordmark": f"Не длиннее {WORDMARK_MAX} символов — иначе не поместится в шапку."}
+        )
+    if not WORDMARK_RE.match(word):
+        raise ValidationError({"wordmark": "Буквы, цифры, пробел, дефис, точка или «&»."})
+    return word
 
 
 def shop_theme() -> ShopTheme:
@@ -111,6 +139,8 @@ def update(
     default_radius: str,
     nav_style: str | None = None,
     default_text: str | None = None,
+    show_wordmark: bool | None = None,
+    wordmark: str | None = None,
 ):
     unknown = [key for key in palettes if key not in PALETTES]
     if unknown:
@@ -128,7 +158,9 @@ def update(
     if nav_style is not None and nav_style not in NAV:
         raise ValidationError({"nav_style": "Неизвестный вид нижнего меню."})
     if default_text is not None and default_text not in TEXT:
-        raise ValidationError({"default_text": "Неизвестный размер текста."})
+        raise ValidationError({"default_text": "Неизвестный масштаб."})
+    if wordmark is not None:
+        wordmark = clean_wordmark(wordmark)
     row = get_row()
     # Порядок — как в tokens.json, без повторов.
     row.palettes = [key for key in PALETTES if key in set(palettes)]
@@ -139,6 +171,10 @@ def update(
         row.nav_style = nav_style
     if default_text is not None:
         row.default_text = default_text
+    if show_wordmark is not None:
+        row.show_wordmark = show_wordmark
+    if wordmark is not None:
+        row.wordmark = wordmark
     row.save()
     cache.delete(CACHE_KEY)
     transaction.on_commit(lambda: cache.delete(CACHE_KEY))
@@ -176,6 +212,11 @@ class Look:
         return PALETTES[self.palette]["bg"]
 
 
+def _text(value: str, default: str) -> str:
+    value = LEGACY_TEXT.get(value, value)
+    return value if value in TEXT else default
+
+
 def resolve_look(
     *, palette: str = "", accent: str = "", radius: str = "", text: str = "", nav: str = ""
 ) -> Look:
@@ -185,6 +226,6 @@ def resolve_look(
         palette=palette if palette in shop.palettes else shop.default_palette,
         accent=accent if accent in ACCENTS else DEFAULT_ACCENT,
         radius=radius if radius in RADIUS else shop.default_radius,
-        text=text if text in TEXT else shop.default_text,
+        text=_text(text, shop.default_text),
         nav=nav if nav in NAV else shop.nav_style,
     )
