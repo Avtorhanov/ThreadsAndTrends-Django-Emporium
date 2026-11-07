@@ -6595,6 +6595,27 @@ a.dash-tile:active {
     content: "Товаров: ";
   }
 
+  /* Подписи строкой текста, а не капсом колонки таблицы. */
+  .table.table-categories td:nth-child(3)::before,
+  .table.table-categories td:nth-child(4)::before {
+    float: none;
+    margin-right: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .table.table-categories td:nth-child(4) {
+    display: flex;
+    align-items: center;
+  }
+
+  .table-categories .input-narrow {
+    width: 64px;
+    min-height: 40px;
+  }
+
   .table.table-categories td:nth-child(4) {
     grid-row: 3;
   }
