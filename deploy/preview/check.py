@@ -167,6 +167,9 @@ def main(site: Path, shots: Path) -> None:
         page.click('main form[method="post"] button[type="submit"]')
         page.wait_for_url(f"**{BASE}/me/checkout/")
         page.wait_for_selector(f".mini li:has-text('{name}')")
+        # Выключенные в панели способы оплаты покупатель не видит (в HTML демо есть все).
+        visible = page.locator('.choice:visible input[name="payment_method"]')
+        assert visible.count() == 1 and visible.first.get_attribute("value") == "agreement"
         page.screenshot(path=shots / "sim-checkout-iphone.png", full_page=True)
         page.click("[data-checkout] button[type=submit]")
         page.wait_for_url(f"**{BASE}/me/orders/DD-*/")

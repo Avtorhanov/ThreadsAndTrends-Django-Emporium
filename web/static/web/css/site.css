@@ -740,6 +740,7 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
   display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: calc(13px * var(--radius-scale));
   border: 1.5px solid var(--border); cursor: pointer; transition: border-color .2s ease, background-color .2s ease;
 }
+.choice[hidden] { display: none; }
 .choice:has(input:checked) { border-color: var(--brand); background: var(--tag); }
 .choice input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--brand); }
 .choice__body { display: grid; flex: 1; gap: 2px; }
