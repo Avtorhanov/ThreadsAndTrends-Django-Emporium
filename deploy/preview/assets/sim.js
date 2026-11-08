@@ -454,7 +454,7 @@
     return {
       id: p.id, name: p.name, slug: p.slug, category: p.category, category_name: c ? c.name : "",
       price_kopecks: p.price_kopecks, compare_at_kopecks: p.compare_at_kopecks, status: p.status || null,
-      is_active: p.is_active, is_draft: !!p.is_draft, deleted_at: p.deleted_at, total_stock: totalStock(p), cover_url: coverUrl(p),
+      is_active: p.is_active, is_draft: !!p.is_draft, color_group: p.color_group || null, color_name: p.color_name || "", deleted_at: p.deleted_at, total_stock: totalStock(p), cover_url: coverUrl(p),
       created_at: p.created_at, updated_at: p.updated_at
     };
   }
@@ -462,6 +462,11 @@
     var row = productRow(db, p);
     row.description = p.description || "";
     row.agreement_channel = p.agreement_channel || "";
+    row.color_siblings = p.color_group ? db.products.filter(function (o) {
+      return o.color_group === p.color_group && o.id !== p.id && !o.deleted_at;
+    }).sort(function (a, b) { return a.id - b.id; }).map(function (o) {
+      return { id: o.id, name: o.name, color_name: o.color_name, is_active: o.is_active, is_draft: !!o.is_draft, cover_url: coverUrl(o) };
+    }) : [];
     row.variants = p.variants.slice().sort(function (a, b) { return a.position - b.position || a.id - b.id; }).map(function (v) {
       return { id: v.id, size: v.size, sku: v.sku, stock: v.stock, position: v.position };
     });
@@ -475,7 +480,7 @@
     var c = category(db, p.category);
     var s = status(db, p.status);
     return {
-      id: p.id, slug: p.slug, name: p.name, price_kopecks: p.price_kopecks, price_on_request: p.price_kopecks === null,
+      id: p.id, slug: p.slug, name: p.name, color_name: p.color_name || "", price_kopecks: p.price_kopecks, price_on_request: p.price_kopecks === null,
       compare_at_kopecks: p.compare_at_kopecks, in_stock: totalStock(p) > 0, cover_url: coverUrl(p),
       category: c ? { id: c.id, slug: c.slug, name: c.name } : null,
       status: s ? { id: s.id, name: s.name, hint: s.hint, tone: s.tone } : null,
@@ -1279,6 +1284,36 @@
     });
     return { status: 200, body: { updated: updated }, save: true };
   });
+  // Цвета (store.services.catalog.link_colors / unlink_color).
+  route("POST", "/catalog/products/colors/", function (db, m, q, body) {
+    var items = body.items || [];
+    if (items.length < 2) return fields({ items: ["Отметьте хотя бы два товара."] });
+    var chosen = items.map(function (it) { return db.products.filter(function (p) { return p.id === Number(it.id) && !p.deleted_at; })[0]; });
+    if (chosen.some(function (p) { return !p; })) return fields({ items: ["Часть товаров не найдена."] });
+    var groups = {};
+    chosen.forEach(function (p) { if (p.color_group) groups[p.color_group] = true; });
+    var keys = Object.keys(groups);
+    if (keys.length > 1) return fields({ items: ["Часть товаров уже связана с другими цветами. Сначала отвяжите их."] });
+    var group = keys[0] || "demo-" + Date.now();
+    var names = items.map(function (it) { return String(it.color_name || "").trim(); });
+    if (names.some(function (n) { return !n; })) return fields({ items: ["Укажите название каждого цвета."] });
+    db.products.forEach(function (p) {
+      if (p.color_group === group && !p.deleted_at && chosen.indexOf(p) < 0) names.push(p.color_name);
+    });
+    var seen = {};
+    if (names.some(function (n) { var k = n.toLowerCase(); var dup = seen[k]; seen[k] = true; return dup; })) {
+      return fields({ items: ["Названия цветов одной модели не должны повторяться."] });
+    }
+    chosen.forEach(function (p, i) { p.color_group = group; p.color_name = String(items[i].color_name).trim(); p.updated_at = now(); });
+    return { status: 200, body: { color_group: group, updated: chosen.length }, save: true };
+  });
+  route("POST", "/catalog/products/(\\d+)/colors/unlink/", function (db, m) {
+    var p = db.products.filter(function (o) { return o.id === Number(m[1]); })[0];
+    if (!p) return { status: 404, body: { detail: "Не найдено." } };
+    var members = db.products.filter(function (o) { return p.color_group && o.color_group === p.color_group; });
+    (members.length <= 2 ? members : [p]).forEach(function (o) { o.color_group = null; o.color_name = ""; o.updated_at = now(); });
+    return { status: 200, body: productDetail(db, p), save: true };
+  });
   route("POST", "/catalog/products/(\\d+)/variants/", function (db, m, q, body) {
     var p = byId(db.products, m[1]);
     if (!p) return fail(404, { detail: "Не найдено." });
@@ -1998,6 +2033,15 @@
     if (c) { c.viewed = []; save(db); }
   }
 
+  // Цвета модели на витрине (store.services.storefront.color_options).
+  function colorOptions(p) {
+    if (!p.color_group) return [];
+    var db = load();
+    var options = db.products.filter(function (o) { return o.color_group === p.color_group && isLive(db, o); })
+      .sort(function (a, b) { return a.id - b.id; })
+      .map(function (o) { return { slug: o.slug, color_name: o.color_name, cover_url: coverUrl(o), in_stock: totalStock(o) > 0 }; });
+    return options.length >= 2 ? options : [];
+  }
   // «Похожие» (store.services.storefront.similar_products): та же категория, затем соседние
   // подкатегории того же корня; в наличии — первыми, затем новые.
   function similar(slug, limit) {
@@ -2078,7 +2122,7 @@
       found.variant.stock -= line.quantity;
       var st = status(db, found.product.status);
       order.items.push({
-        id: next(db, "item"), product_slug: found.product.slug, product_name: found.product.name, size: found.variant.size,
+        id: next(db, "item"), product_slug: found.product.slug, product_name: found.product.name, color_name: found.product.color_name || "", size: found.variant.size,
         sku: found.variant.sku, status_name: st ? st.name : "", price_kopecks: line.unit_price_kopecks, quantity: line.quantity,
         line_total_kopecks: line.line_total_kopecks, cover_url: coverUrl(found.product), product_id: found.product.id,
         variant_id: found.variant.id
@@ -2151,7 +2195,7 @@
     var site = location.origin + BASE;
     var lines = ["Здравствуйте! Хочу оформить заказ " + o.number + ".", ""];
     o.items.forEach(function (item, i) {
-      lines.push((i + 1) + ". " + item.product_name + (item.size ? ", " + item.size : "") + " × " + item.quantity + " — " +
+      lines.push((i + 1) + ". " + item.product_name + (item.color_name ? ", " + item.color_name : "") + (item.size ? ", " + item.size : "") + " × " + item.quantity + " — " +
         rub(item.price_kopecks * item.quantity));
       lines.push(site + "/product/" + item.product_slug + "/");
     });
@@ -2254,6 +2298,7 @@
     viewed: viewed,
     clearViewed: clearViewed,
     similar: similar,
+    colorOptions: colorOptions,
     adminSignedIn: signedIn,
     /** Каналы связи для вкладки «Контакты» магазина (как content.contacts.get_contacts). */
     contacts: function () {

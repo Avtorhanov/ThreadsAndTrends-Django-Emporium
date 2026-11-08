@@ -602,7 +602,17 @@
       head += '<s class="price__old"><span class="sr">Старая цена </span>' + rub(p.compare_at_kopecks) + "&nbsp;₽</s>" +
         (off ? '<span class="sale sale--inline">−' + off + "%</span>" : "");
     }
-    head += "</p></div>";
+    head += "</p>";
+    var colors = sim.colorOptions(full);
+    if (colors.length) {
+      head += '<div class="colors"><p class="label">Цвет: <span class="colors__name">' + esc(p.color_name) + '</span></p><ul class="colors__list">' +
+        colors.map(function (c) {
+          var on = c.slug === p.slug;
+          return '<li><a class="color tone-' + tone(c.slug) + (on ? " is-on" : "") + (c.in_stock ? "" : " is-off") + '" href="' + link("/product/" + c.slug + "/") + '" aria-label="' +
+            esc(c.color_name) + (c.in_stock ? "" : ", нет в наличии") + '"' + (on ? ' aria-current="true"' : "") + ">" + (c.cover_url ? img(c.cover_url, "56px", "color__photo", false, "") : "") + "</a></li>";
+        }).join("") + "</ul></div>";
+    }
+    head += "</div>";
 
     var desc = paragraphs(full.description);
     var descHTML = desc.length ? '<div class="rise r3 pd__desc">' + desc.map(function (x) { return "<p>" + esc(x).replace(/\n/g, "<br>") + "</p>"; }).join("") + "</div>" : "";
@@ -705,8 +715,14 @@
       html += '<a class="line__img tone-' + (p ? tone(p.slug) : "lime") + '"' + (href ? ' href="' + href + '"' : "") + ' tabindex="-1" aria-hidden="true">' +
         (p ? img(p.cover_url, "96px", "line__photo", false, "") : "") + "</a>";
       html += '<div class="line__body"><p class="line__title">' + (available ? '<a href="' + href + '">' + esc(p.name) + "</a>" : p ? esc(p.name) : "Товар снят с продажи") + "</p>";
-      if (line.size) html += '<p class="line__meta">Размер ' + esc(line.size) + "</p>";
-      if (p && p.status && available) html += '<p class="status status--' + esc(p.status.tone) + '">' + esc(p.status.name) + "</p>";
+      var lineMeta = [];
+      if (p && p.color_name) lineMeta.push("Цвет " + esc(p.color_name));
+      if (line.size) lineMeta.push("Размер " + esc(line.size));
+      if (lineMeta.length) html += '<p class="line__meta">' + lineMeta.join(" · ") + "</p>";
+      if (p && p.status && available) {
+        html += '<p class="status status--' + esc(p.status.tone) + '">' + esc(p.status.name) + "</p>";
+        if (p.status.hint && line.status !== "out_of_stock") html += '<p class="line__meta">' + esc(p.status.hint) + "</p>";
+      }
       html += '<div class="line__parts">';
       if (line.status === "unavailable") html += '<p class="pill pill--neutral">Недоступен</p>';
       else if (line.status === "out_of_stock") html += '<p class="pill pill--danger">Нет в наличии</p>';
@@ -979,7 +995,7 @@
     }
     html += '<ul class="lines lines--static">' + o.items.map(function (item) {
       return '<li class="line"><span class="line__img tone-' + tone(item.product_slug) + '" aria-hidden="true">' + img(item.cover_url, "96px", "line__photo", false, "") + "</span>" +
-        '<div class="line__body"><p class="line__title">' + esc(item.product_name) + '</p><p class="line__meta">' + (item.size ? "Размер " + esc(item.size) + " · " : "") +
+        '<div class="line__body"><p class="line__title">' + esc(item.product_name) + '</p><p class="line__meta">' + (item.color_name ? "Цвет " + esc(item.color_name) + " · " : "") + (item.size ? "Размер " + esc(item.size) + " · " : "") +
         (item.status_name ? esc(item.status_name) + " · " : "") + item.quantity + " × " + money(item.price_kopecks) + "</p></div>" +
         '<p class="line__price">' + money(item.line_total_kopecks) + "</p></li>";
     }).join("") + "</ul>";

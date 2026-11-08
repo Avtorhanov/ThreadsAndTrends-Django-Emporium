@@ -336,6 +336,7 @@ def checkout(
                         variant=line.variant,
                         product_name=line.variant.product.name,
                         size=line.variant.size,
+                        color_name=line.variant.product.color_name,
                         sku=line.variant.sku,
                         status_name=_status_name(line.variant.product),
                         price_kopecks=line.unit_price_kopecks,

@@ -682,6 +682,14 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .mark--empty { visibility: hidden; } /* место под статус: карточки без статуса той же высоты */
 .pd__status { margin-top: 8px; }
 .pd__status-hint { margin-top: 4px; font-size: 13px; }
+.colors { margin-top: 12px; }
+.colors__name { font-weight: 600; }
+.colors__list { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+.color { display: block; width: 56px; height: 56px; overflow: hidden; border-radius: var(--radius-image); box-shadow: inset 0 0 0 1px var(--border); }
+.color__photo { display: block; width: 100%; height: 100%; object-fit: cover; }
+.color.is-on { outline: 2px solid var(--accent); outline-offset: 2px; }
+.color:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.color.is-off .color__photo { opacity: .45; }
 .stepper { display: inline-flex; align-items: center; border-radius: calc(12px * var(--radius-scale)); background: var(--surface); box-shadow: var(--shadow-control); }
 .stepper form { display: flex; }
 .stepper__btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: calc(12px * var(--radius-scale)); background: transparent; color: var(--ink); }

@@ -25,6 +25,7 @@ from store.services.storefront import (
     ProductFilters,
     Sort,
     active_categories,
+    color_options,
     filter_products,
     similar_products,
 )
@@ -284,6 +285,7 @@ def product(request, slug: str):
         "web/catalog/product.html",
         {
             "product": found,
+            "colors": color_options(found),
             "ask_links": ask,
             "in_cart_total": sum(in_cart.values()),
             "cart_state": cart_state,

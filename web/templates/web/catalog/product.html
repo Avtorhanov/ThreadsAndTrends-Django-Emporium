@@ -62,6 +62,7 @@
         {% if product.compare_at_kopecks %}<s class="price__old"><span class="sr">Старая цена </span>{{ product.compare_at_kopecks|rub }}&nbsp;₽</s>
         {% with off=product|discount %}{% if off %}<span class="sale sale--inline">−{{ off }}%</span>{% endif %}{% endwith %}{% endif %}
       </p>
+      {% if colors %}{% include "web/catalog/_colors.html" %}{% endif %}
     </div>
 
     {% if product.price_on_request %}

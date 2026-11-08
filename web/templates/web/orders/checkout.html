@@ -67,7 +67,7 @@
     <aside class="summary checkout__summary">
       <ul class="mini">
         {% for line in cart.lines %}
-        <li><span>{{ line.product.name }}{% if line.size %}, {{ line.size }}{% endif %} × {{ line.quantity }}</span><span>{{ line.line_total_kopecks|rub }}&nbsp;₽</span></li>
+        <li><span>{{ line.product.name }}{% if line.product.color_name %}, {{ line.product.color_name }}{% endif %}{% if line.size %}, {{ line.size }}{% endif %} × {{ line.quantity }}</span><span>{{ line.line_total_kopecks|rub }}&nbsp;₽</span></li>
         {% endfor %}
       </ul>
       <p class="summary__row"><span>Товары</span><span>{{ items_total|rub }}&nbsp;₽</span></p>

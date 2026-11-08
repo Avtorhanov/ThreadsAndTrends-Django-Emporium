@@ -3,8 +3,8 @@ from rest_framework import serializers
 
 from core.choices import AgreementChannel
 from store.models import Category, Product, ProductImage, ProductStatus, ProductVariant
-from store.services.catalog import MAX_BULK, MAX_PRICE_KOPECKS
-from store.services.storefront import Sort
+from store.services.catalog import MAX_BULK, MAX_COLORS, MAX_PRICE_KOPECKS, color_siblings
+from store.services.storefront import Sort, color_options
 
 
 def absolute_url(context, file) -> str | None:
@@ -136,13 +136,38 @@ class ProductListQuerySerializer(serializers.Serializer):
         return attrs
 
 
+class CatalogColorOptionSerializer(serializers.Serializer):
+    slug = serializers.CharField()
+    color_name = serializers.CharField()
+    in_stock = serializers.BooleanField()
+    cover_url = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_cover_url(self, obj):
+        cover = obj.cover
+        return absolute_url(self.context, cover.image) if cover else None
+
+
 class CatalogProductDetailSerializer(CatalogProductSerializer):
     images = CatalogImageSerializer(many=True, read_only=True)
     variants = CatalogVariantSerializer(many=True, read_only=True)
+    colors = serializers.SerializerMethodField()
 
     class Meta(CatalogProductSerializer.Meta):
-        fields = [*CatalogProductSerializer.Meta.fields, "description", "images", "variants"]
+        fields = [
+            *CatalogProductSerializer.Meta.fields,
+            "description",
+            "color_name",
+            "colors",
+            "images",
+            "variants",
+        ]
         read_only_fields = fields
+
+    @extend_schema_field(CatalogColorOptionSerializer(many=True))
+    def get_colors(self, obj):
+        options = color_options(obj)
+        return CatalogColorOptionSerializer(options, many=True, context=self.context).data
 
 
 # --- Панель администратора ---
@@ -241,6 +266,8 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "status",
             "is_active",
             "is_draft",
+            "color_group",
+            "color_name",
             "deleted_at",
             "total_stock",
             "cover_url",
@@ -260,15 +287,31 @@ class AdminProductSerializer(serializers.ModelSerializer):
         return data
 
 
+class AdminColorSiblingSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    color_name = serializers.CharField()
+    is_active = serializers.BooleanField()
+    is_draft = serializers.BooleanField()
+    cover_url = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_cover_url(self, obj):
+        cover = obj.cover
+        return absolute_url(self.context, cover.image) if cover else None
+
+
 class AdminProductDetailSerializer(AdminProductSerializer):
     variants = AdminVariantSerializer(many=True, read_only=True)
     images = AdminImageSerializer(many=True, read_only=True)
+    color_siblings = serializers.SerializerMethodField()
 
     class Meta(AdminProductSerializer.Meta):
         fields = [
             *AdminProductSerializer.Meta.fields,
             "description",
             "agreement_channel",
+            "color_siblings",
             "variants",
             "images",
         ]
@@ -278,6 +321,11 @@ class AdminProductDetailSerializer(AdminProductSerializer):
                 "help_text": "Канал согласования заказа; пусто — как в настройках магазина"
             }
         }
+
+    @extend_schema_field(AdminColorSiblingSerializer(many=True))
+    def get_color_siblings(self, obj):
+        siblings = color_siblings(obj)
+        return AdminColorSiblingSerializer(siblings, many=True, context=self.context).data
 
 
 class AdminProductUpdateSerializer(serializers.Serializer):
@@ -371,6 +419,20 @@ class AdminProductBulkSerializer(serializers.Serializer):
         required=False,
         help_text="true — удалить (мягко), false — восстановить; без других полей",
     )
+
+
+class AdminColorItemSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text="id товара")
+    color_name = serializers.CharField(max_length=40, help_text="Название цвета")
+
+
+class AdminProductColorsSerializer(serializers.Serializer):
+    items = AdminColorItemSerializer(many=True, min_length=2, max_length=MAX_COLORS)
+
+
+class AdminProductColorsResultSerializer(serializers.Serializer):
+    color_group = serializers.UUIDField()
+    updated = serializers.IntegerField(help_text="Сколько товаров связано")
 
 
 class AdminProductBulkResultSerializer(serializers.Serializer):
