@@ -183,7 +183,7 @@ export function ContactsSettings() {
     <section className="card form-grid settings-wide contacts-settings">
       <h2>Контакты</h2>
       <p className="muted">
-        Каналы связи на вкладке «Контакты» сайта и приложения и в кнопке «Узнать» у товаров с ценой по запросу.
+        Каналы связи на вкладке «Контакты» сайта и приложения и в кнопке «Узнать цену» у товаров с ценой по запросу.
         Пустой список — вкладка показывает только статьи.
       </p>
       {loadError ? <p className="alert">{loadError}</p> : null}

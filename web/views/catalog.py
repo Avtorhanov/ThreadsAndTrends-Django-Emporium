@@ -17,6 +17,7 @@ from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 
 from content import home as home_page
+from content import shop as shop_settings
 from content.contacts import ask_links
 from store.models import Category, Product, ProductImage, ProductVariant
 from store.services import history
@@ -150,8 +151,17 @@ def home(request):
         values=values,
         pages=False,
     )
+    blocks = _home_blocks()
     return render(
-        request, "web/catalog/home.html", {"grid": grid, "blocks": _home_blocks(), "tab": "catalog"}
+        request,
+        "web/catalog/home.html",
+        {
+            "grid": grid,
+            "blocks": blocks,
+            # По готовому HTML: пустой блок «Категории» покупателю не выводится.
+            "has_categories_block": 'class="hblock hblock-cats"' in blocks,
+            "tab": "catalog",
+        },
     )
 
 
@@ -284,6 +294,7 @@ def product(request, slug: str):
         "web/catalog/product.html",
         {
             "product": found,
+            "shop": shop_settings.current(),
             "ask_links": ask,
             "in_cart_total": sum(in_cart.values()),
             "cart_state": cart_state,

@@ -51,6 +51,7 @@ def legal(request, page: str):
         {
             "title": title,
             "page": page,
+            "shop": shop,
             "delivery_courier": shop.delivery_courier_kopecks,
             "delivery_free_from": shop.delivery_free_from_kopecks,
             "pickup_address": shop.pickup_address,

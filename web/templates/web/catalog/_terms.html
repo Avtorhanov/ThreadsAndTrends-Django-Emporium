@@ -1,0 +1,7 @@
+{% load money storefront %}
+{# Условия у кнопок покупки. Суммы и способы — из настроек магазина, поэтому вне sitetext: сохранённый текст с суммой перестал бы обновляться. #}
+<ul class="rise r4 terms">
+  <li>{% sitetext "product.terms.delivery" %}Доставка курьером{% endsitetext %} — {{ shop.delivery_courier_kopecks|rub }}&nbsp;₽, бесплатно от {{ shop.delivery_free_from_kopecks|rub }}&nbsp;₽{% if shop.pickup_address %}; {% sitetext "product.terms.pickup" %}самовывоз бесплатно{% endsitetext %}{% endif %}</li>
+  {% if with_payment %}<li>{% sitetext "product.terms.payment" %}Оплата{% endsitetext %}: <span class="terms__pay">{% if shop.online_payment %}<span>{% sitetext "product.terms.pay_online" %}онлайн картой или СБП{% endsitetext %}</span>{% endif %}{% if shop.agreement %}<span>{% sitetext "product.terms.pay_agreement" %}по согласованию с продавцом{% endsitetext %}</span>{% endif %}{% if shop.cash_on_delivery %}<span>{% sitetext "product.terms.pay_cash" %}при получении{% endsitetext %}</span>{% endif %}</span></li>{% endif %}
+  <li>{% sitetext "product.terms.return" %}Возврат в течение 7 дней{% endsitetext %} — <a href="{% url 'web:delivery' %}">{% sitetext "product.terms.more" %}Доставка и оплата{% endsitetext %}</a></li>
+</ul>

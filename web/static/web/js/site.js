@@ -893,6 +893,27 @@
   // Демо на Pages может запустить этот файл повторно на той же странице — без двойных шагов.
   if (!window.__didiIncartBound) {
     window.__didiIncartBound = true;
+    // Размер не выбран: своё сообщение у блока размеров вместо системной подсказки.
+    // invalid не всплывает — слушаем на перехвате; приходит по разу на каждую радиокнопку.
+    document.addEventListener("invalid", function (event) {
+      var input = event.target;
+      if (input.name !== "variant" || !input.closest("[data-buy]")) return;
+      event.preventDefault();
+      var box = input.closest(".sizes");
+      var message = box && box.querySelector("[data-size-error]");
+      if (!message || !message.hidden) return;
+      message.hidden = false;
+      box.classList.add("is-invalid");
+      box.scrollIntoView({ block: "center", behavior: reduced.matches ? "auto" : "smooth" });
+    }, true);
+    document.addEventListener("change", function (event) {
+      if (event.target.name !== "variant") return;
+      var box = event.target.closest(".sizes");
+      var message = box && box.querySelector("[data-size-error]");
+      if (!message) return;
+      message.hidden = true;
+      box.classList.remove("is-invalid");
+    });
     document.addEventListener("click", function (event) {
       var button = event.target.closest && event.target.closest("[data-incart-step]");
       if (!button) return;
