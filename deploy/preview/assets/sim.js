@@ -1551,7 +1551,7 @@
     }
     if (Object.keys(errors).length) return fields(errors);
     Object.keys(body).forEach(function (k) {
-      if (k !== "defaults" && k !== "agreement_contacts" && (k in db.settings || /^agreement_|^online_payment_enabled$/.test(k))) db.settings[k] = body[k];
+      if (k !== "defaults" && k !== "agreement_contacts" && (k in db.settings || /^agreement_|^online_payment_enabled$|^offer_enabled$|^operator_/.test(k))) db.settings[k] = body[k];
     });
     db.settings.updated_at = now();
     return { status: 200, body: settingsBody(db), save: true };

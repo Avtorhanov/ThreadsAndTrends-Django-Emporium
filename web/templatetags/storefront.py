@@ -2,9 +2,11 @@ import json
 
 from django import template
 from django.templatetags.static import static
+from django.urls import reverse
 from django.utils.html import format_html, format_html_join, linebreaks
 from django.utils.safestring import mark_safe
 
+from content import shop as shop_settings
 from content import site
 from orders.models import OrderStatus
 from store.services.storefront import category_tree
@@ -213,6 +215,10 @@ def site_blocks(context, area: str):
     cache = context.render_context.setdefault("site_blocks", {})
     if area not in cache:
         cache[area] = site.blocks(area)
+        # Редактор сайта работает по номерам блоков — ему показываем все.
+        if not is_editor(context) and not shop_settings.current().offer_enabled:
+            offer_url = reverse("web:offer")
+            cache[area] = [block for block in cache[area] if block.value != offer_url]
     return cache[area]
 
 

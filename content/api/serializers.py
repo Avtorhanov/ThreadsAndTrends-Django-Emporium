@@ -263,6 +263,9 @@ class AdminShopSettingsWriteSerializer(serializers.Serializer):
     seller_address = serializers.CharField(max_length=300, allow_blank=True)
     seller_phone = serializers.CharField(max_length=30, allow_blank=True)
     seller_email = serializers.CharField(max_length=254, allow_blank=True)
+    offer_enabled = serializers.BooleanField(required=False)
+    operator_name = serializers.CharField(max_length=200, allow_blank=True, required=False)
+    operator_contact = serializers.CharField(max_length=200, allow_blank=True, required=False)
 
 
 # --- Главная из блоков ---

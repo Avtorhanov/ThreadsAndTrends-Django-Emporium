@@ -24,7 +24,7 @@ from django.db import transaction
 from content.models import ShopSettings
 from core.choices import AgreementChannel
 
-CACHE_KEY = "content:shop-settings:v2"
+CACHE_KEY = "content:shop-settings:v3"
 CACHE_SECONDS = 60 * 60
 MAX_DELIVERY_KOPECKS = 100_000_00
 MAX_FREE_FROM_KOPECKS = 10_000_000_00
@@ -49,6 +49,9 @@ FIELDS = (
     "seller_address",
     "seller_phone",
     "seller_email",
+    "offer_enabled",
+    "operator_name",
+    "operator_contact",
 )
 SELLER_FIELDS = ("name", "inn", "ogrn", "address", "phone", "email")
 _TRAILING = re.compile(r"[\s,;:·]+$")
@@ -114,6 +117,9 @@ class Shop:
     unpaid_timeout_minutes: int
     agreement_timeout_hours: int
     seller: Seller
+    offer_enabled: bool = False
+    operator_name: str = ""
+    operator_contact: str = ""
 
 
 def _row_values() -> dict | None:
@@ -181,6 +187,9 @@ def current() -> Shop:
         unpaid_timeout_minutes=pick("unpaid_timeout_minutes"),
         agreement_timeout_hours=pick("agreement_timeout_hours"),
         seller=Seller(**{name: clean_text(pick(f"seller_{name}")) for name in SELLER_FIELDS}),
+        offer_enabled=bool(row.get("offer_enabled", False)),
+        operator_name=clean_text(row.get("operator_name") or ""),
+        operator_contact=clean_text(row.get("operator_contact") or ""),
     )
 
 
@@ -212,7 +221,13 @@ def _validate(values: dict) -> dict:
             f"От {TIMEOUT_RANGE[0]} до {TIMEOUT_RANGE[1]} минут (сутки)."
         )
 
-    for field in ("pickup_address", "seller_name", "seller_address"):
+    for field in (
+        "pickup_address",
+        "seller_name",
+        "seller_address",
+        "operator_name",
+        "operator_contact",
+    ):
         cleaned[field] = clean_text(cleaned.get(field, ""))
 
     inn = re.sub(r"\D", "", cleaned.get("seller_inn", ""))

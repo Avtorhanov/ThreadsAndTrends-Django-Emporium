@@ -6,6 +6,7 @@
 #   sudo ./deploy.sh logs [сервис] — логи (app, worker, scheduler, caddy, db, backup)
 #   sudo ./deploy.sh backup       — бэкап прямо сейчас (в ./backups)
 #   sudo ./deploy.sh restore backups/db-….dump [backups/media-….tar.gz] — восстановление
+#   sudo ./deploy.sh restore-drive [файл] — восстановление из копии в Google Диск
 #   sudo ./deploy.sh smoke        — нагрузочный smoke-тест оформления заказа
 #
 # Сервер: Ubuntu 22.04/24.04 или Debian 12, от 2 ГБ RAM. Docker ставится автоматически.
@@ -223,6 +224,15 @@ restore() {
   restore_noninteractive "$db_dump" "$media_tar"
 }
 
+restore_drive() {
+  say "Скачиваю копию из Google Диска"
+  "${COMPOSE[@]}" exec -T backup sh /usr/local/bin/backup.sh fetch "$@" || die "Не удалось скачать копию."
+  local db_dump
+  db_dump=$(ls -t backups/drive/db-*.dump | head -n 1)
+  restore "$db_dump" backups/drive/media.tar.gz
+  rm -rf backups/drive
+}
+
 restore_noninteractive() {
   local db_dump=$1 media_tar=${2:-}
   say "Останавливаю приложение"
@@ -246,6 +256,7 @@ case "${1:-deploy}" in
   logs) shift; "${COMPOSE[@]}" logs -f --tail 200 "$@" ;;
   backup) "${COMPOSE[@]}" exec backup sh /usr/local/bin/backup.sh ;;
   restore) shift; restore "$@" ;;
+  restore-drive) shift; restore_drive "$@" ;;
   restore-yes) shift; restore_noninteractive "$@" ;;
   smoke) shift; python3 deploy/smoke_checkout.py "https://$(env_get DOMAIN)" "$@" ;;
   *) sed -n '2,12p' "$0"; exit 1 ;;

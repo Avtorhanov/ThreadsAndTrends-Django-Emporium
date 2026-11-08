@@ -4186,6 +4186,18 @@ components:
           format: email
           readOnly: true
           title: Email
+        offer_enabled:
+          type: boolean
+          readOnly: true
+          title: Показывать публичную оферту
+        operator_name:
+          type: string
+          readOnly: true
+          title: Оператор данных
+        operator_contact:
+          type: string
+          readOnly: true
+          title: Контакт для обращений
         updated_at:
           type: string
           format: date-time
@@ -4215,8 +4227,11 @@ components:
       - defaults
       - delivery_courier_kopecks
       - delivery_free_from_kopecks
+      - offer_enabled
       - online_payment_available
       - online_payment_enabled
+      - operator_contact
+      - operator_name
       - pickup_address
       - pickup_enabled
       - seller_address
@@ -4281,6 +4296,14 @@ components:
         seller_email:
           type: string
           maxLength: 254
+        offer_enabled:
+          type: boolean
+        operator_name:
+          type: string
+          maxLength: 200
+        operator_contact:
+          type: string
+          maxLength: 200
       required:
       - cash_on_delivery_enabled
       - delivery_courier_kopecks

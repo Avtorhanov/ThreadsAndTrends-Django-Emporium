@@ -67,6 +67,10 @@ def storefront(request):
         # Заполненные реквизиты одной строкой подвала; пустые не показываются.
         return seller().parts()
 
+    @cache
+    def offer_enabled():
+        return shop_settings.current().offer_enabled
+
     return {
         "theme": theme.get_theme(request),
         "look": theme.get_look(request),
@@ -78,6 +82,7 @@ def storefront(request):
         "android_apk_url": settings.ANDROID_APK_URL,
         "seller": seller,
         "seller_line": seller_line,
+        "offer_enabled": offer_enabled,
         # Слово рядом с плашкой «DiDi» (панель → «Внешний вид» → «Тема магазина»).
         "show_wordmark": look.shop_theme().show_wordmark and bool(look.shop_theme().wordmark),
         "wordmark": look.shop_theme().wordmark,

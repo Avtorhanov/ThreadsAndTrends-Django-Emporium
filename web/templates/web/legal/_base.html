@@ -10,7 +10,7 @@
     <h1 class="h1">{{ title }}</h1>
   </header>
   {# ЗАГОТОВКА. Текст и реквизиты проверяет юрист до запуска; реквизиты — SELLER_* в .env. #}
-  <div class="note note--warning legal__draft">Черновик: текст будет проверен юристом.</div>
+  {% block draft %}<div class="note note--warning legal__draft">Черновик: текст будет проверен юристом.</div>{% endblock %}
   {% block legal %}{% endblock %}
   <p class="muted">Редакция от {% block revision %}[дата редакции]{% endblock %}.</p>
 </article>

@@ -42,6 +42,9 @@ def hide_banner(request):
 def legal(request, page: str):
     template, title = LEGAL_PAGES[page]
     shop = shop_settings.current()
+    # Скрытая оферта: старые ссылки и приложение ведут на политику, а не на 404.
+    if page == "offer" and not shop.offer_enabled:
+        return redirect("web:privacy")
     return render(
         request,
         template,
@@ -52,6 +55,8 @@ def legal(request, page: str):
             "delivery_free_from": shop.delivery_free_from_kopecks,
             "pickup_address": shop.pickup_address,
             "unpaid_timeout": shop.unpaid_timeout_minutes,
+            "operator_name": shop.operator_name or shop.seller.name,
+            "legal_contact": shop.operator_contact or shop.seller.email or shop.seller.phone,
         },
     )
 

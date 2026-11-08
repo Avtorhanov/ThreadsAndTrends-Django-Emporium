@@ -7,12 +7,13 @@ from orders.api.urls import admin_orders_urlpatterns, orders_urlpatterns
 from payments.api.urls import order_payment_urlpatterns, payment_urlpatterns
 from store.api.urls import admin_catalog_urlpatterns, cart_urlpatterns, catalog_urlpatterns
 
-from .views import HealthView
+from .views import FullHealthView, HealthView
 
 app_name = "v1"
 
 urlpatterns = [
     path("health/", HealthView.as_view(), name="health"),
+    path("health/full/", FullHealthView.as_view(), name="health-full"),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path("docs/", SpectacularSwaggerView.as_view(url_name="v1:schema"), name="docs"),
     # Мобильный клиент (JWT)

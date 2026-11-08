@@ -47,8 +47,10 @@ x-app: &app
     SITE_URL: https://${DOMAIN}
     CACHE_URL: ${CACHE_URL:-db://django_cache}
     TASKS_BACKEND: database
+    BACKUP_DIR: /backups
   volumes:
     - media:/data/media
+    - ./backups:/backups:ro
   depends_on:
     db:
       condition: service_healthy
@@ -86,6 +88,7 @@ services:
     volumes:
       - media:/data/media
       - static:/srv/static
+      - ./backups:/backups:ro
     healthcheck:
       # Host — домен сайта: запрос проходит ALLOWED_HOSTS; healthcheck исключён из редиректа на HTTPS.
       test:
@@ -136,7 +139,10 @@ services:
         condition: service_healthy
 
   backup:
-    image: postgres:16-alpine
+    build:
+      context: ./deploy
+      dockerfile: backup.Dockerfile
+    image: didi-shop-backup:latest
     restart: unless-stopped
     logging: *logging
     environment:
@@ -147,6 +153,11 @@ services:
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
       # Время по UTC: 00:30 UTC = 03:30 МСК.
       BACKUP_CRON: ${BACKUP_CRON:-30 0 * * *}
+      # Шифрованная копия в Google Диск (docs/LAUNCH.md, «Бэкап в Google Диск»).
+      BACKUP_GDRIVE_TOKEN: ${BACKUP_GDRIVE_TOKEN:-}
+      BACKUP_GDRIVE_FOLDER: ${BACKUP_GDRIVE_FOLDER:-didi-shop-backup}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:-}
+      BACKUP_REMOTE_KEEP_DAYS: ${BACKUP_REMOTE_KEEP_DAYS:-30}
     volumes:
       - ./backups:/backups
       - media:/media:ro

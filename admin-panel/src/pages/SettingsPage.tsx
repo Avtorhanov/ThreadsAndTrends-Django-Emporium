@@ -55,6 +55,9 @@ type Draft = {
   address: string;
   phone: string;
   email: string;
+  offerEnabled: boolean;
+  operatorName: string;
+  operatorContact: string;
 };
 
 function toDraft(settings: ShopSettings): Draft {
@@ -76,6 +79,9 @@ function toDraft(settings: ShopSettings): Draft {
     address: settings.seller_address,
     phone: settings.seller_phone,
     email: settings.seller_email,
+    offerEnabled: settings.offer_enabled,
+    operatorName: settings.operator_name,
+    operatorContact: settings.operator_contact,
   };
 }
 
@@ -222,6 +228,9 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
         seller_address: draft.address,
         seller_phone: draft.phone,
         seller_email: draft.email,
+        offer_enabled: draft.offerEnabled,
+        operator_name: draft.operatorName,
+        operator_contact: draft.operatorContact,
       });
       setSaved(true);
       onSaved(result);
@@ -445,6 +454,39 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
             ) : (
               <p className="muted">Ничего не заполнено — строки в подвале не будет.</p>
             )}
+          </div>
+        </section>
+
+        <section className="card form-grid settings-wide">
+          <h2>Документы</h2>
+          <Switch
+            checked={draft.offerEnabled}
+            label="Показывать публичную оферту"
+            hint="Выключено — оферты нет в «Помощи», при регистрации и оформлении заказа"
+            onChange={(offerEnabled) => set({ offerEnabled })}
+          />
+          <p className="muted">Имя и контакт видны только в политике обработки данных, в подвал не попадают.</p>
+          <div className="settings-fields">
+            <label className="field">
+              Оператор данных
+              <input
+                value={draft.operatorName}
+                maxLength={200}
+                placeholder="Иванов Иван Иванович"
+                onChange={(e) => set({ operatorName: e.target.value })}
+              />
+              <FieldError errors={errors} name="operator_name" />
+            </label>
+            <label className="field">
+              Контакт для обращений
+              <input
+                value={draft.operatorContact}
+                maxLength={200}
+                placeholder="Email или телефон"
+                onChange={(e) => set({ operatorContact: e.target.value })}
+              />
+              <FieldError errors={errors} name="operator_contact" />
+            </label>
           </div>
         </section>
       </div>

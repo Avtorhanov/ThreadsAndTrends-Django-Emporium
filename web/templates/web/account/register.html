@@ -17,7 +17,7 @@
     <div class="field{% if form.consent.errors %} has-error{% endif %}">
       <label class="check">
         {{ form.consent }}
-        <span>Согласен на обработку персональных данных в соответствии с <a href="{% url 'web:privacy' %}">политикой</a> и принимаю условия <a href="{% url 'web:offer' %}">оферты</a></span>
+        <span>Согласен на обработку персональных данных в соответствии с <a href="{% url 'web:privacy' %}">политикой</a>{% if offer_enabled %} и принимаю условия <a href="{% url 'web:offer' %}">оферты</a>{% endif %}</span>
       </label>
       {% for error in form.consent.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
     </div>
