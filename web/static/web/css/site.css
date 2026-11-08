@@ -312,6 +312,9 @@ a { color: var(--brand); }
 /* Поля под тень у лент и карусели выходят за колонку — без прокрутки страницы вбок. */
 .main { overflow-x: clip; }
 .page-feed .main { padding-top: calc(var(--hdr-full) + 14px + var(--safe-top)); }
+/* На главной есть блок «Категории» — полоса шапки его дублирует. */
+.page-feed--own-cats { --hdr-full: 68px; }
+.page-feed--own-cats .top__more { display: none; }
 .main--bare { padding-top: 48px; }
 .feed, .page, .flash, .pd { max-width: var(--page-max); margin-inline: auto; }
 .feed { padding: 0 var(--gutter); }
@@ -485,7 +488,8 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .pd { padding: 0 var(--gutter); }
 .pd__gallery { position: relative; }
 .hero {
-  position: relative; height: var(--size-detail-hero); overflow: hidden;
+  /* −80 px от токена: на телефоне «В корзину» — на первом экране; токен общий с приложением. */
+  position: relative; height: calc(var(--size-detail-hero) - 80px); overflow: hidden;
   border-radius: var(--radius-hero); background-color: var(--tone);
   animation: hero-in .4s var(--ease-out) both;
 }
@@ -576,6 +580,18 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .pd__desc { color: var(--muted); font-size: 15px; line-height: 1.6; }
 .pd__desc p + p { margin-top: 10px; }
 .buy__bar { display: grid; gap: 10px; }
+.sizes__error { margin-top: 10px; color: var(--danger); font: 700 14px var(--font-text); }
+.sizes.is-invalid .sz:not(.is-off) span { box-shadow: 0 0 0 2px var(--danger); }
+.terms { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; color: var(--muted); font: 500 13px/1.45 var(--font-text); }
+.terms a { color: inherit; text-decoration: underline; }
+.terms__pay > span + span::before { content: ", "; }
+/* Телефон: «В корзину» прилипает над нижним меню, пока кнопка ниже экрана. display: contents —
+   иначе sticky ограничен высотой .buy__bar. fixed нельзя: zoom на body. */
+@media (max-width: 899px) {
+  .buy__bar { display: contents; }
+  .buy__bar .cta[data-cta] { position: sticky; bottom: calc(var(--tabbar-top) + 8px); z-index: 5; }
+  .buy__bar .cta--alt { margin-top: -8px; }
+}
 .buy__result:empty { display: none; }
 /* Уже в корзине: метка-ссылка и «−/+» в одну строку над кнопками. */
 .incart-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
