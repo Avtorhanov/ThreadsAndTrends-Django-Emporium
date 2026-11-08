@@ -322,7 +322,7 @@ def wide(browser, base: str, report: Report, errors: list[str]) -> None:
         )
         assert columns == 4, f"на десктопе {columns} колонок"
         report.shot(page, f"desktop-{scheme}-home")
-        page.locator(".cats .seg").nth(2).click()
+        page.locator(".hblock-cats__item").nth(1).click()
         page.wait_for_url(re.compile(r"/category/"))
         report.shot(page, f"desktop-{scheme}-category")
         in_stock_product(page)
