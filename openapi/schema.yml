@@ -2737,6 +2737,132 @@ paths:
               schema:
                 $ref: '#/components/schemas/CheckoutPreview'
           description: ''
+  /api/v1/orders/guest/:
+    post:
+      operationId: orders_guest_create
+      description: Оформить заказ без аккаунта, только «по согласованию». Ключ идемпотентности
+        — 32–64 символа; повтор с другим телефоном — 400.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: 'Уникальный ключ попытки оформления (8–64 символа: латиница,
+          цифры, - и _). Повтор запроса с тем же ключом возвращает уже созданный заказ
+          (200).'
+        required: true
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestCheckoutInputRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestOrderCreated'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestOrderCreated'
+          description: Повтор с тем же ключом
+  /api/v1/orders/guest/claim/:
+    post:
+      operationId: orders_guest_claim
+      description: Привязать гостевые заказы к аккаунту по токенам; ссылки перестают
+        работать.
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestClaimInputRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestClaim'
+          description: ''
+  /api/v1/orders/guest/order/:
+    get:
+      operationId: orders_guest_retrieve
+      description: Гостевой заказ по токену. Неверный или истёкший токен — 404.
+      parameters:
+      - in: header
+        name: X-Order-Token
+        schema:
+          type: string
+        description: Секрет доступа к гостевому заказу (access_token при оформлении).
+        required: true
+      tags:
+      - orders
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+  /api/v1/orders/guest/order/cancel/:
+    post:
+      operationId: orders_guest_cancel
+      description: Отмена гостевого заказа до отправки. Остатки возвращаются на склад.
+      parameters:
+      - in: header
+        name: X-Order-Token
+        schema:
+          type: string
+        description: Секрет доступа к гостевому заказу (access_token при оформлении).
+        required: true
+      tags:
+      - orders
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+  /api/v1/orders/guest/preview/:
+    post:
+      operationId: orders_guest_preview
+      description: 'Экран оформления без аккаунта: позиции с устройства, доставка
+        и оплата.'
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestPreviewInputRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutPreview'
+          description: ''
 components:
   schemas:
     AdminAgreementContact:
@@ -3490,7 +3616,10 @@ components:
           type: integer
           readOnly: true
         customer:
-          $ref: '#/components/schemas/AdminOrderCustomer'
+          allOf:
+          - $ref: '#/components/schemas/AdminOrderCustomer'
+          nullable: true
+          description: null — гостевой заказ
         number:
           type: string
           readOnly: true
@@ -3637,7 +3766,10 @@ components:
         status_display:
           type: string
         customer:
-          $ref: '#/components/schemas/AdminOrderCustomer'
+          allOf:
+          - $ref: '#/components/schemas/AdminOrderCustomer'
+          nullable: true
+          description: null — гостевой заказ
         recipient_name:
           type: string
           readOnly: true
@@ -5607,6 +5739,108 @@ components:
       required:
       - new_email
       - password
+    GuestCheckoutInputRequest:
+      type: object
+      description: 'Оформление без аккаунта: позиции с устройства вместо корзины на
+        сервере.'
+      properties:
+        delivery_method:
+          $ref: '#/components/schemas/DeliveryMethodEnum'
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        recipient_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        recipient_phone:
+          type: string
+          minLength: 1
+          description: Российский номер
+          maxLength: 32
+        delivery_address:
+          type: string
+          default: ''
+          description: Обязателен для курьера; для самовывоза игнорируется
+          maxLength: 500
+        comment:
+          type: string
+          default: ''
+          maxLength: 500
+        expected_total_kopecks:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Итог, который видел покупатель; если сумма изменилась — 400
+            (total_changed)
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuestLineRequest'
+        consent:
+          type: boolean
+          description: Согласие на обработку персональных данных
+      required:
+      - consent
+      - delivery_method
+      - lines
+      - payment_method
+      - recipient_name
+      - recipient_phone
+    GuestClaim:
+      type: object
+      properties:
+        numbers:
+          type: array
+          items:
+            type: string
+          description: Номера заказов, привязанных к аккаунту
+      required:
+      - numbers
+    GuestClaimInputRequest:
+      type: object
+      properties:
+        tokens:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 64
+          maxItems: 20
+      required:
+      - tokens
+    GuestLineRequest:
+      type: object
+      properties:
+        variant_id:
+          type: integer
+          minimum: 1
+        quantity:
+          type: integer
+          maximum: 99
+          minimum: 1
+      required:
+      - quantity
+      - variant_id
+    GuestOrderCreated:
+      type: object
+      properties:
+        order:
+          $ref: '#/components/schemas/OrderDetail'
+        access_token:
+          type: string
+          description: 'Секрет доступа к заказу: заголовок X-Order-Token'
+      required:
+      - access_token
+      - order
+    GuestPreviewInputRequest:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuestLineRequest'
+      required:
+      - lines
     Health:
       type: object
       properties:
