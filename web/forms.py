@@ -6,7 +6,7 @@ import re
 from django import forms
 
 from orders.models import DeliveryMethod, PaymentMethod
-from store.services.storefront import Sort
+from store.services.storefront import Sort, clean_sizes
 
 MAX_RUBLES = 100_000_000  # как MAX_PRICE_KOPECKS каталога: защита от переполнения
 
@@ -35,6 +35,8 @@ class CatalogFilterForm(forms.Form):
     sort = forms.ChoiceField(required=False, choices=[("", "")] + Sort.CHOICES)
 
     def values(self) -> dict:
+        # Несколько значений одного параметра: ?size=38&size=39; у пустой формы данные — dict.
+        sizes = self.data.getlist("size") if hasattr(self.data, "getlist") else []
         if not self.is_valid():
             data = {name: self.data.get(name, "") for name in self.fields}
             data["q"] = str(data["q"])[:100]
@@ -52,6 +54,7 @@ class CatalogFilterForm(forms.Form):
             "price_max": price_max,
             "in_stock": bool(data["in_stock"]),
             "sort": data["sort"],
+            "sizes": clean_sizes(sizes),
         }
 
 

@@ -102,6 +102,10 @@ class CatalogProductSerializer(serializers.ModelSerializer):
         return absolute_url(self.context, cover.image) if cover else None
 
 
+class ProductSizesSerializer(serializers.Serializer):
+    sizes = serializers.ListField(child=serializers.CharField())
+
+
 class ProductListQuerySerializer(serializers.Serializer):
     """Параметры ленты товаров. Цены — копейки."""
 
@@ -122,6 +126,11 @@ class ProductListQuerySerializer(serializers.Serializer):
         required=False, min_value=0, max_value=MAX_PRICE_KOPECKS, help_text="Цена до, коп."
     )
     in_stock = serializers.BooleanField(required=False, default=False, help_text="Только в наличии")
+    size = serializers.ListField(
+        child=serializers.CharField(allow_blank=True, max_length=50),
+        required=False,
+        help_text="Размеры из /catalog/products/sizes/: любой из отмеченных, в наличии.",
+    )
     sort = serializers.ChoiceField(
         choices=Sort.CHOICES,
         required=False,

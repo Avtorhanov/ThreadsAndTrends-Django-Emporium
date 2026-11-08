@@ -390,6 +390,31 @@
     return parseInt(m[1], 10) * 100 + parseInt((m[2] || "0").padEnd(2, "0"), 10);
   }
 
+  // Группы размеров — копия store/sizes.py (size_group, sort_sizes).
+  var CLOTHING_ORDER = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
+  function sizeGroup(size) { return String(size || "").split(" · ")[0].trim(); }
+
+  function stockedGroups(p) {
+    var full = sim.productById(p.id);
+    return (full ? full.variants : []).filter(function (v) { return v.stock > 0 && v.size; })
+      .map(function (v) { return sizeGroup(v.size); });
+  }
+
+  function sizeRank(size) {
+    var at = CLOTHING_ORDER.indexOf(size);
+    if (at >= 0) return [0, at];
+    var m = /^(\d+(?:[.,]\d+)?)( US)?$/.exec(size);
+    return m ? [m[2] ? 2 : 1, parseFloat(m[1].replace(",", "."))] : [3, 0];
+  }
+
+  function sortSizes(sizes) {
+    return sizes.sort(function (a, b) {
+      var x = sizeRank(a), y = sizeRank(b);
+      return x[0] - y[0] || x[1] - y[1] || a.localeCompare(b, "ru");
+    });
+  }
+
   function renderListing(kind) {
     var feed = document.querySelector(".feed");
     if (!feed) return;
@@ -398,6 +423,7 @@
     var priceMin = parseRubles(query.get("price_min"));
     var priceMax = parseRubles(query.get("price_max"));
     var inStock = query.get("in_stock") === "1";
+    var selectedSizes = query.getAll("size").map(sizeGroup).filter(Boolean);
     var list = sim.liveProducts();
     var cat = null;
     if (kind === "category") {
@@ -435,6 +461,17 @@
         }
         score[p.id] = s;
         return true;
+      });
+    }
+    // Как store.services.storefront: чипы считаются по выборке без учёта выбранных размеров.
+    var sizeOptions = {};
+    selectedSizes.forEach(function (s) { sizeOptions[s] = true; });
+    list.forEach(function (p) {
+      stockedGroups(p).forEach(function (s) { sizeOptions[s] = true; });
+    });
+    if (selectedSizes.length) {
+      list = list.filter(function (p) {
+        return stockedGroups(p).some(function (s) { return selectedSizes.indexOf(s) >= 0; });
       });
     }
     var byPrice = function (dir) {
@@ -483,8 +520,17 @@
       set("price_max", query.get("price_max") || "");
       var check = form.querySelector('[name="in_stock"]');
       if (check) check.checked = inStock;
+      var sizeBox = form.querySelector("[data-size-filter]");
+      if (sizeBox) {
+        var names = sortSizes(Object.keys(sizeOptions));
+        sizeBox.hidden = !names.length;
+        sizeBox.querySelector(".size-filter__chips").innerHTML = names.map(function (s) {
+          return '<label class="size-chip"><input type="checkbox" name="size" value="' + esc(s) + '"' +
+            (selectedSizes.indexOf(s) >= 0 ? " checked" : "") + "><span>" + esc(s) + "</span></label>";
+        }).join("");
+      }
       var details = form.querySelector(".filters__panel");
-      if (details && (sort || priceMin !== null || priceMax !== null || inStock || query.get("filters") === "1")) details.open = true;
+      if (details && (sort || priceMin !== null || priceMax !== null || inStock || selectedSizes.length || query.get("filters") === "1")) details.open = true;
       var reset = form.querySelector(".filters__actions a");
       if (reset) reset.setAttribute("href", location.pathname + (kind === "search" && q ? "?q=" + encodeURIComponent(q) : ""));
     }
@@ -1274,7 +1320,7 @@
     if ((form.method || "get").toLowerCase() === "get") {
       // Поиск и фильтры: адрес с параметрами, выборку делает renderListing.
       var params = new URLSearchParams();
-      new FormData(form).forEach(function (v, k) { if (String(v).trim()) params.set(k, String(v).trim()); });
+      new FormData(form).forEach(function (v, k) { if (String(v).trim()) params.append(k, String(v).trim()); });
       if (submitter && submitter.name) params.set(submitter.name, submitter.value);
       var target = action === "/search/" || form.hasAttribute("data-quick") || form.hasAttribute("data-drop") ? link("/search/") : location.pathname;
       var s = params.toString();

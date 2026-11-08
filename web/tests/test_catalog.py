@@ -198,3 +198,49 @@ def test_size_chart_only_for_shoe_sizes(client, shop):
     assert '<details class="size-guide">' in html
     assert ">38 · 8 US<" in html
     assert '<th scope="row">46</th><td>30</td><td>—</td><td>13</td>' in html
+
+
+@pytest.fixture
+def sized_shop():
+    make_product("Кеды женские", sizes=("38 · 8 US", "39 · 8,5 US"))
+    make_product("Футболка размерная", sizes=("M", "S"))
+    make_product("Без остатка", stock=0, sizes=("XXL",))
+
+
+def test_size_chips_work_without_js(client, sized_shop):
+    html = client.get(reverse("web:products"), {"size": "38"}).content.decode()
+    assert 'name="size" value="38" checked' in html
+    assert 'name="size" value="S"' in html  # выбор размера не убирает остальные чипы
+    assert 'value="XXL"' not in html
+    assert "Кеды женские" in html and "Футболка размерная" not in html
+    assert '<details class="filters__panel" open>' in html
+
+
+def test_size_filter_in_search_and_several_values(client, sized_shop):
+    url = reverse("web:search")
+    html = client.get(url, {"q": "кеды", "size": ["38", "S"]}).content.decode()
+    assert "Кеды женские" in html and "Футболка размерная" not in html
+    assert 'value="39"' in html and 'value="M"' not in html  # чипы — из текущей выборки
+    assert 'value="S" checked' in html  # отмеченный можно снять, хотя в выборке его нет
+
+
+def test_sizes_are_separate_grids_in_cache(client, sized_shop):
+    url = reverse("web:products")
+    assert "Футболка размерная" in client.get(url).content.decode()
+    assert "Футболка размерная" not in client.get(url, {"size": "38"}).content.decode()
+    assert "Кеды женские" not in client.get(url, {"size": "M"}).content.decode()
+
+
+def test_size_is_kept_in_page_links(client, sized_shop, settings):
+    settings.WEB_PAGE_SIZE = 1
+    for n in range(3):
+        make_product(f"Кеды {n}", sizes=("38 · 8 US",))
+    html = client.get(reverse("web:products"), {"size": ["38", "39"]}).content.decode()
+    assert "size=38&amp;size=39&amp;page=2" in html
+
+
+def test_sizes_are_cached_with_grid(client, sized_shop, django_assert_num_queries):
+    url = reverse("web:products")
+    client.get(url)
+    with django_assert_num_queries(0):
+        client.get(url)

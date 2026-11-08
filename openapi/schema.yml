@@ -2280,6 +2280,15 @@ paths:
         description: Поиск по названию и описанию (по началу слов, русская морфология).
           Показывает только товары в наличии.
       - in: query
+        name: size
+        schema:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+        description: 'Размеры из /catalog/products/sizes/: любой из отмеченных, в
+          наличии.'
+      - in: query
         name: sort
         schema:
           enum:
@@ -2306,6 +2315,87 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedCatalogProductList'
+          description: ''
+  /api/v1/catalog/products/sizes/:
+    get:
+      operationId: catalog_products_sizes
+      description: Размеры товаров в наличии для тех же параметров, что у ленты (выбранный
+        `size` не сужает).
+      parameters:
+      - in: query
+        name: category
+        schema:
+          oneOf:
+          - type: string
+            pattern: ^[-a-zA-Z0-9_]+$
+          - type: string
+            maxLength: 0
+        description: Slug категории (с подкатегориями)
+      - in: query
+        name: in_stock
+        schema:
+          type: boolean
+          default: false
+        description: Только в наличии
+      - in: query
+        name: price_max
+        schema:
+          type: integer
+          maximum: 10000000000
+          minimum: 0
+          format: int64
+        description: Цена до, коп.
+      - in: query
+        name: price_min
+        schema:
+          type: integer
+          maximum: 10000000000
+          minimum: 0
+          format: int64
+        description: Цена от, коп.
+      - in: query
+        name: q
+        schema:
+          type: string
+          maxLength: 100
+        description: Поиск по названию и описанию (по началу слов, русская морфология).
+          Показывает только товары в наличии.
+      - in: query
+        name: size
+        schema:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+        description: 'Размеры из /catalog/products/sizes/: любой из отмеченных, в
+          наличии.'
+      - in: query
+        name: sort
+        schema:
+          enum:
+          - new
+          - price_asc
+          - price_desc
+          - relevance
+          - ''
+          type: string
+        description: |-
+          По умолчанию: с поиском — relevance, без — new.
+
+          * `new` - Сначала новые
+          * `price_asc` - Сначала дешевле
+          * `price_desc` - Сначала дороже
+          * `relevance` - По релевантности (только с поиском)
+      tags:
+      - catalog
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductSizes'
           description: ''
   /api/v1/catalog/products/{slug}/:
     get:
@@ -6412,6 +6502,15 @@ components:
         * `succeeded` - Оплачен
         * `canceled` - Не оплачен
         * `refunded` - Возвращён
+    ProductSizes:
+      type: object
+      properties:
+        sizes:
+          type: array
+          items:
+            type: string
+      required:
+      - sizes
     ProductStatus:
       type: object
       description: 'Метка товара для покупателя («Под заказ»…). tone — цвет: success,
