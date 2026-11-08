@@ -1,4 +1,4 @@
-{% load money %}{% autoescape off %}Новый заказ {{ order.number }} — {{ status_label }}.
+{% load money %}{% autoescape off %}{% if cancelled %}Покупатель отменил заказ {{ order.number }}. Товар вернулся в продажу — не отправляйте заказ.{% else %}Новый заказ {{ order.number }} — {{ status_label }}.{% endif %}
 
 {% for item in items %}— {{ item.product_name }}{% if item.size %} ({{ item.size }}){% endif %} × {{ item.quantity }}: {{ item.price_kopecks|rub_times:item.quantity }} ₽
 {% endfor %}
@@ -7,7 +7,7 @@
 Получение: {{ order.get_delivery_method_display }}{% if order.delivery_address %}, {{ order.delivery_address }}{% endif %}
 Получатель: {{ order.recipient_name }}, {{ order.recipient_phone }}{% if order.comment %}
 Комментарий: {{ order.comment }}{% endif %}
-{% if order.status == "awaiting_agreement" %}
+{% if order.status == "awaiting_agreement" and not cancelled %}
 Покупатель напишет вам в {{ order.get_agreement_channel_display|default:"мессенджер" }} с номером заказа. После договорённости отметьте заказ «Принят» в панели — иначе он отменится автоматически.
 {% endif %}{% if panel_url %}
 Заказ в панели: {{ panel_url }}

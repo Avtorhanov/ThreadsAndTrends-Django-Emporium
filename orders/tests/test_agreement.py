@@ -164,11 +164,41 @@ def test_admin_confirms_after_agreement(filled_cart, staff, django_capture_on_co
     assert OrderStatus.ASSEMBLED in status_service.allowed_transitions(order, ChangedBy.ADMIN)
 
 
-def test_customer_can_cancel_and_stock_returns(filled_cart, shirt):
+def test_customer_can_cancel_and_stock_returns(
+    filled_cart, shirt, settings, django_capture_on_commit_callbacks
+):
+    settings.SELLER_EMAIL = "seller@example.com"
     order = place(filled_cart)
     assert status_service.can_cancel(order, ChangedBy.CUSTOMER)
-    status_service.cancel(order, by=ChangedBy.CUSTOMER, actor=filled_cart)
+    mail.outbox.clear()
+    with django_capture_on_commit_callbacks(execute=True):
+        status_service.cancel(order, by=ChangedBy.CUSTOMER, actor=filled_cart)
     assert stock(shirt, "M") == 5
+    seller = [m for m in mail.outbox if m.to == ["seller@example.com"]]
+    assert len(seller) == 1 and "отменил" in seller[0].subject
+
+
+def test_open_agreements_are_limited(customer, shirt):
+    from django.core.exceptions import ValidationError
+
+    from orders.services.checkout import MAX_OPEN_AGREEMENTS
+
+    variant = shirt.variants.get(size="S")
+    for n in range(MAX_OPEN_AGREEMENTS):
+        checkout_service.checkout(
+            customer,
+            agreement_input(),
+            f"limit-key-{n:04d}",
+            buy_now=cart_service.LineInput(variant.pk, 1),
+        )
+    with pytest.raises(ValidationError) as error:
+        checkout_service.checkout(
+            customer,
+            agreement_input(),
+            "limit-key-9999",
+            buy_now=cart_service.LineInput(variant.pk, 1),
+        )
+    assert error.value.code == "too_many_agreements"
 
 
 def test_stale_agreement_is_cancelled(filled_cart, shirt, customer):

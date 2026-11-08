@@ -181,5 +181,8 @@ AGREEMENT_KINDS = (ContactKind.WHATSAPP, ContactKind.TELEGRAM, ContactKind.VK, C
 
 def agreement_contacts() -> list[Contact]:
     """Каналы согласования для панели: заданный контакт магазина или пустой (handle="")."""
-    found = {c.kind: c for c in get_contacts() if c.kind in AGREEMENT_KINDS}
+    found: dict[str, Contact] = {}
+    for contact in get_contacts():
+        if contact.kind in AGREEMENT_KINDS:
+            found.setdefault(contact.kind, contact)  # первый по порядку, как на «Контактах»
     return [found.get(kind) or Contact(kind, TITLES[kind], "", "", "") for kind in AGREEMENT_KINDS]

@@ -6664,9 +6664,12 @@ a.dash-tile:active {
 .agree-settings {
   display: grid;
   gap: 10px;
-  padding: 12px;
-  border-radius: var(--radius-control, 12px);
-  background: var(--surface);
+}
+
+/* Четыре канала в строку и на телефоне 360 px: подписи мельче, без лишних полей. */
+.agree-settings .seg-switch button {
+  padding-inline: 4px;
+  font-size: 13px;
 }
 
 .field-label {

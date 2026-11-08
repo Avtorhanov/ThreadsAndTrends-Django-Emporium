@@ -30,6 +30,7 @@ from orders.models import (
     DeliveryMethod,
     Order,
     OrderItem,
+    OrderStatus,
     OrderStatusChange,
     PaymentMethod,
 )
@@ -41,6 +42,8 @@ from . import agreement, notifications
 from .status import initial_status
 
 IDEMPOTENCY_KEY_RE = re.compile(r"^[A-Za-z0-9_-]{8,64}$")
+# Сколько заказов «по согласованию» один покупатель может держать сразу: каждый резервирует товар.
+MAX_OPEN_AGREEMENTS = 5
 EMPTY_CART = "Корзина пуста."
 BUY_NOW_CHANGED = "Товар изменился — проверьте его на странице товара"
 
@@ -211,6 +214,16 @@ def _clean_input(data: CheckoutInput) -> dict:
     return cleaned
 
 
+def _check_open_agreements(user) -> None:
+    open_count = Order.objects.filter(owner=user, status=OrderStatus.AWAITING_AGREEMENT).count()
+    if open_count >= MAX_OPEN_AGREEMENTS:
+        raise ValidationError(
+            f"У вас уже {open_count} заказов ждут согласования — напишите продавцу по ним "
+            "или отмените лишние, потом оформите новый.",
+            code="too_many_agreements",
+        )
+
+
 def _validate_key(key: str) -> None:
     if not key or not IDEMPOTENCY_KEY_RE.match(key):
         raise ValidationError(
@@ -253,6 +266,8 @@ def checkout(
     if existing is not None:
         return existing, False
     cleaned = _clean_input(data)
+    if data.payment_method == PaymentMethod.AGREEMENT:
+        _check_open_agreements(user)
 
     try:
         with transaction.atomic():

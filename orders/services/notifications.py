@@ -49,14 +49,19 @@ def notify_status(order: Order, *, created: bool = False, comment: str = "") -> 
     return True
 
 
-def notify_seller(order: Order) -> bool:
+def notify_seller(order: Order, *, cancelled: bool = False) -> bool:
     """Письмо продавцу о новом заказе (по согласованию и при получении — сразу, онлайн — после
-    оплаты). Адрес — email из реквизитов продавца; не задан — письма нет."""
+    оплаты) или об отмене заказа покупателем. Адрес — email из реквизитов продавца; не задан —
+    письма нет."""
     recipient = shop_settings.current().seller.email
     if not recipient:
         return False
     panel_url = f"{settings.SITE_URL}/panel/orders/{order.pk}" if settings.SITE_URL else ""
-    subject = f"Новый заказ {order.number} — {OrderStatus(order.status).label.lower()}"
+    subject = (
+        f"Покупатель отменил заказ {order.number}"
+        if cancelled
+        else f"Новый заказ {order.number} — {OrderStatus(order.status).label.lower()}"
+    )
     body = render_to_string(
         "orders/email/new_order_seller.txt",
         {
@@ -64,6 +69,7 @@ def notify_seller(order: Order) -> bool:
             "items": list(order.items.all()),
             "status_label": OrderStatus(order.status).label,
             "panel_url": panel_url,
+            "cancelled": cancelled,
         },
     )
     transaction.on_commit(lambda: send_email.enqueue(subject, body, [recipient]))

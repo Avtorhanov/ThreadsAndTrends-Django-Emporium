@@ -24,7 +24,7 @@ from django.db import transaction
 from content.models import ShopSettings
 from core.choices import AgreementChannel
 
-CACHE_KEY = "content:shop-settings:v1"
+CACHE_KEY = "content:shop-settings:v2"
 CACHE_SECONDS = 60 * 60
 MAX_DELIVERY_KOPECKS = 100_000_00
 MAX_FREE_FROM_KOPECKS = 10_000_000_00

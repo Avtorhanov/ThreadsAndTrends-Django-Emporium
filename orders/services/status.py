@@ -142,6 +142,8 @@ def transition(
     )
     if to_status == S.PAID:
         notifications.notify_seller(locked)  # онлайн-заказ продавец видит после оплаты
+    if to_status == S.CANCELLED and by == ChangedBy.CUSTOMER:
+        notifications.notify_seller(locked, cancelled=True)  # продавец мог уже собирать заказ
     if to_status == S.CANCELLED:
         _return_stock(locked)
         order_cancelled.send(sender=Order, order=locked, was_paid=_was_paid(locked))

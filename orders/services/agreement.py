@@ -75,7 +75,7 @@ def deadline(order: Order) -> datetime:
 
 
 def _contact(kind: str) -> contacts.Contact | None:
-    available = {c.kind: c for c in contacts.get_contacts() if c.kind in contacts.AGREEMENT_KINDS}
+    available = {c.kind: c for c in contacts.agreement_contacts() if c.url}
     if kind in available:
         return available[kind]
     return next((available[k] for k in contacts.AGREEMENT_KINDS if k in available), None)
