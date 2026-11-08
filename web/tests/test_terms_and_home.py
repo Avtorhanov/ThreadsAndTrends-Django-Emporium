@@ -83,3 +83,14 @@ def test_buttons_above_description_and_size_message(client, settings):
     )
     html = client.get(reverse("web:product", args=[product.slug])).content.decode()
     assert html.index("data-cta") < html.index("pd__desc")
+
+
+def test_stock_limit_text_default_and_custom(client, settings):
+    configure(settings)
+    product = make_product("Куртка", category=make_category("Одежда", slug="wear"))
+    url = reverse("web:product", args=[product.slug])
+    html = client.get(url).content.decode()
+    assert f'data-limit-text="{shop_settings.DEFAULT_STOCK_LIMIT_TEXT}"' in html
+    ShopSettings.objects.filter(pk=1).update(stock_limit_text="Это последний")
+    cache.delete(shop_settings.CACHE_KEY)
+    assert 'data-limit-text="Это последний"' in client.get(url).content.decode()

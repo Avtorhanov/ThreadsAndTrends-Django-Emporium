@@ -92,8 +92,20 @@
   // --- Хранилище ---
 
   var cache = null;
+  // Номер записи базы: страница, вернувшаяся из bfcache, или замороженная вкладка iOS событие
+  // storage не получают — без сверки они показывали бы и записывали назад устаревшую базу.
+  var REV_KEY = KEY + "-rev";
+  var rev = null;       // запись, из которой собран cache
+  var shownRev = null;  // запись, по которой отрисована страница
+  function readRev() {
+    try { return localStorage.getItem(REV_KEY); } catch (e) { return null; }
+  }
   function load() {
-    if (cache) return cache;
+    var stored = readRev();
+    if (cache && stored === rev) return cache;
+    if (cache) mediaReady = media.ready();
+    else if (shownRev === null) shownRev = stored;
+    rev = stored;
     try { cache = JSON.parse(localStorage.getItem(KEY) || "null", media.revive); } catch (e) { cache = null; }
     return cache;
   }
@@ -101,6 +113,8 @@
     cache = db;
     try {
       localStorage.setItem(KEY, JSON.stringify(db, media.replace));
+      rev = shownRev = Date.now() + "-" + Math.random().toString(36).slice(2);
+      localStorage.setItem(REV_KEY, rev);
     } catch (e) {
       return false;
     }
@@ -196,6 +210,14 @@
     // Другая вкладка могла загрузить фото — подтянуть их blob:-адреса (после — снова перечитать).
     mediaReady = media.ready();
   });
+
+  // Витрина перерисовывается по свежей базе; панель — нет, там могут быть несохранённые формы.
+  function reloadIfStale() {
+    if (location.pathname.indexOf("/panel/") !== -1 || readRev() === shownRev) return;
+    location.reload();
+  }
+  window.addEventListener("pageshow", function (event) { if (event.persisted) reloadIfStale(); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) reloadIfStale(); });
 
   function writeLook(db) {
     var t = db.theme;
@@ -343,6 +365,7 @@
     readyPromise = null;
     try {
       localStorage.removeItem(KEY);
+      localStorage.removeItem(REV_KEY);
       localStorage.removeItem(LOOK_KEY);
       localStorage.removeItem("didi-preview-cart");
     } catch (e) { /* без хранилища */ }
@@ -617,6 +640,7 @@
       channel: s.agreement_channel || "whatsapp",
       agreement_hours: pick("agreement_timeout_hours") || 48,
       timeout: pick("unpaid_timeout_minutes") || 30,
+      stock_limit_text: s.stock_limit_text || "",
       seller: {
         name: s.seller_name || "", inn: s.seller_inn || "", ogrn: s.seller_ogrn || "",
         address: s.seller_address || "", phone: s.seller_phone || "", email: s.seller_email || ""
@@ -1586,7 +1610,7 @@
     }
     if (Object.keys(errors).length) return fields(errors);
     Object.keys(body).forEach(function (k) {
-      if (k !== "defaults" && k !== "agreement_contacts" && (k in db.settings || /^agreement_|^online_payment_enabled$|^offer_enabled$|^operator_/.test(k))) db.settings[k] = body[k];
+      if (k !== "defaults" && k !== "agreement_contacts" && (k in db.settings || /^agreement_|^online_payment_enabled$|^offer_enabled$|^operator_|^stock_limit_text$/.test(k))) db.settings[k] = body[k];
     });
     db.settings.updated_at = now();
     return { status: 200, body: settingsBody(db), save: true };

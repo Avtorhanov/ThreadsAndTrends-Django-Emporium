@@ -845,7 +845,16 @@
     var stepper = row.querySelector("[data-incart-stepper]");
     stepper.hidden = !quantity;
     stepper.querySelector("[data-incart-qty]").textContent = String(quantity);
-    stepper.querySelector('[data-incart-step="1"]').disabled = !current || quantity >= current.max;
+    // Не disabled: по нажатию на «+» у предела покупатель видит сообщение.
+    var plus = stepper.querySelector('[data-incart-step="1"]');
+    var atLimit = !current || quantity >= current.max;
+    plus.classList.toggle("is-limit", atLimit);
+    if (atLimit) plus.setAttribute("aria-disabled", "true");
+    else plus.removeAttribute("aria-disabled");
+  }
+  function showStockLimit(form) {
+    var stepper = form.querySelector("[data-incart-stepper]");
+    toast((stepper && stepper.getAttribute("data-limit-text")) || "Больше таких размеров не осталось");
   }
   function sendCartLine(form, id, quantity) {
     // Демо на GitHub Pages подменяет отправку (window.didiCartLine) — сервера там нет.
@@ -923,11 +932,26 @@
       if (!state || !state[id]) return;
       var step = parseInt(button.getAttribute("data-incart-step"), 10);
       var current = state[id];
+      if (step > 0 && current.q >= current.max) {
+        showStockLimit(form);
+        return;
+      }
       current.q = Math.max(0, Math.min(current.max, current.q + step));
       incartWanted[id] = current.q;
       renderIncart(form);
       flushCartLine(form, id);
     });
+    // «Добавить ещё» у предела: сообщение вместо запроса (на перехвате — раньше отправки формы).
+    document.addEventListener("click", function (event) {
+      var button = event.target.closest && event.target.closest("[data-cta]");
+      var form = button && button.closest("[data-buy]");
+      var state = form && incartState();
+      var current = state && state[chosenVariant(form)];
+      if (!current || !current.q || current.q < current.max) return;
+      event.preventDefault();
+      event.stopPropagation();
+      showStockLimit(form);
+    }, true);
     // Добавлено («В корзину»): +1 к выбранному размеру. htmx — ответ сервера, демо — своё событие.
     function onAdded(form) {
       var state = incartState();

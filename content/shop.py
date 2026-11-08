@@ -52,7 +52,9 @@ FIELDS = (
     "offer_enabled",
     "operator_name",
     "operator_contact",
+    "stock_limit_text",
 )
+DEFAULT_STOCK_LIMIT_TEXT = "Больше таких размеров не осталось"
 SELLER_FIELDS = ("name", "inn", "ogrn", "address", "phone", "email")
 _TRAILING = re.compile(r"[\s,;:·]+$")
 
@@ -120,6 +122,7 @@ class Shop:
     offer_enabled: bool = False
     operator_name: str = ""
     operator_contact: str = ""
+    stock_limit_text: str = DEFAULT_STOCK_LIMIT_TEXT
 
 
 def _row_values() -> dict | None:
@@ -187,6 +190,7 @@ def current() -> Shop:
         offer_enabled=bool(row.get("offer_enabled", False)),
         operator_name=clean_text(row.get("operator_name") or ""),
         operator_contact=clean_text(row.get("operator_contact") or ""),
+        stock_limit_text=clean_text(row.get("stock_limit_text") or "") or DEFAULT_STOCK_LIMIT_TEXT,
     )
 
 
@@ -224,6 +228,7 @@ def _validate(values: dict) -> dict:
         "seller_address",
         "operator_name",
         "operator_contact",
+        "stock_limit_text",
     ):
         cleaned[field] = clean_text(cleaned.get(field, ""))
 

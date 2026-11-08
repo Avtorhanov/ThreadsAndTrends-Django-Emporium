@@ -702,10 +702,10 @@
         var q = chosenState ? chosenState.q : 0;
         buy += '<div class="buy__sticky"><div class="incart-row" data-incart data-line-url="' + link("/cart/line/0/") + '"' + (inCartTotal ? "" : " hidden") + '>' +
           '<a class="incart" href="' + link("/cart/") + '">' + icon("bag", 16) + '<span data-incart-text>В корзине · ' + (q || inCartTotal) + ' шт.</span></a>' +
-          '<div class="stepper" role="group" aria-label="Количество в корзине" data-incart-stepper' + (q ? "" : " hidden") + '>' +
+          '<div class="stepper" role="group" aria-label="Количество в корзине" data-incart-stepper data-limit-text="' + esc(sim.settings().stock_limit_text) + '"' + (q ? "" : " hidden") + '>' +
           '<button class="stepper__btn" type="button" data-incart-step="-1" aria-label="Убрать одну">' + icon("minus", 18) + '</button>' +
           '<span class="stepper__value" data-incart-qty aria-live="polite">' + q + '</span>' +
-          '<button class="stepper__btn" type="button" data-incart-step="1" aria-label="Добавить ещё одну"' + (q && q >= chosenState.max ? " disabled" : "") + '>' + icon("plus", 18) + '</button>' +
+          '<button class="stepper__btn' + (q && q >= chosenState.max ? ' is-limit" aria-disabled="true"' : '"') + ' type="button" data-incart-step="1" aria-label="Добавить ещё одну">' + icon("plus", 18) + '</button>' +
           '</div></div><script id="incart-state" type="application/json">' + JSON.stringify(state).replace(/</g, "\\u003c") + "</script>";
         buy += '<button class="cta" type="submit" data-cta><span class="cta__label" data-cta-label>' + (q ? "Добавить ещё" : "В корзину") + '</span><span class="cta__price">' + rub(p.price_kopecks) + "&nbsp;₽</span></button></div>" +
           '<button class="cta cta--alt" type="submit" data-buy-now><span class="cta__label">Купить сейчас</span></button>';

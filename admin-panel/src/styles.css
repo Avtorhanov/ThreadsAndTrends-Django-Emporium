@@ -4047,6 +4047,17 @@ a.stat:hover {
   margin-bottom: 12px;
 }
 
+/* «Сохранить» настроек видно при прокрутке длинной формы. */
+.settings > .settings-bar {
+  position: sticky;
+  top: 8px;
+  z-index: 15;
+  padding: 8px 12px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-control);
+}
+
 .settings-lead {
   margin: 0 0 16px;
 }
@@ -4334,9 +4345,30 @@ a.stat:hover {
   /* Мини-панель массовых действий и строка «Сохранить» формы товара прилипают под шапкой,
      а не уезжают под неё. */
   .bulk-bar,
-  .pf-bar {
+  .pf-bar,
+  .settings > .settings-bar {
     top: calc(var(--mobilebar-h) + 8px);
     z-index: 15;
+  }
+
+  /* Одна строка: заголовок в две мелкие, отметка и кнопка справа. */
+  .settings > .settings-bar {
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .settings > .settings-bar > h1 {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.25;
+  }
+
+  .settings > .settings-bar .header-action {
+    flex: none;
+    width: auto;
+    margin: 0;
   }
 
   .ptr {

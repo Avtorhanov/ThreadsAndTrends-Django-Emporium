@@ -721,7 +721,7 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .stepper { display: inline-flex; align-items: center; border-radius: calc(12px * var(--radius-scale)); background: var(--surface); box-shadow: var(--shadow-control); }
 .stepper form { display: flex; }
 .stepper__btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: calc(12px * var(--radius-scale)); background: transparent; color: var(--ink); }
-.stepper__btn:disabled { color: var(--muted); opacity: .5; cursor: default; }
+.stepper__btn:disabled, .stepper__btn.is-limit { color: var(--muted); opacity: .5; cursor: default; }
 .stepper__value { min-width: 20px; text-align: center; font: 800 15px var(--font-text); }
 
 .summary { display: grid; gap: 8px; align-self: start; padding: 18px; border-radius: var(--radius-card); background: var(--card); box-shadow: var(--shadow-card); }
