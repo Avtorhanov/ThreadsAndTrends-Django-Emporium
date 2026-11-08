@@ -5773,6 +5773,12 @@ button.batch-add-tile:focus-visible {
   grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
+@media (max-width: 600px) {
+  .batch-actions-grid-6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .color-link-row {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr);
@@ -5796,7 +5802,7 @@ button.batch-add-tile:focus-visible {
 }
 
 .color-siblings {
-  margin: 0;
+  margin: 0 0 8px;
   padding-left: 18px;
 }
 
