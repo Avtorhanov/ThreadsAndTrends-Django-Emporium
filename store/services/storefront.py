@@ -1,7 +1,8 @@
 """Витрина: поиск, фильтры и сортировка публичного каталога, кэш дерева категорий."""
 
 import re
-from dataclasses import dataclass
+from collections.abc import Iterable
+from dataclasses import dataclass, replace
 
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.cache import cache
@@ -9,9 +10,12 @@ from django.db.models import Case, Exists, F, IntegerField, OuterRef, Prefetch, 
 
 from store.models import Category, Product, ProductVariant
 from store.search import SEARCH_CONFIG, search_vector
+from store.sizes import SIZE_SEPARATOR, size_group, sort_sizes
 
 MAX_QUERY_WORDS = 8
 MAX_QUERY_LENGTH = 100
+MAX_FILTER_SIZES = 30
+MAX_SIZE_LENGTH = 50
 
 CATEGORY_TREE_CACHE_KEY = "catalog:category-tree:v1"
 CATEGORY_TREE_CACHE_SECONDS = 60 * 60
@@ -55,6 +59,7 @@ class ProductFilters:
     price_max: int | None = None  # копейки
     in_stock: bool = False
     sort: str = ""
+    sizes: tuple[str, ...] = ()  # значения clean_sizes
 
 
 def live_products() -> QuerySet[Product]:
@@ -66,9 +71,27 @@ def live_products() -> QuerySet[Product]:
     )
 
 
-def filter_products(filters: ProductFilters) -> QuerySet[Product]:
-    queryset = live_products()
+def clean_sizes(values: Iterable[str]) -> tuple[str, ...]:
+    """Параметры size из запроса: значения фильтра без пустых, повторов и лишнего."""
+    groups = {size_group(value)[:MAX_SIZE_LENGTH] for value in values}
+    groups.discard("")
+    return tuple(sort_sizes(groups)[:MAX_FILTER_SIZES])
 
+
+def _stocked_variants() -> QuerySet[ProductVariant]:
+    return ProductVariant.objects.filter(deleted_at__isnull=True, stock__gt=0)
+
+
+def _size_condition(sizes: Iterable[str]) -> Q:
+    condition = Q()
+    for size in sizes:
+        condition |= Q(size=size) | Q(size__startswith=f"{size}{SIZE_SEPARATOR}")
+    return condition
+
+
+def _apply_filters(
+    queryset: QuerySet[Product], filters: ProductFilters, query: SearchQuery | None
+) -> QuerySet[Product]:
     if filters.category is not None:
         # Корневая категория показывает товары всех своих подкатегорий.
         queryset = queryset.filter(
@@ -79,20 +102,21 @@ def filter_products(filters: ProductFilters) -> QuerySet[Product]:
     if filters.price_max is not None:
         queryset = queryset.filter(price_kopecks__lte=filters.price_max)
 
-    query = build_search_query(filters.q)
+    stocked = _stocked_variants().filter(product=OuterRef("pk"))
+    if filters.sizes:
+        queryset = queryset.filter(Exists(stocked.filter(_size_condition(filters.sizes))))
     # Поиск показывает только товары в наличии.
-    if filters.in_stock or query is not None:
-        queryset = queryset.filter(
-            Exists(
-                ProductVariant.objects.filter(
-                    product=OuterRef("pk"), deleted_at__isnull=True, stock__gt=0
-                )
-            )
-        )
+    elif filters.in_stock or query is not None:
+        queryset = queryset.filter(Exists(stocked))
 
     if query is not None:
-        vector = search_vector()
-        queryset = queryset.annotate(search=vector).filter(search=query)
+        queryset = queryset.annotate(search=search_vector()).filter(search=query)
+    return queryset
+
+
+def filter_products(filters: ProductFilters) -> QuerySet[Product]:
+    query = build_search_query(filters.q)
+    queryset = _apply_filters(live_products(), filters, query)
 
     sort = filters.sort or (Sort.RELEVANCE if query is not None else Sort.NEW)
     # Последние ключи — стабильный порядок для пагинации при равных ценах и релевантности.
@@ -106,6 +130,23 @@ def filter_products(filters: ProductFilters) -> QuerySet[Product]:
             "-rank", "-created_at", "-id"
         )
     return queryset.order_by("-created_at", "-id")
+
+
+def available_sizes(filters: ProductFilters) -> list[str]:
+    """Значения фильтра по текущей выборке. Сам выбор размера её не сужает: иначе после
+    отметки одного размера остальные чипы исчезли бы. Один запрос при любом числе товаров."""
+    products = _apply_filters(
+        Product.objects.live(), replace(filters, sizes=()), build_search_query(filters.q)
+    )
+    sizes = (
+        _stocked_variants()
+        .filter(product__in=products.values("pk"))
+        .exclude(size="")
+        .order_by()
+        .values_list("size", flat=True)
+        .distinct()
+    )
+    return sort_sizes(size_group(size) for size in sizes)
 
 
 # --- Похожие товары ---

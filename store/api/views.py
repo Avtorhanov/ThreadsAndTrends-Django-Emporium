@@ -18,6 +18,7 @@ from .serializers import (
     CatalogProductDetailSerializer,
     CatalogProductSerializer,
     ProductListQuerySerializer,
+    ProductSizesSerializer,
     ViewedRecordSerializer,
 )
 
@@ -37,6 +38,24 @@ class CategoryTreeView(PublicAPIMixin, generics.ListAPIView):
 
 
 @extend_schema(tags=[TAG])
+def _product_filters(request) -> storefront.ProductFilters:
+    params = ProductListQuerySerializer(data=request.query_params)
+    params.is_valid(raise_exception=True)
+    data = params.validated_data
+    category = None
+    if data.get("category"):
+        category = get_object_or_404(storefront.active_categories(), slug=data["category"])
+    return storefront.ProductFilters(
+        q=data.get("q", ""),
+        category=category,
+        price_min=data.get("price_min"),
+        price_max=data.get("price_max"),
+        in_stock=data.get("in_stock", False),
+        sort=data.get("sort", ""),
+        sizes=storefront.clean_sizes(data.get("size", [])),
+    )
+
+
 class ProductListView(PublicAPIMixin, generics.ListAPIView):
     """Лента товаров: поиск (`q`, только товары в наличии), категория с подкатегориями,
     цена в копейках, наличие, сортировка. Постранично."""
@@ -44,22 +63,7 @@ class ProductListView(PublicAPIMixin, generics.ListAPIView):
     serializer_class = CatalogProductSerializer
 
     def get_queryset(self):
-        params = ProductListQuerySerializer(data=self.request.query_params)
-        params.is_valid(raise_exception=True)
-        data = params.validated_data
-        category = None
-        if data.get("category"):
-            category = get_object_or_404(storefront.active_categories(), slug=data["category"])
-        return storefront.filter_products(
-            storefront.ProductFilters(
-                q=data.get("q", ""),
-                category=category,
-                price_min=data.get("price_min"),
-                price_max=data.get("price_max"),
-                in_stock=data.get("in_stock", False),
-                sort=data.get("sort", ""),
-            )
-        )
+        return storefront.filter_products(_product_filters(self.request))
 
     @extend_schema(operation_id="catalog_products_list", parameters=[ProductListQuerySerializer])
     def get(self, request, *args, **kwargs):
@@ -67,6 +71,19 @@ class ProductListView(PublicAPIMixin, generics.ListAPIView):
 
 
 @extend_schema(tags=[TAG])
+@extend_schema(tags=[TAG])
+class ProductSizesView(PublicAPIMixin, APIView):
+    """Размеры товаров в наличии для тех же параметров, что у ленты (выбранный `size` не сужает)."""
+
+    @extend_schema(
+        operation_id="catalog_products_sizes",
+        parameters=[ProductListQuerySerializer],
+        responses=ProductSizesSerializer,
+    )
+    def get(self, request):
+        return Response({"sizes": storefront.available_sizes(_product_filters(request))})
+
+
 class ProductDetailView(PublicAPIMixin, generics.RetrieveAPIView):
     serializer_class = CatalogProductDetailSerializer
     lookup_field = "slug"

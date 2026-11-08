@@ -58,6 +58,14 @@
           <label><span class="field__label">Цена от, ₽</span><input class="input" name="price_min" value="{{ price_min }}" inputmode="decimal" autocomplete="off"></label>
           <label><span class="field__label">до, ₽</span><input class="input" name="price_max" value="{{ price_max }}" inputmode="decimal" autocomplete="off"></label>
         </div>
+        <fieldset class="size-filter" data-size-filter{% if not size_options %} hidden{% endif %}>
+          <legend class="field__label">Размер</legend>
+          <div class="size-filter__chips">
+            {% for option in size_options %}
+            <label class="size-chip"><input type="checkbox" name="size" value="{{ option.value }}"{% if option.selected %} checked{% endif %}><span>{{ option.value }}</span></label>
+            {% endfor %}
+          </div>
+        </fieldset>
         <label class="check">
           <input type="checkbox" name="in_stock" value="1"{% if values.in_stock %} checked{% endif %}>
           <span>Только в наличии</span>
