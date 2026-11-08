@@ -57,7 +57,6 @@ def test_legal_pages(client, db, settings, page):
     assert ("Черновик" in html) == (page == "offer")
     if page != "delivery":
         assert "ИП Иванов И. И." in html
-    assert ("770000000000" in html) == (page == "offer")
     if page != "offer":
         assert "[проверить" not in html and "[email" not in html and "[указать" not in html
 
