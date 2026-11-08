@@ -291,3 +291,25 @@ def test_web_guest_checkout_and_claim_on_login(client, customer, shirt):
 def test_web_invalid_token_404(client):
     assert client.get(reverse("web:guest_order", args=["0" * 64])).status_code == 404
     assert client.post(reverse("web:guest_order_cancel", args=["x"])).status_code == 404
+
+
+def test_opening_foreign_link_does_not_claim_on_login(client, customer, shirt):
+    result = place(shirt)
+    assert client.get(reverse("web:guest_order", args=[result.token])).status_code == 200
+    client.post(reverse("web:login"), {"email": customer.email, "password": "Str0ng-Passw0rd!"})
+    assert Order.objects.get().owner is None
+
+
+def test_guest_order_size_limited(shirt):
+    line = LineInput(shirt.variants.get(size="M").pk, checkout_service.MAX_GUEST_UNITS + 1)
+    with pytest.raises(ValidationError) as exc:
+        checkout_service.guest_checkout(data(), KEY, [line], consent=True)
+    assert exc.value.code == "guest_order_too_big"
+
+
+def test_replay_after_claim_makes_no_duplicate(customer, shirt):
+    result = place(shirt)
+    guest_service.claim(customer, [result.token])
+    with pytest.raises(ValidationError):
+        place(shirt)
+    assert Order.objects.count() == 1

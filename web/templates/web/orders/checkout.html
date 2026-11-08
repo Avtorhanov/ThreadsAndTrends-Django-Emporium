@@ -78,10 +78,11 @@
       <div class="field{% if form.consent.errors %} has-error{% endif %}">
         <label class="check">
           {{ form.consent }}
-          <span>Согласен на обработку персональных данных в соответствии с <a href="{% url 'web:privacy' %}">политикой</a>{% if offer_enabled %} и принимаю условия <a href="{% url 'web:offer' %}">оферты</a>{% endif %}</span>
+          <span>Согласен на обработку персональных данных в соответствии с <a href="{% url 'web:privacy' %}">политикой</a></span>
         </label>
         {% for error in form.consent.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
       </div>
+      {% if offer_enabled %}<p class="summary__hint">Нажимая «Оформить заказ», вы принимаете условия <a href="{% url 'web:offer' %}">оферты</a>.</p>{% endif %}
       {% endif %}
       <button class="cta" type="submit"><span class="cta__label">Оформить заказ</span></button>
       {% if not is_guest %}<p class="summary__hint">Нажимая «Оформить заказ», вы {% if offer_enabled %}принимаете условия <a href="{% url 'web:offer' %}">оферты</a> и {% endif %}даёте согласие на обработку персональных данных по <a href="{% url 'web:privacy' %}">политике</a>.</p>{% endif %}

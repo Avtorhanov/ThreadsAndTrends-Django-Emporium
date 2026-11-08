@@ -263,6 +263,12 @@ class GuestPreviewView(PublicAPIMixin, APIView):
 @extend_schema(tags=[TAG])
 class GuestCheckoutView(PublicAPIMixin, APIView):
     throttle_classes = [GuestCreateHourThrottle, GuestCreateDayThrottle, GuestCreatePhoneThrottle]
+    _limits_due = False
+
+    def check_throttles(self, request):
+        # Лимиты — только для новой попытки: повтор должен вернуть ссылку и при исчерпанном лимите.
+        if self._limits_due:
+            super().check_throttles(request)
 
     @extend_schema(
         operation_id="orders_guest_create",
@@ -280,6 +286,10 @@ class GuestCheckoutView(PublicAPIMixin, APIView):
     def post(self, request):
         serializer = GuestCheckoutInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        key = request.headers.get("Idempotency-Key", "")
+        if checkout_service.find_guest_replay(key, request.data["recipient_phone"]) is None:
+            self._limits_due = True
+            self.check_throttles(request)
         result = checkout_service.guest_checkout(
             serializer.to_input(),
             request.headers.get("Idempotency-Key", ""),

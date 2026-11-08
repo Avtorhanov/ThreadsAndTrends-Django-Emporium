@@ -1,12 +1,13 @@
-"""Секретные ссылки на гостевые заказы в сессии: при входе заказы привязываются к аккаунту."""
+"""Заказы, оформленные в этой сессии без аккаунта: при входе привязываются к нему.
+Хранятся хеши: сама ссылка в таблице сессий не лежит. Открытие чужой ссылки сюда не пишет."""
 
 SESSION_KEY = "guest_orders"
 MAX_LINKS = 20
 
 
-def remember(request, token: str) -> None:
-    tokens = [t for t in request.session.get(SESSION_KEY, []) if t != token]
-    request.session[SESSION_KEY] = [*tokens, token][-MAX_LINKS:]
+def remember(request, token_hash: str) -> None:
+    hashes = [h for h in request.session.get(SESSION_KEY, []) if h != token_hash]
+    request.session[SESSION_KEY] = [*hashes, token_hash][-MAX_LINKS:]
 
 
 def take(request) -> list[str]:

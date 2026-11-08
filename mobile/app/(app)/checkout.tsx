@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Switch, Text, View } from "react-native";
+import { Linking, Switch, Text, View } from "react-native";
 
 import { ApiError } from "../../src/api/errors";
+import { API_URL } from "../../src/config";
 import { useAuth } from "../../src/auth/AuthProvider";
 import { useCart } from "../../src/cart/CartProvider";
 import {
@@ -266,7 +267,9 @@ export default function CheckoutScreen() {
       {!signedIn ? (
         <View style={consentStyle}>
           <Switch value={consent} onValueChange={setConsent} accessibilityLabel="Согласие на обработку персональных данных" />
-          <Text style={consentText}>Согласен на обработку персональных данных по политике магазина</Text>
+          <Text style={consentText} onPress={() => void Linking.openURL(`${API_URL}/legal/privacy/`)}>
+            Согласен на обработку персональных данных по политике магазина (открыть)
+          </Text>
         </View>
       ) : null}
       <Message text={submit.error} />

@@ -45,10 +45,14 @@ def by_token(token: str) -> QuerySet[Order]:
 def claim(user, tokens) -> list[Order]:
     """Привязать к аккаунту заказы по действующим ссылкам; ссылки после этого не работают.
     Владение доказывает только токен: телефон не подтверждён и в сопоставлении не участвует."""
-    if user.is_staff:
-        return []
-    hashes = {token_hash(t) for t in list(tokens)[:MAX_CLAIM_TOKENS] if TOKEN_RE.match(t or "")}
-    if not hashes:
+    valid = [t for t in list(tokens)[:MAX_CLAIM_TOKENS] if TOKEN_RE.match(t or "")]
+    return claim_hashes(user, [token_hash(t) for t in valid])
+
+
+def claim_hashes(user, hashes) -> list[Order]:
+    """То же по хешам ссылок (их хранит сессия витрины)."""
+    hashes = set(list(hashes)[:MAX_CLAIM_TOKENS])
+    if user.is_staff or not hashes:
         return []
     claimed: list[Order] = []
     with transaction.atomic():

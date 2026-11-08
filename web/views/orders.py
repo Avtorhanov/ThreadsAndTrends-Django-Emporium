@@ -136,13 +136,26 @@ def _submit_guest(request, form, buy_now, lines):
     except ValidationError as exc:
         _apply_errors(form, exc)
         return None
-    guest_links.remember(request, result.token)
-    if result.created and buy_now is None:
-        web_cart.take_guest_lines(request)
+    return _guest_placed(request, result, buy_now)
+
+
+def _guest_placed(request, result, buy_now):
+    guest_links.remember(request, guest.token_hash(result.token))
+    if buy_now is None:
+        web_cart.clear_guest(request)
     messages.success(
         request, f"Заказ {result.order.number} создан — напишите продавцу, чтобы его согласовать."
     )
     return redirect("web:guest_order", token=result.token)
+
+
+def _posted_guest_replay(request):
+    try:
+        return checkout_service.find_guest_replay(
+            request.POST.get("idempotency_key", ""), request.POST.get("recipient_phone", "")
+        )
+    except ValidationError:
+        return None  # покажет обычная проверка оформления
 
 
 @shopper_required
@@ -150,6 +163,10 @@ def checkout(request):
     buy_now = buy_now_line(request)
     is_guest = not request.user.is_authenticated
     guest_lines = ([buy_now] if buy_now else web_cart.guest_lines(request)) if is_guest else []
+    if is_guest and request.method == "POST":
+        replay = _posted_guest_replay(request)
+        if replay is not None:
+            return _guest_placed(request, replay, buy_now)
     if is_guest:
         preview = checkout_service.guest_preview(guest_lines)
         if not preview.payment_methods:
@@ -361,8 +378,6 @@ def guest_order(request, token: str):
     found = get_object_or_404(guest.by_token(token))
     order = get_object_or_404(_detail_queryset_of(Order.objects.filter(pk=found.pk)), pk=found.pk)
     status_service.mark_seen(order)
-    # Открывший ссылку владеет заказом: при входе или регистрации он привяжется к аккаунту.
-    guest_links.remember(request, token)
     context = _order_context(request, order)
     context["guest_token"] = token
     context["guest_link"] = request.build_absolute_uri()
@@ -372,6 +387,7 @@ def guest_order(request, token: str):
     return response
 
 
+@shopper_required
 @require_POST
 def guest_order_cancel(request, token: str):
     order = get_object_or_404(guest.by_token(token))

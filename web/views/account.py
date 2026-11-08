@@ -53,9 +53,9 @@ def _apply_errors(form, exc: ValidationError) -> None:
 def _login_with_cart(request, user) -> None:
     """Вход + перенос гостевой корзины в корзину аккаунта, с объяснением пропущенного."""
     lines = web_cart.take_guest_lines(request)
-    guest_tokens = guest_links.take(request)
+    guest_hashes = guest_links.take(request)
     login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-    if guest.claim(user, guest_tokens):
+    if guest.claim_hashes(user, guest_hashes):
         messages.info(request, "Заказы, оформленные без входа, теперь в вашем аккаунте.")
     notices = web_cart.merge_into_account(request, lines)
     reasons = {notice.reason for notice in notices}

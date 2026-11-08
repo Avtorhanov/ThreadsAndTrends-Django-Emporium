@@ -93,7 +93,7 @@ class Migration(migrations.Migration):
                     models.Q(
                         ("guest_consent_at__isnull", False),
                         ("owner__isnull", True),
-                        models.Q(("guest_token_hash", ""), negated=True),
+                        models.Q(("guest_token_hash", ""), _negated=True),
                     ),
                     _connector="OR",
                 ),
