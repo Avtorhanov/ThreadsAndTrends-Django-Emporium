@@ -252,6 +252,7 @@ SPECTACULAR_SETTINGS = {
         "RefundStatusEnum": "payments.models.RefundStatus.choices",
         "RefundReasonEnum": "payments.models.RefundReason.choices",
         "ContactKindEnum": "content.contacts.ContactKind.CHOICES",
+        "AgreementChannelEnum": "core.choices.AgreementChannel.choices",
         "BlockKindEnum": "content.models.BlockKind.choices",
         "BlockAreaEnum": "content.models.BlockArea.choices",
         "HomeBlockKindEnum": "content.models.HomeBlockKind.choices",
