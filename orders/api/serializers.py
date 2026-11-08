@@ -102,7 +102,7 @@ class GuestCheckoutInputSerializer(CheckoutInputSerializer):
     """Оформление без аккаунта: позиции с устройства вместо корзины на сервере."""
 
     buy_now = None
-    lines = GuestLineSerializer(many=True, allow_empty=False)
+    lines = GuestLineSerializer(many=True, allow_empty=False, max_length=5)
     consent = serializers.BooleanField(help_text="Согласие на обработку персональных данных")
 
     def to_input(self) -> CheckoutInput:

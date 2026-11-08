@@ -196,9 +196,8 @@ def shopper(browser, base: str, report: Report, errors: list[str]) -> None:
     expect(page.locator(".stepper__value")).to_have_text("2")
     report.shot(page, "phone-cart-guest")
 
-    # Гость → вход → регистрация (корзина переносится) → оформление.
-    page.click("a.cta[href='/checkout/']")
-    page.wait_for_url(re.compile(r"/login/\?next="))
+    # Гость заходит в аккаунт: регистрация (корзина переносится) → оформление.
+    page.goto(page.url.split("/cart/")[0] + "/login/?next=/checkout/")
     page.get_by_role("link", name="Регистрация").click()
     email = f"web-{uuid.uuid4().hex[:8]}@example.com"
     page.get_by_label("Имя").fill("Покупатель")

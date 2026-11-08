@@ -17,6 +17,7 @@
   <div class="panel guest-link">
     <p class="panel__title">Сохраните ссылку на заказ</p>
     <p class="agree__text">Без аккаунта заказ открывается только по этой ссылке. Писем о статусе не будет — проверяйте его здесь.</p>
+    <input class="input" type="text" readonly value="{{ guest_link }}" aria-label="Ссылка на заказ">
     <button class="btn btn--ghost btn--sm" type="button" data-copy-text="{{ guest_link }}">Скопировать ссылку</button>
     {% if can_claim %}
     <form method="post" action="{% url 'web:guest_order_claim' guest_token %}">
@@ -24,7 +25,7 @@
       <button class="btn btn--dark btn--sm" type="submit">Привязать к аккаунту</button>
     </form>
     {% elif not request.user.is_authenticated %}
-    <p class="muted">Чтобы заказ был в профиле, <a href="{% url 'web:register' %}">создайте аккаунт</a> или <a href="{% url 'web:login' %}">войдите</a> — он привяжется сам.</p>
+    <p class="muted">Чтобы заказ был в профиле, <a href="{% url 'web:register' %}">создайте аккаунт</a> или <a href="{% url 'web:login' %}">войдите</a> в браузере, где оформляли заказ, — он привяжется сам.</p>
     {% endif %}
   </div>
   {% endif %}

@@ -152,6 +152,10 @@ def guest_lines(request) -> list[LineInput]:
     return _read_session(request)
 
 
+def clear_guest(request) -> None:
+    _write_session(request, [])
+
+
 def take_guest_lines(request) -> list[LineInput]:
     """Позиции гостя до входа: вызывать до login() — после него request.user уже клиент."""
     return _read_session(request)

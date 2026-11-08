@@ -62,6 +62,12 @@
 
 	log {
 		output stdout
-		format console
+		# Секрет гостевой ссылки в журнал не попадает.
+		format filter {
+			wrap console
+			fields {
+				request>uri regexp "^/order/g/[^/]+" "/order/g/***"
+			}
+		}
 	}
 }

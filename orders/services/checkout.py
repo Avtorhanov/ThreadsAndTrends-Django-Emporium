@@ -48,6 +48,10 @@ MAX_OPEN_AGREEMENTS = 5
 # Гость: номер не подтверждён, поэтому лимит строже. Ключ идемпотентности длиннее — повтор
 # с ним возвращает ссылку на заказ.
 MAX_OPEN_GUEST_AGREEMENTS = 2
+# Резерв без оплаты на неподтверждённый номер: заказ гостя мал, всех гостевых резервов — потолок.
+MAX_GUEST_POSITIONS = 5
+MAX_GUEST_UNITS = 10
+MAX_OPEN_GUEST_ORDERS = 20
 GUEST_IDEMPOTENCY_KEY_RE = re.compile(r"^[A-Za-z0-9_-]{32,64}$")
 EMPTY_CART = "Корзина пуста."
 BUY_NOW_CHANGED = "Товар изменился — проверьте его на странице товара"
@@ -437,20 +441,49 @@ def _check_guest_agreements(phone: str) -> None:
     if open_count >= MAX_OPEN_GUEST_AGREEMENTS:
         raise ValidationError(
             f"На этот номер уже {open_count} заказа ждут согласования — напишите продавцу "
-            "по ним или отмените лишние, потом оформите новый.",
+            "по ним или отмените лишние. Если это ваш номер и заказы не ваши, войдите в аккаунт.",
             code="too_many_agreements",
+        )
+    reserved = Order.objects.filter(
+        owner__isnull=True, status=OrderStatus.AWAITING_AGREEMENT
+    ).count()
+    if reserved >= MAX_OPEN_GUEST_ORDERS:
+        raise ValidationError(
+            "Сейчас оформить заказ без аккаунта нельзя — войдите или попробуйте позже.",
+            code="too_many_agreements",
+        )
+
+
+def _check_guest_size(lines: list[LineInput]) -> None:
+    if len(lines) > MAX_GUEST_POSITIONS or sum(line.quantity for line in lines) > MAX_GUEST_UNITS:
+        raise ValidationError(
+            f"Без аккаунта — не больше {MAX_GUEST_POSITIONS} позиций и {MAX_GUEST_UNITS} штук "
+            "в заказе. Войдите, чтобы оформить больше.",
+            code="guest_order_too_big",
         )
 
 
 def _guest_replay(key: str, phone: str | None) -> GuestCheckoutResult | None:
     """Повтор с тем же ключом. Вместе с заказом отдаётся ссылка, поэтому ключа мало —
     телефон тоже должен совпасть."""
-    existing = Order.objects.filter(owner__isnull=True, idempotency_key=key).first()
+    existing = Order.objects.filter(guest_consent_at__isnull=False, idempotency_key=key).first()
     if existing is None:
         return None
+    if existing.owner_id is not None:
+        raise ValidationError(
+            "Этот заказ уже привязан к аккаунту — откройте его в профиле.", code="idempotency_key"
+        )
     if phone != existing.recipient_phone:
         raise ValidationError("Обновите страницу и оформите заказ заново.", code="idempotency_key")
     return GuestCheckoutResult(existing, guest.make_token(key), created=False)
+
+
+def find_guest_replay(key: str, phone: str) -> GuestCheckoutResult | None:
+    """Повтор оформления (двойной клик, потерянный ответ) — до лимитов и проверки корзины:
+    они могли уже сработать из-за первого запроса, а ссылка выдаётся только в ответе."""
+    if not GUEST_IDEMPOTENCY_KEY_RE.match(key or ""):
+        return None
+    return _guest_replay(key, _normalized_or_none(phone))
 
 
 def _normalized_or_none(phone: str) -> str | None:
@@ -479,6 +512,7 @@ def guest_checkout(
     if replay is not None:
         return replay
 
+    _check_guest_size(lines)
     errors: dict[str, list[str]] = {}
     if not consent:
         errors["consent"] = ["Нужно согласие на обработку персональных данных."]
