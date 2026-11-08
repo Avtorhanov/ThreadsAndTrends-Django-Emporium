@@ -173,15 +173,8 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
     setSaved(false);
   };
 
-  // Предпросмотр строки подвала: пустое поле — значение из .env, как на сайте.
-  const line = sellerParts({
-    name: draft.name || defaults.seller_name,
-    inn: draft.inn || defaults.seller_inn,
-    ogrn: draft.ogrn || defaults.seller_ogrn,
-    address: draft.address || defaults.seller_address,
-    phone: draft.phone || defaults.seller_phone,
-    email: draft.email || defaults.seller_email,
-  });
+  // Предпросмотр строки подвала: пустые поля покупатель не видит.
+  const line = sellerParts(draft);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -380,7 +373,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
               <input
                 value={draft.name}
                 maxLength={200}
-                placeholder={defaults.seller_name || "ИП Фамилия И. О. или ООО «…»"}
+                placeholder="ИП Фамилия И. О. или ООО «…»"
                 onChange={(e) => set({ name: e.target.value })}
               />
               <FieldError errors={errors} name="seller_name" />
@@ -391,7 +384,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
                 inputMode="numeric"
                 value={draft.inn}
                 maxLength={20}
-                placeholder={defaults.seller_inn || "10 или 12 цифр"}
+                placeholder="10 или 12 цифр"
                 onChange={(e) => set({ inn: e.target.value })}
               />
               <FieldError errors={errors} name="seller_inn" />
@@ -402,7 +395,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
                 inputMode="numeric"
                 value={draft.ogrn}
                 maxLength={20}
-                placeholder={defaults.seller_ogrn || "13 или 15 цифр"}
+                placeholder="13 или 15 цифр"
                 onChange={(e) => set({ ogrn: e.target.value })}
               />
               <FieldError errors={errors} name="seller_ogrn" />
@@ -412,7 +405,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
               <input
                 value={draft.address}
                 maxLength={300}
-                placeholder={defaults.seller_address || "Город, улица, дом"}
+                placeholder="Город, улица, дом"
                 onChange={(e) => set({ address: e.target.value })}
               />
               <FieldError errors={errors} name="seller_address" />
@@ -423,7 +416,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
                 type="tel"
                 value={draft.phone}
                 maxLength={30}
-                placeholder={defaults.seller_phone || "+7 ___ ___-__-__"}
+                placeholder="+7 ___ ___-__-__"
                 onChange={(e) => set({ phone: e.target.value })}
               />
               <FieldError errors={errors} name="seller_phone" />
@@ -434,7 +427,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
                 type="email"
                 value={draft.email}
                 maxLength={254}
-                placeholder={defaults.seller_email || "shop@домен.ru"}
+                placeholder="shop@домен.ru"
                 onChange={(e) => set({ email: e.target.value })}
               />
               <FieldError errors={errors} name="seller_email" />

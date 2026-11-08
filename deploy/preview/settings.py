@@ -35,10 +35,6 @@ SITE_URL = os.environ.get("PREVIEW_SITE_URL", "")
 # а не ведёт в никуда.
 ANDROID_APK_URL = ""
 
-SELLER_NAME = "ИП Пример Продавец (демо)"
-SELLER_INN = "000000000000"
-SELLER_OGRN = "000000000000000"
-SELLER_ADDRESS = "Москва, ул. Примерная, 1"
 SELLER_EMAIL = "hello@example.ru"
 SELLER_PHONE = "+7 900 123-45-67"
 CONTACT_WHATSAPP = "+7 900 123-45-67"

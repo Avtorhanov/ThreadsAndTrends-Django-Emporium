@@ -346,10 +346,6 @@ WEB_PAGE_SIZE = env_int("WEB_PAGE_SIZE", 24)
 WEB_CATALOG_CACHE_SECONDS = env_int("WEB_CATALOG_CACHE_SECONDS", 300)
 # Реквизиты продавца: подвал сайта и юридические страницы (оферта, политика ПДн, доставка).
 # Обязательны до подключения ЮKassa; тексты страниц — заготовки, их проверяет юрист.
-SELLER_NAME = env_str("SELLER_NAME", "")
-SELLER_INN = env_str("SELLER_INN", "")
-SELLER_OGRN = env_str("SELLER_OGRN", "")
-SELLER_ADDRESS = env_str("SELLER_ADDRESS", "")
 SELLER_EMAIL = env_str("SELLER_EMAIL", "")
 SELLER_PHONE = env_str("SELLER_PHONE", "")
 # Вкладка «Контакты» (сайт и приложение): пусто — канал не показывается. Подписи — свои

@@ -4088,29 +4088,11 @@ components:
           type: integer
         agreement_timeout_hours:
           type: integer
-        seller_name:
-          type: string
-        seller_inn:
-          type: string
-        seller_ogrn:
-          type: string
-        seller_address:
-          type: string
-        seller_phone:
-          type: string
-        seller_email:
-          type: string
       required:
       - agreement_timeout_hours
       - delivery_courier_kopecks
       - delivery_free_from_kopecks
       - pickup_address
-      - seller_address
-      - seller_email
-      - seller_inn
-      - seller_name
-      - seller_ogrn
-      - seller_phone
       - unpaid_timeout_minutes
     AdminShopSettings:
       type: object

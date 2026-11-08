@@ -50,9 +50,9 @@ def test_private_pages_are_noindex(client, customer):
 
 @pytest.mark.parametrize("page", ["offer", "privacy", "delivery"])
 def test_legal_pages(client, db, settings, page):
-    settings.SELLER_NAME = "ИП Иванов И. И."
-    settings.SELLER_INN = "770000000000"
-    shop_settings.update(offer_enabled=True)
+    shop_settings.update(
+        offer_enabled=True, seller_name="ИП Иванов И. И.", seller_inn="770000000000"
+    )
     html = client.get(reverse(f"web:{page}")).content.decode()
     assert ("Черновик" in html) == (page == "offer")
     if page != "delivery":

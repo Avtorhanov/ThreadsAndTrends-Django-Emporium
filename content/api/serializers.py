@@ -191,12 +191,6 @@ class AdminShopDefaultsSerializer(serializers.Serializer):
     pickup_address = serializers.CharField()
     unpaid_timeout_minutes = serializers.IntegerField()
     agreement_timeout_hours = serializers.IntegerField()
-    seller_name = serializers.CharField()
-    seller_inn = serializers.CharField()
-    seller_ogrn = serializers.CharField()
-    seller_address = serializers.CharField()
-    seller_phone = serializers.CharField()
-    seller_email = serializers.CharField()
 
 
 class AdminAgreementContactSerializer(serializers.Serializer):

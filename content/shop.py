@@ -140,12 +140,6 @@ def env_defaults() -> dict:
         "pickup_address": settings.PICKUP_ADDRESS,
         "unpaid_timeout_minutes": settings.ORDERS_UNPAID_TIMEOUT_MINUTES,
         "agreement_timeout_hours": settings.ORDERS_AGREEMENT_TIMEOUT_HOURS,
-        "seller_name": settings.SELLER_NAME,
-        "seller_inn": settings.SELLER_INN,
-        "seller_ogrn": settings.SELLER_OGRN,
-        "seller_address": settings.SELLER_ADDRESS,
-        "seller_phone": settings.SELLER_PHONE,
-        "seller_email": settings.SELLER_EMAIL,
     }
 
 
@@ -186,7 +180,10 @@ def current() -> Shop:
         agreement_channel=row.get("agreement_channel") or AgreementChannel.WHATSAPP,
         unpaid_timeout_minutes=pick("unpaid_timeout_minutes"),
         agreement_timeout_hours=pick("agreement_timeout_hours"),
-        seller=Seller(**{name: clean_text(pick(f"seller_{name}")) for name in SELLER_FIELDS}),
+        # Реквизиты — только заполненные в панели: пустое поле покупатель не видит.
+        seller=Seller(
+            **{name: clean_text(row.get(f"seller_{name}") or "") for name in SELLER_FIELDS}
+        ),
         offer_enabled=bool(row.get("offer_enabled", False)),
         operator_name=clean_text(row.get("operator_name") or ""),
         operator_contact=clean_text(row.get("operator_contact") or ""),

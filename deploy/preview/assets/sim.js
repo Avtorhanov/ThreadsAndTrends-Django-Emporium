@@ -613,8 +613,8 @@
       agreement_hours: pick("agreement_timeout_hours") || 48,
       timeout: pick("unpaid_timeout_minutes") || 30,
       seller: {
-        name: pick("seller_name") || "", inn: pick("seller_inn") || "", ogrn: pick("seller_ogrn") || "",
-        address: pick("seller_address") || "", phone: pick("seller_phone") || "", email: pick("seller_email") || ""
+        name: s.seller_name || "", inn: s.seller_inn || "", ogrn: s.seller_ogrn || "",
+        address: s.seller_address || "", phone: s.seller_phone || "", email: s.seller_email || ""
       }
     };
   }
