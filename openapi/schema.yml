@@ -2316,6 +2316,53 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedCatalogProductList'
           description: ''
+  /api/v1/catalog/products/{slug}/:
+    get:
+      operationId: catalog_products_retrieve
+      description: |-
+        Публичное чтение (каталог): без аутентификации, чтобы просроченный JWT
+        в заголовке не превращал открытый запрос в 401.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogProductDetail'
+          description: ''
+  /api/v1/catalog/products/{slug}/similar/:
+    get:
+      operationId: catalog_products_similar
+      description: '«Похожие» для карточки товара: та же категория, затем соседние;
+        до 12, без страниц.'
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogProduct'
+          description: ''
   /api/v1/catalog/products/sizes/:
     get:
       operationId: catalog_products_sizes
@@ -2396,53 +2443,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProductSizes'
-          description: ''
-  /api/v1/catalog/products/{slug}/:
-    get:
-      operationId: catalog_products_retrieve
-      description: |-
-        Публичное чтение (каталог): без аутентификации, чтобы просроченный JWT
-        в заголовке не превращал открытый запрос в 401.
-      parameters:
-      - in: path
-        name: slug
-        schema:
-          type: string
-        required: true
-      tags:
-      - catalog
-      security:
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CatalogProductDetail'
-          description: ''
-  /api/v1/catalog/products/{slug}/similar/:
-    get:
-      operationId: catalog_products_similar
-      description: '«Похожие» для карточки товара: та же категория, затем соседние;
-        до 12, без страниц.'
-      parameters:
-      - in: path
-        name: slug
-        schema:
-          type: string
-        required: true
-      tags:
-      - catalog
-      security:
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CatalogProduct'
           description: ''
   /api/v1/catalog/viewed/:
     get:
