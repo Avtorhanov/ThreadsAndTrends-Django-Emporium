@@ -21,6 +21,7 @@ import { formatDateTime, StatusBadge } from "../../../src/orders/components";
 import { useOrder } from "../../../src/orders/hooks";
 import { type OrderDetail, orderService } from "../../../src/orders/orderService";
 import { checkPayment, isPaymentInProgress, payOrder } from "../../../src/orders/payment";
+import { AgreementPanel } from "../../../src/orders/AgreementPanel";
 import { PaymentPanel } from "../../../src/orders/PaymentPanel";
 import { fonts } from "../../../src/theme/fonts";
 import { makeStyles } from "../../../src/theme/ThemeProvider";
@@ -127,7 +128,9 @@ export default function OrderScreen() {
           text={
             order.can_pay
               ? "Заказ оформлен. Оплатите его, чтобы мы начали сборку."
-              : "Заказ оформлен. Мы сообщим об изменении статуса на email."
+              : order.status === "awaiting_agreement"
+                ? "Заказ создан. Напишите продавцу, чтобы согласовать оплату и доставку."
+                : "Заказ оформлен. Мы сообщим об изменении статуса на email."
           }
           kind="success"
         />
@@ -137,6 +140,8 @@ export default function OrderScreen() {
         <StatusBadge status={order.status} label={order.status_display} />
         <Text style={s.muted}>от {formatDateTime(order.created_at)}</Text>
       </View>
+
+      <AgreementPanel order={order} />
 
       <PaymentPanel
         order={order}

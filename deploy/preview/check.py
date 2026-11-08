@@ -17,6 +17,7 @@ import sys
 import tempfile
 import threading
 from pathlib import Path
+from urllib.parse import unquote
 
 from playwright.sync_api import sync_playwright
 
@@ -172,8 +173,12 @@ def main(site: Path, shots: Path) -> None:
         page.wait_for_selector(".page .h1:has-text('Заказ')")
         number = page.text_content(".page .h1 .nowrap").strip()
         assert page.evaluate("window.DidiSim.cartCount()") == 0
+        # Демо как на запуске: заказ ждёт согласования, кнопка WhatsApp с текстом заказа.
+        page.wait_for_selector(".status:text-is('Ждёт согласования')")
+        href = page.get_attribute(".agree__go", "href")
+        assert href.startswith("https://wa.me/") and number in unquote(href), href
         page.screenshot(path=shots / "sim-order-iphone.png", full_page=True)
-        print(f"Имитация: корзина и оформление — заказ {number}")
+        print(f"Имитация: корзина и оформление — заказ {number}, кнопка WhatsApp с текстом заказа")
 
         # 3. Тот же заказ — в панели; товар, созданный в панели, — в магазине.
         page.evaluate("localStorage.setItem('didi-preview-admin', '1')")
@@ -405,6 +410,15 @@ def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[s
     page.wait_for_selector(".batch-common")
     rest = "[role=radiogroup][aria-label='Категория для остальных'] button"
     page.locator(f".batch-common {rest}").first.click()
+    # Тип размеров: «Обувь жен.» — чипы «RU · US», таблица размеров в шторке.
+    page.click("[aria-label='Тип размеров'] button:has-text('Обувь жен.')")
+    chip = page.locator(".batch-option:has-text('38 · 8 US')")
+    assert chip.get_attribute("aria-pressed") == "true", "38 · 8 US не отмечен по умолчанию"
+    page.click(".batch-field-head button:has-text('Таблица размеров')")
+    assert page.locator(".size-chart tbody tr").count() == 12, "в таблице размеров не 12 строк"
+    page.screenshot(path=shots / "panel-batch-sizes-iphone.png")
+    page.click(".sheet button:has-text('Закрыть')")
+    page.click("[aria-label='Тип размеров'] button:has-text('Одежда')")
     page.click(".batch-next .batch-cta")
     page.wait_for_selector(".draft-card", timeout=30_000)
     assert page.locator(".draft-card").count() == 2, "черновиков не два"
@@ -416,7 +430,7 @@ def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[s
     page.wait_for_selector(".note-success:has-text('Опубликовано: 1')")
     assert page.locator(".draft-card").count() == 1, "опубликованный остался в черновиках"
     page.screenshot(path=shots / "panel-batch-drafts-iphone.png")
-    print("Товары пачкой: раскладка, категории, черновики, цена и публикация: ок")
+    print("Товары пачкой: раскладка, категории, типы размеров, черновики, цена и публикация: ок")
 
     screens = panel_shots(site)
     for theme in ("light", "dark"):

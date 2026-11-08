@@ -3,6 +3,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { type BlockKind, type SiteBlock, blocksService } from "../../api/blocks";
 import { ApiError, type FieldErrors } from "../../api/errors";
 import { useAuth } from "../../auth/AuthProvider";
+import { Icon } from "../Icon";
 
 type ContactKind = Exclude<BlockKind, "link">;
 
@@ -219,7 +220,7 @@ export function ContactsSettings() {
                           disabled={busy || index === 0}
                           onClick={() => move(index, -1)}
                         >
-                          ↑
+                          <Icon name="up" size={20} />
                         </button>
                         <button
                           type="button"
@@ -229,7 +230,7 @@ export function ContactsSettings() {
                           disabled={busy || index === blocks.length - 1}
                           onClick={() => move(index, 1)}
                         >
-                          ↓
+                          <Icon name="down" size={20} />
                         </button>
                       </span>
                     </>

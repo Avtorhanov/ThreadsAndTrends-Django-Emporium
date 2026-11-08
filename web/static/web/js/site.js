@@ -609,6 +609,23 @@
     }
   });
 
+  // --- Заказ «по согласованию»: текст продавцу копируется в буфер (Telegram и ВКонтакте не
+  // принимают текст в ссылке). Ссылка при этом открывается как обычно, в новой вкладке. ---
+  document.addEventListener("click", function (event) {
+    var el = event.target.closest && event.target.closest("[data-copy-text]");
+    if (!el) return;
+    var text = el.getAttribute("data-copy-text");
+    var isLink = el.tagName === "A";
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      if (!isLink) window.prompt("Скопируйте текст", text);
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      function () { toast(isLink ? "Текст заказа скопирован — вставьте его в чат" : "Текст скопирован"); },
+      function () { if (!isLink) window.prompt("Скопируйте текст", text); }
+    );
+  });
+
   // --- Главная: картинки фото-баннера сменяют друг друга, баннеры подряд — карусель ---
   // Только пока блок на экране и вкладка открыта; «уменьшить движение» — без автолистания
   // карусели (картинки баннера меняются растворением без приближения — это задаёт CSS).

@@ -4,6 +4,7 @@ import type { OrderStatus } from "../../api/orders";
 // принят/оплачен/собран — tag, в пути/готов к выдаче — info, получен — success, отменён — neutral.
 const TONE: Record<OrderStatus, string> = {
   awaiting_payment: "warning",
+  awaiting_agreement: "warning",
   confirmed: "tag",
   paid: "tag",
   assembled: "tag",

@@ -19,7 +19,7 @@ from store.tests.factories import make_product
 
 from .factories import make_order
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("cash_on_delivery")]
 
 
 def courier_input(**overrides) -> CheckoutInput:
@@ -93,7 +93,10 @@ def test_online_payment_waits_for_payment(filled_cart):
 
 def test_online_payment_can_be_disabled(filled_cart, settings):
     settings.ORDERS_ONLINE_PAYMENT_ENABLED = False
-    assert checkout_service.payment_methods() == [PaymentMethod.ON_DELIVERY]
+    assert checkout_service.payment_methods() == [
+        PaymentMethod.AGREEMENT,
+        PaymentMethod.ON_DELIVERY,
+    ]
     with pytest.raises(ValidationError) as exc:
         checkout_service.checkout(
             filled_cart, courier_input(payment_method=PaymentMethod.ONLINE), "key-00000001"
@@ -249,7 +252,11 @@ def test_preview_offers_options_and_last_recipient(customer, filled_cart, settin
         (DeliveryMethod.PICKUP, 0),
     ]
     assert preview.delivery_options[1].address == settings.PICKUP_ADDRESS
-    assert preview.payment_methods == [PaymentMethod.ONLINE, PaymentMethod.ON_DELIVERY]
+    assert preview.payment_methods == [
+        PaymentMethod.ONLINE,
+        PaymentMethod.AGREEMENT,
+        PaymentMethod.ON_DELIVERY,
+    ]
     assert preview.defaults.recipient_name == "Пётр"
     assert preview.defaults.delivery_address == "Казань, ул. Баумана, 5"
 

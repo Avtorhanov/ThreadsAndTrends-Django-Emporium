@@ -70,5 +70,6 @@ export const orderService = {
 
 export const PAYMENT_TITLES: Record<PaymentMethod, string> = {
   online: "Онлайн: карта, СБП, SberPay",
+  agreement: "Согласовать с продавцом в мессенджере",
   on_delivery: "При получении",
 };

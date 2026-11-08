@@ -31,6 +31,7 @@ export const PAGE_SIZE = 20;
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
   awaiting_payment: "Ожидает оплаты",
+  awaiting_agreement: "Ждёт согласования",
   confirmed: "Принят",
   paid: "Оплачен",
   assembled: "Собран",
@@ -42,6 +43,7 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
 
 export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   online: "Онлайн",
+  agreement: "По согласованию",
   on_delivery: "При получении",
 };
 

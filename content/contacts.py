@@ -173,3 +173,16 @@ def ask_links(message: str) -> list[Contact]:
             contact = replace(contact, url=f"{contact.url}?text={quote(message)}")
         links.append(contact)
     return sorted(links, key=lambda c: ASK_KINDS.index(c.kind))
+
+
+# Каналы согласования заказа (оплата «по согласованию с продавцом»), по порядку запасного выбора.
+AGREEMENT_KINDS = (ContactKind.WHATSAPP, ContactKind.TELEGRAM, ContactKind.VK, ContactKind.PHONE)
+
+
+def agreement_contacts() -> list[Contact]:
+    """Каналы согласования для панели: заданный контакт магазина или пустой (handle="")."""
+    found: dict[str, Contact] = {}
+    for contact in get_contacts():
+        if contact.kind in AGREEMENT_KINDS:
+            found.setdefault(contact.kind, contact)  # первый по порядку, как на «Контактах»
+    return [found.get(kind) or Contact(kind, TITLES[kind], "", "", "") for kind in AGREEMENT_KINDS]

@@ -117,6 +117,8 @@ def validate_return_url(url: str, order: Order) -> str:
 
 
 def _not_payable_message(order: Order) -> str:
+    if order.payment_method == PaymentMethod.AGREEMENT:
+        return "Оплату этого заказа вы согласуете с продавцом."
     if order.payment_method != PaymentMethod.ONLINE:
         return "Этот заказ оплачивается при получении."
     if order.status == OrderStatus.AWAITING_PAYMENT:

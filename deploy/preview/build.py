@@ -46,7 +46,7 @@ from django.utils import timezone  # noqa: E402
 
 from accounts.models import EmailChangeCode  # noqa: E402
 from content.contacts import ask_links  # noqa: E402
-from content.models import Article, ArticleImage, HomeImage  # noqa: E402
+from content.models import Article, ArticleImage, HomeImage, ShopSettings  # noqa: E402
 from orders.models import ChangedBy, DeliveryMethod, Order, OrderStatus, PaymentMethod  # noqa: E402
 from orders.services import checkout as checkout_service  # noqa: E402
 from orders.services import status as status_service  # noqa: E402
@@ -215,6 +215,7 @@ def demo_orders(user, variants, fake) -> list[Order]:
     v = variants
     C, P = DeliveryMethod.COURIER, DeliveryMethod.PICKUP
     ON, OFF = PaymentMethod.ONLINE, PaymentMethod.ON_DELIVERY
+    AGREE = PaymentMethod.AGREEMENT
     orders = []
     orders.append(
         move(
@@ -250,10 +251,15 @@ def demo_orders(user, variants, fake) -> list[Order]:
         )
     )
     orders.append(
-        move(place_order(user, [(v[6], 3)], delivery=C, payment=OFF, days_ago=3), S.ASSEMBLED)
+        move(
+            place_order(user, [(v[6], 3)], delivery=C, payment=AGREE, days_ago=3),
+            S.CONFIRMED,
+            S.ASSEMBLED,
+        )
     )
     orders.append(pay(place_order(user, [(v[14], 1)], delivery=C, payment=ON, days_ago=2), fake))
-    orders.append(place_order(user, [(v[1], 1), (v[9], 1)], delivery=C, payment=OFF, days_ago=1))
+    # Ждёт согласования: покупатель пишет продавцу, заказ — в «Ждут согласования» панели.
+    orders.append(place_order(user, [(v[1], 1), (v[9], 1)], delivery=C, payment=AGREE))
     orders.append(place_order(user, [(v[4], 2)], delivery=C, payment=ON))
     now = timezone.now()
     for pk, days in BACKDATE.items():
@@ -358,6 +364,11 @@ def build(out: Path) -> None:
     call_command("migrate", verbosity=0)
     stable_media_names()
     call_command("seed_demo", verbosity=0)
+    # Пока строятся страницы, доступны все способы оформления (в HTML оформления — все варианты,
+    # preview.js скрывает выключенные); перед снимком панели — как на запуске (build_panel).
+    ShopSettings.objects.update_or_create(
+        pk=1, defaults={"cash_on_delivery_enabled": True, "agreement_enabled": True}
+    )
 
     fake = FakeProvider()
     providers.get_provider = lambda: fake  # платежи и возвраты — в памяти, без сети
@@ -517,7 +528,7 @@ def render_rooms_states(site, guest, me, customer, variants, query, fake) -> dic
     total = re.search(r'name="expected_total" value="(\d+)"', response.content.decode())[1]
     form = {
         "delivery_method": "courier",
-        "payment_method": "on_delivery",
+        "payment_method": "agreement",
         "recipient_name": "Анна Смирнова",
         "recipient_phone": "+79005551234",
         "delivery_address": "Москва, ул. Лесная, 12, кв. 45",
@@ -534,7 +545,7 @@ def render_rooms_states(site, guest, me, customer, variants, query, fake) -> dic
         tree="me",
         room="placed",
     )
-    rooms["placed"] = ("Заказ оформлен (оплата при получении)", f"{ME}/orders/placed/")
+    rooms["placed"] = ("Заказ создан (согласование в мессенджере)", f"{ME}/orders/placed/")
 
     online = place_order(
         customer, [(variants[3], 1)], delivery=DeliveryMethod.COURIER, payment=PaymentMethod.ONLINE
@@ -785,6 +796,11 @@ def build_panel(out: Path) -> None:
         return
     target = out / "panel"
     shutil.copytree(PANEL_DIST, target)
+    # Демо стартует как магазин на запуске: только согласование в мессенджере (ЮKassa «подключена»
+    # в демо — её можно включить в «Настройках → Оформление и оплата»).
+    ShopSettings.objects.filter(pk=1).update(
+        online_payment_enabled=False, cash_on_delivery_enabled=False, agreement_enabled=True
+    )
     snapshot = panel_snapshot()
     (target / "preview-api.json").write_text(
         json.dumps(snapshot, ensure_ascii=False), encoding="utf-8"
@@ -811,6 +827,7 @@ def panel_section(orders: list[Order]) -> tuple[str, list[tuple[str, str]]]:
         (f"Вход администратора: {ADMIN_EMAIL} / {ADMIN_PASSWORD}", f"{BASE}/login/"),
         ("Сводка", f"{panel}/"),
         ("Заказы в работе", f"{panel}/orders/"),
+        ("Заказы, ждущие согласования", f"{panel}/orders/?status=awaiting_agreement"),
         ("Заказы, ждущие оплаты", f"{panel}/orders/?status=awaiting_payment"),
         (f"Заказ {orders[0].number}", f"{panel}/orders/{orders[0].pk}/"),
         (f"Заказ {online.number} (онлайн-оплата)", f"{panel}/orders/{online.pk}/"),

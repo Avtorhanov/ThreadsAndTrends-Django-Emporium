@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from content import contacts as contacts_service
 from content import home, look, shop
 from content.contacts import ContactKind
 from content.models import (
@@ -17,6 +18,7 @@ from content.models import (
     ShopSettings,
 )
 from content.services import MAX_BODY_LENGTH
+from core.choices import AgreementChannel
 from store.api.serializers import CatalogProductSerializer, absolute_url
 from store.models import Category, Product
 
@@ -188,6 +190,7 @@ class AdminShopDefaultsSerializer(serializers.Serializer):
     delivery_free_from_kopecks = serializers.IntegerField()
     pickup_address = serializers.CharField()
     unpaid_timeout_minutes = serializers.IntegerField()
+    agreement_timeout_hours = serializers.IntegerField()
     seller_name = serializers.CharField()
     seller_inn = serializers.CharField()
     seller_ogrn = serializers.CharField()
@@ -196,20 +199,41 @@ class AdminShopDefaultsSerializer(serializers.Serializer):
     seller_email = serializers.CharField()
 
 
+class AdminAgreementContactSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=AgreementChannel.choices)
+    title = serializers.CharField()
+    handle = serializers.CharField(help_text="Как показан контакт; пусто — контакт не задан")
+
+
 class AdminShopSettingsSerializer(serializers.ModelSerializer):
     updated_at = serializers.DateTimeField(read_only=True, allow_null=True)
     online_payment_available = serializers.SerializerMethodField(
         help_text="Онлайн-оплата подключена на сервере (ключи ЮKassa в .env)"
     )
     defaults = serializers.SerializerMethodField()
+    agreement_contacts = serializers.SerializerMethodField(
+        help_text="Каналы согласования: задан ли контакт магазина (иначе кнопки не будет)"
+    )
 
     class Meta:
         model = ShopSettings
-        fields = [*shop.FIELDS, "updated_at", "online_payment_available", "defaults"]
+        fields = [
+            *shop.FIELDS,
+            "updated_at",
+            "online_payment_available",
+            "agreement_contacts",
+            "defaults",
+        ]
         read_only_fields = fields
 
     def get_online_payment_available(self, obj) -> bool:
         return shop.online_payment_available()
+
+    @extend_schema_field(AdminAgreementContactSerializer(many=True))
+    def get_agreement_contacts(self, obj):
+        return AdminAgreementContactSerializer(
+            contacts_service.agreement_contacts(), many=True
+        ).data
 
     @extend_schema_field(AdminShopDefaultsSerializer)
     def get_defaults(self, obj):
@@ -224,7 +248,15 @@ class AdminShopSettingsWriteSerializer(serializers.Serializer):
     pickup_enabled = serializers.BooleanField()
     pickup_address = serializers.CharField(max_length=300, allow_blank=True)
     cash_on_delivery_enabled = serializers.BooleanField()
+    online_payment_enabled = serializers.BooleanField(
+        required=False,
+        allow_null=True,
+        help_text="Действует, только если ЮKassa подключена (.env); null — как в .env",
+    )
+    agreement_enabled = serializers.BooleanField(required=False)
+    agreement_channel = serializers.ChoiceField(choices=AgreementChannel.choices, required=False)
     unpaid_timeout_minutes = serializers.IntegerField(min_value=1, allow_null=True)
+    agreement_timeout_hours = serializers.IntegerField(min_value=1, allow_null=True, required=False)
     seller_name = serializers.CharField(max_length=200, allow_blank=True)
     seller_inn = serializers.CharField(max_length=20, allow_blank=True)
     seller_ogrn = serializers.CharField(max_length=20, allow_blank=True)

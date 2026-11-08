@@ -1526,6 +1526,7 @@ paths:
         schema:
           type: string
           enum:
+          - agreement
           - on_delivery
           - online
       - in: query
@@ -1539,6 +1540,7 @@ paths:
           type: string
           enum:
           - assembled
+          - awaiting_agreement
           - awaiting_payment
           - cancelled
           - confirmed
@@ -2693,6 +2695,20 @@ paths:
           description: ''
 components:
   schemas:
+    AdminAgreementContact:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/AgreementChannelEnum'
+        title:
+          type: string
+        handle:
+          type: string
+          description: Как показан контакт; пусто — контакт не задан
+      required:
+      - handle
+      - kind
+      - title
     AdminArticle:
       type: object
       properties:
@@ -3411,6 +3427,18 @@ components:
           title: Способ оплаты
         payment_method_display:
           type: string
+        agreement_channel:
+          allOf:
+          - $ref: '#/components/schemas/AgreementChannelEnum'
+          readOnly: true
+          title: Канал согласования
+          description: |-
+            Канал согласования; пусто — другой способ оплаты
+
+            * `whatsapp` - WhatsApp
+            * `telegram` - Telegram
+            * `vk` - ВКонтакте
+            * `phone` - Телефон
         delivery_method:
           allOf:
           - $ref: '#/components/schemas/DeliveryMethodEnum'
@@ -3484,6 +3512,7 @@ components:
           type: boolean
           readOnly: true
       required:
+      - agreement_channel
       - allowed_transitions
       - can_retry_refund
       - comment
@@ -3577,6 +3606,7 @@ components:
             Пусто — оформление заказа
 
             * `awaiting_payment` - Ожидает оплаты
+            * `awaiting_agreement` - Ждёт согласования
             * `confirmed` - Принят
             * `paid` - Оплачен
             * `assembled` - Собран
@@ -3756,6 +3786,17 @@ components:
         is_active:
           type: boolean
           description: Показывать на витрине; true у черновиков — опубликовать
+        agreement_channel:
+          description: |-
+            Канал согласования заказа; пусто — как в настройках магазина
+
+            * `whatsapp` - WhatsApp
+            * `telegram` - Telegram
+            * `vk` - ВКонтакте
+            * `phone` - Телефон
+          oneOf:
+          - $ref: '#/components/schemas/AgreementChannelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         deleted:
           type: boolean
           description: true — удалить (мягко), false — восстановить; без других полей
@@ -3808,6 +3849,17 @@ components:
           description: id статуса; null — без метки
         is_active:
           type: boolean
+        agreement_channel:
+          description: |-
+            Канал согласования заказа; пусто — как в настройках магазина
+
+            * `whatsapp` - WhatsApp
+            * `telegram` - Telegram
+            * `vk` - ВКонтакте
+            * `phone` - Телефон
+          oneOf:
+          - $ref: '#/components/schemas/AgreementChannelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         is_draft:
           type: boolean
           description: 'Черновик («Добавить пачкой»): скрыт до публикации, is_active
@@ -3893,6 +3945,18 @@ components:
           type: string
           readOnly: true
           title: Описание
+        agreement_channel:
+          allOf:
+          - $ref: '#/components/schemas/AgreementChannelEnum'
+          readOnly: true
+          title: Канал согласования
+          description: |-
+            Канал согласования заказа; пусто — как в настройках магазина
+
+            * `whatsapp` - WhatsApp
+            * `telegram` - Telegram
+            * `vk` - ВКонтакте
+            * `phone` - Телефон
         variants:
           type: array
           items:
@@ -3904,6 +3968,7 @@ components:
             $ref: '#/components/schemas/AdminImage'
           readOnly: true
       required:
+      - agreement_channel
       - category
       - category_name
       - compare_at_kopecks
@@ -4021,6 +4086,8 @@ components:
           type: string
         unpaid_timeout_minutes:
           type: integer
+        agreement_timeout_hours:
+          type: integer
         seller_name:
           type: string
         seller_inn:
@@ -4034,6 +4101,7 @@ components:
         seller_email:
           type: string
       required:
+      - agreement_timeout_hours
       - delivery_courier_kopecks
       - delivery_free_from_kopecks
       - pickup_address
@@ -4069,11 +4137,30 @@ components:
           type: boolean
           readOnly: true
           title: Оплата при получении
+        online_payment_enabled:
+          type: boolean
+          readOnly: true
+          nullable: true
+          title: Онлайн-оплата ЮKassa
+        agreement_enabled:
+          type: boolean
+          readOnly: true
+          title: Согласование с продавцом в мессенджере
+        agreement_channel:
+          allOf:
+          - $ref: '#/components/schemas/AgreementChannelEnum'
+          readOnly: true
+          title: Канал согласования
         unpaid_timeout_minutes:
           type: integer
           readOnly: true
           nullable: true
           title: Автоотмена неоплаченного заказа, мин
+        agreement_timeout_hours:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Автоотмена несогласованного заказа, ч
         seller_name:
           type: string
           readOnly: true
@@ -4108,16 +4195,28 @@ components:
           type: boolean
           readOnly: true
           description: Онлайн-оплата подключена на сервере (ключи ЮKassa в .env)
+        agreement_contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminAgreementContact'
+          readOnly: true
+          description: 'Каналы согласования: задан ли контакт магазина (иначе кнопки
+            не будет)'
         defaults:
           allOf:
           - $ref: '#/components/schemas/AdminShopDefaults'
           readOnly: true
       required:
+      - agreement_channel
+      - agreement_contacts
+      - agreement_enabled
+      - agreement_timeout_hours
       - cash_on_delivery_enabled
       - defaults
       - delivery_courier_kopecks
       - delivery_free_from_kopecks
       - online_payment_available
+      - online_payment_enabled
       - pickup_address
       - pickup_enabled
       - seller_address
@@ -4147,7 +4246,20 @@ components:
           maxLength: 300
         cash_on_delivery_enabled:
           type: boolean
+        online_payment_enabled:
+          type: boolean
+          nullable: true
+          description: Действует, только если ЮKassa подключена (.env); null — как
+            в .env
+        agreement_enabled:
+          type: boolean
+        agreement_channel:
+          $ref: '#/components/schemas/AgreementChannelEnum'
         unpaid_timeout_minutes:
+          type: integer
+          minimum: 1
+          nullable: true
+        agreement_timeout_hours:
           type: integer
           minimum: 1
           nullable: true
@@ -4220,6 +4332,9 @@ components:
         awaiting_payment:
           type: integer
           description: Ждут онлайн-оплаты
+        awaiting_agreement:
+          type: integer
+          description: Ждут согласования с покупателем в мессенджере
         to_assemble:
           type: integer
           description: Приняты или оплачены — нужно собрать
@@ -4236,6 +4351,7 @@ components:
           items:
             $ref: '#/components/schemas/AdminLowStockVariant'
       required:
+      - awaiting_agreement
       - awaiting_payment
       - generated_at
       - last_30_days
@@ -4255,7 +4371,7 @@ components:
           description: Оформлено заказов, кроме отменённых
         turnover_kopecks:
           type: integer
-          description: Оборот без отменённых и неоплаченных, коп.
+          description: Оборот без отменённых, неоплаченных и несогласованных, коп.
       required:
       - orders
       - turnover_kopecks
@@ -4432,6 +4548,52 @@ components:
         position:
           type: integer
           minimum: 0
+    AgreementChannelEnum:
+      enum:
+      - whatsapp
+      - telegram
+      - vk
+      - phone
+      type: string
+      description: |-
+        * `whatsapp` - WhatsApp
+        * `telegram` - Telegram
+        * `vk` - ВКонтакте
+        * `phone` - Телефон
+    AgreementLink:
+      type: object
+      description: Связь с продавцом для заказа «по согласованию», пока он ждёт подтверждения.
+      properties:
+        kind:
+          $ref: '#/components/schemas/AgreementChannelEnum'
+        title:
+          type: string
+          description: 'Подпись канала: «WhatsApp» или своя'
+        url:
+          type: string
+          description: https://wa.me/…?text=…, https://t.me/…, tel:+7…
+        handle:
+          type: string
+          description: Номер или имя канала для показа
+        message:
+          type: string
+          description: 'Текст продавцу: номер заказа, товары, сумма'
+        prefilled:
+          type: boolean
+          description: Текст уже в ссылке (WhatsApp); иначе — скопировать и вставить
+            в чат
+        deadline:
+          type: string
+          format: date-time
+          description: Не подтверждённый к этому времени — отменится
+      required:
+      - deadline
+      - handle
+      - kind
+      - message
+      - prefilled
+      - title
+      - url
     Article:
       type: object
       properties:
@@ -5495,6 +5657,18 @@ components:
           title: Способ оплаты
         payment_method_display:
           type: string
+        agreement_channel:
+          allOf:
+          - $ref: '#/components/schemas/AgreementChannelEnum'
+          readOnly: true
+          title: Канал согласования
+          description: |-
+            Канал согласования; пусто — другой способ оплаты
+
+            * `whatsapp` - WhatsApp
+            * `telegram` - Telegram
+            * `vk` - ВКонтакте
+            * `phone` - Телефон
         delivery_method:
           allOf:
           - $ref: '#/components/schemas/DeliveryMethodEnum'
@@ -5580,7 +5754,14 @@ components:
           oneOf:
           - $ref: '#/components/schemas/RefundStatusEnum'
           - $ref: '#/components/schemas/NullEnum'
+        agreement:
+          allOf:
+          - $ref: '#/components/schemas/AgreementLink'
+          nullable: true
+          readOnly: true
       required:
+      - agreement
+      - agreement_channel
       - can_cancel
       - can_pay
       - comment
@@ -5701,6 +5882,7 @@ components:
             Пусто — оформление заказа
 
             * `awaiting_payment` - Ожидает оплаты
+            * `awaiting_agreement` - Ждёт согласования
             * `confirmed` - Принят
             * `paid` - Оплачен
             * `assembled` - Собран
@@ -5733,6 +5915,7 @@ components:
     OrderStatusEnum:
       enum:
       - awaiting_payment
+      - awaiting_agreement
       - confirmed
       - paid
       - assembled
@@ -5743,6 +5926,7 @@ components:
       type: string
       description: |-
         * `awaiting_payment` - Ожидает оплаты
+        * `awaiting_agreement` - Ждёт согласования
         * `confirmed` - Принят
         * `paid` - Оплачен
         * `assembled` - Собран
@@ -6112,6 +6296,17 @@ components:
           description: id статуса; null — без метки
         is_active:
           type: boolean
+        agreement_channel:
+          description: |-
+            Канал согласования заказа; пусто — как в настройках магазина
+
+            * `whatsapp` - WhatsApp
+            * `telegram` - Telegram
+            * `vk` - ВКонтакте
+            * `phone` - Телефон
+          oneOf:
+          - $ref: '#/components/schemas/AgreementChannelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
     PatchedAdminVariantRequest:
       type: object
       properties:
@@ -6172,10 +6367,12 @@ components:
     PaymentMethodEnum:
       enum:
       - online
+      - agreement
       - on_delivery
       type: string
       description: |-
         * `online` - Онлайн
+        * `agreement` - По согласованию с продавцом
         * `on_delivery` - При получении
     PaymentStart:
       type: object

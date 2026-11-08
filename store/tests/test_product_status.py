@@ -159,7 +159,7 @@ def test_storefront_card_quiet_mark_and_product_pill(client):
     assert "status--warning pd__status" in page
 
 
-def test_order_item_keeps_status_snapshot():
+def test_order_item_keeps_status_snapshot(cash_on_delivery):
     from django.contrib.auth import get_user_model
 
     from orders.services.checkout import CheckoutInput, checkout

@@ -5,6 +5,8 @@ from django.conf import settings
 from django.db import models
 from django.db.models import F, Q
 
+from core.choices import AgreementChannel
+
 # Номер заказа берётся из последовательности Postgres (без гонки max+1), см. миграцию 0005.
 ORDER_NUMBER_SEQUENCE = "orders_order_number_seq"
 ORDER_NUMBER_PREFIX = "DD-"
@@ -12,6 +14,7 @@ ORDER_NUMBER_PREFIX = "DD-"
 
 class OrderStatus(models.TextChoices):
     AWAITING_PAYMENT = "awaiting_payment", "Ожидает оплаты"
+    AWAITING_AGREEMENT = "awaiting_agreement", "Ждёт согласования"
     CONFIRMED = "confirmed", "Принят"
     PAID = "paid", "Оплачен"
     ASSEMBLED = "assembled", "Собран"
@@ -23,6 +26,8 @@ class OrderStatus(models.TextChoices):
 
 class PaymentMethod(models.TextChoices):
     ONLINE = "online", "Онлайн"
+    # Покупатель договаривается с продавцом в мессенджере, продавец подтверждает заказ в панели.
+    AGREEMENT = "agreement", "По согласованию с продавцом"
     ON_DELIVERY = "on_delivery", "При получении"
 
 
@@ -70,6 +75,15 @@ class Order(models.Model):
     recipient_phone = models.CharField(max_length=12, verbose_name="Телефон")
     delivery_address = models.CharField(max_length=500, blank=True, verbose_name="Адрес доставки")
     comment = models.CharField(max_length=500, blank=True, verbose_name="Комментарий")
+    # Канал согласования на момент оформления (оплата «по согласованию»); пусто — другой способ.
+    agreement_channel = models.CharField(
+        max_length=20,
+        choices=AgreementChannel.choices,
+        blank=True,
+        default="",
+        db_default="",
+        verbose_name="Канал согласования",
+    )
     # Ключ повторного сабмита от клиента: повтор с тем же ключом возвращает тот же заказ.
     idempotency_key = models.CharField(max_length=64, verbose_name="Ключ идемпотентности")
     # Статус сменил магазин (администратор или система), а покупатель заказ ещё не открывал —

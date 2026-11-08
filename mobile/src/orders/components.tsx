@@ -8,6 +8,7 @@ import type { OrderStatus } from "./orderService";
 function statusColors({ c }: Theme, status: OrderStatus): { fg: string; bg: string } {
   switch (status) {
     case "awaiting_payment":
+    case "awaiting_agreement":
       return { fg: c.warning, bg: c.warningBg };
     case "confirmed":
     case "paid":

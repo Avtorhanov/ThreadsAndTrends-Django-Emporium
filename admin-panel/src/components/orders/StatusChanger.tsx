@@ -1,11 +1,13 @@
 import { useState } from "react";
 
 import type { AdminOrderDetail, OrderStatus } from "../../api/orders";
-import { MARK_LABELS, orderSteps, stepIndex } from "../../lib/orderFlow";
+import { agreementChannel } from "../../lib/agreement";
+import { MARK_LABELS, isAwaitingAgreement, orderSteps, stepIndex } from "../../lib/orderFlow";
 
 const COMMENT_MAX = 500;
 
 const PLACEHOLDERS: Partial<Record<OrderStatus, string>> = {
+  confirmed: "Например: оплата переводом, доставка в четверг",
   assembled: "Например: собрали, передадим курьеру завтра до 12:00",
   shipped: "Например: курьер позвонит за час",
   ready_for_pickup: "Например: заказ ждёт вас 7 дней, возьмите паспорт",
@@ -33,7 +35,9 @@ export function StatusChanger({ order, busy, onSubmit }: Props) {
   const canNotify = !order.customer.is_deleted;
   const sendMail = notify && canNotify;
   const steps = orderSteps(order.delivery_method);
+  const pending = isAwaitingAgreement(order.status);
   const reached = stepIndex(order.status);
+  const channel = agreementChannel(order.agreement_channel);
   const forward = order.allowed_transitions.filter((item) => item.status !== "cancelled");
   const cancel = order.allowed_transitions.find((item) => item.status === "cancelled");
   const target = cancelling ? cancel : forward[0];
@@ -61,8 +65,8 @@ export function StatusChanger({ order, busy, onSubmit }: Props) {
 
       <ol className={reached < 0 ? "status-track is-cancelled" : "status-track"} aria-label="Обработка заказа">
         {steps.map((label, index) => {
-          const done = index <= reached;
-          const current = index === reached;
+          const done = !pending && index <= reached;
+          const current = !pending && index === reached;
           return (
             <li
               key={label}
@@ -75,6 +79,13 @@ export function StatusChanger({ order, busy, onSubmit }: Props) {
         })}
       </ol>
       {reached < 0 ? <p className="note note-info">Заказ отменён.</p> : null}
+      {pending ? (
+        <p className="note note-warning">
+          Ждёт согласования: покупатель напишет вам{channel ? ` в ${channel.label}` : ""} с номером{" "}
+          <b>{order.number}</b>. Договоритесь об оплате и доставке и отметьте «Принят» — иначе заказ отменится
+          автоматически. Товар уже отложен.
+        </p>
+      ) : null}
       {order.status === "awaiting_payment" ? (
         <p className="muted small">Ждём оплату — после неё заказ можно собирать.</p>
       ) : null}

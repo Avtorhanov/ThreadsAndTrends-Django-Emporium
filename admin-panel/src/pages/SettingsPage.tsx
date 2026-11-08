@@ -2,8 +2,10 @@ import { type FormEvent, useState } from "react";
 
 import { ApiError, type FieldErrors } from "../api/errors";
 import { type ShopSettings, sellerParts, shopSettingsService } from "../api/settings";
+import { Icon } from "../components/Icon";
 import { ContactsSettings } from "../components/settings/ContactsSettings";
 import { useShopSettings } from "../hooks/useContent";
+import { AGREEMENT_CHANNELS, type AgreementChannel, agreementChannel } from "../lib/agreement";
 import { formatKopecks, kopecksToInput, parseRublesToKopecks } from "../lib/money";
 
 function FieldError({ errors, name }: { errors: FieldErrors; name: string }) {
@@ -42,6 +44,10 @@ type Draft = {
   pickupEnabled: boolean;
   pickupAddress: string;
   cashOnDelivery: boolean;
+  online: boolean;
+  agreement: boolean;
+  channel: AgreementChannel;
+  agreementHours: string;
   timeout: string;
   name: string;
   inn: string;
@@ -58,6 +64,11 @@ function toDraft(settings: ShopSettings): Draft {
     pickupEnabled: settings.pickup_enabled,
     pickupAddress: settings.pickup_address,
     cashOnDelivery: settings.cash_on_delivery_enabled,
+    // Не сохранялось (null) — как на сервере: включена, если ЮKassa подключена.
+    online: settings.online_payment_enabled ?? settings.online_payment_available,
+    agreement: settings.agreement_enabled,
+    channel: settings.agreement_channel,
+    agreementHours: settings.agreement_timeout_hours === null ? "" : String(settings.agreement_timeout_hours),
     timeout: settings.unpaid_timeout_minutes === null ? "" : String(settings.unpaid_timeout_minutes),
     name: settings.seller_name,
     inn: settings.seller_inn,
@@ -66,6 +77,82 @@ function toDraft(settings: ShopSettings): Draft {
     phone: settings.seller_phone,
     email: settings.seller_email,
   };
+}
+
+function AgreementFields({
+  settings,
+  channel,
+  hours,
+  errors,
+  onChannel,
+  onHours,
+}: {
+  settings: ShopSettings;
+  channel: AgreementChannel;
+  hours: string;
+  errors: FieldErrors;
+  onChannel: (value: AgreementChannel) => void;
+  onHours: (value: string) => void;
+}) {
+  const handles = new Map(settings.agreement_contacts.map((c) => [c.kind, c.handle]));
+  const picked = agreementChannel(channel) ?? AGREEMENT_CHANNELS[0]!;
+  const handle = handles.get(picked.id) ?? "";
+  const fallback = AGREEMENT_CHANNELS.find((item) => handles.get(item.id));
+  return (
+    <div className="agree-settings">
+      <span className="field-label">Канал по умолчанию</span>
+      <div className="seg-switch seg-switch-4" role="radiogroup" aria-label="Канал согласования">
+        {AGREEMENT_CHANNELS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="radio"
+            aria-checked={channel === item.id}
+            className={channel === item.id ? "is-on" : undefined}
+            onClick={() => onChannel(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <div className="agree-preview" aria-label="Так кнопку увидит покупатель">
+        <span className="agree-preview-button">
+          <Icon name={picked.icon} size={18} />
+          {picked.button}
+        </span>
+        <span className="muted small">
+          {handle
+            ? `${picked.label}: ${handle}`
+            : fallback
+              ? `${picked.label} не задан в «Контактах» ниже — кнопка поведёт в ${fallback.label}`
+              : "Ни один контакт не задан — заполните «Контакты» ниже, иначе кнопки не будет"}
+        </span>
+      </div>
+      <p className="muted small">
+        {picked.id === "whatsapp"
+          ? "Номер заказа, товары со ссылками и сумма подставятся в сообщение сами."
+          : picked.id === "phone"
+            ? "Покупатель позвонит и назовёт номер заказа — он крупно на экране заказа."
+            : "Чат откроется без текста: номер заказа и товары скопируются, покупатель вставит их."}{" "}
+        У отдельного товара канал можно сменить в его карточке.
+      </p>
+      <FieldError errors={errors} name="agreement_channel" />
+      <label className="field">
+        Отменить, если не подтвердили за
+        <span className="money input-narrow">
+          <input
+            inputMode="numeric"
+            value={hours}
+            placeholder={String(settings.defaults.agreement_timeout_hours)}
+            onChange={(e) => onHours(e.target.value)}
+          />
+          <span>ч</span>
+        </span>
+        <span className="muted small">Товар отложен для покупателя, потом возвращается в продажу. От 1 часа до 2 недель.</span>
+        <FieldError errors={errors} name="agreement_timeout_hours" />
+      </label>
+    </div>
+  );
 }
 
 function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: (value: ShopSettings) => void }) {
@@ -105,6 +192,14 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
     if (timeout !== null && !Number.isInteger(timeout)) {
       fieldErrors.unpaid_timeout_minutes = ["Целое число минут."];
     }
+    const agreementHours = draft.agreementHours.trim() ? Number(draft.agreementHours) : null;
+    if (agreementHours !== null && !Number.isInteger(agreementHours)) {
+      fieldErrors.agreement_timeout_hours = ["Целое число часов."];
+    }
+    const online = draft.online && settings.online_payment_available;
+    if (!online && !draft.agreement && !draft.cashOnDelivery) {
+      fieldErrors.agreement_enabled = ["Включите хотя бы один способ — иначе покупатель не сможет заказать."];
+    }
     setErrors(fieldErrors);
     setFormError(null);
     if (Object.keys(fieldErrors).length) return;
@@ -116,6 +211,10 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
         pickup_enabled: draft.pickupEnabled,
         pickup_address: draft.pickupAddress,
         cash_on_delivery_enabled: draft.cashOnDelivery,
+        online_payment_enabled: draft.online,
+        agreement_enabled: draft.agreement,
+        agreement_channel: draft.channel,
+        agreement_timeout_hours: agreementHours,
         unpaid_timeout_minutes: timeout,
         seller_name: draft.name,
         seller_inn: draft.inn,
@@ -207,40 +306,60 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
         </section>
 
         <section className="card form-grid">
-          <h2>Оплата</h2>
+          <h2>Оформление и оплата</h2>
           <Switch
-            checked={settings.online_payment_available}
-            disabled
+            checked={draft.agreement}
+            label="Согласование в мессенджере"
+            hint="Покупатель оформляет заказ и пишет вам готовым текстом, вы подтверждаете заказ в «Заказах»"
+            onChange={(agreement) => set({ agreement })}
+          />
+          <FieldError errors={errors} name="agreement_enabled" />
+          {draft.agreement ? (
+            <AgreementFields
+              settings={settings}
+              channel={draft.channel}
+              hours={draft.agreementHours}
+              errors={errors}
+              onChannel={(channel) => set({ channel })}
+              onHours={(agreementHours) => set({ agreementHours })}
+            />
+          ) : null}
+          <Switch
+            checked={draft.online && settings.online_payment_available}
+            disabled={!settings.online_payment_available}
             label="Онлайн-оплата (ЮKassa)"
             hint="Карта, СБП, чеки 54-ФЗ"
-            onChange={() => undefined}
+            onChange={(online) => set({ online })}
           />
           {!settings.online_payment_available ? (
             <p className="note note-warning">
-              Включится, когда на сервере появятся ключи ЮKassa. Ключи вводятся только в .env — в панели их нет.
+              Переключатель станет доступен, когда на сервере подключат ЮKassa: ключи магазина и
+              ORDERS_ONLINE_PAYMENT_ENABLED=True вводятся только в .env — в панели их нет (docs/LAUNCH.md, «ЮKassa»).
             </p>
+          ) : null}
+          {draft.online && settings.online_payment_available ? (
+            <label className="field">
+              Автоотмена неоплаченного онлайн-заказа
+              <span className="money input-narrow">
+                <input
+                  inputMode="numeric"
+                  value={draft.timeout}
+                  placeholder={String(defaults.unpaid_timeout_minutes)}
+                  onChange={(e) => set({ timeout: e.target.value })}
+                />
+                <span>мин</span>
+              </span>
+              <span className="muted small">Остатки возвращаются на склад. От 10 минут до суток.</span>
+              <FieldError errors={errors} name="unpaid_timeout_minutes" />
+            </label>
           ) : null}
           <Switch
             checked={draft.cashOnDelivery}
             label="Оплата при получении"
-            hint="Наличными или картой курьеру"
+            hint="Заказ сразу «Принят», без переписки"
             onChange={(cashOnDelivery) => set({ cashOnDelivery })}
           />
           <FieldError errors={errors} name="cash_on_delivery_enabled" />
-          <label className="field">
-            Автоотмена неоплаченного онлайн-заказа
-            <span className="money input-narrow">
-              <input
-                inputMode="numeric"
-                value={draft.timeout}
-                placeholder={String(defaults.unpaid_timeout_minutes)}
-                onChange={(e) => set({ timeout: e.target.value })}
-              />
-              <span>мин</span>
-            </span>
-            <span className="muted small">Остатки возвращаются на склад. От 10 минут до суток.</span>
-            <FieldError errors={errors} name="unpaid_timeout_minutes" />
-          </label>
         </section>
 
         <section className="card form-grid settings-wide">

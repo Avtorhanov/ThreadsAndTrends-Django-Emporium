@@ -1,13 +1,16 @@
 """Жизненный цикл заказа (state machine).
 
 Онлайн-оплата:    awaiting_payment → paid → assembled → …
+По согласованию:  awaiting_agreement → confirmed (продавец договорился в мессенджере) → …
 При получении:    confirmed → assembled → …
 Далее:            assembled → shipped (курьер) | ready_for_pickup (самовывоз) → delivered
 Отмена:           из любого незавершённого статуса, кроме shipped.
 
 Кто что может:
-- клиент — только отменить свой заказ до отправки (awaiting_payment, confirmed, paid, assembled);
-- администратор — сборка, отправка, выдача, отмена; «Оплачен» вручную не ставит;
+- клиент — только отменить свой заказ до отправки (awaiting_payment, awaiting_agreement,
+  confirmed, paid, assembled);
+- администратор — подтверждение согласованного заказа, сборка, отправка, выдача, отмена;
+  «Оплачен» вручную не ставит;
 - система — «Оплачен» по подтверждению провайдера (mark_paid, сессия 6).
 
 Отмена возвращает остатки и отправляет сигнал order_cancelled (возврат денег — сессия 6).
@@ -34,6 +37,7 @@ S = OrderStatus
 
 TRANSITIONS: dict[str, frozenset[str]] = {
     S.AWAITING_PAYMENT: frozenset({S.PAID, S.CANCELLED}),
+    S.AWAITING_AGREEMENT: frozenset({S.CONFIRMED, S.CANCELLED}),
     S.CONFIRMED: frozenset({S.ASSEMBLED, S.CANCELLED}),
     S.PAID: frozenset({S.ASSEMBLED, S.CANCELLED}),
     S.ASSEMBLED: frozenset({S.SHIPPED, S.READY_FOR_PICKUP, S.CANCELLED}),
@@ -48,11 +52,18 @@ REQUIRED_DELIVERY = {
 }
 
 SYSTEM_ONLY = frozenset({S.PAID})
-CUSTOMER_CANCELLABLE = frozenset({S.AWAITING_PAYMENT, S.CONFIRMED, S.PAID, S.ASSEMBLED})
+CUSTOMER_CANCELLABLE = frozenset(
+    {S.AWAITING_PAYMENT, S.AWAITING_AGREEMENT, S.CONFIRMED, S.PAID, S.ASSEMBLED}
+)
+INITIAL_STATUS = {
+    PaymentMethod.ONLINE: S.AWAITING_PAYMENT,
+    PaymentMethod.AGREEMENT: S.AWAITING_AGREEMENT,
+    PaymentMethod.ON_DELIVERY: S.CONFIRMED,
+}
 
 
 def initial_status(payment_method: str) -> str:
-    return S.AWAITING_PAYMENT if payment_method == PaymentMethod.ONLINE else S.CONFIRMED
+    return INITIAL_STATUS[payment_method]
 
 
 def allowed_transitions(order: Order, by: str) -> list[str]:
@@ -129,6 +140,10 @@ def transition(
         comment=comment,
         notified=sent,
     )
+    if to_status == S.PAID:
+        notifications.notify_seller(locked)  # онлайн-заказ продавец видит после оплаты
+    if to_status == S.CANCELLED and by == ChangedBy.CUSTOMER:
+        notifications.notify_seller(locked, cancelled=True)  # продавец мог уже собирать заказ
     if to_status == S.CANCELLED:
         _return_stock(locked)
         order_cancelled.send(sender=Order, order=locked, was_paid=_was_paid(locked))

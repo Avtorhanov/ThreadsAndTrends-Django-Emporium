@@ -187,3 +187,14 @@ def test_security_headers(client, db):
     response = client.get("/")
     assert "script-src 'self'" in response["Content-Security-Policy"]
     assert response["Referrer-Policy"] == "strict-origin-when-cross-origin"
+
+
+def test_size_chart_only_for_shoe_sizes(client, shop):
+    # Одежда — без таблицы; обувь «RU · US» — таблица под размерами (раскрывается без JS).
+    html = client.get(reverse("web:product", args=["futbolka-belaya"])).content.decode()
+    assert "size-guide" not in html
+    make_product("Кеды", slug="kedy", sizes=("38 · 8 US", "39 · 8,5 US"))
+    html = client.get(reverse("web:product", args=["kedy"])).content.decode()
+    assert '<details class="size-guide">' in html
+    assert ">38 · 8 US<" in html
+    assert '<th scope="row">46</th><td>30</td><td>—</td><td>13</td>' in html

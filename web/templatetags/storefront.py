@@ -18,6 +18,7 @@ TONES = ("lime", "sun", "mint", "apricot", "sage", "aqua")
 
 STATUS_TONES = {
     OrderStatus.AWAITING_PAYMENT: "warning",
+    OrderStatus.AWAITING_AGREEMENT: "warning",
     OrderStatus.CONFIRMED: "tag",
     OrderStatus.PAID: "tag",
     OrderStatus.ASSEMBLED: "tag",

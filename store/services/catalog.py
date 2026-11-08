@@ -28,10 +28,11 @@ PRODUCT_FIELDS = {
     "compare_at_kopecks",
     "status",
     "is_active",
+    "agreement_channel",
 }
 MAX_STATUSES = 20
 MAX_BULK = 200
-BULK_FIELDS = {"status", "category", "is_active", "deleted"}
+BULK_FIELDS = {"status", "category", "is_active", "agreement_channel", "deleted"}
 VARIANT_FIELDS = {"size", "sku", "stock", "position"}
 
 
@@ -150,6 +151,7 @@ def create_product(
     is_draft: bool = False,
     slug: str = "",
     status: ProductStatus | None = None,
+    agreement_channel: str = "",
     variants: list[dict] | None = None,
 ) -> Product:
     _validate_product_fields(
@@ -168,6 +170,7 @@ def create_product(
         price_kopecks=price_kopecks,
         compare_at_kopecks=compare_at_kopecks,
         status=status,
+        agreement_channel=agreement_channel,
         # Черновик всегда скрыт: показывается только после публикации.
         is_active=is_active and not is_draft,
         is_draft=is_draft,
@@ -202,7 +205,8 @@ def update_product(product: Product, **changes) -> Product:
 
 @transaction.atomic
 def bulk_update_products(ids: list[int], **changes) -> int:
-    """Массовое изменение в списке товаров панели: статус, категория, видимость, удаление.
+    """Массовое изменение в списке товаров панели: статус, категория, видимость, канал
+    согласования заказа, удаление.
     is_active=True у черновиков — публикация (отметка черновика снимается).
     deleted=True — мягкое удаление, deleted=False — восстановление; вместе с другими полями нельзя.
     Возвращает число изменённых товаров (остальные поля удалённых товаров не трогаются)."""

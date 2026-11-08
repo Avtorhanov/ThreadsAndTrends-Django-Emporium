@@ -19,6 +19,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from orders.models import ChangedBy, DeliveryMethod, Order, OrderItem, PaymentMethod
+from orders.services import agreement as agreement_service
 from orders.services import checkout as checkout_service
 from orders.services import status as status_service
 from payments import services as payments
@@ -33,6 +34,14 @@ from .common import customer_required, flash_errors
 
 logger = logging.getLogger(__name__)
 
+# Кнопка связи с продавцом у заказа «по согласованию»: подпись и значок канала (свои значки,
+# не фирменные логотипы — как на «Контактах»).
+AGREEMENT_BUTTONS = {
+    "whatsapp": ("Написать в WhatsApp", "chat"),
+    "telegram": ("Написать в Telegram", "send"),
+    "vk": ("Написать ВКонтакте", "people"),
+    "phone": ("Позвонить продавцу", "phone"),
+}
 PAYMENT_UNAVAILABLE = "Платёжный сервис временно недоступен. Попробуйте через минуту."
 ORDERS_PAGE_SIZE = 20
 
@@ -142,7 +151,13 @@ def checkout(request):
             else:
                 if order.payment_method == PaymentMethod.ONLINE and payments.can_pay(order):
                     return _start_payment(request, order)
-                messages.success(request, f"Заказ {order.number} оформлен.")
+                if order.payment_method == PaymentMethod.AGREEMENT:
+                    messages.success(
+                        request,
+                        f"Заказ {order.number} создан — напишите продавцу, чтобы его согласовать.",
+                    )
+                else:
+                    messages.success(request, f"Заказ {order.number} оформлен.")
                 return redirect("web:order", number=order.number)
 
     return render(
@@ -235,11 +250,17 @@ def order_detail(request, number: str):
     # Покупатель увидел заказ — точка «есть новости» на «Профиле» гаснет (до отрисовки шапки).
     status_service.mark_seen(order)
     payment = payments.summary(order)
+    base = settings.SITE_URL or request.build_absolute_uri("/").rstrip("/")
+    agreement = agreement_service.link(order, base)
+    label, icon = AGREEMENT_BUTTONS.get(agreement.kind, ("", "")) if agreement else ("", "")
     return render(
         request,
         "web/orders/detail.html",
         {
             "order": order,
+            "agreement": agreement,
+            "agreement_label": label,
+            "agreement_icon": icon,
             "items": list(order.items.all()),
             "history": list(order.status_changes.all()),
             "payment": payment,

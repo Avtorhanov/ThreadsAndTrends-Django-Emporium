@@ -12,6 +12,27 @@
     <span class="status status--{{ order.status|status_tone }}">{{ order.get_status_display }}</span>
   </header>
 
+  {% if agreement %}
+  {# Заказ «по согласованию»: покупатель пишет продавцу готовым текстом, продавец подтверждает в панели. #}
+  <div class="panel agree">
+    <p class="panel__title">Согласуйте заказ с продавцом</p>
+    <p class="agree__text">{% if agreement.kind == "phone" %}Позвоните продавцу и назовите номер заказа <b class="nowrap">{{ order.number }}</b>.{% elif agreement.prefilled %}Номер заказа, товары и сумма уже будут в сообщении — просто отправьте его.{% else %}Номер заказа, товары и сумма скопируются при нажатии — вставьте их в чат.{% endif %} Товар отложен до {{ agreement.deadline|date:"j E, H:i" }}: если продавец не подтвердит заказ, он отменится.</p>
+    <a class="cta agree__go" href="{{ agreement.url }}"{% if agreement.kind != "phone" %} target="_blank" rel="noopener noreferrer"{% endif %}{% if not agreement.prefilled and agreement.kind != "phone" %} data-copy-text="{{ agreement.message }}"{% endif %}>
+      <svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-{{ agreement_icon }}"/></svg><span class="cta__label">{{ agreement_label }}</span>
+    </a>
+    <p class="muted agree__handle">{{ agreement.title }}: {{ agreement.handle }}</p>
+    <details class="agree__msg">
+      <summary>Текст сообщения</summary>
+      <pre class="agree__pre">{{ agreement.message }}</pre>
+      <button class="btn btn--ghost btn--sm" type="button" data-copy-text="{{ agreement.message }}">Скопировать</button>
+    </details>
+  </div>
+  {% elif order.status == "awaiting_agreement" %}
+  <div class="panel agree">
+    <p class="agree__text">Заказ ждёт подтверждения продавца — он свяжется с вами по телефону {{ order.recipient_phone }}.</p>
+  </div>
+  {% endif %}
+
   {% if order.payment_method == "online" %}
   <div class="panel pay">
     {% if payment.can_pay %}

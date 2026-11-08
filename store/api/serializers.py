@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from core.choices import AgreementChannel
 from store.models import Category, Product, ProductImage, ProductStatus, ProductVariant
 from store.services.catalog import MAX_BULK, MAX_PRICE_KOPECKS
 from store.services.storefront import Sort
@@ -264,8 +265,19 @@ class AdminProductDetailSerializer(AdminProductSerializer):
     images = AdminImageSerializer(many=True, read_only=True)
 
     class Meta(AdminProductSerializer.Meta):
-        fields = [*AdminProductSerializer.Meta.fields, "description", "variants", "images"]
+        fields = [
+            *AdminProductSerializer.Meta.fields,
+            "description",
+            "agreement_channel",
+            "variants",
+            "images",
+        ]
         read_only_fields = fields
+        extra_kwargs = {
+            "agreement_channel": {
+                "help_text": "Канал согласования заказа; пусто — как в настройках магазина"
+            }
+        }
 
 
 class AdminProductUpdateSerializer(serializers.Serializer):
@@ -294,6 +306,12 @@ class AdminProductUpdateSerializer(serializers.Serializer):
         help_text="id статуса; null — без метки",
     )
     is_active = serializers.BooleanField(required=False)
+    agreement_channel = serializers.ChoiceField(
+        choices=AgreementChannel.choices,
+        allow_blank=True,
+        required=False,
+        help_text="Канал согласования заказа; пусто — как в настройках магазина",
+    )
 
 
 class AdminProductCreateSerializer(AdminProductUpdateSerializer):
@@ -342,6 +360,12 @@ class AdminProductBulkSerializer(serializers.Serializer):
     )
     is_active = serializers.BooleanField(
         required=False, help_text="Показывать на витрине; true у черновиков — опубликовать"
+    )
+    agreement_channel = serializers.ChoiceField(
+        choices=AgreementChannel.choices,
+        allow_blank=True,
+        required=False,
+        help_text="Канал согласования заказа; пусто — как в настройках магазина",
     )
     deleted = serializers.BooleanField(
         required=False,

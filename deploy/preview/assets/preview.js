@@ -72,7 +72,7 @@
     return Math.floor(((old - price) * 100 + Math.floor(old / 2)) / old);
   }
   var STATUS_TONES = {
-    awaiting_payment: "warning", confirmed: "tag", paid: "tag", assembled: "tag",
+    awaiting_payment: "warning", awaiting_agreement: "warning", confirmed: "tag", paid: "tag", assembled: "tag",
     shipped: "info", ready_for_pickup: "info", delivered: "success", cancelled: "neutral"
   };
   function icon(name, size, css) {
@@ -508,17 +508,33 @@
       '<svg class="ic ask__chev" width="20" height="20" aria-hidden="true"><use href="#i-chevron"/></svg></summary><div class="ask__body">' + links + "</div></details>";
   }
 
+  // Таблица размеров обуви — как web/catalog/_size_chart.html (данные — store/sizes.py).
+  var SHOE_CHART = [[35, "22,5", "5,5", null], [36, "23", "6", null], [37, "24", "7,5", null], [38, "24,5", "8", "6,5"],
+    [39, "25", "8,5", "7"], [40, "26", "10", "8"], [41, "26,5", "10,5", "9"], [42, "27", "11", "9,5"],
+    [43, "28", null, "10,5"], [44, "28,5", null, "11"], [45, "29", null, "12"], [46, "30", null, "13"]];
+
+  function sizeChartHTML() {
+    return '<details class="size-guide"><summary class="size-guide__toggle">' + icon("ruler", 18) + "Таблица размеров</summary>" +
+      '<div class="size-guide__body"><p class="size-guide__hint">Длина стопы — от пятки до большого пальца, стоя.</p>' +
+      '<table class="size-guide__table"><thead><tr><th scope="col">RU</th><th scope="col">Стопа, см</th><th scope="col">US жен.</th><th scope="col">US муж.</th></tr></thead><tbody>' +
+      SHOE_CHART.map(function (r) {
+        return '<tr><th scope="row">' + r[0] + "</th><td>" + r[1] + "</td><td>" + (r[2] || "—") + "</td><td>" + (r[3] || "—") + "</td></tr>";
+      }).join("") + "</tbody></table></div></details>";
+  }
+
   function renderProduct(data) {
     var slug = HERE.split("/")[2];
     var full = sim.product(slug);
     var pd = document.querySelector(".pd");
     var main = document.getElementById("main");
     if (!full || !sim.isLive(full)) {
-      var target = pd || main;
-      if (target) {
-        target.outerHTML = '<section class="page">' + emptyHTML("Товар недоступен", "Его сняли с продажи или скрыли. Посмотрите другие товары.", "box",
-          '<a class="btn btn--dark" href="' + link("/") + '">В каталог</a>') + "</section>";
-      }
+      // Меняется содержимое <main>, а не он сам: у .main — отступ под фиксированную шапку
+      // (без него заглушка уходит под шапку, а короткая страница не прокручивается).
+      var section = '<section class="page page--narrow">' + emptyHTML("Товар недоступен", "Его сняли с продажи или скрыли. Посмотрите другие товары.", "box",
+        '<a class="btn btn--dark" href="' + link("/") + '">В каталог</a>') + "</section>";
+      if (main) main.innerHTML = section;
+      else if (pd) pd.outerHTML = section;
+      document.body.classList.remove("page-product");
       document.title = "Товар недоступен — DiDi-shop";
       return;
     }
@@ -550,7 +566,8 @@
     var gallery = '<div class="pd__gallery"><a class="glass-btn pd__back" href="' + link("/category/" + cat.slug + "/") + '" data-back aria-label="Назад к категории ' + esc(cat.name) + '">' +
       icon("back", 22) + '</a>' +
       // «Поделиться» и просмотр фото на весь экран — как web/catalog/product.html.
-      '<a class="glass-btn pd__share" href="' + esc(location.origin + location.pathname) + '" data-share data-share-title="' + esc(p.name) +
+      // Публичный адрес товара, без ветки «/me» вошедшего покупателя демо (как product.html на сервере).
+      '<a class="glass-btn pd__share" href="' + esc(location.origin + BASE + "/product/" + p.slug + "/") + '" data-share data-share-title="' + esc(p.name) +
       '" aria-label="Поделиться ссылкой на товар">' + icon("share", 22) + "</a>" +
       '<div class="pd__frame"><div class="hero tone-' + t + '">';
     if (images.length) {
@@ -599,7 +616,7 @@
         buy += '<fieldset class="rise r2 sizes"><legend class="label">Размер</legend><div class="sizes__list">' + sizes.map(function (s) {
           return '<label class="sz' + (s.available ? "" : " is-off") + '"><input type="radio" name="variant" value="' + s.v.id + '"' +
             (s.available ? "" : " disabled") + (s.v.id === chosen ? " checked" : "") + ' required><span>' + esc(s.v.size || "Без размера") + "</span></label>";
-        }).join("") + "</div></fieldset>";
+        }).join("") + "</div>" + (sizes.some(function (s) { return / US$/.test(s.v.size || ""); }) ? sizeChartHTML() : "") + "</fieldset>";
       }
       buy += descHTML + '<div class="rise r4 buy__bar">';
       if (inStock) {
@@ -786,7 +803,7 @@
         '</span><span class="choice__price">' + (o.cost_kopecks ? money(o.cost_kopecks) : "Бесплатно") + "</span></label>";
     }).join("");
     form.querySelectorAll('input[name="payment_method"]').forEach(function (input) {
-      var allowed = input.value === "online" ? s.online : s.cash;
+      var allowed = input.value === "online" ? s.online : input.value === "agreement" ? s.agreement || (!s.online && !s.cash) : s.cash;
       input.closest(".choice").hidden = !allowed;
       if (!allowed) input.checked = false;
     });
@@ -871,7 +888,9 @@
     var res = sim.checkout(data, buyNowLine());
     if (res.error || res.errors) return showErrors(form, res.errors, res.error);
     setBadges();
-    flash(res.order.payment_method === "online" ? "Заказ оформлен — оплатите его, чтобы мы начали сборку." : "Заказ " + res.order.number + " оформлен. Мы скоро свяжемся с вами.");
+    flash(res.order.payment_method === "online" ? "Заказ оформлен — оплатите его, чтобы мы начали сборку." :
+      res.order.payment_method === "agreement" ? "Заказ " + res.order.number + " создан — напишите продавцу, чтобы его согласовать." :
+      "Заказ " + res.order.number + " оформлен. Мы скоро свяжемся с вами.");
     go(ME + "/orders/" + res.order.number + "/");
   }
 
@@ -900,6 +919,32 @@
     page.appendChild(holder.firstChild);
   }
 
+  // Заказ «по согласованию»: как блок .agree в web/orders/detail.html.
+  var AGREEMENT_BUTTONS = {
+    whatsapp: ["Написать в WhatsApp", "chat"], telegram: ["Написать в Telegram", "send"],
+    vk: ["Написать ВКонтакте", "people"], phone: ["Позвонить продавцу", "phone"]
+  };
+  function agreementHTML(o) {
+    if (o.status !== "awaiting_agreement") return "";
+    var a = sim.agreementLink(o);
+    if (!a) {
+      return '<div class="panel agree"><p class="agree__text">Заказ ждёт подтверждения продавца — он свяжется с вами по телефону ' + esc(o.recipient_phone) + ".</p></div>";
+    }
+    var phone = a.kind === "phone";
+    var button = AGREEMENT_BUTTONS[a.kind];
+    var text = phone ? "Позвоните продавцу и назовите номер заказа <b class=\"nowrap\">" + esc(o.number) + "</b>." :
+      a.prefilled ? "Номер заказа, товары и сумма уже будут в сообщении — просто отправьте его." :
+        "Номер заказа, товары и сумма скопируются при нажатии — вставьте их в чат.";
+    return '<div class="panel agree"><p class="panel__title">Согласуйте заказ с продавцом</p>' +
+      '<p class="agree__text">' + text + " Товар отложен до " + date(a.deadline, false, true) + ": если продавец не подтвердит заказ, он отменится.</p>" +
+      '<a class="cta agree__go" href="' + esc(a.url) + '"' + (phone ? "" : ' target="_blank" rel="noopener noreferrer"') +
+      (!a.prefilled && !phone ? ' data-copy-text="' + esc(a.message) + '"' : "") + ">" + icon(button[1], 20) +
+      '<span class="cta__label">' + button[0] + "</span></a>" +
+      '<p class="muted agree__handle">' + esc(a.title) + ": " + esc(a.handle) + "</p>" +
+      '<details class="agree__msg"><summary>Текст сообщения</summary><pre class="agree__pre">' + esc(a.message) + "</pre>" +
+      '<button class="btn btn--ghost btn--sm" type="button" data-copy-text="' + esc(a.message) + '">Скопировать</button></details></div>';
+  }
+
   function renderOrder() {
     var number = HERE.split("/")[2];
     sim.markSeen(number); // покупатель открыл заказ — значок «есть новости» гаснет
@@ -916,6 +961,7 @@
     var html = '<a class="back-link" href="' + ME + '/orders/">' + icon("chevron", 16, "flip") + "Мои заказы</a>" +
       '<header class="section-head section-head--row"><div><p class="overline">' + date(o.created_at, true, true) + '</p><h1 class="h1">Заказ <span class="nowrap">' + esc(o.number) + "</span></h1></div>" +
       '<span class="status status--' + STATUS_TONES[o.status] + '">' + esc(sim.statusLabel(o.status)) + "</span></header>";
+    html += agreementHTML(o);
     if (o.payment_method === "online") {
       html += '<div class="panel pay">';
       if (o.status === "awaiting_payment") {

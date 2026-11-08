@@ -7,6 +7,7 @@ from django.db import models
 from django.db.models import F, Q, Sum
 from django.utils import timezone
 
+from core.choices import AgreementChannel
 from store.search import search_vector
 
 # Глубина дерева категорий: корень → подкатегория. Товары — только в конечных категориях.
@@ -122,6 +123,15 @@ class Product(models.Model):
     # Черновик из «Добавить пачкой»: всегда скрыт, в списке панели — отдельно от скрытых.
     # Публикация (is_active=True) снимает отметку.
     is_draft = models.BooleanField(default=False, db_default=False, verbose_name="Черновик")
+    # Свой канал согласования заказа; пусто — канал из настроек магазина.
+    agreement_channel = models.CharField(
+        max_length=20,
+        choices=AgreementChannel.choices,
+        blank=True,
+        default="",
+        db_default="",
+        verbose_name="Канал согласования",
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создан")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменён")
     deleted_at = models.DateTimeField(null=True, blank=True, verbose_name="Удалён")

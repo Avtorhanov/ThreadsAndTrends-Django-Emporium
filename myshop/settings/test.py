@@ -22,6 +22,13 @@ DELIVERY_FREE_FROM_KOPECKS = 10_000_00
 PICKUP_ADDRESS = "Москва, ул. Тестовая, 1"
 ORDERS_ONLINE_PAYMENT_ENABLED = True
 ORDERS_UNPAID_TIMEOUT_MINUTES = 30
+ORDERS_AGREEMENT_TIMEOUT_HOURS = 48
+# Контакты и почта продавца — из теста (settings), не из локального .env.
+SELLER_EMAIL = ""
+SELLER_PHONE = ""
+CONTACT_WHATSAPP = ""
+CONTACT_TELEGRAM = ""
+CONTACT_VK = ""
 # Ключи тестового окружения: провайдер в тестах подменяется фейком (payments/tests/fake.py).
 YOOKASSA_SHOP_ID = "test-shop"
 YOOKASSA_SECRET_KEY = "test-secret"

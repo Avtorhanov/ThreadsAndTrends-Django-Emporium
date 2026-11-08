@@ -3,7 +3,7 @@
  * (как оформление панели). Неизвестные и пропавшие блоки при чтении чинятся: новый блок
  * встаёт в конец, удалённый — убирается.
  */
-export type WidgetId = "today" | "awaiting" | "assemble" | "deliver" | "turnover" | "recent" | "stock";
+export type WidgetId = "today" | "agreement" | "awaiting" | "assemble" | "deliver" | "turnover" | "recent" | "stock";
 /** s — четверть ширины (на телефоне половина), m — половина (на телефоне вся), l — вся ширина. */
 export type WidgetSize = "s" | "m" | "l";
 export type SummaryLayout = { order: WidgetId[]; size: Record<WidgetId, WidgetSize> };
@@ -12,6 +12,7 @@ type Widget = { title: string; sizes: WidgetSize[]; size: WidgetSize };
 
 export const WIDGETS: Record<WidgetId, Widget> = {
   today: { title: "Сегодня", sizes: ["s", "m", "l"], size: "s" },
+  agreement: { title: "Ждут согласования", sizes: ["s", "m"], size: "s" },
   awaiting: { title: "Ждут оплаты", sizes: ["s", "m"], size: "s" },
   assemble: { title: "Собрать", sizes: ["s", "m"], size: "s" },
   deliver: { title: "Доставить", sizes: ["s", "m"], size: "s" },
@@ -20,7 +21,8 @@ export const WIDGETS: Record<WidgetId, Widget> = {
   stock: { title: "Мало на складе", sizes: ["m", "l"], size: "l" },
 };
 
-const ORDER: WidgetId[] = ["today", "awaiting", "assemble", "deliver", "recent", "turnover", "stock"];
+// Пока онлайн-оплата не подключена, первым идёт «Ждут согласования», «Ждут оплаты» — ниже.
+const ORDER: WidgetId[] = ["today", "agreement", "assemble", "deliver", "recent", "turnover", "awaiting", "stock"];
 const KEY = "didi-panel-summary";
 
 export function defaultLayout(): SummaryLayout {

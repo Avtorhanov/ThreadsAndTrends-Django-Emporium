@@ -28,6 +28,7 @@ from store.services.storefront import (
     filter_products,
     similar_products,
 )
+from store.sizes import SHOE_CHART, has_shoe_sizes
 
 from .. import cart as web_cart
 from .. import catalog_cache
@@ -291,6 +292,7 @@ def product(request, slug: str):
             "images": images,
             "sizes": sizes,
             "single_variant": single,
+            "size_chart": SHOE_CHART if has_shoe_sizes(v.size for v in variants) else None,
             "in_stock": in_stock,
             "json_ld": product_json_ld(request, found, images, in_stock),
             "similar": _similar_rail(found),

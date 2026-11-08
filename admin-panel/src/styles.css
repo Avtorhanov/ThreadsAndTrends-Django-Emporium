@@ -2046,7 +2046,7 @@ a.stat:hover {
 .variant-head,
 .variant-row {
   display: grid;
-  grid-template-columns: 76px minmax(0, 1fr) 118px 40px;
+  grid-template-columns: 100px minmax(0, 1fr) 118px 40px;
   grid-template-areas: "size sku stock act";
   align-items: center;
   gap: 6px;
@@ -2186,7 +2186,7 @@ a.stat:hover {
 
 @container (max-width: 360px) {
   .variant-row {
-    grid-template-columns: 76px minmax(0, 1fr) 40px;
+    grid-template-columns: 100px minmax(0, 1fr) 40px;
     grid-template-areas:
       "size stock act"
       "sku sku sku";
@@ -6476,4 +6476,227 @@ a.dash-tile:active {
 /* Маленькие плитки не тянутся по высоте соседнего большого блока. */
 .dash-s {
   align-self: start;
+}
+
+/* --- Типы размеров и таблица обуви (пачка, новый товар, варианты) --- */
+.seg-switch-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.batch-field-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+/* Второстепенное действие строкой-ссылкой: «Таблица размеров». */
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.size-chart {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.size-chart th,
+.size-chart td {
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.size-chart thead th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.size-chart tbody th {
+  font-weight: 800;
+}
+
+/* Длинное название в заголовке с «Назад» и кнопками (карточка товара, статьи) — не больше двух
+   строк, мельче; полное — в поле «Название» ниже. */
+@media (max-width: 720px) {
+  .page-header > .page-back ~ h1:has(~ .page-tools) {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 20px;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+  }
+}
+
+/* Категории: иконка у действий — только на телефоне; на компьютере кнопки с подписью, как были. */
+.table-categories .actions .icon {
+  display: none;
+}
+
+/* На телефоне — плотная карточка: название и видимость; адрес и число товаров; порядок и
+   действия иконками в одну строку (подписи остаются для экранного диктора). */
+@media (max-width: 720px) {
+  .table-categories tbody tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 6px;
+    padding: 12px 14px;
+  }
+
+  .table.table-categories td {
+    padding: 0;
+    border: 0;
+    text-align: left;
+  }
+
+  .table.table-categories td[data-label]::before {
+    content: none;
+  }
+
+  .table.table-categories td:nth-child(1) {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .table.table-categories td:nth-child(2) {
+    grid-row: 2;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+
+  .table.table-categories td:nth-child(3) {
+    grid-row: 2;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .table.table-categories td:nth-child(3)::before {
+    content: "Товаров: ";
+  }
+
+  /* Подписи строкой текста, а не капсом колонки таблицы. */
+  .table.table-categories td:nth-child(3)::before,
+  .table.table-categories td:nth-child(4)::before {
+    float: none;
+    margin-right: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .table.table-categories td:nth-child(4) {
+    display: flex;
+    align-items: center;
+  }
+
+  .table-categories .input-narrow {
+    width: 64px;
+    min-height: 40px;
+  }
+
+  .table.table-categories td:nth-child(4) {
+    grid-row: 3;
+  }
+
+  .table.table-categories td:nth-child(4)::before {
+    content: "Порядок";
+    margin-right: 8px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .table.table-categories td:nth-child(5) {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .table.table-categories td.actions {
+    display: flex;
+    grid-row: 3;
+    grid-column: 2;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .table-categories .actions .button {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+  }
+
+  .table-categories .actions .icon {
+    display: block;
+  }
+
+  .table-categories .cat-action-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* --- Оформление «по согласованию»: канал и предпросмотр кнопки («Настройки», товар) --- */
+.agree-settings {
+  display: grid;
+  gap: 10px;
+}
+
+/* Четыре канала в строку и на телефоне 360 px: подписи мельче, без лишних полей. */
+.agree-settings .seg-switch button {
+  padding-inline: 4px;
+  font-size: 13px;
+}
+
+.field-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.agree-preview {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.agree-preview-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.agree-settings p {
+  margin: 0;
 }

@@ -51,7 +51,11 @@ def test_defaults_come_from_env_until_saved(settings):
     assert current.delivery_free_from_kopecks == settings.DELIVERY_FREE_FROM_KOPECKS
     assert current.pickup_address == settings.PICKUP_ADDRESS
     assert current.unpaid_timeout_minutes == settings.ORDERS_UNPAID_TIMEOUT_MINUTES
-    assert current.cash_on_delivery is True
+    assert current.agreement_timeout_hours == settings.ORDERS_AGREEMENT_TIMEOUT_HOURS
+    # По умолчанию — согласование в мессенджере, оплата при получении выключена.
+    assert current.agreement is True
+    assert current.agreement_channel == "whatsapp"
+    assert current.cash_on_delivery is False
 
 
 def test_saved_values_override_env_and_empty_falls_back(settings):
@@ -81,19 +85,43 @@ def test_checkout_uses_panel_delivery_cost():
     assert checkout.delivery_cost("courier", 5_000_00) == 0
 
 
-def test_cash_on_delivery_can_be_turned_off_only_with_online_payment(settings):
+def test_online_payment_needs_yookassa_and_panel_switch(settings):
     settings.ORDERS_ONLINE_PAYMENT_ENABLED = False
-    with pytest.raises(ValidationError) as error:
-        shop.update(**payload(cash_on_delivery_enabled=False))
-    assert "cash_on_delivery_enabled" in error.value.message_dict
+    shop.update(**payload(online_payment_enabled=True))
+    # ЮKassa не подключена в .env — переключатель в панели ничего не включает.
+    assert checkout.payment_methods() == ["agreement"]
 
     settings.ORDERS_ONLINE_PAYMENT_ENABLED = True
-    shop.update(**payload(cash_on_delivery_enabled=False))
-    assert checkout.payment_methods() == ["online"]
+    assert checkout.payment_methods() == ["online", "agreement"]
 
-    # Онлайн-оплату выключили на сервере — оплата при получении возвращается сама.
+    shop.update(**payload(online_payment_enabled=False))
+    assert checkout.payment_methods() == ["agreement"]
+
+
+def test_until_saved_online_payment_follows_env(settings):
+    settings.ORDERS_ONLINE_PAYMENT_ENABLED = True
+    assert checkout.payment_methods() == ["online", "agreement"]
+
+
+def test_at_least_one_checkout_method_stays(settings):
     settings.ORDERS_ONLINE_PAYMENT_ENABLED = False
+    with pytest.raises(ValidationError) as error:
+        shop.update(**payload(agreement_enabled=False, cash_on_delivery_enabled=False))
+    assert "agreement_enabled" in error.value.message_dict
+
+    shop.update(**payload(agreement_enabled=False, cash_on_delivery_enabled=True))
     assert checkout.payment_methods() == ["on_delivery"]
+
+    # Онлайн-оплата была единственной, ЮKassa отключили на сервере — остаётся согласование.
+    settings.ORDERS_ONLINE_PAYMENT_ENABLED = True
+    shop.update(
+        **payload(
+            online_payment_enabled=True, agreement_enabled=False, cash_on_delivery_enabled=False
+        )
+    )
+    assert checkout.payment_methods() == ["online"]
+    settings.ORDERS_ONLINE_PAYMENT_ENABLED = False
+    assert checkout.payment_methods() == ["agreement"]
 
 
 @pytest.mark.parametrize(
@@ -104,6 +132,9 @@ def test_cash_on_delivery_can_be_turned_off_only_with_online_payment(settings):
         ("seller_phone", "звоните"),
         ("seller_email", "не почта"),
         ("unpaid_timeout_minutes", 5),
+        ("agreement_timeout_hours", 0),
+        ("agreement_timeout_hours", 15 * 24),
+        ("agreement_channel", "instagram"),
         ("delivery_courier_kopecks", 1_000_000_00),
     ],
 )
@@ -167,6 +198,12 @@ def test_api_get_returns_defaults_and_put_saves(admin_api, settings):
     assert data["delivery_courier_kopecks"] is None
     assert data["defaults"]["delivery_courier_kopecks"] == settings.DELIVERY_COURIER_KOPECKS
     assert data["online_payment_available"] is True
+    assert [c["kind"] for c in data["agreement_contacts"]] == [
+        "whatsapp",
+        "telegram",
+        "vk",
+        "phone",
+    ]
 
     response = admin_api.put(URL, payload(delivery_courier_kopecks=400_00), format="json")
     assert response.status_code == 200, response.content
