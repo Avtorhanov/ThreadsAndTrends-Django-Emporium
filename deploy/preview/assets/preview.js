@@ -378,7 +378,6 @@
       html += '<p class="more"><a class="btn btn--ghost" href="' + link("/products/") + '">Весь каталог' + icon("chevron", 18) + "</a></p>";
     }
     feed.innerHTML = html;
-    document.body.classList.toggle("page-feed--own-cats", !!feed.querySelector(".hblock-cats"));
     if (window.didiHomeMotion) window.didiHomeMotion(feed);
   }
 

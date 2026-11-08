@@ -184,8 +184,6 @@ def home(request):
         {
             "grid": grid,
             "blocks": blocks,
-            # По готовому HTML: пустой блок «Категории» покупателю не выводится.
-            "has_categories_block": 'class="hblock hblock-cats"' in blocks,
             "tab": "catalog",
         },
     )

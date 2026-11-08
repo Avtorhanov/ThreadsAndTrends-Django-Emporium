@@ -3,7 +3,6 @@
 import pytest
 from django.core.cache import cache
 from django.urls import reverse
-from django.utils.safestring import mark_safe
 
 from content import shop as shop_settings
 from content.models import ShopSettings
@@ -84,16 +83,3 @@ def test_buttons_above_description_and_size_message(client, settings):
     )
     html = client.get(reverse("web:product", args=[product.slug])).content.decode()
     assert html.index("data-cta") < html.index("pd__desc")
-
-
-@pytest.mark.parametrize(
-    ("blocks", "hidden"),
-    [
-        ('<nav class="hblock hblock-cats"></nav>', True),
-        ('<section class="hblock"></section>', False),
-    ],
-)
-def test_header_strip_hidden_only_with_categories_block(client, monkeypatch, blocks, hidden):
-    monkeypatch.setattr("web.views.catalog._home_blocks", lambda: mark_safe(blocks))
-    html = client.get(reverse("web:home")).content.decode()
-    assert ("page-feed--own-cats" in html) is hidden

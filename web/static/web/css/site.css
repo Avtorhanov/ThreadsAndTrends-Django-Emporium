@@ -312,9 +312,6 @@ a { color: var(--brand); }
 /* Поля под тень у лент и карусели выходят за колонку — без прокрутки страницы вбок. */
 .main { overflow-x: clip; }
 .page-feed .main { padding-top: calc(var(--hdr-full) + 14px + var(--safe-top)); }
-/* На главной есть блок «Категории» — полоса шапки его дублирует. */
-.page-feed--own-cats { --hdr-full: 68px; }
-.page-feed--own-cats .top__more { display: none; }
 .main--bare { padding-top: 48px; }
 .feed, .page, .flash, .pd { max-width: var(--page-max); margin-inline: auto; }
 .feed { padding: 0 var(--gutter); }
