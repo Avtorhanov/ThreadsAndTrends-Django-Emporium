@@ -446,6 +446,28 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/admin/catalog/products/{id}/colors/unlink/:
+    post:
+      operationId: admin_catalog_products_colors_unlink_create
+      description: Убрать товар из группы цветов.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Товар.
+        required: true
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductDetail'
+          description: ''
   /api/v1/admin/catalog/products/{id}/images/:
     post:
       operationId: admin_catalog_products_images_create
@@ -574,6 +596,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminProductBulkResult'
+          description: ''
+  /api/v1/admin/catalog/products/colors/:
+    post:
+      operationId: admin_catalog_products_colors_create
+      description: Связать товары как цвета одной модели; повторно — сменить названия
+        или добавить цвет.
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductColorsRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductColorsResult'
           description: ''
   /api/v1/admin/catalog/statuses/:
     get:
@@ -3125,6 +3169,44 @@ components:
           title: Показывать
       required:
       - name
+    AdminColorItemRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: id товара
+        color_name:
+          type: string
+          minLength: 1
+          description: Название цвета
+          maxLength: 40
+      required:
+      - color_name
+      - id
+    AdminColorSibling:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color_name:
+          type: string
+        is_active:
+          type: boolean
+        is_draft:
+          type: boolean
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - color_name
+      - cover_url
+      - id
+      - is_active
+      - is_draft
+      - name
     AdminHome:
       type: object
       properties:
@@ -3726,6 +3808,16 @@ components:
           type: boolean
           readOnly: true
           title: Черновик
+        color_group:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          title: Группа цветов
+        color_name:
+          type: string
+          readOnly: true
+          title: Цвет
         deleted_at:
           type: string
           format: date-time
@@ -3753,6 +3845,8 @@ components:
       required:
       - category
       - category_name
+      - color_group
+      - color_name
       - compare_at_kopecks
       - cover_url
       - created_at
@@ -3809,6 +3903,27 @@ components:
           type: integer
           description: Сколько товаров изменено
       required:
+      - updated
+    AdminProductColorsRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminColorItemRequest'
+      required:
+      - items
+    AdminProductColorsResult:
+      type: object
+      properties:
+        color_group:
+          type: string
+          format: uuid
+        updated:
+          type: integer
+          description: Сколько товаров связано
+      required:
+      - color_group
       - updated
     AdminProductCreateRequest:
       type: object
@@ -3917,6 +4032,16 @@ components:
           type: boolean
           readOnly: true
           title: Черновик
+        color_group:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          title: Группа цветов
+        color_name:
+          type: string
+          readOnly: true
+          title: Цвет
         deleted_at:
           type: string
           format: date-time
@@ -3957,6 +4082,11 @@ components:
             * `telegram` - Telegram
             * `vk` - ВКонтакте
             * `phone` - Телефон
+        color_siblings:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminColorSibling'
+          readOnly: true
         variants:
           type: array
           items:
@@ -3971,6 +4101,9 @@ components:
       - agreement_channel
       - category
       - category_name
+      - color_group
+      - color_name
+      - color_siblings
       - compare_at_kopecks
       - cover_url
       - created_at
@@ -4954,6 +5087,9 @@ components:
           type: string
         name:
           type: string
+        color_name:
+          type: string
+          description: Цвет; пусто — без цвета
         cover_url:
           type: string
           nullable: true
@@ -4964,6 +5100,7 @@ components:
           nullable: true
           description: 'Метка товара: «Под заказ»…'
       required:
+      - color_name
       - cover_url
       - id
       - name
@@ -5010,6 +5147,24 @@ components:
       - children
       - id
       - name
+      - slug
+    CatalogColorOption:
+      type: object
+      properties:
+        slug:
+          type: string
+        color_name:
+          type: string
+        in_stock:
+          type: boolean
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - color_name
+      - cover_url
+      - in_stock
       - slug
     CatalogImage:
       type: object
@@ -5128,6 +5283,15 @@ components:
           type: string
           readOnly: true
           title: Описание
+        color_name:
+          type: string
+          readOnly: true
+          title: Цвет
+        colors:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogColorOption'
+          readOnly: true
         images:
           type: array
           items:
@@ -5140,6 +5304,8 @@ components:
           readOnly: true
       required:
       - category
+      - color_name
+      - colors
       - compare_at_kopecks
       - cover_url
       - description
@@ -5801,6 +5967,9 @@ components:
         size:
           type: string
           description: Пусто — товар без размера
+        color_name:
+          type: string
+          description: Цвет на момент заказа; пусто — без цвета
         sku:
           type: string
         status_name:
@@ -5818,6 +5987,7 @@ components:
           nullable: true
           readOnly: true
       required:
+      - color_name
       - cover_url
       - id
       - line_total_kopecks
