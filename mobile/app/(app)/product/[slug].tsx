@@ -276,8 +276,7 @@ export default function ProductScreen() {
                   disabled={!variant?.in_stock}
                   onPress={() => {
                     if (!variant) return;
-                    if (status !== "signedIn") router.push("/sign-in");
-                    else router.push({ pathname: "/checkout", params: { variant: String(variant.id), qty: "1" } });
+                    router.push({ pathname: "/checkout", params: { variant: String(variant.id), qty: "1" } });
                   }}
                 />
               )}

@@ -1,15 +1,21 @@
 """Заказы клиента в мобильном приложении (JWT). Логика — orders.services."""
 
+import hashlib
+
+from django.core.exceptions import ValidationError
 from django.db.models import Prefetch, Sum
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
+from rest_framework.throttling import SimpleRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 
+from core.api.mixins import PublicAPIMixin
+from core.api.throttles import IPRateThrottle
 from orders.models import ChangedBy, Order, OrderItem, OrderStatusChange
 from orders.services import checkout as checkout_service
+from orders.services import guest as guest_service
 from orders.services import status as status_service
 from payments.models import Payment
 from store.models import ProductImage
@@ -18,6 +24,11 @@ from .serializers import (
     BuyNowSerializer,
     CheckoutInputSerializer,
     CheckoutPreviewSerializer,
+    GuestCheckoutInputSerializer,
+    GuestClaimInputSerializer,
+    GuestClaimSerializer,
+    GuestOrderCreatedSerializer,
+    GuestPreviewInputSerializer,
     OrderDetailSerializer,
     OrderListSerializer,
 )
@@ -170,3 +181,163 @@ class OrderCancelView(APIView):
         status_service.cancel(order, by=ChangedBy.CUSTOMER, actor=request.user)
         order = order_detail_queryset(Order.objects.all()).get(pk=order.pk)
         return Response(OrderDetailSerializer(order, context={"request": request}).data)
+
+
+# --- Заказ без аккаунта ---
+
+ORDER_TOKEN_HEADER = OpenApiParameter(
+    "X-Order-Token",
+    str,
+    location=OpenApiParameter.HEADER,
+    required=True,
+    description="Секрет доступа к гостевому заказу (access_token при оформлении).",
+)
+
+
+def _request_phone(request) -> str | None:
+    try:
+        return checkout_service.normalize_phone(str(request.data.get("recipient_phone", "")))
+    except ValidationError:
+        return None  # опечатка в номере не тратит попытки: ошибку вернёт сервис
+
+
+class _GuestCreateIPThrottle(IPRateThrottle):
+    def get_cache_key(self, request, view):
+        return super().get_cache_key(request, view) if _request_phone(request) else None
+
+
+class GuestCreateHourThrottle(_GuestCreateIPThrottle):
+    scope = "order_create_guest"
+
+
+class GuestCreateDayThrottle(_GuestCreateIPThrottle):
+    scope = "order_create_guest_day"
+
+
+class GuestCreatePhoneThrottle(SimpleRateThrottle):
+    scope = "order_create_guest_phone"
+
+    def get_cache_key(self, request, view):
+        phone = _request_phone(request)
+        if phone is None:
+            return None
+        ident = hashlib.sha256(phone.encode()).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class GuestPreviewThrottle(IPRateThrottle):
+    scope = "cart_quote"
+
+
+class GuestAccessThrottle(IPRateThrottle):
+    scope = "order_guest_access"
+
+
+def _guest_order_or_404(request) -> Order:
+    token = request.headers.get("X-Order-Token", "")
+    return get_object_or_404(guest_service.by_token(token))
+
+
+def _guest_detail_response(request, order: Order) -> Response:
+    order = order_detail_queryset(Order.objects.all()).get(pk=order.pk)
+    return Response(OrderDetailSerializer(order, context={"request": request}).data)
+
+
+@extend_schema(tags=[TAG])
+class GuestPreviewView(PublicAPIMixin, APIView):
+    throttle_classes = [GuestPreviewThrottle]
+
+    @extend_schema(
+        operation_id="orders_guest_preview",
+        request=GuestPreviewInputSerializer,
+        responses=CheckoutPreviewSerializer,
+        description="Экран оформления без аккаунта: позиции с устройства, доставка и оплата.",
+    )
+    def post(self, request):
+        serializer = GuestPreviewInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        preview = checkout_service.guest_preview(serializer.to_lines())
+        return Response(CheckoutPreviewSerializer(preview, context={"request": request}).data)
+
+
+@extend_schema(tags=[TAG])
+class GuestCheckoutView(PublicAPIMixin, APIView):
+    throttle_classes = [GuestCreateHourThrottle, GuestCreateDayThrottle, GuestCreatePhoneThrottle]
+
+    @extend_schema(
+        operation_id="orders_guest_create",
+        parameters=[IDEMPOTENCY_HEADER],
+        request=GuestCheckoutInputSerializer,
+        responses={
+            201: GuestOrderCreatedSerializer,
+            200: OpenApiResponse(GuestOrderCreatedSerializer, description="Повтор с тем же ключом"),
+        },
+        description=(
+            "Оформить заказ без аккаунта, только «по согласованию». Ключ идемпотентности — "
+            "32–64 символа; повтор с другим телефоном — 400."
+        ),
+    )
+    def post(self, request):
+        serializer = GuestCheckoutInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = checkout_service.guest_checkout(
+            serializer.to_input(),
+            request.headers.get("Idempotency-Key", ""),
+            serializer.to_lines(),
+            consent=serializer.validated_data["consent"],
+        )
+        order = order_detail_queryset(Order.objects.all()).get(pk=result.order.pk)
+        data = GuestOrderCreatedSerializer(
+            {"order": order, "access_token": result.token}, context={"request": request}
+        ).data
+        return Response(
+            data, status=status.HTTP_201_CREATED if result.created else status.HTTP_200_OK
+        )
+
+
+@extend_schema(tags=[TAG])
+class GuestOrderView(PublicAPIMixin, APIView):
+    throttle_classes = [GuestAccessThrottle]
+
+    @extend_schema(
+        operation_id="orders_guest_retrieve",
+        parameters=[ORDER_TOKEN_HEADER],
+        responses=OrderDetailSerializer,
+        description="Гостевой заказ по токену. Неверный или истёкший токен — 404.",
+    )
+    def get(self, request):
+        return _guest_detail_response(request, _guest_order_or_404(request))
+
+
+@extend_schema(tags=[TAG])
+class GuestOrderCancelView(PublicAPIMixin, APIView):
+    throttle_classes = [GuestAccessThrottle]
+
+    @extend_schema(
+        operation_id="orders_guest_cancel",
+        parameters=[ORDER_TOKEN_HEADER],
+        request=None,
+        responses=OrderDetailSerializer,
+        description="Отмена гостевого заказа до отправки. Остатки возвращаются на склад.",
+    )
+    def post(self, request):
+        order = _guest_order_or_404(request)
+        status_service.cancel(order, by=ChangedBy.CUSTOMER)
+        return _guest_detail_response(request, order)
+
+
+@extend_schema(tags=[TAG])
+class GuestClaimView(APIView):
+    throttle_classes = [GuestAccessThrottle]
+
+    @extend_schema(
+        operation_id="orders_guest_claim",
+        request=GuestClaimInputSerializer,
+        responses=GuestClaimSerializer,
+        description="Привязать гостевые заказы к аккаунту по токенам; ссылки перестают работать.",
+    )
+    def post(self, request):
+        serializer = GuestClaimInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        claimed = guest_service.claim(request.user, serializer.validated_data["tokens"])
+        return Response(GuestClaimSerializer({"numbers": [o.number for o in claimed]}).data)

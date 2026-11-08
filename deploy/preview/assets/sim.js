@@ -826,7 +826,7 @@
     var row = clone(c);
     delete row.password;
     var db = load();
-    row.orders_count = db ? db.orders.filter(function (o) { return o.customer.id === c.id; }).length : 0;
+    row.orders_count = db ? db.orders.filter(function (o) { return !!o.customer && o.customer.id === c.id; }).length : 0;
     return row;
   }
 
@@ -916,12 +916,12 @@
     if (s) {
       var d = digits(s);
       list = list.filter(function (o) {
-        return lower(o.number).indexOf(s) >= 0 || lower(o.customer.email).indexOf(s) >= 0 ||
+        return lower(o.number).indexOf(s) >= 0 || (!!o.customer && lower(o.customer.email).indexOf(s) >= 0) ||
           lower(o.recipient_name).indexOf(s) >= 0 || (d.length >= 3 && digits(o.recipient_phone).indexOf(d) >= 0);
       });
     }
     if (q.get("status")) list = list.filter(function (o) { return o.status === q.get("status"); });
-    if (q.get("customer")) list = list.filter(function (o) { return o.customer.id === Number(q.get("customer")); });
+    if (q.get("customer")) list = list.filter(function (o) { return !!o.customer && o.customer.id === Number(q.get("customer")); });
     if (q.get("unfinished") === "true") list = list.filter(function (o) { return UNFINISHED.indexOf(o.status) >= 0; });
     if (q.get("payment_method")) list = list.filter(function (o) { return o.payment_method === q.get("payment_method"); });
     if (q.get("delivery_method")) list = list.filter(function (o) { return o.delivery_method === q.get("delivery_method"); });
@@ -1088,7 +1088,7 @@
     var c = byId(db.customers, m[1]);
     if (!c) return fail(404, { detail: "Не найдено." });
     if (m[2] === "delete") {
-      var open = db.orders.some(function (o) { return o.customer.id === c.id && UNFINISHED.indexOf(o.status) >= 0; });
+      var open = db.orders.some(function (o) { return !!o.customer && o.customer.id === c.id && UNFINISHED.indexOf(o.status) >= 0; });
       if (open) return bad("У клиента есть незавершённые заказы — удалить нельзя.");
       c.status = "deleted";
       c.deleted_at = now();
@@ -1096,7 +1096,7 @@
       c.first_name = "";
       c.last_name = "";
       db.orders.forEach(function (o) {
-        if (o.customer.id === c.id) { o.customer.is_deleted = true; o.customer.email = c.email; }
+        if (o.customer && o.customer.id === c.id) { o.customer.is_deleted = true; o.customer.email = c.email; }
       });
     } else {
       c.status = m[2] === "block" ? "blocked" : "active";
@@ -1826,6 +1826,7 @@
     db.session = { id: c.id, email: c.email };
     db.loggedOut = false;
     mergeCart(db, "guest", cartKey(db));
+    claimGuestOrders(db);
     save(db);
     return { ok: true };
   }
@@ -1865,6 +1866,7 @@
     db.session = { id: c.id, email: c.email };
     db.loggedOut = false;
     mergeCart(db, "guest", cartKey(db));
+    claimGuestOrders(db);
     save(db);
     return { ok: true };
   }
@@ -1883,6 +1885,7 @@
     if (!anna) return null;
     db.session = { id: anna.id, email: anna.email };
     mergeCart(db, "guest", cartKey(db));
+    claimGuestOrders(db);
     save(db);
     return db.session;
   }
@@ -1962,7 +1965,7 @@
     var db = load();
     var c = db.session && customerByEmail(db, db.session.email);
     if (!c) return { error: "Нужно войти." };
-    if (db.orders.some(function (o) { return o.customer.id === c.id && UNFINISHED.indexOf(o.status) >= 0; })) {
+    if (db.orders.some(function (o) { return !!o.customer && o.customer.id === c.id && UNFINISHED.indexOf(o.status) >= 0; })) {
       return { error: "Есть незавершённые заказы — удалить аккаунт можно после их получения или отмены." };
     }
     c.status = "deleted";
@@ -2062,10 +2065,31 @@
       .map(function (e) { return publicProduct(db, e.x); });
   }
 
+  // Гостевые заказы: в демо ссылка живёт в одной «базе» браузера, срока у неё нет.
+  var GUEST_MAX_OPEN = 2;
+  function guestToken() {
+    var bytes = crypto.getRandomValues(new Uint8Array(32));
+    return Array.prototype.map.call(bytes, function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+  }
+  function guestOrder(token) {
+    return load().orders.filter(function (o) { return !o.customer && o.guest_token === token; })[0] || null;
+  }
+  function claimGuestOrders(db) {
+    var c = db.session && customerByEmail(db, db.session.email);
+    if (!c) return;
+    db.orders.forEach(function (o) {
+      if (!o.customer && (db.guestTokens || []).indexOf(o.guest_token) >= 0) {
+        o.customer = { id: c.id, email: c.email, is_deleted: false };
+        delete o.guest_token;
+      }
+    });
+    db.guestTokens = [];
+  }
+
   function myOrders() {
     var db = load();
     if (!db.session) return [];
-    return db.orders.filter(function (o) { return o.customer.id === db.session.id; })
+    return db.orders.filter(function (o) { return !!o.customer && o.customer.id === db.session.id; })
       .sort(function (a, b) { return a.created_at < b.created_at ? 1 : -1; });
   }
   function myOrder(number) {
@@ -2076,7 +2100,6 @@
   function checkout(form, buyNow) {
     var db = load();
     var c = db.session && customerByEmail(db, db.session.email);
-    if (!c) return { error: "Войдите, чтобы оформить заказ." };
     var lines = buyNow ? [[Number(buyNow.variant), Number(buyNow.quantity) || 1]] : cartLines(db);
     var cart = cartSummary(db, lines);
     if (!cart.lines.length) return { error: "Корзина пуста." };
@@ -2100,11 +2123,17 @@
     else if (payment === "online" && !s.online) errors.payment_method = "Онлайн-оплата сейчас недоступна.";
     else if (payment === "agreement" && !agreementOn) errors.payment_method = "Согласование с продавцом сейчас недоступно.";
     else if (payment === "on_delivery" && !s.cash) errors.payment_method = "Оплата при получении сейчас недоступна.";
+    if (!c) { // без аккаунта (orders.services.checkout.guest_checkout)
+      if (payment !== "agreement") errors.payment_method = "Без аккаунта заказ оформляется только по согласованию.";
+      if (!form.consent) errors.consent = "Нужно согласие на обработку персональных данных.";
+      var openOnPhone = db.orders.filter(function (o) { return o.status === "awaiting_agreement" && digits(o.recipient_phone) === phone; }).length;
+      if (!Object.keys(errors).length && openOnPhone >= GUEST_MAX_OPEN) return { error: "На этот номер уже " + openOnPhone + " заказа ждут согласования — напишите продавцу по ним или отмените лишние." };
+    }
     if (Object.keys(errors).length) return { errors: errors };
 
     var created = now();
     var order = {
-      id: next(db, "order"), customer: { id: c.id, email: c.email, is_deleted: false }, number: "DD-" + next(db, "number"),
+      id: next(db, "order"), customer: c ? { id: c.id, email: c.email, is_deleted: false } : null, number: "DD-" + next(db, "number"),
       status: payment === "online" ? "awaiting_payment" : payment === "agreement" ? "awaiting_agreement" : "confirmed",
       payment_method: payment, agreement_channel: payment === "agreement" ? orderChannel(db, cart.lines, s.channel) : "",
       payment_method_display: PAYMENT_LABELS[payment], delivery_method: delivery.method,
@@ -2130,8 +2159,12 @@
     });
     order.status_history.push({
       from_status: "", to_status: order.status, to_status_display: STATUS_LABELS[order.status], changed_by: "customer",
-      comment: "", created_at: created, actor_email: c.email, notified: true
+      comment: "", created_at: created, actor_email: c ? c.email : null, notified: !!c
     });
+    if (!c) {
+      order.guest_token = guestToken();
+      db.guestTokens = (db.guestTokens || []).concat(order.guest_token);
+    }
     if (payment === "online") {
       order.payments.push({
         id: next(db, "payment"), amount_kopecks: order.total_kopecks, status: "pending", status_display: "Ожидает оплаты",
@@ -2214,7 +2247,7 @@
     var db = load();
     var o = db.orders.filter(function (x) { return x.number === number; })[0];
     if (!o || CUSTOMER_CANCEL.indexOf(o.status) < 0) return null;
-    setStatus(db, o, "cancelled", "customer", o.customer.email, "", true);
+    setStatus(db, o, "cancelled", "customer", o.customer ? o.customer.email : null, "", true);
     save(db);
     return o;
   }
@@ -2289,6 +2322,7 @@
     checkout: checkout,
     payOrder: payOrder,
     cancelOrder: cancelOrder,
+    guestOrder: guestOrder,
     canCancel: canCancel,
     agreementLink: function (o) { return agreementLink(load(), o); },
     lastRecipient: lastRecipient,

@@ -177,7 +177,8 @@ def shopper(browser, base: str, report: Report, errors: list[str]) -> None:
     page.click("[data-to-top]")
     wait_until(page, "() => scrollY === 0", what="возврат наверх по логотипу")
 
-    page.locator(".cats .seg").nth(1).click()
+    # На главной с блоком «Категории» полоса шапки скрыта — переход из блока.
+    page.locator(".hblock-cats__item").nth(1).click()
     page.wait_for_url(re.compile(r"/category/"))
     report.shot(page, "phone-category")
     in_stock_product(page)

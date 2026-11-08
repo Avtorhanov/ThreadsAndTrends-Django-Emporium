@@ -708,7 +708,7 @@
         return;
       }
       var target = "/checkout/?variant=" + input.value + "&qty=1";
-      go(TREE === "me" ? ME + target : BASE + "/login/?next=" + encodeURIComponent(target));
+      go(link(target));
       return;
     }
     var res = sim.cartAdd(input.value, 1);
@@ -770,7 +770,7 @@
       '<p class="summary__hint">Доставка курьером — при оформлении, бесплатно от ' + money(free) + ".</p>" +
       '<p class="summary__row summary__total"><span>Итого</span><span>' + money(cart.total_kopecks) + "</span></p>";
     if (cart.can_checkout) {
-      html += '<a class="cta cta--link" href="' + (TREE === "me" ? ME + "/checkout/" : BASE + "/login/?next=" + encodeURIComponent("/checkout/")) + '"><span class="cta__label">Оформить заказ</span><span class="cta__price">' + money(cart.total_kopecks) + "</span></a>";
+      html += '<a class="cta cta--link" href="' + link("/checkout/") + '"><span class="cta__label">Оформить заказ</span><span class="cta__price">' + money(cart.total_kopecks) + "</span></a>";
       if (TREE !== "me") html += '<p class="summary__hint">Для оформления нужно войти — корзина сохранится.</p>';
     } else {
       html += '<button class="cta" type="button" disabled><span class="cta__label">Уберите недоступные товары</span></button>';
@@ -851,6 +851,7 @@
     if (!payment) {
       var first = Array.prototype.filter.call(form.querySelectorAll('input[name="payment_method"]'), function (i) { return !i.closest(".choice").hidden; })[0];
       if (first) first.checked = true;
+      else if (TREE !== "me") { location.replace(BASE + "/login/?next=" + encodeURIComponent("/checkout/")); return; }
     }
     var last = sim.lastRecipient();
     var fill = function (name, value) { var el = form.querySelector('[name="' + name + '"]'); if (el && !el.value && value) el.value = value; };
@@ -931,7 +932,7 @@
     flash(res.order.payment_method === "online" ? "Заказ оформлен — оплатите его, чтобы мы начали сборку." :
       res.order.payment_method === "agreement" ? "Заказ " + res.order.number + " создан — напишите продавцу, чтобы его согласовать." :
       "Заказ " + res.order.number + " оформлен. Мы скоро свяжемся с вами.");
-    go(ME + "/orders/" + res.order.number + "/");
+    go(res.order.guest_token ? BASE + "/order/g/" + res.order.guest_token + "/" : ME + "/orders/" + res.order.number + "/");
   }
 
   // --- Заказы (web/orders/list.html, detail.html) ---
@@ -985,12 +986,20 @@
       '<button class="btn btn--ghost btn--sm" type="button" data-copy-text="' + esc(a.message) + '">Скопировать</button></details></div>';
   }
 
-  function renderOrder() {
+  function renderOrder(guestToken) {
     var number = HERE.split("/")[2];
-    sim.markSeen(number); // покупатель открыл заказ — значок «есть новости» гаснет
-    var o = sim.myOrder(number);
+    if (!guestToken) sim.markSeen(number); // покупатель открыл заказ — значок «есть новости» гаснет
+    var o = guestToken ? sim.guestOrder(guestToken) : sim.myOrder(number);
     var page = document.querySelector("#main .page");
+    if (!page && guestToken) { // адрес гостевого заказа — страница 404 с заказом внутри <main>
+      document.getElementById("main").innerHTML = '<section class="page"></section>';
+      page = document.querySelector("#main .page");
+    }
     if (!page) return;
+    if (!o && guestToken) {
+      page.innerHTML = emptyHTML("Заказ не найден", "Ссылка неверна или заказ уже привязан к аккаунту.", "box", '<a class="btn btn--dark" href="' + BASE + '/">В каталог</a>');
+      return;
+    }
     if (!o) {
       page.innerHTML = emptyHTML("Заказ не найден", "Проверьте номер или откройте список заказов.", "box", '<a class="btn btn--dark" href="' + ME + '/orders/">Мои заказы</a>');
       return;
@@ -998,9 +1007,14 @@
     document.title = "Заказ " + o.number + " — DiDi-shop";
     var payment = o.payments[o.payments.length - 1] || null;
     var refund = payment && payment.refunds[payment.refunds.length - 1];
-    var html = '<a class="back-link" href="' + ME + '/orders/">' + icon("chevron", 16, "flip") + "Мои заказы</a>" +
+    var html = (guestToken ? "" : '<a class="back-link" href="' + ME + '/orders/">' + icon("chevron", 16, "flip") + "Мои заказы</a>") +
       '<header class="section-head section-head--row"><div><p class="overline">' + date(o.created_at, true, true) + '</p><h1 class="h1">Заказ <span class="nowrap">' + esc(o.number) + "</span></h1></div>" +
       '<span class="status status--' + STATUS_TONES[o.status] + '">' + esc(sim.statusLabel(o.status)) + "</span></header>";
+    if (guestToken) {
+      html += '<div class="panel guest-link"><p class="panel__title">Сохраните ссылку на заказ</p><p class="agree__text">Без аккаунта заказ открывается только по этой ссылке. Писем о статусе не будет — проверяйте его здесь.</p>' +
+        '<button class="btn btn--ghost btn--sm" type="button" data-copy-text="' + esc(location.href) + '">Скопировать ссылку</button>' +
+        '<p class="muted">Чтобы заказ был в профиле, <a href="' + BASE + '/register/">создайте аккаунт</a> или <a href="' + BASE + '/login/">войдите</a> — он привяжется сам.</p></div>';
+    }
     html += agreementHTML(o);
     if (o.payment_method === "online") {
       html += '<div class="panel pay">';
@@ -1534,7 +1548,8 @@
     else if (/^\/category\/[^/]+\/$/.test(HERE)) renderListing("category");
     else if (/^\/product\/[^/]+\/$/.test(HERE)) renderProduct(data);
     else if (HERE === "/cart/") renderCart();
-    else if (HERE === "/checkout/" && TREE === "me") renderCheckout();
+    else if (HERE === "/checkout/") renderCheckout();
+    else if ((m = HERE.match(/^\/order\/g\/([^/]+)\/$/))) renderOrder(m[1]);
     else if (HERE === "/orders/" && TREE === "me") renderOrders();
     else if ((m = HERE.match(/^\/orders\/([^/]+)\/$/)) && TREE === "me") renderOrder();
     else if (HERE === "/profile/" && TREE === "me") renderProfile();

@@ -16,21 +16,25 @@ from django.db.models import Prefetch, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import urlencode
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
 from orders.models import ChangedBy, DeliveryMethod, Order, OrderItem, PaymentMethod
 from orders.services import agreement as agreement_service
 from orders.services import checkout as checkout_service
+from orders.services import guest
 from orders.services import status as status_service
 from payments import services as payments
 from payments.models import Payment, PaymentStatus
 from store.models import ProductImage, ProductVariant
 from store.services.cart import LineInput
 
-from .. import ratelimit
+from .. import cart as web_cart
+from .. import guest_links, ratelimit
 from ..forms import CheckoutForm
 from .account import _apply_errors
-from .common import customer_required, flash_errors
+from .common import customer_required, flash_errors, shopper_required
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +55,11 @@ def _customer_orders(user):
 
 
 def _detail_queryset(user):
-    return _customer_orders(user).prefetch_related(
+    return _detail_queryset_of(_customer_orders(user))
+
+
+def _detail_queryset_of(queryset):
+    return queryset.prefetch_related(
         Prefetch(
             "items",
             queryset=OrderItem.objects.select_related("product").prefetch_related(
@@ -84,10 +92,72 @@ def _back_to_product(buy_now: LineInput):
     return redirect("web:product", slug=variant.product.slug)
 
 
-@customer_required
+def _guest_limit_ok(request, phone: str) -> bool:
+    # Те же области и ключи, что у POST /api/v1/orders/guest/.
+    return (
+        ratelimit.allow(request, "order_create_guest")
+        and ratelimit.allow(request, "order_create_guest_day")
+        and ratelimit.allow(request, "order_create_guest_phone", phone=phone)
+    )
+
+
+def _input_from(data: dict, expected: int) -> checkout_service.CheckoutInput:
+    return checkout_service.CheckoutInput(
+        delivery_method=data["delivery_method"],
+        payment_method=data["payment_method"],
+        recipient_name=data["recipient_name"],
+        recipient_phone=data["recipient_phone"],
+        delivery_address=data["delivery_address"],
+        comment=data["comment"],
+        expected_total_kopecks=expected,
+    )
+
+
+def _submit_guest(request, form, buy_now, lines):
+    """Оформление без аккаунта: редирект на заказ или None с ошибками в форме."""
+    data = form.cleaned_data
+    try:
+        phone = checkout_service.normalize_phone(data["recipient_phone"])
+    except ValidationError:
+        phone = None  # опечатка в номере не тратит попытки: ошибку покажет сервис
+    if phone is not None and not _guest_limit_ok(request, phone):
+        form.add_error(None, ratelimit.TOO_MANY)
+        return None
+    seen_items = data["expected_total"]
+    expected = seen_items + checkout_service.delivery_cost(data["delivery_method"], seen_items)
+    try:
+        result = checkout_service.guest_checkout(
+            _input_from(data, expected),
+            data["idempotency_key"],
+            lines,
+            consent=data["consent"],
+            buy_now=buy_now is not None,
+        )
+    except ValidationError as exc:
+        _apply_errors(form, exc)
+        return None
+    guest_links.remember(request, result.token)
+    if result.created and buy_now is None:
+        web_cart.take_guest_lines(request)
+    messages.success(
+        request, f"Заказ {result.order.number} создан — напишите продавцу, чтобы его согласовать."
+    )
+    return redirect("web:guest_order", token=result.token)
+
+
+@shopper_required
 def checkout(request):
     buy_now = buy_now_line(request)
-    preview = checkout_service.preview(request.user, buy_now)
+    is_guest = not request.user.is_authenticated
+    guest_lines = ([buy_now] if buy_now else web_cart.guest_lines(request)) if is_guest else []
+    if is_guest:
+        preview = checkout_service.guest_preview(guest_lines)
+        if not preview.payment_methods:
+            login_url = reverse("web:login")
+            messages.info(request, "Чтобы оформить заказ этим способом, войдите в аккаунт.")
+            return redirect(f"{login_url}?{urlencode({'next': request.get_full_path()})}")
+    else:
+        preview = checkout_service.preview(request.user, buy_now)
     if buy_now is not None and not preview.cart.can_checkout:
         line = preview.cart.lines[0]
         reason = "закончился" if line.status == "out_of_stock" else "недоступен для заказа"
@@ -108,11 +178,12 @@ def checkout(request):
         request.POST or None,
         delivery_methods=list(options),
         payment_methods=preview.payment_methods,
+        guest=is_guest,
         initial={
             "delivery_method": DeliveryMethod.COURIER,
             "payment_method": preview.payment_methods[0],
             "recipient_name": preview.defaults.recipient_name
-            or request.user.get_full_name().strip(),
+            or ("" if is_guest else request.user.get_full_name().strip()),
             "recipient_phone": preview.defaults.recipient_phone,
             "delivery_address": preview.defaults.delivery_address,
             "expected_total": items_total,
@@ -120,7 +191,11 @@ def checkout(request):
         },
     )
 
-    if request.method == "POST" and form.is_valid():
+    if request.method == "POST" and form.is_valid() and is_guest:
+        response = _submit_guest(request, form, buy_now, guest_lines)
+        if response is not None:
+            return response
+    elif request.method == "POST" and form.is_valid():
         data = form.cleaned_data
         if not ratelimit.allow(request, "order_create", user=request.user):
             form.add_error(None, ratelimit.TOO_MANY)
@@ -134,15 +209,7 @@ def checkout(request):
             try:
                 order, _ = checkout_service.checkout(
                     request.user,
-                    checkout_service.CheckoutInput(
-                        delivery_method=data["delivery_method"],
-                        payment_method=data["payment_method"],
-                        recipient_name=data["recipient_name"],
-                        recipient_phone=data["recipient_phone"],
-                        delivery_address=data["delivery_address"],
-                        comment=data["comment"],
-                        expected_total_kopecks=expected,
-                    ),
+                    _input_from(data, expected),
                     data["idempotency_key"],
                     buy_now=buy_now,
                 )
@@ -171,6 +238,7 @@ def checkout(request):
             "free_from": preview.free_delivery_from_kopecks,
             "pickup": options.get(DeliveryMethod.PICKUP),
             "buy_now": buy_now,
+            "is_guest": is_guest,
             "action": request.get_full_path(),
             "tab": "cart",
             "noindex": True,
@@ -239,6 +307,26 @@ def order_list(request):
     )
 
 
+def _order_context(request, order: Order) -> dict:
+    payment = payments.summary(order)
+    base = settings.SITE_URL or request.build_absolute_uri("/").rstrip("/")
+    agreement = agreement_service.link(order, base)
+    label, icon = AGREEMENT_BUTTONS.get(agreement.kind, ("", "")) if agreement else ("", "")
+    return {
+        "order": order,
+        "agreement": agreement,
+        "agreement_label": label,
+        "agreement_icon": icon,
+        "items": list(order.items.all()),
+        "history": list(order.status_changes.all()),
+        "payment": payment,
+        "can_cancel": status_service.can_cancel(order, ChangedBy.CUSTOMER),
+        "returned": request.GET.get("paid") == "1",
+        "tab": "profile",
+        "noindex": True,
+    }
+
+
 @customer_required
 def order_detail(request, number: str):
     order = get_object_or_404(_customer_orders(request.user), number=number)
@@ -249,27 +337,7 @@ def order_detail(request, number: str):
     order = get_object_or_404(_detail_queryset(request.user), pk=order.pk)
     # Покупатель увидел заказ — точка «есть новости» на «Профиле» гаснет (до отрисовки шапки).
     status_service.mark_seen(order)
-    payment = payments.summary(order)
-    base = settings.SITE_URL or request.build_absolute_uri("/").rstrip("/")
-    agreement = agreement_service.link(order, base)
-    label, icon = AGREEMENT_BUTTONS.get(agreement.kind, ("", "")) if agreement else ("", "")
-    return render(
-        request,
-        "web/orders/detail.html",
-        {
-            "order": order,
-            "agreement": agreement,
-            "agreement_label": label,
-            "agreement_icon": icon,
-            "items": list(order.items.all()),
-            "history": list(order.status_changes.all()),
-            "payment": payment,
-            "can_cancel": status_service.can_cancel(order, ChangedBy.CUSTOMER),
-            "returned": request.GET.get("paid") == "1",
-            "tab": "profile",
-            "noindex": True,
-        },
-    )
+    return render(request, "web/orders/detail.html", _order_context(request, order))
 
 
 @customer_required
@@ -283,3 +351,44 @@ def order_cancel(request, number: str):
     else:
         messages.success(request, f"Заказ {order.number} отменён.")
     return redirect("web:order", number=order.number)
+
+
+# --- Заказ гостя: доступ только по секретной ссылке ---
+
+
+@never_cache
+def guest_order(request, token: str):
+    found = get_object_or_404(guest.by_token(token))
+    order = get_object_or_404(_detail_queryset_of(Order.objects.filter(pk=found.pk)), pk=found.pk)
+    status_service.mark_seen(order)
+    # Открывший ссылку владеет заказом: при входе или регистрации он привяжется к аккаунту.
+    guest_links.remember(request, token)
+    context = _order_context(request, order)
+    context["guest_token"] = token
+    context["guest_link"] = request.build_absolute_uri()
+    context["can_claim"] = request.user.is_authenticated and not request.user.is_staff
+    response = render(request, "web/orders/detail.html", context)
+    response["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@require_POST
+def guest_order_cancel(request, token: str):
+    order = get_object_or_404(guest.by_token(token))
+    try:
+        status_service.cancel(order, by=ChangedBy.CUSTOMER)
+    except ValidationError as exc:
+        flash_errors(request, exc)
+    else:
+        messages.success(request, f"Заказ {order.number} отменён.")
+    return redirect("web:guest_order", token=token)
+
+
+@customer_required
+@require_POST
+def guest_order_claim(request, token: str):
+    claimed = guest.claim(request.user, [token])
+    if not claimed:
+        raise Http404("Заказ не найден.")
+    messages.success(request, f"Заказ {claimed[0].number} теперь в вашем аккаунте.")
+    return redirect("web:order", number=claimed[0].number)

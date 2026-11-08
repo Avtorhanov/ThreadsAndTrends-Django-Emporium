@@ -71,6 +71,7 @@ def robots_txt(request):
         "Disallow: /cart/",
         "Disallow: /checkout/",
         "Disallow: /orders/",
+        "Disallow: /order/",
         "Disallow: /profile/",
         "Disallow: /login/",
         "Disallow: /register/",

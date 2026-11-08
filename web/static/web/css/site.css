@@ -649,6 +649,7 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 fieldset.panel > legend, .panel fieldset > legend { float: left; }
 fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .nowrap { white-space: nowrap; }
+.guest-link { display: grid; gap: 10px; justify-items: start; }
 .note { margin: 0 0 12px; padding: 12px 14px; border-radius: var(--radius-control); font: 600 14px/1.4 var(--font-text); }
 .note p + p { margin-top: 4px; }
 .note--danger { background: var(--danger-bg); color: var(--danger); }

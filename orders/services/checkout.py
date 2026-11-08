@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.db.models import F
+from django.utils import timezone
 
 from content import shop as shop_settings
 from orders.models import (
@@ -38,12 +39,16 @@ from store.models import Cart, ProductVariant
 from store.services.cart import CartSummary, LineInput, get_summary, quote
 from store.templatetags.money import format_kopecks
 
-from . import agreement, notifications
+from . import agreement, guest, notifications
 from .status import initial_status
 
 IDEMPOTENCY_KEY_RE = re.compile(r"^[A-Za-z0-9_-]{8,64}$")
 # Сколько заказов «по согласованию» один покупатель может держать сразу: каждый резервирует товар.
 MAX_OPEN_AGREEMENTS = 5
+# Гость: номер не подтверждён, поэтому лимит строже. Ключ идемпотентности длиннее — повтор
+# с ним возвращает ссылку на заказ.
+MAX_OPEN_GUEST_AGREEMENTS = 2
+GUEST_IDEMPOTENCY_KEY_RE = re.compile(r"^[A-Za-z0-9_-]{32,64}$")
 EMPTY_CART = "Корзина пуста."
 BUY_NOW_CHANGED = "Товар изменился — проверьте его на странице товара"
 
@@ -256,6 +261,86 @@ def _problems_message(summary: CartSummary, buy_now: bool = False) -> str:
     return head + ": " + ", ".join(names) + "."
 
 
+def _place_order(
+    owner,
+    data: CheckoutInput,
+    cleaned: dict,
+    idempotency_key: str,
+    summary: CartSummary,
+    *,
+    buy_now: bool,
+    guest_fields: dict | None = None,
+) -> Order:
+    """Создать заказ по пересчитанной под блокировкой корзине: позиции, списание, письма,
+    запись в истории. Вызывается внутри транзакции; owner=None — гостевой заказ."""
+    guest_fields = guest_fields or {}
+    items_total = summary.total_kopecks
+    delivery = delivery_cost(data.delivery_method, items_total)
+    total = items_total + delivery
+    expected = data.expected_total_kopecks
+    if expected is not None and expected != total:
+        raise ValidationError(
+            f"Сумма заказа изменилась: теперь {format_kopecks(total)} ₽. "
+            "Проверьте заказ и подтвердите ещё раз.",
+            code="total_changed",
+        )
+
+    channel = ""
+    if data.payment_method == PaymentMethod.AGREEMENT:
+        channel = agreement.choose_channel(line.variant.product for line in summary.lines)
+    order = Order.objects.create(
+        owner=owner,
+        number=_next_number(),
+        status=initial_status(data.payment_method),
+        payment_method=data.payment_method,
+        agreement_channel=channel,
+        delivery_method=data.delivery_method,
+        items_total_kopecks=items_total,
+        delivery_kopecks=delivery,
+        total_kopecks=total,
+        idempotency_key=idempotency_key,
+        **guest_fields,
+        **cleaned,
+    )
+    lines = sorted(summary.lines, key=lambda line: line.variant_id)
+    OrderItem.objects.bulk_create(
+        [
+            OrderItem(
+                order=order,
+                product=line.variant.product,
+                variant=line.variant,
+                product_name=line.variant.product.name,
+                size=line.variant.size,
+                sku=line.variant.sku,
+                status_name=_status_name(line.variant.product),
+                color_name=line.variant.product.color_name,
+                price_kopecks=line.unit_price_kopecks,
+                quantity=line.quantity,
+            )
+            for line in lines
+        ]
+    )
+    for line in lines:
+        updated = ProductVariant.all_objects.filter(
+            pk=line.variant_id, stock__gte=line.quantity
+        ).update(stock=F("stock") - line.quantity)
+        if updated != 1:  # невозможно под блокировкой; страховка от отрицательных остатков
+            raise ValidationError(_problems_message(summary, buy_now), code="cart_changed")
+
+    sent = notifications.notify_status(order, created=True)
+    if data.payment_method != PaymentMethod.ONLINE:
+        notifications.notify_seller(order)  # онлайн-заказ — после оплаты
+    OrderStatusChange.objects.create(
+        order=order,
+        from_status="",
+        to_status=order.status,
+        changed_by=ChangedBy.CUSTOMER,
+        actor=owner,
+        notified=sent,
+    )
+    return order
+
+
 def checkout(
     user, data: CheckoutInput, idempotency_key: str, buy_now: LineInput | None = None
 ) -> tuple[Order, bool]:
@@ -300,68 +385,8 @@ def checkout(
                     _problems_message(summary, buy_now is not None), code="cart_changed"
                 )
 
-            items_total = summary.total_kopecks
-            delivery = delivery_cost(data.delivery_method, items_total)
-            total = items_total + delivery
-            expected = data.expected_total_kopecks
-            if expected is not None and expected != total:
-                raise ValidationError(
-                    f"Сумма заказа изменилась: теперь {format_kopecks(total)} ₽. "
-                    "Проверьте заказ и подтвердите ещё раз.",
-                    code="total_changed",
-                )
-
-            channel = ""
-            if data.payment_method == PaymentMethod.AGREEMENT:
-                channel = agreement.choose_channel(line.variant.product for line in summary.lines)
-            order = Order.objects.create(
-                owner=user,
-                number=_next_number(),
-                status=initial_status(data.payment_method),
-                payment_method=data.payment_method,
-                agreement_channel=channel,
-                delivery_method=data.delivery_method,
-                items_total_kopecks=items_total,
-                delivery_kopecks=delivery,
-                total_kopecks=total,
-                idempotency_key=idempotency_key,
-                **cleaned,
-            )
-            lines = sorted(summary.lines, key=lambda line: line.variant_id)
-            OrderItem.objects.bulk_create(
-                [
-                    OrderItem(
-                        order=order,
-                        product=line.variant.product,
-                        variant=line.variant,
-                        product_name=line.variant.product.name,
-                        size=line.variant.size,
-                        color_name=line.variant.product.color_name,
-                        sku=line.variant.sku,
-                        status_name=_status_name(line.variant.product),
-                        price_kopecks=line.unit_price_kopecks,
-                        quantity=line.quantity,
-                    )
-                    for line in lines
-                ]
-            )
-            for line in lines:
-                updated = ProductVariant.all_objects.filter(
-                    pk=line.variant_id, stock__gte=line.quantity
-                ).update(stock=F("stock") - line.quantity)
-                if updated != 1:  # невозможно под блокировкой; страховка от отрицательных остатков
-                    raise ValidationError(_problems_message(summary), code="cart_changed")
-
-            sent = notifications.notify_status(order, created=True)
-            if data.payment_method != PaymentMethod.ONLINE:
-                notifications.notify_seller(order)  # онлайн-заказ — после оплаты
-            OrderStatusChange.objects.create(
-                order=order,
-                from_status="",
-                to_status=order.status,
-                changed_by=ChangedBy.CUSTOMER,
-                actor=user,
-                notified=sent,
+            order = _place_order(
+                user, data, cleaned, idempotency_key, summary, buy_now=buy_now is not None
             )
             if buy_now is None:
                 cart.items.all().delete()
@@ -377,3 +402,138 @@ def checkout(
 def _status_name(product) -> str:
     status = product.status if product.status_id else None
     return status.name if status else ""
+
+
+# --- Оформление без аккаунта ---
+
+
+@dataclass(frozen=True)
+class GuestCheckoutResult:
+    order: Order
+    token: str  # секрет ссылки на заказ; в БД только его хеш
+    created: bool
+
+
+def guest_payment_methods() -> list[str]:
+    """Гость оформляет только «по согласованию»; иначе нужен аккаунт."""
+    return [m for m in payment_methods() if m == PaymentMethod.AGREEMENT]
+
+
+def guest_preview(lines: list[LineInput]) -> CheckoutPreview:
+    summary = quote(lines)
+    return CheckoutPreview(
+        cart=summary,
+        delivery_options=delivery_options(summary.total_kopecks),
+        payment_methods=guest_payment_methods(),
+        free_delivery_from_kopecks=shop_settings.current().delivery_free_from_kopecks,
+    )
+
+
+def _check_guest_agreements(phone: str) -> None:
+    # Считаются и заказы аккаунтов: иначе лимит обходится выходом из аккаунта.
+    open_count = Order.objects.filter(
+        recipient_phone=phone, status=OrderStatus.AWAITING_AGREEMENT
+    ).count()
+    if open_count >= MAX_OPEN_GUEST_AGREEMENTS:
+        raise ValidationError(
+            f"На этот номер уже {open_count} заказа ждут согласования — напишите продавцу "
+            "по ним или отмените лишние, потом оформите новый.",
+            code="too_many_agreements",
+        )
+
+
+def _guest_replay(key: str, phone: str | None) -> GuestCheckoutResult | None:
+    """Повтор с тем же ключом. Вместе с заказом отдаётся ссылка, поэтому ключа мало —
+    телефон тоже должен совпасть."""
+    existing = Order.objects.filter(owner__isnull=True, idempotency_key=key).first()
+    if existing is None:
+        return None
+    if phone != existing.recipient_phone:
+        raise ValidationError("Обновите страницу и оформите заказ заново.", code="idempotency_key")
+    return GuestCheckoutResult(existing, guest.make_token(key), created=False)
+
+
+def _normalized_or_none(phone: str) -> str | None:
+    try:
+        return normalize_phone(phone)
+    except ValidationError:
+        return None
+
+
+def guest_checkout(
+    data: CheckoutInput,
+    idempotency_key: str,
+    lines: list[LineInput],
+    *,
+    consent: bool,
+    buy_now: bool = False,
+) -> GuestCheckoutResult:
+    """Оформить заказ без аккаунта. Позиции — с устройства или из сессии: блокировать строку
+    корзины не на чем, параллельные оформления на один номер разводит advisory lock."""
+    if not GUEST_IDEMPOTENCY_KEY_RE.match(idempotency_key or ""):
+        raise ValidationError(
+            "Заголовок Idempotency-Key обязателен: 32–64 символа (латиница, цифры, - и _).",
+            code="idempotency_key",
+        )
+    replay = _guest_replay(idempotency_key, _normalized_or_none(data.recipient_phone))
+    if replay is not None:
+        return replay
+
+    errors: dict[str, list[str]] = {}
+    if not consent:
+        errors["consent"] = ["Нужно согласие на обработку персональных данных."]
+    if data.payment_method != PaymentMethod.AGREEMENT:
+        errors["payment_method"] = ["Без аккаунта заказ оформляется только по согласованию."]
+    try:
+        cleaned = _clean_input(data)
+    except ValidationError as exc:
+        errors = {**exc.message_dict, **errors}
+    if errors:
+        raise ValidationError(errors)
+    phone = cleaned["recipient_phone"]
+
+    try:
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT pg_advisory_xact_lock(hashtext(%s))", [f"orders.guest:{phone}"]
+                )
+            # Параллельный запрос с тем же ключом ждал блокировку и видит готовый заказ.
+            replay = _guest_replay(idempotency_key, phone)
+            if replay is not None:
+                return replay
+            _check_guest_agreements(phone)
+            variant_ids = [line.variant_id for line in lines]
+            if not variant_ids:
+                raise ValidationError(EMPTY_CART, code="empty_cart")
+            list(
+                ProductVariant.all_objects.select_for_update()
+                .filter(pk__in=variant_ids)
+                .order_by("pk")
+                .values_list("pk", flat=True)
+            )
+            summary = quote(lines)
+            if not summary.lines:
+                raise ValidationError(EMPTY_CART, code="empty_cart")
+            if not summary.can_checkout:
+                raise ValidationError(_problems_message(summary, buy_now), code="cart_changed")
+            token = guest.make_token(idempotency_key)
+            order = _place_order(
+                None,
+                data,
+                cleaned,
+                idempotency_key,
+                summary,
+                buy_now=buy_now,
+                guest_fields={
+                    "guest_token_hash": guest.token_hash(token),
+                    "guest_consent_at": timezone.now(),
+                },
+            )
+    except IntegrityError:
+        # Гонка по ключу на разных номерах: блокировка у них разная, держит уникальный индекс.
+        replay = _guest_replay(idempotency_key, phone)
+        if replay is None:
+            raise
+        return replay
+    return GuestCheckoutResult(order, token, created=True)

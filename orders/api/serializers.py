@@ -86,6 +86,45 @@ class CheckoutInputSerializer(serializers.Serializer):
         return LineInput(raw["variant_id"], raw["quantity"]) if raw else None
 
 
+class GuestLineSerializer(serializers.Serializer):
+    variant_id = serializers.IntegerField(min_value=1)
+    quantity = serializers.IntegerField(min_value=1, max_value=99)
+
+
+class GuestPreviewInputSerializer(serializers.Serializer):
+    lines = GuestLineSerializer(many=True, allow_empty=False)
+
+    def to_lines(self) -> list[LineInput]:
+        return [LineInput(r["variant_id"], r["quantity"]) for r in self.validated_data["lines"]]
+
+
+class GuestCheckoutInputSerializer(CheckoutInputSerializer):
+    """Оформление без аккаунта: позиции с устройства вместо корзины на сервере."""
+
+    buy_now = None
+    lines = GuestLineSerializer(many=True, allow_empty=False)
+    consent = serializers.BooleanField(help_text="Согласие на обработку персональных данных")
+
+    def to_input(self) -> CheckoutInput:
+        skip = ("lines", "consent")
+        return CheckoutInput(**{k: v for k, v in self.validated_data.items() if k not in skip})
+
+    def to_lines(self) -> list[LineInput]:
+        return [LineInput(r["variant_id"], r["quantity"]) for r in self.validated_data["lines"]]
+
+
+class GuestClaimInputSerializer(serializers.Serializer):
+    tokens = serializers.ListField(
+        child=serializers.CharField(max_length=64), allow_empty=False, max_length=20
+    )
+
+
+class GuestClaimSerializer(serializers.Serializer):
+    numbers = serializers.ListField(
+        child=serializers.CharField(), help_text="Номера заказов, привязанных к аккаунту"
+    )
+
+
 # --- Заказ ---
 
 
@@ -260,6 +299,13 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         return self._payment(order).refund_status
 
 
+class GuestOrderCreatedSerializer(serializers.Serializer):
+    order = OrderDetailSerializer()
+    access_token = serializers.CharField(
+        help_text="Секрет доступа к заказу: заголовок X-Order-Token"
+    )
+
+
 # --- Панель администратора ---
 
 
@@ -271,7 +317,9 @@ class AdminOrderCustomerSerializer(serializers.Serializer):
 
 class AdminOrderListSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display")
-    customer = AdminOrderCustomerSerializer(source="owner")
+    customer = AdminOrderCustomerSerializer(
+        source="owner", allow_null=True, help_text="null — гостевой заказ"
+    )
     items_count = serializers.IntegerField()
 
     class Meta:
@@ -308,7 +356,9 @@ class AdminTransitionOptionSerializer(serializers.Serializer):
 
 
 class AdminOrderDetailSerializer(OrderDetailSerializer):
-    customer = AdminOrderCustomerSerializer(source="owner")
+    customer = AdminOrderCustomerSerializer(
+        source="owner", allow_null=True, help_text="null — гостевой заказ"
+    )
     status_history = AdminOrderStatusChangeSerializer(many=True, source="status_changes")
     allowed_transitions = serializers.SerializerMethodField()
     payments = AdminPaymentSerializer(many=True, help_text="Попытки онлайн-оплаты и возвраты")

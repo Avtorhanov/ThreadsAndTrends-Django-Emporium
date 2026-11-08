@@ -151,8 +151,9 @@ export function OrderDetailPage() {
                 </dd>
                 <dt>Аккаунт</dt>
                 <dd>
-                  {data.customer.email}
-                  {data.customer.is_deleted ? " (удалён)" : ""}
+                  {data.customer === null
+                    ? "Гость, без аккаунта"
+                    : `${data.customer.email}${data.customer.is_deleted ? " (удалён)" : ""}`}
                 </dd>
                 <dt>{data.delivery_method_display}</dt>
                 <dd>{data.delivery_address || "—"}</dd>

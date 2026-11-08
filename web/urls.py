@@ -25,6 +25,9 @@ urlpatterns = [
     # Оформление и заказы
     path("checkout/", orders.checkout, name="checkout"),
     path("orders/", orders.order_list, name="orders"),
+    path("order/g/<str:token>/", orders.guest_order, name="guest_order"),
+    path("order/g/<str:token>/cancel/", orders.guest_order_cancel, name="guest_order_cancel"),
+    path("order/g/<str:token>/claim/", orders.guest_order_claim, name="guest_order_claim"),
     path("orders/<str:number>/", orders.order_detail, name="order"),
     path("orders/<str:number>/pay/", orders.pay, name="order_pay"),
     path("orders/<str:number>/cancel/", orders.order_cancel, name="order_cancel"),

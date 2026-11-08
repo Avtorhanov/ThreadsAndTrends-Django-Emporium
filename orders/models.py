@@ -53,9 +53,12 @@ class OrderQuerySet(models.QuerySet):
 
 class Order(models.Model):
     # PROTECT: пользователи удаляются мягко, история заказов не теряется.
+    # NULL — гостевой заказ: доступ по секретной ссылке (orders.services.guest).
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="orders",
         verbose_name="Покупатель",
     )
@@ -91,6 +94,17 @@ class Order(models.Model):
     status_unseen = models.BooleanField(
         default=False, db_default=False, verbose_name="Смена статуса не просмотрена"
     )
+    # Только у гостевого заказа. Хеш секрета ссылки: сама ссылка в БД не хранится.
+    guest_token_hash = models.CharField(
+        max_length=64, blank=True, default="", db_default="", verbose_name="Хеш гостевой ссылки"
+    )
+    # NULL, пока заказ не завершён; потом ссылка работает до этого момента.
+    guest_link_expires_at = models.DateTimeField(
+        null=True, blank=True, verbose_name="Гостевая ссылка действует до"
+    )
+    guest_consent_at = models.DateTimeField(
+        null=True, blank=True, verbose_name="Согласие на обработку ПДн (гость)"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Оформлен")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменён")
 
@@ -108,10 +122,43 @@ class Order(models.Model):
             models.Index(
                 fields=["owner"], condition=Q(status_unseen=True), name="order_owner_unseen_idx"
             ),
+            # Лимит открытых согласований гостя по телефону.
+            models.Index(
+                fields=["recipient_phone"],
+                condition=Q(status="awaiting_agreement"),
+                name="order_phone_awaiting_idx",
+            ),
+            # Обезличивание старых гостевых заказов.
+            models.Index(
+                fields=["guest_link_expires_at"],
+                condition=Q(owner__isnull=True),
+                name="order_guest_expiry_idx",
+            ),
         ]
         constraints = [
             models.UniqueConstraint(
                 fields=["owner", "idempotency_key"], name="order_unique_idempotency_key"
+            ),
+            # NULL в Postgres не совпадают: у гостей ключ уникален отдельным условием.
+            models.UniqueConstraint(
+                fields=["idempotency_key"],
+                condition=Q(owner__isnull=True),
+                name="order_guest_unique_idempotency_key",
+            ),
+            models.UniqueConstraint(
+                fields=["guest_token_hash"],
+                condition=Q(owner__isnull=True),
+                name="order_guest_unique_token",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(owner__isnull=False, guest_token_hash="", guest_link_expires_at__isnull=True)
+                    | (
+                        Q(owner__isnull=True, guest_consent_at__isnull=False)
+                        & ~Q(guest_token_hash="")
+                    )
+                ),
+                name="order_guest_fields_consistent",
             ),
             models.CheckConstraint(
                 condition=Q(total_kopecks=F("items_total_kopecks") + F("delivery_kopecks")),
