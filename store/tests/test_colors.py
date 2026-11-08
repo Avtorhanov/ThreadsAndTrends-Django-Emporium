@@ -46,6 +46,7 @@ def test_link_rejects_two_groups():
 def test_unlink_dissolves_pair_but_keeps_larger_group():
     a, b, c = make_product(), make_product(), make_product()
     link((a, "1"), (b, "2"), (c, "3"))
+    a.refresh_from_db()
     catalog.unlink_color(a)
     b.refresh_from_db()
     assert a.color_group is None and a.color_name == "" and b.color_group is not None

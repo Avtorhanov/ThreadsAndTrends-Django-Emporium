@@ -115,7 +115,7 @@ def test_color_snapshot_goes_to_order_and_message(filled_cart, shirt):
     shirt.save(update_fields=["color_name"])
     order = place(filled_cart)
 
-    assert order.items.get().color_name == "Зелёный"
+    assert order.items.get(product=shirt).color_name == "Зелёный"
     assert "Футболка, Зелёный, M × 2" in agreement.message(order, BASE)
 
 
