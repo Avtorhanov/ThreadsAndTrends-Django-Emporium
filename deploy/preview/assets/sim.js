@@ -92,8 +92,20 @@
   // --- Хранилище ---
 
   var cache = null;
+  // Номер записи базы: страница, вернувшаяся из bfcache, или замороженная вкладка iOS событие
+  // storage не получают — без сверки они показывали бы и записывали назад устаревшую базу.
+  var REV_KEY = KEY + "-rev";
+  var rev = null;       // запись, из которой собран cache
+  var shownRev = null;  // запись, по которой отрисована страница
+  function readRev() {
+    try { return localStorage.getItem(REV_KEY); } catch (e) { return null; }
+  }
   function load() {
-    if (cache) return cache;
+    var stored = readRev();
+    if (cache && stored === rev) return cache;
+    if (cache) mediaReady = media.ready();
+    else if (shownRev === null) shownRev = stored;
+    rev = stored;
     try { cache = JSON.parse(localStorage.getItem(KEY) || "null", media.revive); } catch (e) { cache = null; }
     return cache;
   }
@@ -101,6 +113,8 @@
     cache = db;
     try {
       localStorage.setItem(KEY, JSON.stringify(db, media.replace));
+      rev = shownRev = Date.now() + "-" + Math.random().toString(36).slice(2);
+      localStorage.setItem(REV_KEY, rev);
     } catch (e) {
       return false;
     }
@@ -196,6 +210,14 @@
     // Другая вкладка могла загрузить фото — подтянуть их blob:-адреса (после — снова перечитать).
     mediaReady = media.ready();
   });
+
+  // Витрина перерисовывается по свежей базе; панель — нет, там могут быть несохранённые формы.
+  function reloadIfStale() {
+    if (location.pathname.indexOf("/panel/") !== -1 || readRev() === shownRev) return;
+    location.reload();
+  }
+  window.addEventListener("pageshow", function (event) { if (event.persisted) reloadIfStale(); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) reloadIfStale(); });
 
   function writeLook(db) {
     var t = db.theme;
@@ -343,6 +365,7 @@
     readyPromise = null;
     try {
       localStorage.removeItem(KEY);
+      localStorage.removeItem(REV_KEY);
       localStorage.removeItem(LOOK_KEY);
       localStorage.removeItem("didi-preview-cart");
     } catch (e) { /* без хранилища */ }
