@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 
 import { ApiError, type FieldErrors } from "../api/errors";
 import { type ShopSettings, sellerParts, shopSettingsService } from "../api/settings";
@@ -163,12 +163,21 @@ function AgreementFields({
   );
 }
 
-function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: (value: ShopSettings) => void }) {
+function SettingsForm({
+  settings,
+  justSaved,
+  onSaved,
+}: {
+  settings: ShopSettings;
+  justSaved: boolean;
+  onSaved: (value: ShopSettings) => void;
+}) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [draft, setDraft] = useState<Draft>(() => toDraft(settings));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState(justSaved);
   const defaults = settings.defaults;
   const set = (patch: Partial<Draft>) => {
     setDraft((prev) => ({ ...prev, ...patch }));
@@ -177,6 +186,18 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
 
   // Предпросмотр строки подвала: пустые поля покупатель не видит.
   const line = sellerParts(draft);
+
+  // Настройки сохраняются целиком: одна ошибка отменяет всё, поэтому причину видно сразу,
+  // даже если поле ниже экрана или скрыто выключенным способом оплаты.
+  function showFailure(fieldErrors: FieldErrors, fallback: string) {
+    const first = Object.values(fieldErrors).find((messages) => messages.length > 0)?.[0];
+    setErrors(fieldErrors);
+    setFormError(`Не сохранено: ${first ?? fallback}`);
+    setSaved(false);
+    requestAnimationFrame(() => {
+      formRef.current?.querySelector(".field-error")?.scrollIntoView({ block: "center" });
+    });
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -201,9 +222,12 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
     if (!online && !draft.agreement && !draft.cashOnDelivery) {
       fieldErrors.agreement_enabled = ["Включите хотя бы один способ — иначе покупатель не сможет заказать."];
     }
-    setErrors(fieldErrors);
+    if (Object.keys(fieldErrors).length) {
+      showFailure(fieldErrors, "проверьте поля.");
+      return;
+    }
+    setErrors({});
     setFormError(null);
-    if (Object.keys(fieldErrors).length) return;
     setSaving(true);
     try {
       const result = await shopSettingsService.save({
@@ -228,14 +252,12 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
         operator_contact: draft.operatorContact,
         stock_limit_text: draft.stockLimitText,
       });
-      setSaved(true);
       onSaved(result);
     } catch (err) {
       if (err instanceof ApiError) {
-        setErrors(err.fieldErrors);
-        setFormError(err.message);
+        showFailure(err.fieldErrors, err.message);
       } else {
-        setFormError("Не удалось сохранить настройки.");
+        showFailure({}, "ошибка соединения, попробуйте ещё раз.");
       }
     } finally {
       setSaving(false);
@@ -243,8 +265,8 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
   }
 
   return (
-    <form className="settings" onSubmit={submit} noValidate>
-      <div className="page-header">
+    <form ref={formRef} className="settings" onSubmit={submit} noValidate>
+      <div className="page-header settings-bar">
         <h1>Настройки магазина</h1>
         <div className="header-action pf-actions">
           {saved ? <span className="saved">Сохранено</span> : null}
@@ -254,7 +276,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
         </div>
       </div>
       <p className="muted settings-lead">Меняются без деплоя. Пустое поле — значение из настроек сервера (.env), оно видно в подсказке.</p>
-      {formError ? <p className="alert">{formError}</p> : null}
+      {formError ? <p className="alert settings-alert" role="alert">{formError}</p> : null}
 
       <div className="settings-grid">
         <section className="card form-grid">
@@ -553,6 +575,8 @@ function DemoReset() {
 
 export function SettingsPage() {
   const settings = useShopSettings();
+  // Форма пересоздаётся по updated_at — отметка «Сохранено» живёт уровнем выше.
+  const [justSaved, setJustSaved] = useState(false);
   return (
     <section className="stack">
       {settings.error ? <p className="alert">{settings.error}</p> : null}
@@ -561,7 +585,11 @@ export function SettingsPage() {
         <SettingsForm
           key={settings.data.updated_at ?? "new"}
           settings={settings.data}
-          onSaved={settings.set}
+          justSaved={justSaved}
+          onSaved={(value) => {
+            setJustSaved(true);
+            settings.set(value);
+          }}
         />
       ) : null}
       {/* Контакты сохраняются сразу, отдельно от формы настроек (свой API блоков сайта). */}

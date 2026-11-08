@@ -4047,6 +4047,19 @@ a.stat:hover {
   margin-bottom: 12px;
 }
 
+/* «Сохранить» настроек видно при прокрутке длинной формы. */
+.settings > .settings-bar {
+  position: sticky;
+  top: 8px;
+  z-index: 15;
+  padding: 8px 12px;
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: var(--shadow-control);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
 .settings-lead {
   margin: 0 0 16px;
 }
@@ -4334,7 +4347,8 @@ a.stat:hover {
   /* Мини-панель массовых действий и строка «Сохранить» формы товара прилипают под шапкой,
      а не уезжают под неё. */
   .bulk-bar,
-  .pf-bar {
+  .pf-bar,
+  .settings > .settings-bar {
     top: calc(var(--mobilebar-h) + 8px);
     z-index: 15;
   }
