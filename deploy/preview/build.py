@@ -344,7 +344,7 @@ def catalog_paths() -> list[str]:
     paths += [f"/category/{c.slug}/" for c in Category.objects.filter(is_active=True)]
     paths += [f"/product/{p.slug}/" for p in Product.objects.live()]
     paths += [f"/articles/{a.slug}/" for a in Article.objects.filter(is_published=True)]
-    paths += ["/legal/offer/", "/legal/privacy/", "/legal/delivery/"]
+    paths += ["/legal/privacy/", "/legal/delivery/"]
     return paths
 
 
@@ -668,7 +668,6 @@ def write_rooms(out: Path, orders: list[Order], rooms: dict, query: str) -> None
                     "Статья",
                     f"{g}/articles/{Article.objects.filter(is_published=True).first().slug}/",
                 ),
-                ("Оферта", f"{g}/legal/offer/"),
                 ("Политика ПДн", f"{g}/legal/privacy/"),
                 ("Доставка и возврат", f"{g}/legal/delivery/"),
                 ("Страница 404", f"{g}/404.html"),

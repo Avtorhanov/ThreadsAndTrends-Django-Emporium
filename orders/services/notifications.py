@@ -53,7 +53,7 @@ def notify_seller(order: Order, *, cancelled: bool = False) -> bool:
     """Письмо продавцу о новом заказе (по согласованию и при получении — сразу, онлайн — после
     оплаты) или об отмене заказа покупателем. Адрес — email из реквизитов продавца; не задан —
     письма нет."""
-    recipient = shop_settings.current().seller.email
+    recipient = shop_settings.current().seller.email or settings.SELLER_EMAIL
     if not recipient:
         return False
     panel_url = f"{settings.SITE_URL}/panel/orders/{order.pk}" if settings.SITE_URL else ""

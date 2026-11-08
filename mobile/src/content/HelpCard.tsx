@@ -39,8 +39,6 @@ export function HelpCard({ withContacts = true }: { withContacts?: boolean }) {
             <View style={s.divider} />
           </>
         ) : null}
-        <Row icon="help" title="Публичная оферта" onPress={() => open(SITE_PAGES.offer)} />
-        <View style={s.divider} />
         <Row icon="help" title="Политика обработки данных" onPress={() => open(SITE_PAGES.privacy)} />
       </Card>
     </View>

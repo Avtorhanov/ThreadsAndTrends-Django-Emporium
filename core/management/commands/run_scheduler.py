@@ -1,9 +1,14 @@
+import logging
 import signal
 import time
 
 from django.core.management.base import BaseCommand
 
+from core.monitoring import check_and_alert
 from core.periodic import enqueue_due, load_periodic_tasks
+
+logger = logging.getLogger(__name__)
+MONITOR_EVERY = 10 * 60
 
 
 class Command(BaseCommand):
@@ -18,6 +23,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Планировщик: задач {len(tasks)}, проверка каждые {tick} с")
 
         self._running = True
+        checked_at = time.monotonic()  # сразу после старта службы ещё не успели поработать
         signal.signal(signal.SIGTERM, self._stop)
         signal.signal(signal.SIGINT, self._stop)
 
@@ -25,6 +31,12 @@ class Command(BaseCommand):
             enqueue_due(tasks)
             if once:
                 break
+            if time.monotonic() - checked_at >= MONITOR_EVERY:
+                checked_at = time.monotonic()
+                try:
+                    check_and_alert()
+                except Exception:  # сбой проверки не должен останавливать планировщик
+                    logger.exception("Мониторинг: проверка не выполнена")
             # Спим по секунде, чтобы SIGTERM от Docker обрабатывался без ожидания tick.
             for _ in range(tick):
                 if not self._running:

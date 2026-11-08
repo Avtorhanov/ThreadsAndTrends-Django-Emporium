@@ -1,6 +1,7 @@
-<p>
-  <b>Продавец:</b> {{ seller.name|default:"[наименование продавца: ИП или ООО]" }}<br>
-  ИНН: {{ seller.inn|default:"[ИНН]" }}{% if seller.ogrn or not seller.name %}, ОГРН/ОГРНИП: {{ seller.ogrn|default:"[ОГРН]" }}{% endif %}<br>
-  Адрес: {{ seller.address|default:"[юридический адрес]" }}<br>
-  Email: {{ seller.email|default:"[email для обращений]" }}{% if seller.phone %}, телефон: {{ seller.phone }}{% endif %}
-</p>
+{% if seller.parts %}<p>
+  {% if seller.name %}<b>Продавец:</b> {{ seller.name }}<br>{% endif %}
+  {% if seller.inn %}ИНН: {{ seller.inn }}<br>{% endif %}
+  {% if seller.ogrn %}{{ seller.ogrn_label }}: {{ seller.ogrn }}<br>{% endif %}
+  {% if seller.address %}Адрес: {{ seller.address }}<br>{% endif %}
+  {% if seller.email %}Email: {{ seller.email }}{% endif %}{% if seller.phone %}{% if seller.email %}, {% endif %}телефон: {{ seller.phone }}{% endif %}
+</p>{% endif %}

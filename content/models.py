@@ -242,6 +242,16 @@ class ShopSettings(models.Model):
     seller_address = models.CharField(max_length=300, blank=True, verbose_name="Адрес продавца")
     seller_phone = models.CharField(max_length=30, blank=True, verbose_name="Телефон")
     seller_email = models.EmailField(blank=True, verbose_name="Email")
+    offer_enabled = models.BooleanField(
+        default=False, db_default=False, verbose_name="Показывать публичную оферту"
+    )
+    # Только для политики ПДн, в подвал не попадают.
+    operator_name = models.CharField(
+        max_length=200, blank=True, default="", db_default="", verbose_name="Оператор данных"
+    )
+    operator_contact = models.CharField(
+        max_length=200, blank=True, default="", db_default="", verbose_name="Контакт для обращений"
+    )
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменены")
 
     class Meta:

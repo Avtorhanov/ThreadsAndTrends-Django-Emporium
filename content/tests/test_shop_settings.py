@@ -31,10 +31,6 @@ def admin_api(staff):
 
 @pytest.fixture
 def env_seller(settings):
-    settings.SELLER_NAME = ""
-    settings.SELLER_INN = ""
-    settings.SELLER_OGRN = ""
-    settings.SELLER_ADDRESS = ""
     settings.SELLER_PHONE = ""
     settings.SELLER_EMAIL = ""
 
@@ -180,6 +176,13 @@ def test_footer_one_line_without_empty_fields(client, env_seller):
     assert "ИП Пример" in line and 'href="mailto:shop@example.com"' in line
     assert "ИНН" not in line and "<br>" not in line
     assert "&nbsp;· " in line
+
+
+def test_empty_requisites_not_filled_from_env(client, settings):
+    settings.SELLER_EMAIL = "env@example.com"
+    settings.SELLER_PHONE = "+7 900 000-00-00"
+    assert shop.current().seller.parts() == []
+    assert "foot__seller" not in client.get(reverse("web:home")).content.decode()
 
 
 # --- API панели ---

@@ -28,9 +28,9 @@ SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", False)
 # (отменяется месяцами), поэтому по умолчанию выключено и предупреждение не нужно.
 SILENCED_SYSTEM_CHECKS = ["security.W021"]
 
-# Почта: пока SMTP не настроен (EMAIL_HOST пуст), письма — в лог воркера
+# Почта: пока SMTP не настроен (нет ни EMAIL_HOST, ни ящиков), письма — в лог воркера
 # (`./deploy.sh logs worker`), чтобы коды сброса пароля можно было найти при проверке.
-if not os.environ.get("EMAIL_HOST"):
+if not os.environ.get("EMAIL_HOST") and not EMAIL_RELAYS:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # --- Мониторинг ошибок (Sentry): включается переменной SENTRY_DSN ---

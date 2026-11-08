@@ -281,6 +281,40 @@ EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
 EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
 EMAIL_TIMEOUT = env_int("EMAIL_TIMEOUT", 10)
 DEFAULT_FROM_EMAIL = env_str("DEFAULT_FROM_EMAIL", "DiDi-shop <noreply@localhost>")
+# Ящики Яндекс → Mail.ru → Gmail (логин и пароль приложения): заполненные пробуются по очереди.
+EMAIL_RELAYS = [
+    {"name": name, "host": host, "port": 465, "user": user, "password": password}
+    for name, host, user, password in (
+        (
+            "Яндекс",
+            "smtp.yandex.ru",
+            env_str("EMAIL_YANDEX_USER", ""),
+            env_str("EMAIL_YANDEX_PASSWORD", ""),
+        ),
+        (
+            "Mail.ru",
+            "smtp.mail.ru",
+            env_str("EMAIL_MAILRU_USER", ""),
+            env_str("EMAIL_MAILRU_PASSWORD", ""),
+        ),
+        (
+            "Gmail",
+            "smtp.gmail.com",
+            env_str("EMAIL_GMAIL_USER", ""),
+            env_str("EMAIL_GMAIL_PASSWORD", ""),
+        ),
+    )
+    if user and password
+]
+if EMAIL_RELAYS:
+    EMAIL_BACKEND = "core.mail.FailoverEmailBackend"
+
+# --- Мониторинг (core.monitoring): оповещения о сбоях служб, бэкапа и диска ---
+ALERT_EMAIL = env_str("ALERT_EMAIL", env_str("ADMIN_EMAIL", ""))
+BACKUP_DIR = env_str("BACKUP_DIR", "")
+BACKUP_MAX_AGE_HOURS = env_int("BACKUP_MAX_AGE_HOURS", 26)
+BACKUP_GDRIVE_TOKEN = env_str("BACKUP_GDRIVE_TOKEN", "")
+DISK_MAX_PERCENT = env_int("DISK_MAX_PERCENT", 90)
 
 LOG_LEVEL = env_str("LOG_LEVEL", "INFO")
 LOGGING = {
@@ -312,10 +346,6 @@ WEB_PAGE_SIZE = env_int("WEB_PAGE_SIZE", 24)
 WEB_CATALOG_CACHE_SECONDS = env_int("WEB_CATALOG_CACHE_SECONDS", 300)
 # Реквизиты продавца: подвал сайта и юридические страницы (оферта, политика ПДн, доставка).
 # Обязательны до подключения ЮKassa; тексты страниц — заготовки, их проверяет юрист.
-SELLER_NAME = env_str("SELLER_NAME", "")
-SELLER_INN = env_str("SELLER_INN", "")
-SELLER_OGRN = env_str("SELLER_OGRN", "")
-SELLER_ADDRESS = env_str("SELLER_ADDRESS", "")
 SELLER_EMAIL = env_str("SELLER_EMAIL", "")
 SELLER_PHONE = env_str("SELLER_PHONE", "")
 # Вкладка «Контакты» (сайт и приложение): пусто — канал не показывается. Подписи — свои

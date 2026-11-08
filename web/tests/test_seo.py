@@ -1,6 +1,8 @@
 import pytest
 from django.urls import reverse
 
+from content import shop as shop_settings
+
 pytestmark = pytest.mark.django_db
 
 
@@ -48,12 +50,33 @@ def test_private_pages_are_noindex(client, customer):
 
 @pytest.mark.parametrize("page", ["offer", "privacy", "delivery"])
 def test_legal_pages(client, db, settings, page):
-    settings.SELLER_NAME = "ИП Иванов И. И."
-    settings.SELLER_INN = "770000000000"
+    shop_settings.update(
+        offer_enabled=True, seller_name="ИП Иванов И. И.", seller_inn="770000000000"
+    )
     html = client.get(reverse(f"web:{page}")).content.decode()
-    assert "Черновик" in html
+    assert ("Черновик" in html) == (page == "offer")
     if page != "delivery":
-        assert "ИП Иванов И. И." in html and "770000000000" in html
+        assert "ИП Иванов И. И." in html
+    if page != "offer":
+        assert "[проверить" not in html and "[email" not in html and "[указать" not in html
+
+
+def test_offer_hidden_by_default(client, db):
+    assert client.get(reverse("web:offer")).url == reverse("web:privacy")
+    assert reverse("web:offer") not in client.get(reverse("web:contacts")).content.decode()
+    assert reverse("web:offer") not in client.get(reverse("web:register")).content.decode()
+
+
+def test_offer_shown_when_enabled(client, db):
+    shop_settings.update(offer_enabled=True)
+    assert client.get(reverse("web:offer")).status_code == 200
+    assert reverse("web:offer") in client.get(reverse("web:contacts")).content.decode()
+
+
+def test_privacy_shows_operator(client, db):
+    shop_settings.update(operator_name="Иван И.", operator_contact="ivan@example.com")
+    html = client.get(reverse("web:privacy")).content.decode()
+    assert "Иван И." in html and "ivan@example.com" in html
 
 
 def test_app_banner_only_on_phones(client, db, settings):

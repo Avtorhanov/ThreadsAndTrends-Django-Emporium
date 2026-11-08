@@ -30,6 +30,5 @@ export const contentService = {
 /** Страницы сайта магазина (оферта, политика, доставка) — тот же адрес, что у API. */
 export const SITE_PAGES = {
   delivery: `${API_URL}/legal/delivery/`,
-  offer: `${API_URL}/legal/offer/`,
   privacy: `${API_URL}/legal/privacy/`,
 };

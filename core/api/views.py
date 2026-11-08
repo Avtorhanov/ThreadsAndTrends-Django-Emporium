@@ -8,6 +8,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core import monitoring
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,6 +30,29 @@ def _check_cache() -> bool:
     except Exception:
         logger.exception("Healthcheck: кэш недоступен")
         return False
+
+
+class FullHealthView(APIView):
+    """Для внешнего мониторинга: кроме сайта — фоновые службы, бэкап и диск.
+
+    Отдельно от HealthView: тот проверяет Docker, и сбой воркера не должен перезапускать сайт.
+    """
+
+    authentication_classes: list = []
+    permission_classes = [AllowAny]
+
+    @extend_schema(exclude=True)
+    def get(self, request, *args, **kwargs):
+        checks = {
+            "database": _check_database(),
+            "cache": _check_cache(),
+            **monitoring.service_checks(),
+        }
+        healthy = all(checks.values())
+        return Response(
+            {"status": "ok" if healthy else "error", "checks": checks},
+            status=200 if healthy else 503,
+        )
 
 
 class HealthView(APIView):

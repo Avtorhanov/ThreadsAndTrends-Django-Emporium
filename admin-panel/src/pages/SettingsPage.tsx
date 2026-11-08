@@ -55,6 +55,9 @@ type Draft = {
   address: string;
   phone: string;
   email: string;
+  offerEnabled: boolean;
+  operatorName: string;
+  operatorContact: string;
 };
 
 function toDraft(settings: ShopSettings): Draft {
@@ -76,6 +79,9 @@ function toDraft(settings: ShopSettings): Draft {
     address: settings.seller_address,
     phone: settings.seller_phone,
     email: settings.seller_email,
+    offerEnabled: settings.offer_enabled,
+    operatorName: settings.operator_name,
+    operatorContact: settings.operator_contact,
   };
 }
 
@@ -167,15 +173,8 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
     setSaved(false);
   };
 
-  // Предпросмотр строки подвала: пустое поле — значение из .env, как на сайте.
-  const line = sellerParts({
-    name: draft.name || defaults.seller_name,
-    inn: draft.inn || defaults.seller_inn,
-    ogrn: draft.ogrn || defaults.seller_ogrn,
-    address: draft.address || defaults.seller_address,
-    phone: draft.phone || defaults.seller_phone,
-    email: draft.email || defaults.seller_email,
-  });
+  // Предпросмотр строки подвала: пустые поля покупатель не видит.
+  const line = sellerParts(draft);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -222,6 +221,9 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
         seller_address: draft.address,
         seller_phone: draft.phone,
         seller_email: draft.email,
+        offer_enabled: draft.offerEnabled,
+        operator_name: draft.operatorName,
+        operator_contact: draft.operatorContact,
       });
       setSaved(true);
       onSaved(result);
@@ -371,7 +373,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
               <input
                 value={draft.name}
                 maxLength={200}
-                placeholder={defaults.seller_name || "ИП Фамилия И. О. или ООО «…»"}
+                placeholder="ИП Фамилия И. О. или ООО «…»"
                 onChange={(e) => set({ name: e.target.value })}
               />
               <FieldError errors={errors} name="seller_name" />
@@ -382,7 +384,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
                 inputMode="numeric"
                 value={draft.inn}
                 maxLength={20}
-                placeholder={defaults.seller_inn || "10 или 12 цифр"}
+                placeholder="10 или 12 цифр"
                 onChange={(e) => set({ inn: e.target.value })}
               />
               <FieldError errors={errors} name="seller_inn" />
@@ -393,7 +395,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
                 inputMode="numeric"
                 value={draft.ogrn}
                 maxLength={20}
-                placeholder={defaults.seller_ogrn || "13 или 15 цифр"}
+                placeholder="13 или 15 цифр"
                 onChange={(e) => set({ ogrn: e.target.value })}
               />
               <FieldError errors={errors} name="seller_ogrn" />
@@ -403,7 +405,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
               <input
                 value={draft.address}
                 maxLength={300}
-                placeholder={defaults.seller_address || "Город, улица, дом"}
+                placeholder="Город, улица, дом"
                 onChange={(e) => set({ address: e.target.value })}
               />
               <FieldError errors={errors} name="seller_address" />
@@ -414,7 +416,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
                 type="tel"
                 value={draft.phone}
                 maxLength={30}
-                placeholder={defaults.seller_phone || "+7 ___ ___-__-__"}
+                placeholder="+7 ___ ___-__-__"
                 onChange={(e) => set({ phone: e.target.value })}
               />
               <FieldError errors={errors} name="seller_phone" />
@@ -425,7 +427,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
                 type="email"
                 value={draft.email}
                 maxLength={254}
-                placeholder={defaults.seller_email || "shop@домен.ru"}
+                placeholder="shop@домен.ru"
                 onChange={(e) => set({ email: e.target.value })}
               />
               <FieldError errors={errors} name="seller_email" />
@@ -445,6 +447,39 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
             ) : (
               <p className="muted">Ничего не заполнено — строки в подвале не будет.</p>
             )}
+          </div>
+        </section>
+
+        <section className="card form-grid settings-wide">
+          <h2>Документы</h2>
+          <Switch
+            checked={draft.offerEnabled}
+            label="Показывать публичную оферту"
+            hint="Выключено — оферты нет в «Помощи», при регистрации и оформлении заказа"
+            onChange={(offerEnabled) => set({ offerEnabled })}
+          />
+          <p className="muted">Имя и контакт видны только в политике обработки данных, в подвал не попадают.</p>
+          <div className="settings-fields">
+            <label className="field">
+              Оператор данных
+              <input
+                value={draft.operatorName}
+                maxLength={200}
+                placeholder="Иванов Иван Иванович"
+                onChange={(e) => set({ operatorName: e.target.value })}
+              />
+              <FieldError errors={errors} name="operator_name" />
+            </label>
+            <label className="field">
+              Контакт для обращений
+              <input
+                value={draft.operatorContact}
+                maxLength={200}
+                placeholder="Email или телефон"
+                onChange={(e) => set({ operatorContact: e.target.value })}
+              />
+              <FieldError errors={errors} name="operator_contact" />
+            </label>
           </div>
         </section>
       </div>

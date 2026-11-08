@@ -191,12 +191,6 @@ class AdminShopDefaultsSerializer(serializers.Serializer):
     pickup_address = serializers.CharField()
     unpaid_timeout_minutes = serializers.IntegerField()
     agreement_timeout_hours = serializers.IntegerField()
-    seller_name = serializers.CharField()
-    seller_inn = serializers.CharField()
-    seller_ogrn = serializers.CharField()
-    seller_address = serializers.CharField()
-    seller_phone = serializers.CharField()
-    seller_email = serializers.CharField()
 
 
 class AdminAgreementContactSerializer(serializers.Serializer):
@@ -263,6 +257,9 @@ class AdminShopSettingsWriteSerializer(serializers.Serializer):
     seller_address = serializers.CharField(max_length=300, allow_blank=True)
     seller_phone = serializers.CharField(max_length=30, allow_blank=True)
     seller_email = serializers.CharField(max_length=254, allow_blank=True)
+    offer_enabled = serializers.BooleanField(required=False)
+    operator_name = serializers.CharField(max_length=200, allow_blank=True, required=False)
+    operator_contact = serializers.CharField(max_length=200, allow_blank=True, required=False)
 
 
 # --- Главная из блоков ---
