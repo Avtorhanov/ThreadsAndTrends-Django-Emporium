@@ -7,6 +7,7 @@ from django.urls import reverse
 from store.models import Product
 from store.services.catalog import add_product_image
 from store.tests.factories import make_product
+from web import catalog_cache
 
 from .conftest import image_file
 
@@ -110,6 +111,7 @@ def test_listing_query_count_does_not_grow_with_products(
 ):
     url = reverse("web:category", args=["odezhda"])
     client.get(url)  # прогрев: дерево категорий в кэше
+    catalog_cache.bump()  # оба замера — без готовых сеток и чипов размеров
     with django_assert_max_num_queries(12) as small:
         client.get(url + "?sort=price_desc")
     for n in range(15):
