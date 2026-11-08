@@ -260,6 +260,7 @@ class AdminShopSettingsWriteSerializer(serializers.Serializer):
     offer_enabled = serializers.BooleanField(required=False)
     operator_name = serializers.CharField(max_length=200, allow_blank=True, required=False)
     operator_contact = serializers.CharField(max_length=200, allow_blank=True, required=False)
+    stock_limit_text = serializers.CharField(max_length=120, allow_blank=True, required=False)
 
 
 # --- Главная из блоков ---

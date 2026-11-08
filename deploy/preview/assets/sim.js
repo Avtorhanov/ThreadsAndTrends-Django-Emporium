@@ -617,6 +617,7 @@
       channel: s.agreement_channel || "whatsapp",
       agreement_hours: pick("agreement_timeout_hours") || 48,
       timeout: pick("unpaid_timeout_minutes") || 30,
+      stock_limit_text: s.stock_limit_text || "",
       seller: {
         name: s.seller_name || "", inn: s.seller_inn || "", ogrn: s.seller_ogrn || "",
         address: s.seller_address || "", phone: s.seller_phone || "", email: s.seller_email || ""
@@ -1586,7 +1587,7 @@
     }
     if (Object.keys(errors).length) return fields(errors);
     Object.keys(body).forEach(function (k) {
-      if (k !== "defaults" && k !== "agreement_contacts" && (k in db.settings || /^agreement_|^online_payment_enabled$|^offer_enabled$|^operator_/.test(k))) db.settings[k] = body[k];
+      if (k !== "defaults" && k !== "agreement_contacts" && (k in db.settings || /^agreement_|^online_payment_enabled$|^offer_enabled$|^operator_|^stock_limit_text$/.test(k))) db.settings[k] = body[k];
     });
     db.settings.updated_at = now();
     return { status: 200, body: settingsBody(db), save: true };

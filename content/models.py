@@ -252,6 +252,13 @@ class ShopSettings(models.Model):
     operator_contact = models.CharField(
         max_length=200, blank=True, default="", db_default="", verbose_name="Контакт для обращений"
     )
+    stock_limit_text = models.CharField(
+        max_length=120,
+        blank=True,
+        default="",
+        db_default="",
+        verbose_name="Сообщение, когда больше нет",
+    )
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменены")
 
     class Meta:

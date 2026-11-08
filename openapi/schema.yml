@@ -4535,6 +4535,10 @@ components:
           type: string
           readOnly: true
           title: Контакт для обращений
+        stock_limit_text:
+          type: string
+          readOnly: true
+          title: Сообщение, когда больше нет
         updated_at:
           type: string
           format: date-time
@@ -4577,6 +4581,7 @@ components:
       - seller_name
       - seller_ogrn
       - seller_phone
+      - stock_limit_text
       - unpaid_timeout_minutes
       - updated_at
     AdminShopSettingsWriteRequest:
@@ -4641,6 +4646,9 @@ components:
         operator_contact:
           type: string
           maxLength: 200
+        stock_limit_text:
+          type: string
+          maxLength: 120
       required:
       - cash_on_delivery_enabled
       - delivery_courier_kopecks

@@ -58,6 +58,7 @@ type Draft = {
   offerEnabled: boolean;
   operatorName: string;
   operatorContact: string;
+  stockLimitText: string;
 };
 
 function toDraft(settings: ShopSettings): Draft {
@@ -82,6 +83,7 @@ function toDraft(settings: ShopSettings): Draft {
     offerEnabled: settings.offer_enabled,
     operatorName: settings.operator_name,
     operatorContact: settings.operator_contact,
+    stockLimitText: settings.stock_limit_text,
   };
 }
 
@@ -224,6 +226,7 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
         offer_enabled: draft.offerEnabled,
         operator_name: draft.operatorName,
         operator_contact: draft.operatorContact,
+        stock_limit_text: draft.stockLimitText,
       });
       setSaved(true);
       onSaved(result);
@@ -481,6 +484,21 @@ function SettingsForm({ settings, onSaved }: { settings: ShopSettings; onSaved: 
               <FieldError errors={errors} name="operator_contact" />
             </label>
           </div>
+        </section>
+
+        <section className="card form-grid settings-wide">
+          <h2>Сообщения покупателю</h2>
+          <label className="field">
+            Когда выбранного размера больше нет
+            <input
+              value={draft.stockLimitText}
+              maxLength={120}
+              placeholder="Больше таких размеров не осталось"
+              onChange={(e) => set({ stockLimitText: e.target.value })}
+            />
+            <FieldError errors={errors} name="stock_limit_text" />
+          </label>
+          <p className="muted">Всплывает на странице товара, если покупатель пытается добавить больше, чем есть. Пусто — текст из подсказки.</p>
         </section>
       </div>
       <p className="muted small">
