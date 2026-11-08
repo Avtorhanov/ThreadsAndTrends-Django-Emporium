@@ -20,14 +20,14 @@ class Migration(migrations.Migration):
             model_name="shopsettings",
             name="operator_name",
             field=models.CharField(
-                blank=True, db_default="", max_length=200, verbose_name="Оператор данных"
+                blank=True, db_default="", default="", max_length=200, verbose_name="Оператор данных"
             ),
         ),
         migrations.AddField(
             model_name="shopsettings",
             name="operator_contact",
             field=models.CharField(
-                blank=True, db_default="", max_length=200, verbose_name="Контакт для обращений"
+                blank=True, db_default="", default="", max_length=200, verbose_name="Контакт для обращений"
             ),
         ),
     ]

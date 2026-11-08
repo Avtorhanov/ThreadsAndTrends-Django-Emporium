@@ -16,8 +16,9 @@ Usage = namedtuple("Usage", "total used free")
 
 
 @pytest.fixture(autouse=True)
-def clean_cache():
+def isolated(settings, tmp_path):
     cache.clear()
+    settings.MEDIA_ROOT = tmp_path
 
 
 def test_no_task_activity_is_a_failure(settings):
