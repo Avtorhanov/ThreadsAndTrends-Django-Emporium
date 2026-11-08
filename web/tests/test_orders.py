@@ -9,7 +9,7 @@ from payments.models import Payment, PaymentStatus
 from store.models import CartItem, ProductVariant
 from store.services import cart as cart_service
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("cash_on_delivery")]
 
 
 @pytest.fixture

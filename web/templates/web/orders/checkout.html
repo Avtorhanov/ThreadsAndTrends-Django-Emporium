@@ -50,7 +50,7 @@
             <input type="radio" name="payment_method" value="{{ value }}"{% if form.payment_method.value == value %} checked{% endif %} required>
             <span class="choice__body">
               <span class="choice__title">{{ label }}</span>
-              <span class="choice__hint">{% if value == "online" %}Картой или через СБП на странице ЮKassa{% else %}Курьеру или в пункте выдачи{% endif %}</span>
+              <span class="choice__hint">{% if value == "online" %}Картой или через СБП на странице ЮKassa{% elif value == "agreement" %}После оформления напишите продавцу — оплату и доставку обсудите в переписке{% else %}Курьеру или в пункте выдачи{% endif %}</span>
             </span>
           </label>
           {% endfor %}

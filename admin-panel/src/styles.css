@@ -6659,3 +6659,41 @@ a.dash-tile:active {
     white-space: nowrap;
   }
 }
+
+/* --- Оформление «по согласованию»: канал и предпросмотр кнопки («Настройки», товар) --- */
+.agree-settings {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-control, 12px);
+  background: var(--surface);
+}
+
+.field-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.agree-preview {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.agree-preview-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.agree-settings p {
+  margin: 0;
+}

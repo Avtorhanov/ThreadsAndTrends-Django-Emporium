@@ -1,7 +1,10 @@
+from django.conf import settings
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from core.choices import AgreementChannel
 from orders.models import ChangedBy, DeliveryMethod, Order, OrderStatus, PaymentMethod
+from orders.services import agreement
 from orders.services.checkout import CheckoutInput
 from orders.services.status import allowed_transitions, can_cancel
 from payments import services as payment_services
@@ -140,6 +143,28 @@ class OrderListSerializer(serializers.ModelSerializer):
         }
 
 
+class AgreementLinkSerializer(serializers.Serializer):
+    """Связь с продавцом для заказа «по согласованию», пока он ждёт подтверждения."""
+
+    kind = serializers.ChoiceField(choices=AgreementChannel.choices)
+    title = serializers.CharField(help_text="Подпись канала: «WhatsApp» или своя")
+    url = serializers.CharField(help_text="https://wa.me/…?text=…, https://t.me/…, tel:+7…")
+    handle = serializers.CharField(help_text="Номер или имя канала для показа")
+    message = serializers.CharField(help_text="Текст продавцу: номер заказа, товары, сумма")
+    prefilled = serializers.BooleanField(
+        help_text="Текст уже в ссылке (WhatsApp); иначе — скопировать и вставить в чат"
+    )
+    deadline = serializers.DateTimeField(help_text="Не подтверждённый к этому времени — отменится")
+
+
+def base_url(context) -> str:
+    """Адрес сайта для ссылок на товары в сообщении продавцу."""
+    if settings.SITE_URL:
+        return settings.SITE_URL
+    request = context.get("request")
+    return request.build_absolute_uri("/").rstrip("/") if request else ""
+
+
 class OrderDetailSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display")
     payment_method_display = serializers.CharField(source="get_payment_method_display")
@@ -151,6 +176,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     pay_until = serializers.SerializerMethodField()
     payment_status = serializers.SerializerMethodField()
     refund_status = serializers.SerializerMethodField()
+    agreement = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -160,6 +186,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "status_display",
             "payment_method",
             "payment_method_display",
+            "agreement_channel",
             "delivery_method",
             "delivery_method_display",
             "items_total_kopecks",
@@ -177,8 +204,17 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "pay_until",
             "payment_status",
             "refund_status",
+            "agreement",
         ]
         read_only_fields = fields
+        extra_kwargs = {
+            "agreement_channel": {"help_text": "Канал согласования; пусто — другой способ оплаты"}
+        }
+
+    @extend_schema_field(AgreementLinkSerializer(allow_null=True))
+    def get_agreement(self, order):
+        found = agreement.link(order, base_url(self.context))
+        return AgreementLinkSerializer(found).data if found else None
 
     def get_can_cancel(self, order) -> bool:
         return can_cancel(order, ChangedBy.CUSTOMER)
@@ -284,7 +320,8 @@ class AdminOrderDetailSerializer(OrderDetailSerializer):
             *[
                 f
                 for f in OrderDetailSerializer.Meta.fields
-                if f not in ("can_cancel", "can_pay", "payment_status", "refund_status")
+                if f
+                not in ("can_cancel", "can_pay", "payment_status", "refund_status", "agreement")
             ],
             "updated_at",
             "allowed_transitions",

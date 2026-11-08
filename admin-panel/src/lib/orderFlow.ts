@@ -22,8 +22,14 @@ export function stepIndex(status: OrderStatus): number {
   }
 }
 
+/** Заказ «по согласованию» ещё не принят: ни один шаг не пройден. */
+export function isAwaitingAgreement(status: OrderStatus): boolean {
+  return status === "awaiting_agreement";
+}
+
 /** Подпись действия «Отметить: …» — словами шагов, а не служебных статусов. */
 export const MARK_LABELS: Partial<Record<OrderStatus, string>> = {
+  confirmed: "принят — согласовано",
   assembled: "собран",
   shipped: "в пути",
   ready_for_pickup: "в пункте выдачи",
@@ -32,6 +38,7 @@ export const MARK_LABELS: Partial<Record<OrderStatus, string>> = {
 
 /** Статусы, которые администратор ставит сам (групповая обработка), в порядке процесса. */
 export const ADMIN_TARGETS: OrderStatus[] = [
+  "confirmed",
   "assembled",
   "shipped",
   "ready_for_pickup",
@@ -40,6 +47,7 @@ export const ADMIN_TARGETS: OrderStatus[] = [
 ];
 
 export const TARGET_LABELS: Partial<Record<OrderStatus, string>> = {
+  confirmed: "Принят (согласовано)",
   assembled: "Собран",
   shipped: "В пути (курьер)",
   ready_for_pickup: "В пункте выдачи (самовывоз)",

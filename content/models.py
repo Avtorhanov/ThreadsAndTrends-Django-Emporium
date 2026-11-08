@@ -11,6 +11,8 @@ from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 
+from core.choices import AgreementChannel
+
 
 class ArticleQuerySet(models.QuerySet):
     def published(self):
@@ -211,7 +213,25 @@ class ShopSettings(models.Model):
         max_length=300, blank=True, verbose_name="Адрес пункта выдачи"
     )
     cash_on_delivery_enabled = models.BooleanField(
-        default=True, verbose_name="Оплата при получении"
+        default=False, verbose_name="Оплата при получении"
+    )
+    # Онлайн-оплата ЮKassa работает, только если подключена в .env (ключи); здесь — включена ли.
+    # NULL — настройка ещё не сохранялась: как в .env.
+    online_payment_enabled = models.BooleanField(
+        null=True, blank=True, verbose_name="Онлайн-оплата ЮKassa"
+    )
+    agreement_enabled = models.BooleanField(
+        default=True, db_default=True, verbose_name="Согласование с продавцом в мессенджере"
+    )
+    agreement_channel = models.CharField(
+        max_length=20,
+        choices=AgreementChannel.choices,
+        default=AgreementChannel.WHATSAPP,
+        db_default=AgreementChannel.WHATSAPP,
+        verbose_name="Канал согласования",
+    )
+    agreement_timeout_hours = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Автоотмена несогласованного заказа, ч"
     )
     unpaid_timeout_minutes = models.PositiveIntegerField(
         null=True, blank=True, verbose_name="Автоотмена неоплаченного заказа, мин"

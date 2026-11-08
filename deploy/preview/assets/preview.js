@@ -72,7 +72,7 @@
     return Math.floor(((old - price) * 100 + Math.floor(old / 2)) / old);
   }
   var STATUS_TONES = {
-    awaiting_payment: "warning", confirmed: "tag", paid: "tag", assembled: "tag",
+    awaiting_payment: "warning", awaiting_agreement: "warning", confirmed: "tag", paid: "tag", assembled: "tag",
     shipped: "info", ready_for_pickup: "info", delivered: "success", cancelled: "neutral"
   };
   function icon(name, size, css) {
@@ -803,7 +803,7 @@
         '</span><span class="choice__price">' + (o.cost_kopecks ? money(o.cost_kopecks) : "Бесплатно") + "</span></label>";
     }).join("");
     form.querySelectorAll('input[name="payment_method"]').forEach(function (input) {
-      var allowed = input.value === "online" ? s.online : s.cash;
+      var allowed = input.value === "online" ? s.online : input.value === "agreement" ? s.agreement || (!s.online && !s.cash) : s.cash;
       input.closest(".choice").hidden = !allowed;
       if (!allowed) input.checked = false;
     });
@@ -888,7 +888,9 @@
     var res = sim.checkout(data, buyNowLine());
     if (res.error || res.errors) return showErrors(form, res.errors, res.error);
     setBadges();
-    flash(res.order.payment_method === "online" ? "Заказ оформлен — оплатите его, чтобы мы начали сборку." : "Заказ " + res.order.number + " оформлен. Мы скоро свяжемся с вами.");
+    flash(res.order.payment_method === "online" ? "Заказ оформлен — оплатите его, чтобы мы начали сборку." :
+      res.order.payment_method === "agreement" ? "Заказ " + res.order.number + " создан — напишите продавцу, чтобы его согласовать." :
+      "Заказ " + res.order.number + " оформлен. Мы скоро свяжемся с вами.");
     go(ME + "/orders/" + res.order.number + "/");
   }
 
@@ -917,6 +919,32 @@
     page.appendChild(holder.firstChild);
   }
 
+  // Заказ «по согласованию»: как блок .agree в web/orders/detail.html.
+  var AGREEMENT_BUTTONS = {
+    whatsapp: ["Написать в WhatsApp", "chat"], telegram: ["Написать в Telegram", "send"],
+    vk: ["Написать ВКонтакте", "people"], phone: ["Позвонить продавцу", "phone"]
+  };
+  function agreementHTML(o) {
+    if (o.status !== "awaiting_agreement") return "";
+    var a = sim.agreementLink(o);
+    if (!a) {
+      return '<div class="panel agree"><p class="agree__text">Заказ ждёт подтверждения продавца — он свяжется с вами по телефону ' + esc(o.recipient_phone) + ".</p></div>";
+    }
+    var phone = a.kind === "phone";
+    var button = AGREEMENT_BUTTONS[a.kind];
+    var text = phone ? "Позвоните продавцу и назовите номер заказа <b class=\"nowrap\">" + esc(o.number) + "</b>." :
+      a.prefilled ? "Номер заказа, товары и сумма уже будут в сообщении — просто отправьте его." :
+        "Номер заказа, товары и сумма скопируются при нажатии — вставьте их в чат.";
+    return '<div class="panel agree"><p class="panel__title">Согласуйте заказ с продавцом</p>' +
+      '<p class="agree__text">' + text + " Товар отложен до " + date(a.deadline, false, true) + ": если продавец не подтвердит заказ, он отменится.</p>" +
+      '<a class="cta agree__go" href="' + esc(a.url) + '"' + (phone ? "" : ' target="_blank" rel="noopener noreferrer"') +
+      (!a.prefilled && !phone ? ' data-copy-text="' + esc(a.message) + '"' : "") + ">" + icon(button[1], 20) +
+      '<span class="cta__label">' + button[0] + "</span></a>" +
+      '<p class="muted agree__handle">' + esc(a.title) + ": " + esc(a.handle) + "</p>" +
+      '<details class="agree__msg"><summary>Текст сообщения</summary><pre class="agree__pre">' + esc(a.message) + "</pre>" +
+      '<button class="btn btn--ghost btn--sm" type="button" data-copy-text="' + esc(a.message) + '">Скопировать</button></details></div>';
+  }
+
   function renderOrder() {
     var number = HERE.split("/")[2];
     sim.markSeen(number); // покупатель открыл заказ — значок «есть новости» гаснет
@@ -933,6 +961,7 @@
     var html = '<a class="back-link" href="' + ME + '/orders/">' + icon("chevron", 16, "flip") + "Мои заказы</a>" +
       '<header class="section-head section-head--row"><div><p class="overline">' + date(o.created_at, true, true) + '</p><h1 class="h1">Заказ <span class="nowrap">' + esc(o.number) + "</span></h1></div>" +
       '<span class="status status--' + STATUS_TONES[o.status] + '">' + esc(sim.statusLabel(o.status)) + "</span></header>";
+    html += agreementHTML(o);
     if (o.payment_method === "online") {
       html += '<div class="panel pay">';
       if (o.status === "awaiting_payment") {

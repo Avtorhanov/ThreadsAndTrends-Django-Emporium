@@ -105,6 +105,8 @@ PERIODIC_TASKS: list[dict] = [
     {"task": "payments.tasks.sync_pending", "every": 60},
     # Автоотмена онлайн-заказов, не оплаченных за ORDERS_UNPAID_TIMEOUT_MINUTES.
     {"task": "payments.tasks.cancel_unpaid_orders", "every": 60},
+    # Автоотмена заказов «по согласованию», не подтверждённых продавцом (часы — в панели).
+    {"task": "orders.tasks.cancel_stale_agreements", "every": 10 * 60},
 ]
 
 # --- Пользователи ---
@@ -186,11 +188,14 @@ DELIVERY_COURIER_KOPECKS = env_int("DELIVERY_COURIER_KOPECKS", 500_00)
 DELIVERY_FREE_FROM_KOPECKS = env_int("DELIVERY_FREE_FROM_KOPECKS", 10_000_00)
 # Адрес пункта самовывоза; пусто — самовывоз не предлагается.
 PICKUP_ADDRESS = env_str("PICKUP_ADDRESS", "")
-# Онлайн-оплата (ЮKassa) предлагается только при заданных ключах магазина — иначе system check
-# payments.E001. По умолчанию выключена: только оплата при получении.
+# ЮKassa подключена (ключи магазина заданы — иначе system check payments.E001). Предлагается ли
+# онлайн-оплата покупателю — переключатель в панели («Настройки → Оплата»). По умолчанию не
+# подключена: заказ согласуется с продавцом в мессенджере.
 ORDERS_ONLINE_PAYMENT_ENABLED = env_bool("ORDERS_ONLINE_PAYMENT_ENABLED", False)
 # Неоплаченный онлайн-заказ отменяется через столько минут, товар возвращается в продажу.
 ORDERS_UNPAID_TIMEOUT_MINUTES = env_int("ORDERS_UNPAID_TIMEOUT_MINUTES", 30)
+# Заказ «по согласованию», который продавец не подтвердил за столько часов, отменяется.
+ORDERS_AGREEMENT_TIMEOUT_HOURS = env_int("ORDERS_AGREEMENT_TIMEOUT_HOURS", 48)
 
 # --- Платежи (ЮKassa) ---
 YOOKASSA_SHOP_ID = env_str("YOOKASSA_SHOP_ID", "")

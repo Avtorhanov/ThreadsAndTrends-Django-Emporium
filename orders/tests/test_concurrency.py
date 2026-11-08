@@ -16,7 +16,10 @@ from store.tests.factories import make_product
 
 User = get_user_model()
 
-pytestmark = pytest.mark.django_db(transaction=True)
+pytestmark = [
+    pytest.mark.django_db(transaction=True),
+    pytest.mark.usefixtures("cash_on_delivery"),
+]
 
 INPUT = CheckoutInput(
     delivery_method=DeliveryMethod.COURIER,

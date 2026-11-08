@@ -1,0 +1,14 @@
+{% load money %}{% autoescape off %}Новый заказ {{ order.number }} — {{ status_label }}.
+
+{% for item in items %}— {{ item.product_name }}{% if item.size %} ({{ item.size }}){% endif %} × {{ item.quantity }}: {{ item.price_kopecks|rub_times:item.quantity }} ₽
+{% endfor %}
+Итого: {{ order.total_kopecks|rub }} ₽ (доставка: {% if order.delivery_kopecks %}{{ order.delivery_kopecks|rub }} ₽{% else %}бесплатно{% endif %})
+Оплата: {{ order.get_payment_method_display }}
+Получение: {{ order.get_delivery_method_display }}{% if order.delivery_address %}, {{ order.delivery_address }}{% endif %}
+Получатель: {{ order.recipient_name }}, {{ order.recipient_phone }}{% if order.comment %}
+Комментарий: {{ order.comment }}{% endif %}
+{% if order.status == "awaiting_agreement" %}
+Покупатель напишет вам в {{ order.get_agreement_channel_display|default:"мессенджер" }} с номером заказа. После договорённости отметьте заказ «Принят» в панели — иначе он отменится автоматически.
+{% endif %}{% if panel_url %}
+Заказ в панели: {{ panel_url }}
+{% endif %}{% endautoescape %}

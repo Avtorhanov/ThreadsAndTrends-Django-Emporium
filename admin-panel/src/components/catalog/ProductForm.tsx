@@ -5,6 +5,7 @@ import { ApiError, type FieldErrors } from "../../api/errors";
 import { isLeaf, sortCategoryTree } from "../../hooks/useCatalog";
 import { kopecksToInput, parseRublesToKopecks } from "../../lib/money";
 import { SizeChartSheet } from "./SizeChartSheet";
+import { AGREEMENT_CHANNELS, type AgreementChannel } from "../../lib/agreement";
 import { SIZE_TYPES, hasShoeSizes } from "./sizes";
 
 export type ProductFormValues = Omit<ProductCreate, "variants"> & { sizes: string[] };
@@ -134,6 +135,8 @@ export function ProductForm({
     product ? String(product.category) : initialCategory !== null ? String(initialCategory) : "",
   );
   const [status, setStatus] = useState(product?.status ? String(product.status) : "");
+  // Свой канал согласования заказа; пусто — как в «Настройках».
+  const [channel, setChannel] = useState<AgreementChannel | "">(product?.agreement_channel ?? "");
   const [price, setPrice] = useState(kopecksToInput(product?.price_kopecks));
   // Цена по запросу: на витрине вместо цены и корзины — «Узнать» (мессенджеры магазина).
   const [onRequest, setOnRequest] = useState(product ? product.price_kopecks === null : false);
@@ -147,7 +150,7 @@ export function ProductForm({
   const [saved, setSaved] = useState(false);
 
   // Несохранённые изменения: сравнение с тем, что пришло с сервера.
-  const snapshot = JSON.stringify([name, slug, category, status, price, onRequest, compareAt, description, isActive, sizes]);
+  const snapshot = JSON.stringify([name, slug, category, status, channel, price, onRequest, compareAt, description, isActive, sizes]);
   const [initial] = useState(snapshot);
   const dirty = !saving && (snapshot !== initial || extraDirty);
   useEffect(() => {
@@ -186,6 +189,7 @@ export function ProductForm({
         slug: slug.trim(),
         category: Number(category),
         status: status ? Number(status) : null,
+        agreement_channel: channel,
         price_kopecks: priceKopecks,
         compare_at_kopecks: compareKopecks,
         description,
@@ -293,6 +297,21 @@ export function ProductForm({
               <FieldError errors={errors} name="status" />
             </label>
           </div>
+          <label className="field">
+            Согласование заказа
+            <select value={channel} onChange={(e) => setChannel(e.target.value as AgreementChannel | "")}>
+              <option value="">Как в настройках магазина</option>
+              {AGREEMENT_CHANNELS.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+            <span className="muted small">
+              Куда покупатель напишет после оформления. В заказе с товарами разных каналов — канал магазина.
+            </span>
+            <FieldError errors={errors} name="agreement_channel" />
+          </label>
           {product ? (
             <label className="switch">
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />

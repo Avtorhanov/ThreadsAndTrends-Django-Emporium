@@ -101,7 +101,7 @@ def buyer(base: str, insecure: bool, variant_id: int, run: str, n: int) -> dict:
     key = uuid.uuid4().hex
     order = {
         "delivery_method": "courier",
-        "payment_method": "on_delivery",
+        "payment_method": "agreement",
         "recipient_name": f"Smoke {n}",
         "recipient_phone": "+79990000000",
         "delivery_address": "Москва, ул. Тестовая, 1",

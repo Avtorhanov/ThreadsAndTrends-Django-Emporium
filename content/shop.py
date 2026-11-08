@@ -4,8 +4,10 @@
 поэтому до первого сохранения магазин работает как раньше. Действующие значения — current()
 (строка БД в общем кэше до следующего сохранения, .env подставляется при каждом чтении).
 
-Онлайн-оплата здесь не включается: она зависит от ключей ЮKassa в .env
-(ORDERS_ONLINE_PAYMENT_ENABLED), панель только показывает её состояние.
+Способы оформления: онлайн-оплата ЮKassa (переключатель действует, только если ЮKassa подключена
+в .env — ORDERS_ONLINE_PAYMENT_ENABLED и ключи; ключи в панель не попадают), согласование
+с продавцом в мессенджере (канал — из контактов магазина), оплата при получении. Хотя бы один
+способ остаётся всегда: если выключено всё доступное — согласование.
 
 Не зависит от DRF: ошибки — django ValidationError.
 """
@@ -20,12 +22,14 @@ from django.core.validators import validate_email
 from django.db import transaction
 
 from content.models import ShopSettings
+from core.choices import AgreementChannel
 
 CACHE_KEY = "content:shop-settings:v1"
 CACHE_SECONDS = 60 * 60
 MAX_DELIVERY_KOPECKS = 100_000_00
 MAX_FREE_FROM_KOPECKS = 10_000_000_00
 TIMEOUT_RANGE = (10, 24 * 60)
+AGREEMENT_TIMEOUT_RANGE = (1, 14 * 24)
 
 # Поля строки настроек, которые меняет панель.
 FIELDS = (
@@ -34,7 +38,11 @@ FIELDS = (
     "pickup_enabled",
     "pickup_address",
     "cash_on_delivery_enabled",
+    "online_payment_enabled",
+    "agreement_enabled",
+    "agreement_channel",
     "unpaid_timeout_minutes",
+    "agreement_timeout_hours",
     "seller_name",
     "seller_inn",
     "seller_ogrn",
@@ -101,7 +109,10 @@ class Shop:
     pickup_address: str
     cash_on_delivery: bool
     online_payment: bool
+    agreement: bool
+    agreement_channel: str
     unpaid_timeout_minutes: int
+    agreement_timeout_hours: int
     seller: Seller
 
 
@@ -122,6 +133,7 @@ def env_defaults() -> dict:
         "delivery_free_from_kopecks": settings.DELIVERY_FREE_FROM_KOPECKS,
         "pickup_address": settings.PICKUP_ADDRESS,
         "unpaid_timeout_minutes": settings.ORDERS_UNPAID_TIMEOUT_MINUTES,
+        "agreement_timeout_hours": settings.ORDERS_AGREEMENT_TIMEOUT_HOURS,
         "seller_name": settings.SELLER_NAME,
         "seller_inn": settings.SELLER_INN,
         "seller_ogrn": settings.SELLER_OGRN,
@@ -132,7 +144,20 @@ def env_defaults() -> dict:
 
 
 def online_payment_available() -> bool:
+    """ЮKassa подключена на сервере (.env)."""
     return bool(settings.ORDERS_ONLINE_PAYMENT_ENABLED)
+
+
+def _methods(row: dict) -> tuple[bool, bool, bool]:
+    """(онлайн, согласование, при получении) с учётом подключения ЮKassa. Онлайн-оплата
+    до первого сохранения настроек (NULL) — как в .env."""
+    online_switch = row.get("online_payment_enabled")
+    online = online_payment_available() and (online_switch is None or bool(online_switch))
+    agreement = bool(row.get("agreement_enabled", True))
+    cash = bool(row.get("cash_on_delivery_enabled", False))
+    if not (online or agreement or cash):
+        agreement = True  # без способа оформления покупатель не сможет заказать
+    return online, agreement, cash
 
 
 def current() -> Shop:
@@ -144,16 +169,17 @@ def current() -> Shop:
         return env[field] if value in (None, "") else value
 
     pickup_enabled = row.get("pickup_enabled", True)
-    online = online_payment_available()
-    # Хотя бы один способ оплаты остаётся всегда: без онлайн-оплаты — при получении.
-    cash = bool(row.get("cash_on_delivery_enabled", True)) or not online
+    online, agreement, cash = _methods(row)
     return Shop(
         delivery_courier_kopecks=pick("delivery_courier_kopecks"),
         delivery_free_from_kopecks=pick("delivery_free_from_kopecks"),
         pickup_address=clean_text(pick("pickup_address")) if pickup_enabled else "",
         cash_on_delivery=cash,
         online_payment=online,
+        agreement=agreement,
+        agreement_channel=row.get("agreement_channel") or AgreementChannel.WHATSAPP,
         unpaid_timeout_minutes=pick("unpaid_timeout_minutes"),
+        agreement_timeout_hours=pick("agreement_timeout_hours"),
         seller=Seller(**{name: clean_text(pick(f"seller_{name}")) for name in SELLER_FIELDS}),
     )
 
@@ -214,10 +240,22 @@ def _validate(values: dict) -> dict:
             errors["seller_email"] = "Неверный адрес почты."
     cleaned["seller_email"] = email
 
-    if not cleaned.get("cash_on_delivery_enabled", True) and not online_payment_available():
-        errors["cash_on_delivery_enabled"] = (
-            "Онлайн-оплата не подключена — без оплаты при получении покупатель не сможет "
-            "оформить заказ."
+    hours = cleaned.get("agreement_timeout_hours")
+    if hours is not None and not AGREEMENT_TIMEOUT_RANGE[0] <= hours <= AGREEMENT_TIMEOUT_RANGE[1]:
+        errors["agreement_timeout_hours"] = (
+            f"От {AGREEMENT_TIMEOUT_RANGE[0]} до {AGREEMENT_TIMEOUT_RANGE[1]} часов (2 недели)."
+        )
+
+    if cleaned.get("agreement_channel") not in AgreementChannel.values:
+        errors["agreement_channel"] = "Выберите канал: WhatsApp, Telegram, ВКонтакте или телефон."
+
+    switch = cleaned.get("online_payment_enabled")
+    online = online_payment_available() and (switch is None or bool(switch))
+    if not (
+        online or cleaned.get("agreement_enabled", True) or cleaned.get("cash_on_delivery_enabled")
+    ):
+        errors["agreement_enabled"] = (
+            "Включите хотя бы один способ оформления — иначе покупатель не сможет заказать."
         )
 
     if errors:

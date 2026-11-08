@@ -37,7 +37,7 @@ from store.models import Cart, ProductVariant
 from store.services.cart import CartSummary, LineInput, get_summary, quote
 from store.templatetags.money import format_kopecks
 
-from . import notifications
+from . import agreement, notifications
 from .status import initial_status
 
 IDEMPOTENCY_KEY_RE = re.compile(r"^[A-Za-z0-9_-]{8,64}$")
@@ -120,6 +120,8 @@ def payment_methods() -> list[str]:
     methods = []
     if shop.online_payment:
         methods.append(PaymentMethod.ONLINE.value)
+    if shop.agreement:
+        methods.append(PaymentMethod.AGREEMENT.value)
     if shop.cash_on_delivery:
         methods.append(PaymentMethod.ON_DELIVERY.value)
     return methods
@@ -294,11 +296,15 @@ def checkout(
                     code="total_changed",
                 )
 
+            channel = ""
+            if data.payment_method == PaymentMethod.AGREEMENT:
+                channel = agreement.choose_channel(line.variant.product for line in summary.lines)
             order = Order.objects.create(
                 owner=user,
                 number=_next_number(),
                 status=initial_status(data.payment_method),
                 payment_method=data.payment_method,
+                agreement_channel=channel,
                 delivery_method=data.delivery_method,
                 items_total_kopecks=items_total,
                 delivery_kopecks=delivery,
@@ -331,6 +337,8 @@ def checkout(
                     raise ValidationError(_problems_message(summary), code="cart_changed")
 
             sent = notifications.notify_status(order, created=True)
+            if data.payment_method != PaymentMethod.ONLINE:
+                notifications.notify_seller(order)  # онлайн-заказ — после оплаты
             OrderStatusChange.objects.create(
                 order=order,
                 from_status="",

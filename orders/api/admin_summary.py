@@ -1,6 +1,6 @@
 """Сводка для главной страницы панели администратора: что требует внимания сегодня.
 
-Оборот — сумма заказов, которые не отменены и не ждут онлайн-оплаты (принятые к исполнению),
+Оборот — сумма заказов, которые не отменены и не ждут оплаты или согласования (принятые),
 по дате оформления. Это оборот магазина, а не поступившие деньги: заказ с оплатой при получении
 учитывается сразу после оформления."""
 
@@ -19,7 +19,11 @@ from orders.models import Order, OrderStatus
 from store.models import ProductVariant
 
 LOW_STOCK_LIMIT = 8
-EXCLUDED_FROM_TURNOVER = (OrderStatus.CANCELLED, OrderStatus.AWAITING_PAYMENT)
+EXCLUDED_FROM_TURNOVER = (
+    OrderStatus.CANCELLED,
+    OrderStatus.AWAITING_PAYMENT,
+    OrderStatus.AWAITING_AGREEMENT,
+)
 
 
 class AdminSummaryPeriodSerializer(serializers.Serializer):
@@ -27,7 +31,7 @@ class AdminSummaryPeriodSerializer(serializers.Serializer):
 
     orders = serializers.IntegerField(help_text="Оформлено заказов, кроме отменённых")
     turnover_kopecks = serializers.IntegerField(
-        help_text="Оборот без отменённых и неоплаченных, коп."
+        help_text="Оборот без отменённых, неоплаченных и несогласованных, коп."
     )
 
 
@@ -51,6 +55,9 @@ class AdminSummarySerializer(serializers.Serializer):
     last_7_days = AdminSummaryPeriodSerializer()
     last_30_days = AdminSummaryPeriodSerializer()
     awaiting_payment = serializers.IntegerField(help_text="Ждут онлайн-оплаты")
+    awaiting_agreement = serializers.IntegerField(
+        help_text="Ждут согласования с покупателем в мессенджере"
+    )
     to_assemble = serializers.IntegerField(help_text="Приняты или оплачены — нужно собрать")
     to_deliver = serializers.IntegerField(help_text="Собраны, отправлены или ждут в пункте выдачи")
     low_stock_threshold = serializers.IntegerField()
@@ -98,6 +105,7 @@ def build_summary(now=None) -> dict:
         "last_7_days": _period(midnight - timedelta(days=6)),
         "last_30_days": _period(midnight - timedelta(days=29)),
         "awaiting_payment": count(OrderStatus.AWAITING_PAYMENT),
+        "awaiting_agreement": count(OrderStatus.AWAITING_AGREEMENT),
         "to_assemble": count(OrderStatus.CONFIRMED, OrderStatus.PAID),
         "to_deliver": count(
             OrderStatus.ASSEMBLED, OrderStatus.SHIPPED, OrderStatus.READY_FOR_PICKUP

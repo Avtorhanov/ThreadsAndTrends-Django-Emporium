@@ -202,6 +202,17 @@ function renderWidget(id: WidgetId, data: AdminSummary): ReactNode {
   switch (id) {
     case "today":
       return <TodayWidget data={data} />;
+    case "agreement":
+      return (
+        <QueueTile
+          to="/orders?status=awaiting_agreement"
+          icon="orders"
+          label="Ждут согласования"
+          value={data.awaiting_agreement}
+          note="договоритесь в мессенджере"
+          alert
+        />
+      );
     case "awaiting":
       return (
         <QueueTile

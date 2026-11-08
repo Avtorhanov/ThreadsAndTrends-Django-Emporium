@@ -20,13 +20,15 @@
   var LOW_STOCK = 3;
 
   var STATUS_LABELS = {
-    awaiting_payment: "Ожидает оплаты", confirmed: "Принят", paid: "Оплачен", assembled: "Собран",
+    awaiting_payment: "Ожидает оплаты", awaiting_agreement: "Ждёт согласования", confirmed: "Принят", paid: "Оплачен", assembled: "Собран",
     shipped: "В пути", ready_for_pickup: "В пункте выдачи", delivered: "Получен", cancelled: "Отменён"
   };
-  var PAYMENT_LABELS = { online: "Онлайн", on_delivery: "При получении" };
+  var PAYMENT_LABELS = { online: "Онлайн", agreement: "По согласованию с продавцом", on_delivery: "При получении" };
   var DELIVERY_LABELS = { courier: "Курьер", pickup: "Самовывоз" };
-  var UNFINISHED = ["awaiting_payment", "confirmed", "paid", "assembled", "shipped", "ready_for_pickup"];
-  var CUSTOMER_CANCEL = ["awaiting_payment", "confirmed", "paid", "assembled"];
+  var UNFINISHED = ["awaiting_payment", "awaiting_agreement", "confirmed", "paid", "assembled", "shipped", "ready_for_pickup"];
+  var CUSTOMER_CANCEL = ["awaiting_payment", "awaiting_agreement", "confirmed", "paid", "assembled"];
+  // Каналы согласования заказа (orders.services.agreement), по порядку запасного выбора.
+  var AGREEMENT_KINDS = ["whatsapp", "telegram", "vk", "phone"];
 
   // --- Утилиты ---
 
@@ -459,6 +461,7 @@
   function productDetail(db, p) {
     var row = productRow(db, p);
     row.description = p.description || "";
+    row.agreement_channel = p.agreement_channel || "";
     row.variants = p.variants.slice().sort(function (a, b) { return a.position - b.position || a.id - b.id; }).map(function (v) {
       return { id: v.id, size: v.size, sku: v.sku, stock: v.stock, position: v.position };
     });
@@ -518,6 +521,7 @@
   function allowedTransitions(o) {
     var flow = {
       awaiting_payment: ["cancelled"],
+      awaiting_agreement: ["confirmed", "cancelled"],
       confirmed: ["assembled", "cancelled"],
       paid: ["assembled", "cancelled"],
       assembled: [o.delivery_method === "pickup" ? "ready_for_pickup" : "shipped", "cancelled"],
@@ -602,7 +606,11 @@
       pickup_enabled: !!s.pickup_enabled,
       pickup_address: pick("pickup_address") || "",
       cash: !!s.cash_on_delivery_enabled,
-      online: s.online_payment_available !== false,
+      // Как content.shop._methods: онлайн — только при подключённой ЮKassa; без способов — согласование.
+      online: s.online_payment_available !== false && s.online_payment_enabled !== false,
+      agreement: s.agreement_enabled !== false,
+      channel: s.agreement_channel || "whatsapp",
+      agreement_hours: pick("agreement_timeout_hours") || 48,
       timeout: pick("unpaid_timeout_minutes") || 30,
       seller: {
         name: pick("seller_name") || "", inn: pick("seller_inn") || "", ogrn: pick("seller_ogrn") || "",
@@ -621,7 +629,7 @@
       var orders = db.orders.filter(function (o) { return new Date(o.created_at) >= from && o.status !== "cancelled"; });
       return {
         orders: orders.length,
-        turnover_kopecks: orders.filter(function (o) { return o.status !== "awaiting_payment"; })
+        turnover_kopecks: orders.filter(function (o) { return o.status !== "awaiting_payment" && o.status !== "awaiting_agreement"; })
           .reduce(function (n, o) { return n + o.total_kopecks; }, 0)
       };
     };
@@ -636,7 +644,7 @@
     low.sort(function (a, b) { return a.stock - b.stock || (a.product_name < b.product_name ? -1 : 1); });
     return {
       generated_at: now(), today: period(start), last_7_days: period(since(7)), last_30_days: period(since(30)),
-      awaiting_payment: count(["awaiting_payment"]), to_assemble: count(["confirmed", "paid"]),
+      awaiting_payment: count(["awaiting_payment"]), awaiting_agreement: count(["awaiting_agreement"]), to_assemble: count(["confirmed", "paid"]),
       to_deliver: count(["assembled", "shipped", "ready_for_pickup"]), low_stock_threshold: LOW_STOCK,
       low_stock_count: low.length, low_stock: low.slice(0, 8)
     };
@@ -1198,6 +1206,7 @@
       id: id, name: String(body.name).trim(), slug: body.slug || uniqueSlug(db.products, body.name), category: Number(body.category),
       price_kopecks: body.price_kopecks === undefined ? null : body.price_kopecks,
       compare_at_kopecks: body.compare_at_kopecks || null, status: body.status || null,
+      agreement_channel: body.agreement_channel || "",
       is_active: !body.is_draft && body.is_active !== false, is_draft: !!body.is_draft,
       deleted_at: null, description: String(body.description || ""),
       created_at: now(), updated_at: now(), variants: [], images: []
@@ -1219,7 +1228,7 @@
     if (!p) return fail(404, { detail: "Не найдено." });
     var errors = validateProduct(db, body, p);
     if (errors) return fields(errors);
-    ["name", "description", "price_kopecks", "compare_at_kopecks", "status", "is_active", "slug"].forEach(function (k) {
+    ["name", "description", "price_kopecks", "compare_at_kopecks", "status", "is_active", "slug", "agreement_channel"].forEach(function (k) {
       if (body[k] !== undefined) p[k] = k === "name" ? String(body[k]).trim() : body[k];
     });
     if (body.category !== undefined) p.category = Number(body.category);
@@ -1263,6 +1272,7 @@
       if (body.status !== undefined) p.status = body.status || null;
       if (body.category !== undefined && body.category !== null) p.category = Number(body.category);
       if (body.is_active !== undefined) p.is_active = !!body.is_active;
+      if (body.agreement_channel !== undefined) p.agreement_channel = body.agreement_channel || "";
       if (p.is_active) p.is_draft = false;
       p.updated_at = now();
       updated++;
@@ -1515,7 +1525,12 @@
   });
 
   // Настройки магазина
-  route("GET", "/content/settings/", function (db) { return ok(clone(db.settings)); });
+  function settingsBody(db) {
+    var body = clone(db.settings);
+    body.agreement_contacts = agreementContacts(db);
+    return body;
+  }
+  route("GET", "/content/settings/", function (db) { return ok(settingsBody(db)); });
   route("PUT", "/content/settings/", function (db, m, q, body) {
     var errors = {};
     ["delivery_courier_kopecks", "delivery_free_from_kopecks"].forEach(function (k) {
@@ -1528,10 +1543,18 @@
     var ogrn = digits(body.seller_ogrn);
     if (ogrn && ogrn.length !== 13 && ogrn.length !== 15) errors.seller_ogrn = ["ОГРН — 13 цифр, ОГРНИП — 15."];
     if (body.seller_email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.seller_email)) errors.seller_email = ["Введите правильный адрес электронной почты."];
+    var hours = body.agreement_timeout_hours;
+    if (hours !== null && hours !== undefined && !(hours >= 1 && hours <= 336)) errors.agreement_timeout_hours = ["От 1 до 336 часов (2 недели)."];
+    var online = db.settings.online_payment_available !== false && body.online_payment_enabled !== false;
+    if (!online && body.agreement_enabled === false && !body.cash_on_delivery_enabled) {
+      errors.agreement_enabled = ["Включите хотя бы один способ оформления — иначе покупатель не сможет заказать."];
+    }
     if (Object.keys(errors).length) return fields(errors);
-    Object.keys(body).forEach(function (k) { if (k in db.settings && k !== "defaults") db.settings[k] = body[k]; });
+    Object.keys(body).forEach(function (k) {
+      if (k !== "defaults" && k !== "agreement_contacts" && (k in db.settings || /^agreement_|^online_payment_enabled$/.test(k))) db.settings[k] = body[k];
+    });
     db.settings.updated_at = now();
-    return { status: 200, body: clone(db.settings), save: true };
+    return { status: 200, body: settingsBody(db), save: true };
   });
 
   // Сотрудники
@@ -2028,15 +2051,18 @@
     var address = String(form.delivery_address || "").trim();
     if (delivery && delivery.method === "courier" && !address) errors.delivery_address = "Укажите адрес доставки.";
     var payment = form.payment_method;
-    if (payment !== "online" && payment !== "on_delivery") errors.payment_method = "Выберите способ оплаты.";
+    var agreementOn = s.agreement || (!s.online && !s.cash);
+    if (payment !== "online" && payment !== "on_delivery" && payment !== "agreement") errors.payment_method = "Выберите способ оплаты.";
     else if (payment === "online" && !s.online) errors.payment_method = "Онлайн-оплата сейчас недоступна.";
+    else if (payment === "agreement" && !agreementOn) errors.payment_method = "Согласование с продавцом сейчас недоступно.";
     else if (payment === "on_delivery" && !s.cash) errors.payment_method = "Оплата при получении сейчас недоступна.";
     if (Object.keys(errors).length) return { errors: errors };
 
     var created = now();
     var order = {
       id: next(db, "order"), customer: { id: c.id, email: c.email, is_deleted: false }, number: "DD-" + next(db, "number"),
-      status: payment === "online" ? "awaiting_payment" : "confirmed", payment_method: payment,
+      status: payment === "online" ? "awaiting_payment" : payment === "agreement" ? "awaiting_agreement" : "confirmed",
+      payment_method: payment, agreement_channel: payment === "agreement" ? orderChannel(db, cart.lines, s.channel) : "",
       payment_method_display: PAYMENT_LABELS[payment], delivery_method: delivery.method,
       delivery_method_display: DELIVERY_LABELS[delivery.method], items_total_kopecks: cart.total_kopecks,
       delivery_kopecks: delivery.cost_kopecks, total_kopecks: cart.total_kopecks + delivery.cost_kopecks,
@@ -2092,6 +2118,54 @@
     save(db);
     return o;
   }
+  // --- Согласование заказа в мессенджере (orders.services.agreement) ---
+  function agreementContacts(db) {
+    var found = {};
+    (db.contacts || []).forEach(function (b) {
+      var parsed = AGREEMENT_KINDS.indexOf(b.kind) >= 0 && !found[b.kind] && parseContact(b.kind, b.value);
+      if (parsed) found[b.kind] = { kind: b.kind, title: b.title || CONTACT_TITLES[b.kind], url: parsed[0], handle: parsed[1] };
+    });
+    return AGREEMENT_KINDS.map(function (k) { return found[k] || { kind: k, title: CONTACT_TITLES[k], url: "", handle: "" }; });
+  }
+  function orderChannel(db, lines, fallback) {
+    var seen = {};
+    lines.forEach(function (line) {
+      var found = findVariant(db, line.variant_id);
+      seen[(found && found.product.agreement_channel) || fallback] = true;
+    });
+    var kinds = Object.keys(seen);
+    return kinds.length === 1 ? kinds[0] : fallback;
+  }
+  function rub(kopecks) {
+    var whole = String(Math.floor(kopecks / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    var rest = kopecks % 100;
+    return whole + (rest ? "," + (rest < 10 ? "0" : "") + rest : "") + " ₽";
+  }
+  function agreementLink(db, o) {
+    if (!o || o.status !== "awaiting_agreement") return null;
+    var s = effectiveSettings(db);
+    var list = agreementContacts(db).filter(function (c) { return c.url; });
+    var want = o.agreement_channel || s.channel;
+    var contact = list.filter(function (c) { return c.kind === want; })[0] || list[0];
+    if (!contact) return null;
+    var site = location.origin + BASE;
+    var lines = ["Здравствуйте! Хочу оформить заказ " + o.number + ".", ""];
+    o.items.forEach(function (item, i) {
+      lines.push((i + 1) + ". " + item.product_name + (item.size ? ", " + item.size : "") + " × " + item.quantity + " — " +
+        rub(item.price_kopecks * item.quantity));
+      lines.push(site + "/product/" + item.product_slug + "/");
+    });
+    lines.push("", "Доставка: " + DELIVERY_LABELS[o.delivery_method].toLowerCase() + ", " +
+      (o.delivery_kopecks ? rub(o.delivery_kopecks) : "бесплатно"), "Итого: " + rub(o.total_kopecks));
+    var message = lines.join("\n");
+    var prefilled = contact.kind === "whatsapp";
+    return {
+      kind: contact.kind, title: contact.title, handle: contact.handle, message: message, prefilled: prefilled,
+      url: prefilled ? contact.url + "?text=" + encodeURIComponent(message) : contact.url,
+      deadline: new Date(new Date(o.created_at).getTime() + s.agreement_hours * 3600000).toISOString()
+    };
+  }
+
   function cancelOrder(number) {
     var db = load();
     var o = db.orders.filter(function (x) { return x.number === number; })[0];
@@ -2172,6 +2246,7 @@
     payOrder: payOrder,
     cancelOrder: cancelOrder,
     canCancel: canCancel,
+    agreementLink: function (o) { return agreementLink(load(), o); },
     lastRecipient: lastRecipient,
     setAvatar: setAvatar,
     removeAvatar: removeAvatar,

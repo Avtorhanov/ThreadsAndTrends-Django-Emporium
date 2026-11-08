@@ -17,6 +17,7 @@ import sys
 import tempfile
 import threading
 from pathlib import Path
+from urllib.parse import unquote
 
 from playwright.sync_api import sync_playwright
 
@@ -172,8 +173,12 @@ def main(site: Path, shots: Path) -> None:
         page.wait_for_selector(".page .h1:has-text('Заказ')")
         number = page.text_content(".page .h1 .nowrap").strip()
         assert page.evaluate("window.DidiSim.cartCount()") == 0
+        # Демо как на запуске: заказ ждёт согласования, кнопка WhatsApp с текстом заказа.
+        page.wait_for_selector(".status:text-is('Ждёт согласования')")
+        href = page.get_attribute(".agree__go", "href")
+        assert href.startswith("https://wa.me/") and number in unquote(href), href
         page.screenshot(path=shots / "sim-order-iphone.png", full_page=True)
-        print(f"Имитация: корзина и оформление — заказ {number}")
+        print(f"Имитация: корзина и оформление — заказ {number}, кнопка WhatsApp с текстом заказа")
 
         # 3. Тот же заказ — в панели; товар, созданный в панели, — в магазине.
         page.evaluate("localStorage.setItem('didi-preview-admin', '1')")

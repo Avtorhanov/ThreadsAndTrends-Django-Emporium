@@ -726,6 +726,16 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .history li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; font-size: 13px; }
 .history__note { flex-basis: 100%; margin: 0; padding: 8px 10px; border-radius: var(--radius-seg); background: var(--surface); color: var(--ink); font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
 .pay { display: grid; gap: 12px; }
+.agree { display: grid; gap: 12px; margin-bottom: 16px; }
+.agree__text { margin: 0; font: 600 15px/1.45 var(--font-text); }
+.agree__go { justify-content: center; gap: 10px; text-decoration: none; }
+.agree__handle { margin: -4px 0 0; font-size: 13px; text-align: center; }
+.agree__msg summary { cursor: pointer; color: var(--muted); font: 700 14px var(--font-text); }
+.agree__msg[open] { display: grid; gap: 10px; }
+.agree__pre {
+  margin: 8px 0 0; padding: 12px; border-radius: var(--radius-control); background: var(--surface);
+  font: 500 13px/1.5 var(--font-text); white-space: pre-wrap; overflow-wrap: anywhere;
+}
 .pay__text { display: flex; align-items: center; gap: 6px; font: 600 15px/1.4 var(--font-text); }
 .cancel { margin-top: 4px; }
 .menu { display: grid; gap: 8px; margin-bottom: 14px; }

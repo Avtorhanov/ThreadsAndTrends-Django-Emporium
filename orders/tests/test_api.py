@@ -9,7 +9,7 @@ from store.services import cart as cart_service
 
 from .factories import make_order
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("cash_on_delivery")]
 
 ORDERS = "/api/v1/orders/"
 CHECKOUT = "/api/v1/orders/checkout/"
@@ -57,7 +57,7 @@ def test_checkout_preview(client_api, filled_cart):
         ("courier", 500_00),
         ("pickup", 0),
     ]
-    assert body["payment_methods"] == ["online", "on_delivery"]
+    assert body["payment_methods"] == ["online", "agreement", "on_delivery"]
     assert body["free_delivery_from_kopecks"] == 10_000_00
     assert body["defaults"] == {"recipient_name": "", "recipient_phone": "", "delivery_address": ""}
 
