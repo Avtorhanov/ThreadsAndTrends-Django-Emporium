@@ -112,6 +112,7 @@
 
       <div class="rise r4 buy__bar">
         {% if in_stock %}
+        <div class="buy__sticky">
         {# Уже в корзине: сколько штук выбранного размера, «−/+» прямо здесь (site.js). #}
         <div class="incart-row" data-incart data-line-url="{% url 'web:cart_line' 0 %}"{% if not in_cart_total %} hidden{% endif %}>
           <a class="incart" href="{% url 'web:cart' %}"><svg class="ic" width="16" height="16" aria-hidden="true"><use href="#i-bag"/></svg><span data-incart-text>{% if chosen_state.q %}В корзине · {{ chosen_state.q }} шт.{% elif in_cart_total %}В корзине · {{ in_cart_total }} шт.{% endif %}</span></a>
@@ -126,6 +127,7 @@
           <span class="cta__label" data-cta-label>{% if chosen_state.q %}Добавить ещё{% else %}В корзину{% endif %}</span>
           <span class="cta__price">{{ product.price_kopecks|rub }}&nbsp;₽</span>
         </button>
+        </div>
         {# «Купить сейчас»: оформление только этого товара, корзина не меняется. #}
         <button class="cta cta--alt" type="submit" formaction="{% url 'web:buy_now' %}"
                 hx-post="{% url 'web:buy_now' %}" hx-target="#buy-result" hx-swap="innerHTML" data-buy-now>

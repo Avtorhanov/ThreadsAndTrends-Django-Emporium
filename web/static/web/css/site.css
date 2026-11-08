@@ -588,17 +588,19 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .sz.is-off input { cursor: not-allowed; }
 .pd__desc { color: var(--muted); font-size: 15px; line-height: 1.6; }
 .pd__desc p + p { margin-top: 10px; }
-.buy__bar { display: grid; gap: 10px; }
+.buy__bar, .buy__sticky { display: grid; gap: 10px; }
 .sizes__error { margin-top: 10px; color: var(--danger); font: 700 14px var(--font-text); }
 .sizes.is-invalid .sz:not(.is-off) span { box-shadow: 0 0 0 2px var(--danger); }
 .terms { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; color: var(--muted); font: 500 13px/1.45 var(--font-text); }
 .terms a { color: inherit; text-decoration: underline; }
 .terms__pay > span + span::before { content: ", "; }
-/* Телефон: «В корзину» прилипает над нижним меню, пока кнопка ниже экрана. display: contents —
-   иначе sticky ограничен высотой .buy__bar. fixed нельзя: zoom на body. */
+/* Телефон: «В корзину» вместе со строкой «−/+» прилипает над нижним меню, пока кнопка ниже экрана
+   (одним блоком — иначе кнопка закрывает «−/+»). display: contents — иначе sticky ограничен
+   высотой .buy__bar. fixed нельзя: zoom на body. */
 @media (max-width: 899px) {
   .buy__bar { display: contents; }
-  .buy__bar .cta[data-cta] { position: sticky; bottom: calc(var(--tabbar-top) + 8px); z-index: 5; }
+  .buy__sticky { position: sticky; bottom: calc(var(--tabbar-top) + 8px); z-index: 5; }
+  .buy__sticky .incart-row { padding: 4px 4px 4px 8px; border-radius: calc(16px * var(--radius-scale)); background: var(--surface); box-shadow: var(--shadow-control); }
   .buy__bar .cta--alt { margin-top: -8px; }
 }
 .buy__result:empty { display: none; }
