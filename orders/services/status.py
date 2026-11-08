@@ -19,8 +19,10 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import F
+from django.utils import timezone
 
 from orders.models import (
+    FINAL_STATUSES,
     ChangedBy,
     DeliveryMethod,
     Order,
@@ -31,7 +33,7 @@ from orders.models import (
 from orders.signals import order_cancelled
 from store.models import ProductVariant
 
-from . import notifications
+from . import guest, notifications
 
 S = OrderStatus
 
@@ -129,7 +131,11 @@ def transition(
     locked.status = to_status
     # Смену, сделанную самим покупателем (отмена), отмечать новостью не нужно.
     locked.status_unseen = by != ChangedBy.CUSTOMER if news is None else news
-    locked.save(update_fields=["status", "status_unseen", "updated_at"])
+    update_fields = ["status", "status_unseen", "updated_at"]
+    if locked.owner_id is None and to_status in FINAL_STATUSES:
+        locked.guest_link_expires_at = timezone.now() + guest.LINK_LIFETIME
+        update_fields.append("guest_link_expires_at")
+    locked.save(update_fields=update_fields)
     sent = notify and notifications.notify_status(locked, comment=comment)
     OrderStatusChange.objects.create(
         order=locked,

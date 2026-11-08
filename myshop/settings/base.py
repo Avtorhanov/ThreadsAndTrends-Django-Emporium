@@ -107,6 +107,8 @@ PERIODIC_TASKS: list[dict] = [
     {"task": "payments.tasks.cancel_unpaid_orders", "every": 60},
     # Автоотмена заказов «по согласованию», не подтверждённых продавцом (часы — в панели).
     {"task": "orders.tasks.cancel_stale_agreements", "every": 10 * 60},
+    # Обезличивание гостевых заказов через 180 дней после завершения (152-ФЗ).
+    {"task": "orders.tasks.anonymize_guest_orders", "every": 24 * 60 * 60},
 ]
 
 # --- Пользователи ---
@@ -165,6 +167,12 @@ REST_FRAMEWORK = {
         "cart_quote": env_str("THROTTLE_CART_QUOTE", "60/min"),
         # Оформление заказа (на пользователя).
         "order_create": env_str("THROTTLE_ORDER_CREATE", "30/hour"),
+        # Оформление без аккаунта: телефон не подтверждён, поэтому главный барьер — IP.
+        "order_create_guest": env_str("THROTTLE_ORDER_CREATE_GUEST", "5/hour"),
+        "order_create_guest_day": env_str("THROTTLE_ORDER_CREATE_GUEST_DAY", "15/day"),
+        "order_create_guest_phone": env_str("THROTTLE_ORDER_CREATE_GUEST_PHONE", "10/day"),
+        # Открытие и отмена гостевого заказа по токену, привязка к аккаунту (на IP).
+        "order_guest_access": env_str("THROTTLE_ORDER_GUEST_ACCESS", "120/hour"),
         # Оплата: получение ссылки и сверка после возврата из браузера (на пользователя).
         "payment_start": env_str("THROTTLE_PAYMENT_START", "30/hour"),
         "payment_refresh": env_str("THROTTLE_PAYMENT_REFRESH", "120/hour"),

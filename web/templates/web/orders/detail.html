@@ -3,7 +3,7 @@
 {% block title %}Заказ {{ order.number }} — DiDi-shop{% endblock %}
 {% block content %}
 <section class="page">
-  <a class="back-link" href="{% url 'web:orders' %}"><svg class="ic flip" width="16" height="16"><use href="#i-chevron"/></svg>Мои заказы</a>
+  {% if not guest_token %}<a class="back-link" href="{% url 'web:orders' %}"><svg class="ic flip" width="16" height="16"><use href="#i-chevron"/></svg>Мои заказы</a>{% endif %}
   <header class="section-head section-head--row">
     <div>
       <p class="overline">{{ order.created_at|date:"j E Y, H:i" }}</p>
@@ -11,6 +11,23 @@
     </div>
     <span class="status status--{{ order.status|status_tone }}">{{ order.get_status_display }}</span>
   </header>
+
+  {% if guest_token %}
+  {# Гостевой заказ: ссылка — единственный доступ к нему. #}
+  <div class="panel guest-link">
+    <p class="panel__title">Сохраните ссылку на заказ</p>
+    <p class="agree__text">Без аккаунта заказ открывается только по этой ссылке. Писем о статусе не будет — проверяйте его здесь.</p>
+    <button class="btn btn--ghost btn--sm" type="button" data-copy-text="{{ guest_link }}">Скопировать ссылку</button>
+    {% if can_claim %}
+    <form method="post" action="{% url 'web:guest_order_claim' guest_token %}">
+      {% csrf_token %}
+      <button class="btn btn--dark btn--sm" type="submit">Привязать к аккаунту</button>
+    </form>
+    {% elif not request.user.is_authenticated %}
+    <p class="muted">Чтобы заказ был в профиле, <a href="{% url 'web:register' %}">создайте аккаунт</a> или <a href="{% url 'web:login' %}">войдите</a> — он привяжется сам.</p>
+    {% endif %}
+  </div>
+  {% endif %}
 
   {% if agreement %}
   {# Заказ «по согласованию»: покупатель пишет продавцу готовым текстом, продавец подтверждает в панели. #}
@@ -95,7 +112,7 @@
   {% endif %}
 
   {% if can_cancel %}
-  <form class="cancel" method="post" action="{% url 'web:order_cancel' order.number %}" data-confirm="Отменить заказ {{ order.number }}?{% if payment.payment_status == 'succeeded' %} Деньги вернутся на карту.{% endif %}">
+  <form class="cancel" method="post" action="{% if guest_token %}{% url 'web:guest_order_cancel' guest_token %}{% else %}{% url 'web:order_cancel' order.number %}{% endif %}" data-confirm="Отменить заказ {{ order.number }}?{% if payment.payment_status == 'succeeded' %} Деньги вернутся на карту.{% endif %}">
     {% csrf_token %}
     <button class="btn btn--danger" type="submit">Отменить заказ</button>
   </form>

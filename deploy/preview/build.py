@@ -390,8 +390,13 @@ def build(out: Path) -> None:
     for path in ("/login/", "/register/", "/password-reset/", "/profile/", "/profile/look/"):
         site.save(guest, BASE, path, tree="guest")
     site.save(guest, BASE, f"/password-reset/confirm/?email={CUSTOMER_EMAIL}", tree="guest")
-    # Оформление и заказы гостю недоступны — там страница входа, как на сайте.
+    # Оформление без аккаунта: страница строится с позицией в гостевой корзине, иначе редирект.
+    session = guest.session
+    session["cart"] = [[variants[0].pk, 1, None]]
+    session.save()
     site.save(guest, BASE, "/checkout/", tree="guest")
+    session.pop("cart")
+    session.save()
     site.save(guest, BASE, "/orders/", tree="guest")
     site.save_raw(guest, BASE, "/manifest.webmanifest")
 

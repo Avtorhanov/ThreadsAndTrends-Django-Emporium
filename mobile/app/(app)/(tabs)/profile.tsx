@@ -10,6 +10,7 @@ import { Segmented } from "../../../src/components/Segmented";
 import { HelpCard } from "../../../src/content/HelpCard";
 import { formatKopecks } from "../../../src/lib/money";
 import { formatDateTime, StatusBadge } from "../../../src/orders/components";
+import { guestOrderStorage } from "../../../src/orders/guestOrderStorage";
 import { type OrderSummary, orderService } from "../../../src/orders/orderService";
 import { Button, Card, LinkButton, Message, PressScale, Screen, TextField } from "../../../src/components/ui";
 import { useSubmit } from "../../../src/hooks/useSubmit";
@@ -212,10 +213,29 @@ function CurrentOrder() {
 
 function GuestProfile() {
   const s = useStyles();
+  const [numbers, setNumbers] = useState<string[]>([]);
+  useFocusEffect(
+    useCallback(() => {
+      void guestOrderStorage.list().then((items) => setNumbers(items.map((item) => item.number)));
+    }, []),
+  );
   return (
     <Screen tabs title="Профиль" overline="Аккаунт">
+      {numbers.length > 0 ? (
+        <Card style={s.card}>
+          <Text style={s.lead}>Заказы на этом устройстве</Text>
+          {numbers.map((number) => (
+            <Button
+              key={number}
+              title={number}
+              variant="secondary"
+              onPress={() => router.push({ pathname: "/orders/[number]", params: { number } })}
+            />
+          ))}
+        </Card>
+      ) : null}
       <Card style={s.card}>
-        <Text style={s.lead}>Войдите, чтобы оформлять заказы и следить за их статусом.</Text>
+        <Text style={s.lead}>Войдите, чтобы заказы хранились в аккаунте и приходили письма о статусе.</Text>
         <Text style={s.muted}>Товары из корзины сохранятся и перенесутся в аккаунт.</Text>
         <Button title="Войти" onPress={() => router.push("/sign-in")} />
         <Button title="Зарегистрироваться" variant="secondary" onPress={() => router.push("/sign-up")} />

@@ -18,8 +18,10 @@ import {
 import { useSubmit } from "../../../src/hooks/useSubmit";
 import { formatKopecks } from "../../../src/lib/money";
 import { formatDateTime, StatusBadge } from "../../../src/orders/components";
+import { useAuth } from "../../../src/auth/AuthProvider";
+import { guestOrderStorage } from "../../../src/orders/guestOrderStorage";
 import { useOrder } from "../../../src/orders/hooks";
-import { type OrderDetail, orderService } from "../../../src/orders/orderService";
+import { guestOrderService, type OrderDetail, orderService } from "../../../src/orders/orderService";
 import { checkPayment, isPaymentInProgress, payOrder } from "../../../src/orders/payment";
 import { AgreementPanel } from "../../../src/orders/AgreementPanel";
 import { PaymentPanel } from "../../../src/orders/PaymentPanel";
@@ -76,10 +78,16 @@ function Field({ label, value }: { label: string; value: string }) {
 export default function OrderScreen() {
   const s = useStyles();
   const { number, created } = useLocalSearchParams<{ number: string; created?: string }>();
-  const { order, setOrder, loading, error, reload } = useOrder(number);
+  const signedIn = useAuth().status === "signedIn";
+  const { order, setOrder, loading, error, reload } = useOrder(number, signedIn);
 
   const cancel = useSubmit(async () => {
-    setOrder(await orderService.cancel(number));
+    if (signedIn) {
+      setOrder(await orderService.cancel(number));
+      return;
+    }
+    const token = await guestOrderStorage.tokenFor(number);
+    if (token) setOrder(await guestOrderService.cancel(token));
   });
   const pay = useSubmit(async () => {
     setOrder(await payOrder(number));
@@ -178,7 +186,11 @@ export default function OrderScreen() {
       {order.can_cancel ? (
         <Button title="Отменить заказ" variant="danger" onPress={confirmCancel} loading={cancel.loading} />
       ) : null}
-      <LinkButton title="Все заказы" onPress={() => router.navigate("/orders")} />
+      {signedIn ? (
+        <LinkButton title="Все заказы" onPress={() => router.navigate("/orders")} />
+      ) : (
+        <Message text="Без аккаунта заказ хранится на этом устройстве. Войдите или зарегистрируйтесь — он привяжется к аккаунту." />
+      )}
     </Screen>
   );
 }

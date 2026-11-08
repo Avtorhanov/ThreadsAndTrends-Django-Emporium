@@ -161,7 +161,7 @@ def main(site: Path, shots: Path) -> None:
         page.click('form[data-op="inc"] button')
         page.wait_for_selector(".stepper__value:text-is('2')")
         page.screenshot(path=shots / "sim-cart-iphone.png")
-        page.click(".cta--link")  # гость → вход
+        page.goto(origin + f"{BASE}/login/?next=/checkout/", wait_until="load")
         page.fill('main input[name="email"]', data["customer"]["email"])
         page.fill('main input[name="password"]', data["customer"]["password"])
         page.click('main form[method="post"] button[type="submit"]')
@@ -179,6 +179,34 @@ def main(site: Path, shots: Path) -> None:
         assert href.startswith("https://wa.me/") and number in unquote(href), href
         page.screenshot(path=shots / "sim-order-iphone.png", full_page=True)
         print(f"Имитация: корзина и оформление — заказ {number}, кнопка WhatsApp с текстом заказа")
+
+        # 2а. Гость: корзина → оформление без аккаунта → ссылка → вход привязывает заказ.
+        page = page_for(IPHONE, pages_404=True)
+        page.goto(origin + BASE + check["path"], wait_until="load")
+        page.click(f'label.sz:has(input[value="{variant}"])')
+        page.click("[data-cta]")
+        page.wait_for_selector("[data-added]")
+        page.goto(origin + f"{BASE}/cart/", wait_until="load")
+        page.click(".cta--link")
+        page.wait_for_url(f"**{BASE}/checkout/")
+        page.fill('[name="recipient_name"]', "Гость Проверки")
+        page.fill('[name="recipient_phone"]', "+7 900 555-44-33")
+        page.fill('[name="delivery_address"]', "Москва, ул. Ленина, 1, кв. 1")
+        page.check('[name="consent"]')
+        page.screenshot(path=shots / "sim-guest-checkout-iphone.png", full_page=True)
+        page.click("[data-checkout] button[type=submit]")
+        page.wait_for_url(f"**{BASE}/order/g/*/")
+        page.wait_for_selector(".guest-link")
+        guest_number = page.text_content(".page .h1 .nowrap").strip()
+        page.screenshot(path=shots / "sim-guest-order-iphone.png", full_page=True)
+        page.goto(origin + f"{BASE}/login/", wait_until="load")
+        page.fill('main input[name="email"]', data["customer"]["email"])
+        page.fill('main input[name="password"]', data["customer"]["password"])
+        page.click('main form[method="post"] button[type="submit"]')
+        page.wait_for_url(f"**{BASE}/me/**")
+        page.goto(origin + f"{BASE}/me/orders/{guest_number}/", wait_until="load")
+        page.wait_for_selector(f".page .h1:has-text('{guest_number}')")
+        print(f"Имитация: заказ гостя {guest_number} оформлен и привязан при входе")
 
         # 3. Тот же заказ — в панели; товар, созданный в панели, — в магазине.
         page.evaluate("localStorage.setItem('didi-preview-admin', '1')")

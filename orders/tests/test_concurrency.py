@@ -12,6 +12,7 @@ from orders.services import checkout as checkout_service
 from orders.services.checkout import CheckoutInput
 from store.models import ProductVariant
 from store.services import cart as cart_service
+from store.services.cart import LineInput
 from store.tests.factories import make_product
 
 User = get_user_model()
@@ -86,3 +87,23 @@ def test_double_submit_with_same_key_creates_one_order():
     assert {order.pk for order, _ in results} == {Order.objects.get().pk}
     assert sorted(created for _, created in results) == [False, True]
     assert ProductVariant.all_objects.get(pk=variant.pk).stock == 3
+
+
+def test_guest_limit_holds_under_race():
+    """Гостевой лимит по телефону считается под advisory lock: параллельные оформления
+    не обходят его."""
+    product = make_product(name="Гонка", price_kopecks=100_00, stock=10)
+    line = LineInput(product.variants.get().pk, 1)
+    guest_input = CheckoutInput(
+        delivery_method=DeliveryMethod.COURIER,
+        payment_method=PaymentMethod.AGREEMENT,
+        recipient_name="Анна Гостева",
+        recipient_phone="+79001112233",
+        delivery_address="Москва, ул. Ленина, 1",
+    )
+    calls = [
+        lambda i=i: checkout_service.guest_checkout(guest_input, f"{i:032d}", [line], consent=True)
+        for i in range(6)
+    ]
+    run_parallel(calls)
+    assert Order.objects.filter(owner__isnull=True).count() == 2

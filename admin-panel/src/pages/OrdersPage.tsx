@@ -256,8 +256,9 @@ export function OrdersPage() {
               </td>
               <td>
                 {order.recipient_name || "—"}
+                {order.customer === null ? <span className="muted small"> · Гость</span> : null}
                 <div className="muted small">
-                  {order.recipient_phone || order.customer.email}
+                  {order.recipient_phone || order.customer?.email || "—"}
                 </div>
               </td>
               <td>

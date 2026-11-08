@@ -183,7 +183,7 @@ export default function CartScreen() {
     );
   }
 
-  const checkout = () => router.push(signedIn ? "/checkout" : "/sign-in");
+  const checkout = () => router.push("/checkout");
 
   return (
     <SafeAreaView style={s.screen} edges={["top"]}>
@@ -247,9 +247,9 @@ export default function CartScreen() {
                 </Text>
               ) : null}
               <Button
-                title={signedIn ? "Оформить заказ" : "Войти и оформить"}
+                title="Оформить заказ"
                 onPress={checkout}
-                disabled={action.busy || (signedIn && !cart.can_checkout)}
+                disabled={action.busy || !cart.can_checkout}
               />
             </Card>
           ) : null

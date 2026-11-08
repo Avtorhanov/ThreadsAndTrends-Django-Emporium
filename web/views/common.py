@@ -33,6 +33,18 @@ def safe_next(request, default: str) -> str:
     return default
 
 
+def shopper_required(view):
+    """Покупатель с аккаунтом или гость; администратора — в панель."""
+
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        if request.user.is_authenticated and request.user.is_staff:
+            return redirect("/panel/")
+        return view(request, *args, **kwargs)
+
+    return wrapper
+
+
 def customer_required(view):
     """Только вошедший покупатель. Гостя — на вход с возвратом на эту страницу,
     администратора — в панель (кабинет покупателя ему не нужен)."""
