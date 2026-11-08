@@ -1,7 +1,7 @@
 {% extends "web/base.html" %}
 {% load storefront %}
 {% block title %}{% if search %}{% if values.q %}«{{ values.q }}» — поиск{% else %}Поиск{% endif %}{% elif category %}{{ category.name }}{% if category.parent %} — {{ category.parent.name }}{% endif %}{% else %}Все товары{% endif %}{% if page_number > 1 %}, страница {{ page_number }}{% endif %} — DiDi-shop{% endblock %}
-{% block description %}{% if category %}{{ category.name }} в DiDi-shop: цены, наличие и доставка курьером. Оплата онлайн или при получении.{% else %}Каталог DiDi-shop: одежда, обувь, аксессуары и уход. Доставка курьером, оплата онлайн или при получении.{% endif %}{% endblock %}
+{% block description %}{% if category %}{{ category.name }} в DiDi-shop: цены, наличие и доставка курьером.{% else %}Каталог DiDi-shop: одежда, обувь, аксессуары и уход. Доставка курьером.{% endif %}{% endblock %}
 {% block canonical %}{% if not search %}<link rel="canonical" href="{% absolute canonical %}">{% endif %}{% endblock %}
 {% block og %}
 <meta property="og:type" content="website">

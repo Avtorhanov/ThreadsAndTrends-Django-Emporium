@@ -313,6 +313,7 @@ def _place_order(
                 size=line.variant.size,
                 sku=line.variant.sku,
                 status_name=_status_name(line.variant.product),
+                color_name=line.variant.product.color_name,
                 price_kopecks=line.unit_price_kopecks,
                 quantity=line.quantity,
             )

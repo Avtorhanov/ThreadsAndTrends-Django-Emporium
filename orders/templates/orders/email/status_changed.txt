@@ -3,7 +3,7 @@
 {% if created and agreement %}Ваш заказ {{ order.number }} создан и ждёт согласования с продавцом. Если вы ещё не написали продавцу, откройте заказ в разделе «Мои заказы» и нажмите кнопку связи — номер заказа и товары подставятся в сообщение. Товар отложен для вас на {{ agreement_hours }} ч.
 {% elif created %}Ваш заказ {{ order.number }} оформлен.
 
-{% for item in items %}— {{ item.product_name }}{% if item.size %} ({{ item.size }}){% endif %} × {{ item.quantity }}: {{ item.price_kopecks|rub_times:item.quantity }} ₽
+{% for item in items %}— {{ item.product_name }}{% if item.color_name or item.size %} ({% if item.color_name %}{{ item.color_name }}{% if item.size %}, {% endif %}{% endif %}{{ item.size }}){% endif %} × {{ item.quantity }}: {{ item.price_kopecks|rub_times:item.quantity }} ₽
 {% endfor %}
 Товары: {{ order.items_total_kopecks|rub }} ₽
 Доставка: {% if order.delivery_kopecks %}{{ order.delivery_kopecks|rub }} ₽{% else %}бесплатно{% endif %}

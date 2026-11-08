@@ -194,6 +194,10 @@ class OrderItem(models.Model):
     )
     product_name = models.CharField(max_length=200, verbose_name="Название")
     size = models.CharField(max_length=50, blank=True, verbose_name="Размер")
+    # Снимок цвета: название товара его не содержит, а связку могут поменять.
+    color_name = models.CharField(
+        max_length=40, blank=True, default="", db_default="", verbose_name="Цвет"
+    )
     sku = models.CharField(max_length=64, verbose_name="Артикул")
     # Снимок статуса товара («Под заказ») на момент заказа: справочник могут поменять.
     status_name = models.CharField(max_length=40, blank=True, verbose_name="Статус товара")

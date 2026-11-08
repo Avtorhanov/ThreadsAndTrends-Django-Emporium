@@ -19,6 +19,8 @@ from .serializers import (
     AdminImageUploadSerializer,
     AdminProductBulkResultSerializer,
     AdminProductBulkSerializer,
+    AdminProductColorsResultSerializer,
+    AdminProductColorsSerializer,
     AdminProductCreateSerializer,
     AdminProductDetailSerializer,
     AdminProductSerializer,
@@ -253,6 +255,29 @@ class AdminProductViewSet(
         ids = changes.pop("ids")
         updated = catalog.bulk_update_products(ids, **changes)
         return Response({"updated": updated})
+
+    @extend_schema(
+        request=AdminProductColorsSerializer,
+        responses={200: AdminProductColorsResultSerializer},
+        description=(
+            "Связать товары как цвета одной модели; повторно — сменить названия или добавить цвет."
+        ),
+    )
+    @action(detail=False, methods=["post"])
+    def colors(self, request):
+        serializer = AdminProductColorsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        group, updated = catalog.link_colors(serializer.validated_data["items"])
+        return Response({"color_group": group, "updated": updated})
+
+    @extend_schema(
+        request=None,
+        responses={200: AdminProductDetailSerializer},
+        description="Убрать товар из группы цветов.",
+    )
+    @action(detail=True, methods=["post"], url_path="colors/unlink")
+    def unlink_color(self, request, pk=None):
+        return self._detail(catalog.unlink_color(self.get_object()))
 
     @extend_schema(
         request=None,

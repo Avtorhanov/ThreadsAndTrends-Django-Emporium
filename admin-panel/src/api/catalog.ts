@@ -96,6 +96,14 @@ export const productsService = {
   bulk(body: ProductBulk): Promise<{ updated: number }> {
     return unwrap(api.POST("/api/v1/admin/catalog/products/bulk/", { body }));
   },
+  linkColors(items: { id: number; color_name: string }[]): Promise<{ updated: number }> {
+    return unwrap(api.POST("/api/v1/admin/catalog/products/colors/", { body: { items } }));
+  },
+  unlinkColor(id: number): Promise<Product> {
+    return unwrap(
+      api.POST("/api/v1/admin/catalog/products/{id}/colors/unlink/", { params: { path: { id } } }),
+    );
+  },
 };
 
 export const labelsService = {

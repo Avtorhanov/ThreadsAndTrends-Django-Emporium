@@ -8,6 +8,7 @@ import { PageTools, ToolButton } from "../components/PageTools";
 import { Icon } from "../components/Icon";
 import { type BatchCategory, batchCategories, categoryLabel, drafts as draftsText, isReady } from "../components/catalog/batch";
 import { CategorySheet } from "../components/catalog/CategorySheet";
+import { ColorLinkSheet } from "../components/catalog/ColorLinkSheet";
 import { useCategories, useLabels, useLoader } from "../hooks/useCatalog";
 import { formatKopecks, parseRublesToKopecks } from "../lib/money";
 import { BatchSteps, type BatchResult } from "./ProductBatchPage";
@@ -46,6 +47,7 @@ export function ProductDraftsPage() {
   const [massName, setMassName] = useState("");
   const [numbered, setNumbered] = useState(true);
   const [sheet, setSheet] = useState(false);
+  const [colorSheet, setColorSheet] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -351,7 +353,11 @@ export function ProductDraftsPage() {
                   </button>
                 </form>
               )}
-              <div className="batch-actions-grid batch-actions-grid-3">
+              <div className="batch-actions-grid">
+                <button type="button" className="batch-action" disabled={busy || checked.length < 2} onClick={() => setColorSheet(true)}>
+                  <Icon name="palette" />
+                  Цвета
+                </button>
                 <button type="button" className="batch-action" disabled={busy} onClick={() => setSheet(true)}>
                   <Icon name="folder" />
                   Категория
@@ -389,6 +395,18 @@ export function ProductDraftsPage() {
             </div>
           )}
         </>
+      ) : null}
+
+      {colorSheet ? (
+        <ColorLinkSheet
+          rows={checked}
+          onDone={(updated) => {
+            setColorSheet(false);
+            setNotice(`Связано цветов: ${updated}`);
+            list.reload();
+          }}
+          onClose={() => setColorSheet(false)}
+        />
       ) : null}
 
       {sheet ? (

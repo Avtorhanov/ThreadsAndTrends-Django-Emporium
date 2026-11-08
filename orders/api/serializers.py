@@ -133,6 +133,7 @@ class OrderItemSerializer(serializers.Serializer):
     product_slug = serializers.CharField(source="product.slug")
     product_name = serializers.CharField()
     size = serializers.CharField(help_text="Пусто — товар без размера")
+    color_name = serializers.CharField(help_text="Цвет на момент заказа; пусто — без цвета")
     sku = serializers.CharField()
     status_name = serializers.CharField(
         help_text="Статус товара на момент заказа («Под заказ»); пусто — без статуса"

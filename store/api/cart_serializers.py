@@ -17,6 +17,7 @@ class CartProductSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     slug = serializers.CharField()
     name = serializers.CharField()
+    color_name = serializers.CharField(help_text="Цвет; пусто — без цвета")
     cover_url = serializers.SerializerMethodField()
     status = ProductStatusSerializer(allow_null=True, help_text="Метка товара: «Под заказ»…")
 

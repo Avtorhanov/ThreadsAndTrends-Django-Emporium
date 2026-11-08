@@ -378,6 +378,7 @@
       html += '<p class="more"><a class="btn btn--ghost" href="' + link("/products/") + '">Весь каталог' + icon("chevron", 18) + "</a></p>";
     }
     feed.innerHTML = html;
+    document.body.classList.toggle("page-feed--own-cats", !!feed.querySelector(".hblock-cats"));
     if (window.didiHomeMotion) window.didiHomeMotion(feed);
   }
 
@@ -497,6 +498,29 @@
 
   // --- Карточка товара (web/catalog/product.html) ---
 
+  // Условия у кнопок — как web/catalog/_terms.html.
+  function termsHTML(withPayment) {
+    var s = sim.settings();
+    var pay = [s.online && "онлайн картой или СБП", (s.agreement || (!s.online && !s.cash)) && "по согласованию с продавцом", s.cash && "при получении"]
+      .filter(Boolean).map(function (x) { return "<span>" + x + "</span>"; }).join("");
+    return '<ul class="rise r4 terms"><li>Доставка курьером — ' + money(s.courier) + ", бесплатно от " + money(s.free_from) +
+      (s.pickup_enabled && s.pickup_address ? "; самовывоз бесплатно" : "") + "</li>" +
+      (withPayment ? '<li>Оплата: <span class="terms__pay">' + pay + "</span></li>" : "") +
+      '<li>Возврат в течение 7 дней — <a href="' + link("/legal/delivery/") + '">Доставка и оплата</a></li></ul>';
+  }
+
+  // «Доставка и оплата»: страница статична, собрана со всеми способами — оставляем активные.
+  function renderDelivery() {
+    var s = sim.settings();
+    var active = { online: s.online, agreement: s.agreement || (!s.online && !s.cash), cash: s.cash };
+    document.querySelectorAll("[data-pay-method]").forEach(function (el) {
+      if (!active[el.getAttribute("data-pay-method")]) el.remove();
+    });
+    var values = { courier: rub(s.courier), free_from: rub(s.free_from), timeout: s.timeout, agreement_hours: s.agreement_hours, pickup: s.pickup_address };
+    document.querySelectorAll("[data-shop]").forEach(function (el) { el.textContent = values[el.getAttribute("data-shop")]; });
+    if (!s.pickup_enabled || !s.pickup_address) document.querySelectorAll("[data-shop-pickup]").forEach(function (el) { el.remove(); });
+  }
+
   function askHTML(p, ask) {
     var message = "Здравствуйте! Подскажите цену: " + p.name + " — " + location.origin + link("/product/" + p.slug + "/");
     var links = (ask || []).map(function (a) {
@@ -504,7 +528,7 @@
       return '<a class="ask__link ask__link--' + esc(a.kind) + '" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer"><span class="channel__icon" aria-hidden="true">' +
         icon(a.kind === "telegram" ? "send" : "chat", 20) + "</span><span>" + esc(a.title) + "</span></a>";
     }).join("") || '<a class="ask__link" href="' + link("/contacts/") + '"><span>Контакты магазина</span></a>';
-    return '<details class="rise r4 ask" data-ask><summary class="cta ask__toggle"><span class="cta__label">Узнать</span>' +
+    return '<details class="rise r4 ask" data-ask><summary class="cta ask__toggle"><span class="cta__label">Узнать цену</span>' +
       '<svg class="ic ask__chev" width="20" height="20" aria-hidden="true"><use href="#i-chevron"/></svg></summary><div class="ask__body">' + links + "</div></details>";
   }
 
@@ -602,13 +626,23 @@
       head += '<s class="price__old"><span class="sr">Старая цена </span>' + rub(p.compare_at_kopecks) + "&nbsp;₽</s>" +
         (off ? '<span class="sale sale--inline">−' + off + "%</span>" : "");
     }
-    head += "</p></div>";
+    head += "</p>";
+    var colors = sim.colorOptions(full);
+    if (colors.length) {
+      head += '<div class="colors"><p class="label">Цвет: <span class="colors__name">' + esc(p.color_name) + '</span></p><ul class="colors__list">' +
+        colors.map(function (c) {
+          var on = c.slug === p.slug;
+          return '<li><a class="color tone-' + tone(c.slug) + (on ? " is-on" : "") + (c.in_stock ? "" : " is-off") + '" href="' + link("/product/" + c.slug + "/") + '" aria-label="' +
+            esc(c.color_name) + (c.in_stock ? "" : ", нет в наличии") + '"' + (on ? ' aria-current="true"' : "") + ">" + (c.cover_url ? img(c.cover_url, "56px", "color__photo", false, "") : "") + "</a></li>";
+        }).join("") + "</ul></div>";
+    }
+    head += "</div>";
 
     var desc = paragraphs(full.description);
     var descHTML = desc.length ? '<div class="rise r3 pd__desc">' + desc.map(function (x) { return "<p>" + esc(x).replace(/\n/g, "<br>") + "</p>"; }).join("") + "</div>" : "";
     var buy;
     if (p.price_on_request) {
-      buy = '<div class="buy">' + descHTML + askHTML(p, data.ask) + "</div>";
+      buy = '<div class="buy">' + askHTML(p, data.ask) + termsHTML(false) + descHTML + "</div>";
     } else {
       buy = '<form class="buy" method="post" action="' + link("/cart/add/") + '" data-buy>';
       if (single) buy += '<input type="hidden" name="variant" value="' + single.id + '">';
@@ -616,9 +650,9 @@
         buy += '<fieldset class="rise r2 sizes"><legend class="label">Размер</legend><div class="sizes__list">' + sizes.map(function (s) {
           return '<label class="sz' + (s.available ? "" : " is-off") + '"><input type="radio" name="variant" value="' + s.v.id + '"' +
             (s.available ? "" : " disabled") + (s.v.id === chosen ? " checked" : "") + ' required><span>' + esc(s.v.size || "Без размера") + "</span></label>";
-        }).join("") + "</div>" + (sizes.some(function (s) { return / US$/.test(s.v.size || ""); }) ? sizeChartHTML() : "") + "</fieldset>";
+        }).join("") + "</div>" + (sizes.some(function (s) { return / US$/.test(s.v.size || ""); }) ? sizeChartHTML() : "") + '<p class="sizes__error" data-size-error role="alert" hidden>Выберите размер</p></fieldset>';
       }
-      buy += descHTML + '<div class="rise r4 buy__bar">';
+      buy += '<div class="rise r4 buy__bar">';
       if (inStock) {
         var q = chosenState ? chosenState.q : 0;
         buy += '<div class="incart-row" data-incart data-line-url="' + link("/cart/line/0/") + '"' + (inCartTotal ? "" : " hidden") + '>' +
@@ -633,7 +667,7 @@
       } else {
         buy += '<button class="cta" type="button" disabled><span class="cta__label">Нет в наличии</span></button>';
       }
-      buy += '<div id="buy-result" class="buy__result" aria-live="polite"></div></div></form>';
+      buy += '<div id="buy-result" class="buy__result" aria-live="polite"></div></div>' + (inStock ? termsHTML(true) : "") + descHTML + "</form>";
     }
     pd.innerHTML = gallery + '<div class="pd__info">' + head + buy + "</div>";
     document.title = p.price_on_request ? p.name + " — цена по запросу в DiDi-shop" : p.name + " — купить за " + rub(p.price_kopecks) + " ₽ в DiDi-shop";
@@ -705,8 +739,14 @@
       html += '<a class="line__img tone-' + (p ? tone(p.slug) : "lime") + '"' + (href ? ' href="' + href + '"' : "") + ' tabindex="-1" aria-hidden="true">' +
         (p ? img(p.cover_url, "96px", "line__photo", false, "") : "") + "</a>";
       html += '<div class="line__body"><p class="line__title">' + (available ? '<a href="' + href + '">' + esc(p.name) + "</a>" : p ? esc(p.name) : "Товар снят с продажи") + "</p>";
-      if (line.size) html += '<p class="line__meta">Размер ' + esc(line.size) + "</p>";
-      if (p && p.status && available) html += '<p class="status status--' + esc(p.status.tone) + '">' + esc(p.status.name) + "</p>";
+      var lineMeta = [];
+      if (p && p.color_name) lineMeta.push("Цвет " + esc(p.color_name));
+      if (line.size) lineMeta.push("Размер " + esc(line.size));
+      if (lineMeta.length) html += '<p class="line__meta">' + lineMeta.join(" · ") + "</p>";
+      if (p && p.status && available) {
+        html += '<p class="status status--' + esc(p.status.tone) + '">' + esc(p.status.name) + "</p>";
+        if (p.status.hint && line.status !== "out_of_stock") html += '<p class="line__meta">' + esc(p.status.hint) + "</p>";
+      }
       html += '<div class="line__parts">';
       if (line.status === "unavailable") html += '<p class="pill pill--neutral">Недоступен</p>';
       else if (line.status === "out_of_stock") html += '<p class="pill pill--danger">Нет в наличии</p>';
@@ -993,7 +1033,7 @@
     }
     html += '<ul class="lines lines--static">' + o.items.map(function (item) {
       return '<li class="line"><span class="line__img tone-' + tone(item.product_slug) + '" aria-hidden="true">' + img(item.cover_url, "96px", "line__photo", false, "") + "</span>" +
-        '<div class="line__body"><p class="line__title">' + esc(item.product_name) + '</p><p class="line__meta">' + (item.size ? "Размер " + esc(item.size) + " · " : "") +
+        '<div class="line__body"><p class="line__title">' + esc(item.product_name) + '</p><p class="line__meta">' + (item.color_name ? "Цвет " + esc(item.color_name) + " · " : "") + (item.size ? "Размер " + esc(item.size) + " · " : "") +
         (item.status_name ? esc(item.status_name) + " · " : "") + item.quantity + " × " + money(item.price_kopecks) + "</p></div>" +
         '<p class="line__price">' + money(item.line_total_kopecks) + "</p></li>";
     }).join("") + "</ul>";
@@ -1515,6 +1555,7 @@
     else if (HERE === "/profile/" && TREE === "me") renderProfile();
     else if (HERE === "/profile/data/" && TREE === "me") renderProfileData();
     else if (HERE === "/contacts/") renderContacts();
+    else if (HERE === "/legal/delivery/") renderDelivery();
     else if (/^\/articles\/[^/]+\/$/.test(HERE)) renderArticle();
     renderNews();
     // Email из адреса: «Забыли пароль?» на входе панели и шаг «код» сброса.

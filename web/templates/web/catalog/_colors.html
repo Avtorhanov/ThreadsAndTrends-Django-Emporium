@@ -1,0 +1,13 @@
+{% load storefront %}{# Цвет — отдельный товар: выбор цвета — переход на его страницу, работает без JS. #}
+<div class="colors">
+  <p class="label">Цвет: <span class="colors__name">{{ product.color_name }}</span></p>
+  <ul class="colors__list">
+    {% for option in colors %}
+    <li>
+      <a class="color tone-{{ option.slug|tone }}{% if option.pk == product.pk %} is-on{% endif %}{% if not option.in_stock %} is-off{% endif %}" href="{% url 'web:product' option.slug %}" aria-label="{{ option.color_name }}{% if not option.in_stock %}, нет в наличии{% endif %}"{% if option.pk == product.pk %} aria-current="true"{% endif %}>
+        {% with cover=option.cover %}{% if cover %}{% product_img cover "56px" css="color__photo" %}{% endif %}{% endwith %}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>

@@ -351,6 +351,28 @@ def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[s
     page.screenshot(path=shots / "panel-from-site-login-iphone.png")
     print("Вход администратора с витрины → панель: ок")
 
+    # Цвета: связка двух товаров → переключатель на карточке, переход на второй цвет.
+    linked = page.evaluate(
+        """async () => {
+          const url = "/api/v1/admin/catalog/products/";
+          const list = await window.DidiSim.api("GET", url + "?status=active");
+          const [a, b] = list.body.results;
+          const items = [{ id: a.id, color_name: "Зелёный" }, { id: b.id, color_name: "Бежевый" }];
+          const done = await window.DidiSim.api("POST", url + "colors/", { items });
+          return { status: done.status, first: a.slug, second: b.slug };
+        }"""
+    )
+    assert linked["status"] == 200, linked
+    page.goto(f"{origin}{BASE}/product/{linked['first']}/", wait_until="load")
+    page.wait_for_selector(".colors__list .color.is-on")
+    assert page.locator(".colors__list .color").count() == 2
+    page.screenshot(path=shots / "sim-product-colors-iphone.png")
+    page.click(f'.colors__list .color[href$="/product/{linked["second"]}/"]')
+    page.wait_for_selector(".colors__name:text-is('Бежевый')")
+    page.goto(origin + BASE + "/panel/", wait_until="load")
+    page.wait_for_selector("main h1:has-text('Сводка')")
+    print("Цвета: связка и переключатель на карточке: ок")
+
     # Пароль сотрудника: смена в «Аккаунте» → выход → вход с новым; «Забыли пароль?» на входе
     # панели → сброс кодом на сайте → снова в панели. В конце пароль демо возвращается.
     admin = data["admin"]

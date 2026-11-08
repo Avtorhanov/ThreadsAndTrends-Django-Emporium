@@ -116,6 +116,7 @@ export function OrderDetailPage() {
                     <div>
                       <strong>{item.product_name}</strong>
                       <span className="muted small">
+                        {item.color_name ? `Цвет ${item.color_name} · ` : ""}
                         {item.size ? `Размер ${item.size} · ` : ""}
                         {item.quantity} шт. × {formatKopecks(item.price_kopecks)} · {item.sku}
                       </span>

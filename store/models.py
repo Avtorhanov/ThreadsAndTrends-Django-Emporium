@@ -132,6 +132,11 @@ class Product(models.Model):
         db_default="",
         verbose_name="Канал согласования",
     )
+    # Цвет — отдельный товар; товары с одной группой — цвета одной модели.
+    color_group = models.UUIDField(null=True, blank=True, verbose_name="Группа цветов")
+    color_name = models.CharField(
+        max_length=40, blank=True, default="", db_default="", verbose_name="Цвет"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создан")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Изменён")
     deleted_at = models.DateTimeField(null=True, blank=True, verbose_name="Удалён")
@@ -161,6 +166,12 @@ class Product(models.Model):
                 fields=["-created_at"],
                 name="product_draft_idx",
                 condition=Q(is_draft=True, deleted_at__isnull=True),
+            ),
+            # Соседние цвета на карточке товара.
+            models.Index(
+                fields=["color_group"],
+                name="product_color_group_idx",
+                condition=Q(color_group__isnull=False),
             ),
         ]
         constraints = [

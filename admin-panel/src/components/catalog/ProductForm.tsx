@@ -347,7 +347,7 @@ export function ProductForm({
             </button>
           </div>
           {onRequest ? (
-            <span className="muted">На витрине вместо цены и корзины — кнопка «Узнать» с мессенджерами магазина.</span>
+            <span className="muted">На витрине вместо цены и корзины — кнопка «Узнать цену» с мессенджерами магазина.</span>
           ) : (
             <div className="pf-prices">
               <label className="field">
