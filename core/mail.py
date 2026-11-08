@@ -14,6 +14,22 @@ from django.core.mail.backends.smtp import EmailBackend
 
 logger = logging.getLogger(__name__)
 
+# Домены получателей по сервисам: письмо внутри одного сервиса реже попадает в спам.
+RELAY_DOMAINS = {
+    "Яндекс": {"yandex.ru", "ya.ru", "yandex.com", "yandex.by", "yandex.kz", "narod.ru"},
+    "Mail.ru": {"mail.ru", "inbox.ru", "list.ru", "bk.ru", "internet.ru"},
+    "Gmail": {"gmail.com", "googlemail.com"},
+}
+
+
+def relays_for(recipients: list[str]) -> list[dict]:
+    """Ящики в порядке попыток: сначала сервис получателя, затем остальные как настроены."""
+    domain = recipients[0].rpartition("@")[2].lower() if recipients else ""
+    # sorted устойчив: порядок остальных ящиков сохраняется.
+    return sorted(
+        settings.EMAIL_RELAYS, key=lambda relay: domain not in RELAY_DOMAINS[relay["name"]]
+    )
+
 
 class FailoverEmailBackend(BaseEmailBackend):
     def send_messages(self, messages) -> int:
@@ -29,7 +45,7 @@ class FailoverEmailBackend(BaseEmailBackend):
     def _send(self, message) -> int:
         display_name = parseaddr(settings.DEFAULT_FROM_EMAIL)[0] or "DiDi-shop"
         error: Exception | None = None
-        for relay in settings.EMAIL_RELAYS:
+        for relay in relays_for(message.recipients()):
             backend = EmailBackend(
                 host=relay["host"],
                 port=relay["port"],

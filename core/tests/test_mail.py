@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 from django.core.mail import EmailMessage
 
-from core.mail import FailoverEmailBackend
+from core.mail import FailoverEmailBackend, relays_for
 from core.tasks import RETRY_DELAYS, send_email
 
 RELAYS = [
@@ -32,6 +32,24 @@ def test_next_mailbox_used_when_first_fails(relays):
         assert FailoverEmailBackend().send_messages([message]) == 1
     assert backend.call_args_list[1].kwargs["host"] == "smtp.gmail.com"
     assert "b@gmail.com" in message.from_email
+
+
+@pytest.mark.parametrize(
+    "address, first",
+    [
+        ("c@gmail.com", "Gmail"),
+        ("C@GOOGLEMAIL.COM", "Gmail"),
+        ("c@ya.ru", "Яндекс"),
+        ("c@example.com", "Яндекс"),
+    ],
+)
+def test_recipient_service_goes_first(relays, address, first):
+    assert [r["name"] for r in relays_for([address])][0] == first
+    assert len(relays_for([address])) == 2
+
+
+def test_missing_mailbox_falls_back_to_configured_order(relays):
+    assert [r["name"] for r in relays_for(["c@mail.ru"])] == ["Яндекс", "Gmail"]
 
 
 def test_error_raised_when_all_mailboxes_fail(relays):
