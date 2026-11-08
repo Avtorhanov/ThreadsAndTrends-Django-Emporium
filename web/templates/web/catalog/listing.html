@@ -1,7 +1,7 @@
 {% extends "web/base.html" %}
 {% load storefront %}
 {% block title %}{% if search %}{% if values.q %}«{{ values.q }}» — поиск{% else %}Поиск{% endif %}{% elif category %}{{ category.name }}{% if category.parent %} — {{ category.parent.name }}{% endif %}{% else %}Все товары{% endif %}{% if page_number > 1 %}, страница {{ page_number }}{% endif %} — DiDi-shop{% endblock %}
-{% block description %}{% if category %}{{ category.name }} в DiDi-shop: цены, наличие и доставка курьером. Оплата онлайн или при получении.{% else %}Каталог DiDi-shop: одежда, обувь, аксессуары и уход. Доставка курьером, оплата онлайн или при получении.{% endif %}{% endblock %}
+{% block description %}{% if category %}{{ category.name }} в DiDi-shop: цены, наличие и доставка курьером.{% else %}Каталог DiDi-shop: одежда, обувь, аксессуары и уход. Доставка курьером.{% endif %}{% endblock %}
 {% block canonical %}{% if not search %}<link rel="canonical" href="{% absolute canonical %}">{% endif %}{% endblock %}
 {% block og %}
 <meta property="og:type" content="website">
@@ -58,6 +58,14 @@
           <label><span class="field__label">Цена от, ₽</span><input class="input" name="price_min" value="{{ price_min }}" inputmode="decimal" autocomplete="off"></label>
           <label><span class="field__label">до, ₽</span><input class="input" name="price_max" value="{{ price_max }}" inputmode="decimal" autocomplete="off"></label>
         </div>
+        <fieldset class="size-filter" data-size-filter{% if not size_options %} hidden{% endif %}>
+          <legend class="field__label">Размер</legend>
+          <div class="size-filter__chips">
+            {% for option in size_options %}
+            <label class="size-chip"><input type="checkbox" name="size" value="{{ option.value }}"{% if option.selected %} checked{% endif %}><span>{{ option.value }}</span></label>
+            {% endfor %}
+          </div>
+        </fieldset>
         <label class="check">
           <input type="checkbox" name="in_stock" value="1"{% if values.in_stock %} checked{% endif %}>
           <span>Только в наличии</span>

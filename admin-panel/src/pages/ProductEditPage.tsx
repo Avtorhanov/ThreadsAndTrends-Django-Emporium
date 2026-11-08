@@ -5,6 +5,7 @@ import { imagesService, productsService, variantsService } from "../api/catalog"
 import { ApiError } from "../api/errors";
 import { ImagesEditor } from "../components/catalog/ImagesEditor";
 import { MAX_PRODUCT_IMAGES, PendingPhotos } from "../components/catalog/PendingPhotos";
+import { ProductColors } from "../components/catalog/ProductColors";
 import { ProductForm, type ProductFormValues } from "../components/catalog/ProductForm";
 import { type VariantEdits, VariantsEditor } from "../components/catalog/VariantsEditor";
 import { useCategories, useLabels, useProduct } from "../hooks/useCatalog";
@@ -200,6 +201,7 @@ export function ProductEditPage() {
           }
         />
       ) : null}
+      {current?.color_group ? <ProductColors product={current} onChanged={product.reload} /> : null}
     </section>
   );
 }

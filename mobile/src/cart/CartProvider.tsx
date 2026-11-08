@@ -19,6 +19,7 @@ import {
   EMPTY_CART,
 } from "./cartService";
 import { type GuestLine, guestCartStorage } from "./guestCartStorage";
+import { claimGuestOrders } from "../orders/guestOrderStorage";
 
 type CartContextValue = {
   /** Корзина в одном виде для гостя и клиента; null — ещё не загружена. */
@@ -35,6 +36,8 @@ type CartContextValue = {
   remove: (line: CartLine) => Promise<void>;
   ackPrices: () => Promise<void>;
   dismissNotice: () => void;
+  /** Гость оформил заказ из корзины: позиции с устройства больше не нужны. */
+  clearGuest: () => Promise<void>;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -148,6 +151,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, [signedIn, refresh]);
 
+  // Вход или регистрация: заказы, оформленные на этом устройстве без аккаунта, — в аккаунт.
+  useEffect(() => {
+    if (signedIn) void claimGuestOrders();
+  }, [signedIn]);
+
   /** Изменение корзины клиента: ответ сервера — новое состояние корзины. */
   const applyServer = useCallback(
     async (request: Promise<Cart>) => {
@@ -189,6 +197,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       notice,
       refresh,
       dismissNotice: () => setNotice(null),
+      clearGuest: async () => {
+        await saveGuest([]);
+        setCart(EMPTY_CART);
+      },
 
       add: async (variantId, priceKopecks) => {
         if (signedIn) return applyServer(cartService.add(variantId));
@@ -238,7 +250,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         );
       },
     }),
-    [cart, loading, error, notice, refresh, signedIn, applyServer, applyGuest, loadGuest],
+    [cart, loading, error, notice, refresh, signedIn, applyServer, applyGuest, loadGuest, saveGuest],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

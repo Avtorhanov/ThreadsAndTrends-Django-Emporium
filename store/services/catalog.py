@@ -1,6 +1,8 @@
 """Управление каталогом (администратор). Не зависит от DRF: ошибки — django ValidationError,
 API превращает их в 400."""
 
+import uuid
+
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Max
@@ -32,6 +34,7 @@ PRODUCT_FIELDS = {
 }
 MAX_STATUSES = 20
 MAX_BULK = 200
+MAX_COLORS = 12
 BULK_FIELDS = {"status", "category", "is_active", "agreement_channel", "deleted"}
 VARIANT_FIELDS = {"size", "sku", "stock", "position"}
 
@@ -265,6 +268,78 @@ def _notify_bulk(products: list[Product]) -> None:
     from store.signals import products_bulk_updated
 
     products_bulk_updated.send(sender=Product, ids=[p.pk for p in products])
+
+
+@transaction.atomic
+def link_colors(items: list[dict]) -> tuple[uuid.UUID, int]:
+    """Связать товары как цвета одной модели; items — {id, color_name}.
+    Повторный вызов с товарами той же группы меняет названия и добавляет новые цвета.
+    Товары из разных групп не сливаются — ошибка. Черновики можно: на витрине видны только
+    опубликованные."""
+    names = {item["id"]: " ".join(item["color_name"].split()) for item in items}
+    if len(names) != len(items):
+        raise ValidationError({"items": "Товар указан дважды."})
+    if len(names) < 2:
+        raise ValidationError({"items": "Отметьте хотя бы два товара."})
+    if not all(names.values()):
+        raise ValidationError({"items": "Укажите название каждого цвета."})
+    products = list(Product.objects.select_for_update().filter(pk__in=names).order_by("pk"))
+    if len(products) != len(names):
+        raise ValidationError({"items": "Часть товаров не найдена."})
+    groups = {product.color_group for product in products if product.color_group}
+    if len(groups) > 1:
+        raise ValidationError(
+            {"items": "Часть товаров уже связана с другими цветами. Сначала отвяжите их."}
+        )
+    group = groups.pop() if groups else uuid.uuid4()
+    others = Product.objects.filter(color_group=group).exclude(pk__in=names)
+    taken = [*names.values(), *others.values_list("color_name", flat=True)]
+    if len(taken) > MAX_COLORS:
+        raise ValidationError({"items": f"Не больше {MAX_COLORS} цветов у одной модели."})
+    if len({name.casefold() for name in taken}) != len(taken):
+        raise ValidationError({"items": "Названия цветов одной модели не должны повторяться."})
+    now = timezone.now()  # bulk_update не заполняет auto_now
+    for product in products:
+        product.color_group = group
+        product.color_name = names[product.pk]
+        product.updated_at = now
+    Product.objects.bulk_update(products, ["color_group", "color_name", "updated_at"])
+    _notify_bulk(products)
+    return group, len(products)
+
+
+@transaction.atomic
+def unlink_color(product: Product) -> Product:
+    """Убрать товар из группы цветов. Единственный оставшийся цвет тоже выходит из группы."""
+    if product.color_group is None:
+        return product
+    members = list(
+        Product.all_objects.select_for_update()
+        .filter(color_group=product.color_group)
+        .order_by("pk")
+    )
+    leaving = members if len(members) <= 2 else [m for m in members if m.pk == product.pk]
+    now = timezone.now()
+    for member in leaving:
+        member.color_group = None
+        member.color_name = ""
+        member.updated_at = now
+    Product.all_objects.bulk_update(leaving, ["color_group", "color_name", "updated_at"])
+    _notify_bulk(leaving)
+    product.refresh_from_db()
+    return product
+
+
+def color_siblings(product: Product):
+    """Другие цвета той же модели для панели (в том числе скрытые и черновики)."""
+    if product.color_group is None:
+        return Product.objects.none()
+    return (
+        Product.objects.filter(color_group=product.color_group)
+        .exclude(pk=product.pk)
+        .prefetch_related("images")
+        .order_by("pk")
+    )
 
 
 def soft_delete_product(product: Product) -> Product:

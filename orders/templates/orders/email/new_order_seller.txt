@@ -1,6 +1,6 @@
 {% load money %}{% autoescape off %}{% if cancelled %}Покупатель отменил заказ {{ order.number }}. Товар вернулся в продажу — не отправляйте заказ.{% else %}Новый заказ {{ order.number }} — {{ status_label }}.{% endif %}
 
-{% for item in items %}— {{ item.product_name }}{% if item.size %} ({{ item.size }}){% endif %} × {{ item.quantity }}: {{ item.price_kopecks|rub_times:item.quantity }} ₽
+{% for item in items %}— {{ item.product_name }}{% if item.color_name or item.size %} ({% if item.color_name %}{{ item.color_name }}{% if item.size %}, {% endif %}{% endif %}{{ item.size }}){% endif %} × {{ item.quantity }}: {{ item.price_kopecks|rub_times:item.quantity }} ₽
 {% endfor %}
 Итого: {{ order.total_kopecks|rub }} ₽ (доставка: {% if order.delivery_kopecks %}{{ order.delivery_kopecks|rub }} ₽{% else %}бесплатно{% endif %})
 Оплата: {{ order.get_payment_method_display }}

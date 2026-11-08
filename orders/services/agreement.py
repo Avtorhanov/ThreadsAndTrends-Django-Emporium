@@ -58,9 +58,10 @@ def message(order: Order, base_url: str) -> str:
     """Текст продавцу: номер заказа, позиции со ссылками на товары, доставка и сумма."""
     lines = [f"Здравствуйте! Хочу оформить заказ {order.number}.", ""]
     for n, item in enumerate(order.items.all(), start=1):
+        color = f", {item.color_name}" if item.color_name else ""
         size = f", {item.size}" if item.size else ""
         lines.append(
-            f"{n}. {item.product_name}{size} × {item.quantity} — "
+            f"{n}. {item.product_name}{color}{size} × {item.quantity} — "
             f"{_rub(item.price_kopecks * item.quantity)}"
         )
         lines.append(base_url + reverse("web:product", kwargs={"slug": item.product.slug}))

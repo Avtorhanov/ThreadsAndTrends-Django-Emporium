@@ -6,7 +6,7 @@ import re
 from django import forms
 
 from orders.models import DeliveryMethod, PaymentMethod
-from store.services.storefront import Sort
+from store.services.storefront import Sort, clean_sizes
 
 MAX_RUBLES = 100_000_000  # как MAX_PRICE_KOPECKS каталога: защита от переполнения
 
@@ -35,6 +35,8 @@ class CatalogFilterForm(forms.Form):
     sort = forms.ChoiceField(required=False, choices=[("", "")] + Sort.CHOICES)
 
     def values(self) -> dict:
+        # Несколько значений одного параметра: ?size=38&size=39; у пустой формы данные — dict.
+        sizes = self.data.getlist("size") if hasattr(self.data, "getlist") else []
         if not self.is_valid():
             data = {name: self.data.get(name, "") for name in self.fields}
             data["q"] = str(data["q"])[:100]
@@ -52,6 +54,7 @@ class CatalogFilterForm(forms.Form):
             "price_max": price_max,
             "in_stock": bool(data["in_stock"]),
             "sort": data["sort"],
+            "sizes": clean_sizes(sizes),
         }
 
 
@@ -221,8 +224,16 @@ class CheckoutForm(forms.Form):
     expected_total = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
     idempotency_key = forms.RegexField(regex=r"^[A-Za-z0-9_-]{8,64}$", widget=forms.HiddenInput)
 
-    def __init__(self, *args, delivery_methods=(), payment_methods=(), **kwargs):
+    # 152-ФЗ: гость не проходил регистрацию — согласие отдельной отметкой при оформлении.
+    consent = forms.BooleanField(
+        label="Согласен на обработку персональных данных",
+        error_messages={"required": "Нужно согласие на обработку персональных данных."},
+    )
+
+    def __init__(self, *args, delivery_methods=(), payment_methods=(), guest=False, **kwargs):
         super().__init__(*args, **kwargs)
+        if not guest:
+            del self.fields["consent"]
         # Только доступные сейчас способы (самовывоз — если задан адрес пункта, онлайн — если
         # включена оплата).
         self.fields["delivery_method"].choices = [

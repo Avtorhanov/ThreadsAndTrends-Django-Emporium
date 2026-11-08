@@ -178,7 +178,7 @@ def test_delete_account_blocked_by_unfinished_order(customer_client, customer):
     assert not customer.is_deleted
 
 
-@pytest.mark.parametrize("name", ["password_change", "delete_account", "orders", "checkout"])
+@pytest.mark.parametrize("name", ["password_change", "delete_account", "orders"])
 def test_private_pages_redirect_guest_to_login(client, db, name):
     response = client.get(reverse(f"web:{name}"))
     assert response.status_code == 302

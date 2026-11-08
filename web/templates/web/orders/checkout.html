@@ -16,6 +16,7 @@
     {% include "web/partials/form_errors.html" %}
 
     <div class="checkout__main">
+      {% if is_guest %}<p class="note">Аккаунт не нужен: заказ откроется по ссылке. Уже есть аккаунт? <a href="{% url 'web:login' %}?next={{ action|urlencode:'' }}">Войти</a></p>{% endif %}
       <fieldset class="panel">
         <legend class="panel__title">Получатель</legend>
         {% include "web/partials/field.html" with field=form.recipient_name %}
@@ -67,14 +68,24 @@
     <aside class="summary checkout__summary">
       <ul class="mini">
         {% for line in cart.lines %}
-        <li><span>{{ line.product.name }}{% if line.size %}, {{ line.size }}{% endif %} × {{ line.quantity }}</span><span>{{ line.line_total_kopecks|rub }}&nbsp;₽</span></li>
+        <li><span>{{ line.product.name }}{% if line.product.color_name %}, {{ line.product.color_name }}{% endif %}{% if line.size %}, {{ line.size }}{% endif %} × {{ line.quantity }}</span><span>{{ line.line_total_kopecks|rub }}&nbsp;₽</span></li>
         {% endfor %}
       </ul>
       <p class="summary__row"><span>Товары</span><span>{{ items_total|rub }}&nbsp;₽</span></p>
       <p class="summary__row"><span>Доставка</span><span data-delivery-cost>{% with cost=form.delivery_method.value|delivery_cost:options %}{{ cost|rub }}&nbsp;₽{% endwith %}</span></p>
       <p class="summary__row summary__total"><span>Итого</span><span data-total data-items="{{ items_total }}">{% with cost=form.delivery_method.value|delivery_cost:options %}{{ items_total|add:cost|rub }}&nbsp;₽{% endwith %}</span></p>
+      {% if is_guest %}
+      <div class="field{% if form.consent.errors %} has-error{% endif %}">
+        <label class="check">
+          {{ form.consent }}
+          <span>Согласен на обработку персональных данных в соответствии с <a href="{% url 'web:privacy' %}">политикой</a></span>
+        </label>
+        {% for error in form.consent.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+      </div>
+      {% if offer_enabled %}<p class="summary__hint">Нажимая «Оформить заказ», вы принимаете условия <a href="{% url 'web:offer' %}">оферты</a>.</p>{% endif %}
+      {% endif %}
       <button class="cta" type="submit"><span class="cta__label">Оформить заказ</span></button>
-      <p class="summary__hint">Нажимая «Оформить заказ», вы {% if offer_enabled %}принимаете условия <a href="{% url 'web:offer' %}">оферты</a> и {% endif %}даёте согласие на обработку персональных данных по <a href="{% url 'web:privacy' %}">политике</a>.</p>
+      {% if not is_guest %}<p class="summary__hint">Нажимая «Оформить заказ», вы {% if offer_enabled %}принимаете условия <a href="{% url 'web:offer' %}">оферты</a> и {% endif %}даёте согласие на обработку персональных данных по <a href="{% url 'web:privacy' %}">политике</a>.</p>{% endif %}
     </aside>
   </form>
 </section>

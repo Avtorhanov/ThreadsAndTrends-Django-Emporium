@@ -62,16 +62,14 @@
         {% if product.compare_at_kopecks %}<s class="price__old"><span class="sr">Старая цена </span>{{ product.compare_at_kopecks|rub }}&nbsp;₽</s>
         {% with off=product|discount %}{% if off %}<span class="sale sale--inline">−{{ off }}%</span>{% endif %}{% endwith %}{% endif %}
       </p>
+      {% if colors %}{% include "web/catalog/_colors.html" %}{% endif %}
     </div>
 
     {% if product.price_on_request %}
     <div class="buy">
-      {% if product.description %}
-      <div class="rise r3 pd__desc">{{ product.description|linebreaks }}</div>
-      {% endif %}
-      {# Без JavaScript: <details> раскрывается сам; «Узнать» — мессенджеры магазина. #}
+      {# Без JavaScript: <details> раскрывается сам; «Узнать цену» — мессенджеры магазина. #}
       <details class="rise r4 ask" data-ask>
-        <summary class="cta ask__toggle"><span class="cta__label">Узнать</span><svg class="ic ask__chev" width="20" height="20" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+        <summary class="cta ask__toggle"><span class="cta__label">{% sitetext "product.ask" %}Узнать цену{% endsitetext %}</span><svg class="ic ask__chev" width="20" height="20" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
         <div class="ask__body">
           {% for link in ask_links %}
           <a class="ask__link ask__link--{{ link.kind }}" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">
@@ -83,6 +81,10 @@
           {% endfor %}
         </div>
       </details>
+      {% include "web/catalog/_terms.html" with with_payment=False %}
+      {% if product.description %}
+      <div class="rise r3 pd__desc">{{ product.description|linebreaks }}</div>
+      {% endif %}
     </div>
     {% else %}
     <form class="buy" method="post" action="{% url 'web:cart_add' %}"
@@ -102,16 +104,15 @@
           </label>
           {% endfor %}
         </div>
+        {# Своя подсказка вместо системной (site.js); без JS остаётся required браузера. #}
+        <p class="sizes__error" data-size-error role="alert" hidden>{% sitetext "product.size_required" %}Выберите размер{% endsitetext %}</p>
         {% if size_chart %}{% include "web/catalog/_size_chart.html" %}{% endif %}
       </fieldset>
       {% endif %}
 
-      {% if product.description %}
-      <div class="rise r3 pd__desc">{{ product.description|linebreaks }}</div>
-      {% endif %}
-
       <div class="rise r4 buy__bar">
         {% if in_stock %}
+        <div class="buy__sticky">
         {# Уже в корзине: сколько штук выбранного размера, «−/+» прямо здесь (site.js). #}
         <div class="incart-row" data-incart data-line-url="{% url 'web:cart_line' 0 %}"{% if not in_cart_total %} hidden{% endif %}>
           <a class="incart" href="{% url 'web:cart' %}"><svg class="ic" width="16" height="16" aria-hidden="true"><use href="#i-bag"/></svg><span data-incart-text>{% if chosen_state.q %}В корзине · {{ chosen_state.q }} шт.{% elif in_cart_total %}В корзине · {{ in_cart_total }} шт.{% endif %}</span></a>
@@ -126,6 +127,7 @@
           <span class="cta__label" data-cta-label>{% if chosen_state.q %}Добавить ещё{% else %}В корзину{% endif %}</span>
           <span class="cta__price">{{ product.price_kopecks|rub }}&nbsp;₽</span>
         </button>
+        </div>
         {# «Купить сейчас»: оформление только этого товара, корзина не меняется. #}
         <button class="cta cta--alt" type="submit" formaction="{% url 'web:buy_now' %}"
                 hx-post="{% url 'web:buy_now' %}" hx-target="#buy-result" hx-swap="innerHTML" data-buy-now>
@@ -136,6 +138,11 @@
         {% endif %}
         <div id="buy-result" class="buy__result" aria-live="polite"></div>
       </div>
+
+      {% if in_stock %}{% include "web/catalog/_terms.html" with with_payment=True %}{% endif %}
+      {% if product.description %}
+      <div class="rise r3 pd__desc">{{ product.description|linebreaks }}</div>
+      {% endif %}
     </form>
     {% endif %}
   </div>

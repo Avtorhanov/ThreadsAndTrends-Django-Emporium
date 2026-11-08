@@ -446,6 +446,28 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/admin/catalog/products/{id}/colors/unlink/:
+    post:
+      operationId: admin_catalog_products_colors_unlink_create
+      description: Убрать товар из группы цветов.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Товар.
+        required: true
+      tags:
+      - admin-catalog
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductDetail'
+          description: ''
   /api/v1/admin/catalog/products/{id}/images/:
     post:
       operationId: admin_catalog_products_images_create
@@ -574,6 +596,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminProductBulkResult'
+          description: ''
+  /api/v1/admin/catalog/products/colors/:
+    post:
+      operationId: admin_catalog_products_colors_create
+      description: Связать товары как цвета одной модели; повторно — сменить названия
+        или добавить цвет.
+      tags:
+      - admin-catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductColorsRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductColorsResult'
           description: ''
   /api/v1/admin/catalog/statuses/:
     get:
@@ -2280,6 +2324,15 @@ paths:
         description: Поиск по названию и описанию (по началу слов, русская морфология).
           Показывает только товары в наличии.
       - in: query
+        name: size
+        schema:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+        description: 'Размеры из /catalog/products/sizes/: любой из отмеченных, в
+          наличии.'
+      - in: query
         name: sort
         schema:
           enum:
@@ -2353,6 +2406,87 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CatalogProduct'
+          description: ''
+  /api/v1/catalog/products/sizes/:
+    get:
+      operationId: catalog_products_sizes
+      description: Размеры товаров в наличии для тех же параметров, что у ленты (выбранный
+        `size` не сужает).
+      parameters:
+      - in: query
+        name: category
+        schema:
+          oneOf:
+          - type: string
+            pattern: ^[-a-zA-Z0-9_]+$
+          - type: string
+            maxLength: 0
+        description: Slug категории (с подкатегориями)
+      - in: query
+        name: in_stock
+        schema:
+          type: boolean
+          default: false
+        description: Только в наличии
+      - in: query
+        name: price_max
+        schema:
+          type: integer
+          maximum: 10000000000
+          minimum: 0
+          format: int64
+        description: Цена до, коп.
+      - in: query
+        name: price_min
+        schema:
+          type: integer
+          maximum: 10000000000
+          minimum: 0
+          format: int64
+        description: Цена от, коп.
+      - in: query
+        name: q
+        schema:
+          type: string
+          maxLength: 100
+        description: Поиск по названию и описанию (по началу слов, русская морфология).
+          Показывает только товары в наличии.
+      - in: query
+        name: size
+        schema:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+        description: 'Размеры из /catalog/products/sizes/: любой из отмеченных, в
+          наличии.'
+      - in: query
+        name: sort
+        schema:
+          enum:
+          - new
+          - price_asc
+          - price_desc
+          - relevance
+          - ''
+          type: string
+        description: |-
+          По умолчанию: с поиском — relevance, без — new.
+
+          * `new` - Сначала новые
+          * `price_asc` - Сначала дешевле
+          * `price_desc` - Сначала дороже
+          * `relevance` - По релевантности (только с поиском)
+      tags:
+      - catalog
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductSizes'
           description: ''
   /api/v1/catalog/viewed/:
     get:
@@ -2686,6 +2820,132 @@ paths:
       security:
       - jwtAuth: []
       - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutPreview'
+          description: ''
+  /api/v1/orders/guest/:
+    post:
+      operationId: orders_guest_create
+      description: Оформить заказ без аккаунта, только «по согласованию». Ключ идемпотентности
+        — 32–64 символа; повтор с другим телефоном — 400.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: 'Уникальный ключ попытки оформления (8–64 символа: латиница,
+          цифры, - и _). Повтор запроса с тем же ключом возвращает уже созданный заказ
+          (200).'
+        required: true
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestCheckoutInputRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestOrderCreated'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestOrderCreated'
+          description: Повтор с тем же ключом
+  /api/v1/orders/guest/claim/:
+    post:
+      operationId: orders_guest_claim
+      description: Привязать гостевые заказы к аккаунту по токенам; ссылки перестают
+        работать.
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestClaimInputRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestClaim'
+          description: ''
+  /api/v1/orders/guest/order/:
+    get:
+      operationId: orders_guest_retrieve
+      description: Гостевой заказ по токену. Неверный или истёкший токен — 404.
+      parameters:
+      - in: header
+        name: X-Order-Token
+        schema:
+          type: string
+        description: Секрет доступа к гостевому заказу (access_token при оформлении).
+        required: true
+      tags:
+      - orders
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+  /api/v1/orders/guest/order/cancel/:
+    post:
+      operationId: orders_guest_cancel
+      description: Отмена гостевого заказа до отправки. Остатки возвращаются на склад.
+      parameters:
+      - in: header
+        name: X-Order-Token
+        schema:
+          type: string
+        description: Секрет доступа к гостевому заказу (access_token при оформлении).
+        required: true
+      tags:
+      - orders
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+  /api/v1/orders/guest/preview/:
+    post:
+      operationId: orders_guest_preview
+      description: 'Экран оформления без аккаунта: позиции с устройства, доставка
+        и оплата.'
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestPreviewInputRequest'
+        required: true
+      security:
+      - {}
       responses:
         '200':
           content:
@@ -3125,6 +3385,44 @@ components:
           title: Показывать
       required:
       - name
+    AdminColorItemRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: id товара
+        color_name:
+          type: string
+          minLength: 1
+          description: Название цвета
+          maxLength: 40
+      required:
+      - color_name
+      - id
+    AdminColorSibling:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color_name:
+          type: string
+        is_active:
+          type: boolean
+        is_draft:
+          type: boolean
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - color_name
+      - cover_url
+      - id
+      - is_active
+      - is_draft
+      - name
     AdminHome:
       type: object
       properties:
@@ -3408,7 +3706,10 @@ components:
           type: integer
           readOnly: true
         customer:
-          $ref: '#/components/schemas/AdminOrderCustomer'
+          allOf:
+          - $ref: '#/components/schemas/AdminOrderCustomer'
+          nullable: true
+          description: null — гостевой заказ
         number:
           type: string
           readOnly: true
@@ -3555,7 +3856,10 @@ components:
         status_display:
           type: string
         customer:
-          $ref: '#/components/schemas/AdminOrderCustomer'
+          allOf:
+          - $ref: '#/components/schemas/AdminOrderCustomer'
+          nullable: true
+          description: null — гостевой заказ
         recipient_name:
           type: string
           readOnly: true
@@ -3726,6 +4030,16 @@ components:
           type: boolean
           readOnly: true
           title: Черновик
+        color_group:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          title: Группа цветов
+        color_name:
+          type: string
+          readOnly: true
+          title: Цвет
         deleted_at:
           type: string
           format: date-time
@@ -3753,6 +4067,8 @@ components:
       required:
       - category
       - category_name
+      - color_group
+      - color_name
       - compare_at_kopecks
       - cover_url
       - created_at
@@ -3809,6 +4125,27 @@ components:
           type: integer
           description: Сколько товаров изменено
       required:
+      - updated
+    AdminProductColorsRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminColorItemRequest'
+      required:
+      - items
+    AdminProductColorsResult:
+      type: object
+      properties:
+        color_group:
+          type: string
+          format: uuid
+        updated:
+          type: integer
+          description: Сколько товаров связано
+      required:
+      - color_group
       - updated
     AdminProductCreateRequest:
       type: object
@@ -3917,6 +4254,16 @@ components:
           type: boolean
           readOnly: true
           title: Черновик
+        color_group:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          title: Группа цветов
+        color_name:
+          type: string
+          readOnly: true
+          title: Цвет
         deleted_at:
           type: string
           format: date-time
@@ -3957,6 +4304,11 @@ components:
             * `telegram` - Telegram
             * `vk` - ВКонтакте
             * `phone` - Телефон
+        color_siblings:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminColorSibling'
+          readOnly: true
         variants:
           type: array
           items:
@@ -3971,6 +4323,9 @@ components:
       - agreement_channel
       - category
       - category_name
+      - color_group
+      - color_name
+      - color_siblings
       - compare_at_kopecks
       - cover_url
       - created_at
@@ -4954,6 +5309,9 @@ components:
           type: string
         name:
           type: string
+        color_name:
+          type: string
+          description: Цвет; пусто — без цвета
         cover_url:
           type: string
           nullable: true
@@ -4964,6 +5322,7 @@ components:
           nullable: true
           description: 'Метка товара: «Под заказ»…'
       required:
+      - color_name
       - cover_url
       - id
       - name
@@ -5010,6 +5369,24 @@ components:
       - children
       - id
       - name
+      - slug
+    CatalogColorOption:
+      type: object
+      properties:
+        slug:
+          type: string
+        color_name:
+          type: string
+        in_stock:
+          type: boolean
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - color_name
+      - cover_url
+      - in_stock
       - slug
     CatalogImage:
       type: object
@@ -5128,6 +5505,15 @@ components:
           type: string
           readOnly: true
           title: Описание
+        color_name:
+          type: string
+          readOnly: true
+          title: Цвет
+        colors:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogColorOption'
+          readOnly: true
         images:
           type: array
           items:
@@ -5140,6 +5526,8 @@ components:
           readOnly: true
       required:
       - category
+      - color_name
+      - colors
       - compare_at_kopecks
       - cover_url
       - description
@@ -5441,6 +5829,108 @@ components:
       required:
       - new_email
       - password
+    GuestCheckoutInputRequest:
+      type: object
+      description: 'Оформление без аккаунта: позиции с устройства вместо корзины на
+        сервере.'
+      properties:
+        delivery_method:
+          $ref: '#/components/schemas/DeliveryMethodEnum'
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        recipient_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        recipient_phone:
+          type: string
+          minLength: 1
+          description: Российский номер
+          maxLength: 32
+        delivery_address:
+          type: string
+          default: ''
+          description: Обязателен для курьера; для самовывоза игнорируется
+          maxLength: 500
+        comment:
+          type: string
+          default: ''
+          maxLength: 500
+        expected_total_kopecks:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Итог, который видел покупатель; если сумма изменилась — 400
+            (total_changed)
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuestLineRequest'
+        consent:
+          type: boolean
+          description: Согласие на обработку персональных данных
+      required:
+      - consent
+      - delivery_method
+      - lines
+      - payment_method
+      - recipient_name
+      - recipient_phone
+    GuestClaim:
+      type: object
+      properties:
+        numbers:
+          type: array
+          items:
+            type: string
+          description: Номера заказов, привязанных к аккаунту
+      required:
+      - numbers
+    GuestClaimInputRequest:
+      type: object
+      properties:
+        tokens:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 64
+          maxItems: 20
+      required:
+      - tokens
+    GuestLineRequest:
+      type: object
+      properties:
+        variant_id:
+          type: integer
+          minimum: 1
+        quantity:
+          type: integer
+          maximum: 99
+          minimum: 1
+      required:
+      - quantity
+      - variant_id
+    GuestOrderCreated:
+      type: object
+      properties:
+        order:
+          $ref: '#/components/schemas/OrderDetail'
+        access_token:
+          type: string
+          description: 'Секрет доступа к заказу: заголовок X-Order-Token'
+      required:
+      - access_token
+      - order
+    GuestPreviewInputRequest:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuestLineRequest'
+      required:
+      - lines
     Health:
       type: object
       properties:
@@ -5801,6 +6291,9 @@ components:
         size:
           type: string
           description: Пусто — товар без размера
+        color_name:
+          type: string
+          description: Цвет на момент заказа; пусто — без цвета
         sku:
           type: string
         status_name:
@@ -5818,6 +6311,7 @@ components:
           nullable: true
           readOnly: true
       required:
+      - color_name
       - cover_url
       - id
       - line_total_kopecks
@@ -6412,6 +6906,15 @@ components:
         * `succeeded` - Оплачен
         * `canceled` - Не оплачен
         * `refunded` - Возвращён
+    ProductSizes:
+      type: object
+      properties:
+        sizes:
+          type: array
+          items:
+            type: string
+      required:
+      - sizes
     ProductStatus:
       type: object
       description: 'Метка товара для покупателя («Под заказ»…). tone — цвет: success,

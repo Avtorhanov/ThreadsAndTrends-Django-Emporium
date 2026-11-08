@@ -12,6 +12,7 @@ import {
 import { ApiError } from "../api/errors";
 import { batchCategories } from "../components/catalog/batch";
 import { CategorySheet } from "../components/catalog/CategorySheet";
+import { ColorLinkSheet } from "../components/catalog/ColorLinkSheet";
 import { LabelsManager } from "../components/catalog/LabelsManager";
 import { FiltersToggle } from "../components/FiltersToggle";
 import { PageTools, ToolButton } from "../components/PageTools";
@@ -52,7 +53,7 @@ export function ProductsPage() {
   const [moreFilters, setMoreFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [sheet, setSheet] = useState<"status" | "category" | null>(null);
+  const [sheet, setSheet] = useState<"status" | "category" | "colors" | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -84,6 +85,8 @@ export function ProductsPage() {
       return next;
     });
   }
+
+  const checkedRows = rows.filter((row) => selected.has(row.id));
 
   async function apply(changes: Omit<ProductBulk, "ids">, done: string, ids = [...selected]) {
     setBusy(true);
@@ -373,7 +376,11 @@ export function ProductsPage() {
               </button>
             </div>
           ) : (
-            <div className="batch-actions-grid batch-actions-grid-5">
+            <div className="batch-actions-grid batch-actions-grid-6">
+              <button type="button" className="batch-action" disabled={busy || checkedRows.length < 2} onClick={() => setSheet("colors")}>
+                <Icon name="palette" />
+                Цвета
+              </button>
               <button type="button" className="batch-action" disabled={busy} onClick={() => setSheet("status")}>
                 <Icon name="tag" />
                 Статус
@@ -414,6 +421,17 @@ export function ProductsPage() {
         </div>
       ) : null}
 
+      {sheet === "colors" ? (
+        <ColorLinkSheet
+          rows={checkedRows}
+          onDone={(updated) => {
+            setSheet(null);
+            setNotice(`Связано цветов: ${updated}`);
+            products.reload();
+          }}
+          onClose={() => setSheet(null)}
+        />
+      ) : null}
       {sheet === "status" ? (
         <PickSheet
           title={`Статус · товаров: ${selected.size}`}

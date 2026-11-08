@@ -402,6 +402,18 @@ a { color: var(--brand); }
 .filters__toggle::-webkit-details-marker { display: none; }
 .filters__body { display: grid; gap: 4px; padding: 0 16px 16px; }
 .filters__actions { display: flex; gap: 10px; }
+.size-filter { min-width: 0; margin: 0 0 8px; padding: 0; border: 0; }
+.size-filter[hidden] { display: none; }
+.size-filter__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.size-chip { position: relative; display: inline-flex; cursor: pointer; }
+.size-chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.size-chip span {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0 12px;
+  border-radius: var(--radius-seg); background: var(--surface); box-shadow: var(--shadow-control); color: var(--muted);
+  font: 800 13px var(--font-text); white-space: nowrap;
+}
+.size-chip input:checked + span { background: var(--seg-on-bg); color: var(--seg-on-ink); }
+.size-chip input:focus-visible + span { outline: 2px solid currentColor; outline-offset: 2px; }
 
 /* --- Формы --- */
 .field { display: grid; gap: 6px; margin-bottom: 14px; }
@@ -485,7 +497,8 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .pd { padding: 0 var(--gutter); }
 .pd__gallery { position: relative; }
 .hero {
-  position: relative; height: var(--size-detail-hero); overflow: hidden;
+  /* −80 px от токена: на телефоне «В корзину» — на первом экране; токен общий с приложением. */
+  position: relative; height: calc(var(--size-detail-hero) - 80px); overflow: hidden;
   border-radius: var(--radius-hero); background-color: var(--tone);
   animation: hero-in .4s var(--ease-out) both;
 }
@@ -575,7 +588,21 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .sz.is-off input { cursor: not-allowed; }
 .pd__desc { color: var(--muted); font-size: 15px; line-height: 1.6; }
 .pd__desc p + p { margin-top: 10px; }
-.buy__bar { display: grid; gap: 10px; }
+.buy__bar, .buy__sticky { display: grid; gap: 10px; }
+.sizes__error { margin-top: 10px; color: var(--danger); font: 700 14px var(--font-text); }
+.sizes.is-invalid .sz:not(.is-off) span { box-shadow: 0 0 0 2px var(--danger); }
+.terms { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; color: var(--muted); font: 500 13px/1.45 var(--font-text); }
+.terms a { color: inherit; text-decoration: underline; }
+.terms__pay > span + span::before { content: ", "; }
+/* Телефон: «В корзину» вместе со строкой «−/+» прилипает над нижним меню, пока кнопка ниже экрана
+   (одним блоком — иначе кнопка закрывает «−/+»). display: contents — иначе sticky ограничен
+   высотой .buy__bar. fixed нельзя: zoom на body. */
+@media (max-width: 899px) {
+  .buy__bar { display: contents; }
+  .buy__sticky { position: sticky; bottom: calc(var(--tabbar-top) + 8px); z-index: 5; }
+  .buy__sticky .incart-row { padding: 4px 4px 4px 8px; border-radius: calc(16px * var(--radius-scale)); background: var(--surface); box-shadow: var(--shadow-control); }
+  .buy__bar .cta--alt { margin-top: -8px; }
+}
 .buy__result:empty { display: none; }
 /* Уже в корзине: метка-ссылка и «−/+» в одну строку над кнопками. */
 .incart-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
@@ -633,6 +660,7 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 fieldset.panel > legend, .panel fieldset > legend { float: left; }
 fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .nowrap { white-space: nowrap; }
+.guest-link { display: grid; gap: 10px; justify-items: start; }
 .note { margin: 0 0 12px; padding: 12px 14px; border-radius: var(--radius-control); font: 600 14px/1.4 var(--font-text); }
 .note p + p { margin-top: 4px; }
 .note--danger { background: var(--danger-bg); color: var(--danger); }
@@ -682,6 +710,14 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
 .mark--empty { visibility: hidden; } /* место под статус: карточки без статуса той же высоты */
 .pd__status { margin-top: 8px; }
 .pd__status-hint { margin-top: 4px; font-size: 13px; }
+.colors { margin-top: 12px; }
+.colors__name { font-weight: 600; }
+.colors__list { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+.color { display: block; width: 56px; height: 56px; overflow: hidden; border-radius: var(--radius-image); box-shadow: inset 0 0 0 1px var(--border); }
+.color__photo { display: block; width: 100%; height: 100%; object-fit: cover; }
+.color.is-on { outline: 2px solid var(--accent); outline-offset: 2px; }
+.color:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.color.is-off .color__photo { opacity: .45; }
 .stepper { display: inline-flex; align-items: center; border-radius: calc(12px * var(--radius-scale)); background: var(--surface); box-shadow: var(--shadow-control); }
 .stepper form { display: flex; }
 .stepper__btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: calc(12px * var(--radius-scale)); background: transparent; color: var(--ink); }
@@ -703,6 +739,7 @@ fieldset.panel > legend + *, .panel fieldset > legend + * { clear: both; }
   display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: calc(13px * var(--radius-scale));
   border: 1.5px solid var(--border); cursor: pointer; transition: border-color .2s ease, background-color .2s ease;
 }
+.choice[hidden] { display: none; }
 .choice:has(input:checked) { border-color: var(--brand); background: var(--tag); }
 .choice input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--brand); }
 .choice__body { display: grid; flex: 1; gap: 2px; }
@@ -1215,7 +1252,7 @@ a.hblock-photo__frame:active { transform: scale(.985); }
   .card:active { transform: scale(.98); }
   .filters__body { grid-template-columns: 1fr 1.4fr auto; align-items: end; column-gap: 16px; }
   .filters__body .field { margin-bottom: 0; }
-  .filters__actions { grid-column: 1 / -1; }
+  .filters__actions, .size-filter { grid-column: 1 / -1; }
   .articles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
   .channels { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .pd { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: start; }

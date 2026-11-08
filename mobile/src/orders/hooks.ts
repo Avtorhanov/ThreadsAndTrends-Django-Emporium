@@ -1,7 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiError } from "../api/errors";
-import { type OrderDetail, type OrderSummary, orderService } from "./orderService";
+import { guestOrderStorage } from "./guestOrderStorage";
+import {
+  guestOrderService,
+  type OrderDetail,
+  type OrderSummary,
+  orderService,
+} from "./orderService";
+
+/** Гостю заказ открывается по токену с устройства, клиенту — по номеру. */
+export async function fetchOrder(number: string, signedIn: boolean): Promise<OrderDetail> {
+  if (signedIn) return orderService.get(number);
+  const token = await guestOrderStorage.tokenFor(number);
+  if (!token) throw new ApiError(404, "Заказ не найден на этом устройстве.");
+  return guestOrderService.get(token);
+}
 
 function errorText(error: unknown): string {
   return error instanceof ApiError ? error.message : "Не удалось загрузить данные.";
@@ -43,7 +57,7 @@ export function useOrderFeed() {
 }
 
 /** Один заказ; setOrder — обновить после отмены без повторного запроса. */
-export function useOrder(number: string) {
+export function useOrder(number: string, signedIn = true) {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,13 +66,13 @@ export function useOrder(number: string) {
     setLoading(true);
     setError(null);
     try {
-      setOrder(await orderService.get(number));
+      setOrder(await fetchOrder(number, signedIn));
     } catch (err) {
       setError(errorText(err));
     } finally {
       setLoading(false);
     }
-  }, [number]);
+  }, [number, signedIn]);
 
   useEffect(() => {
     void reload();

@@ -16,11 +16,12 @@ from django.views.decorators.http import require_POST
 
 from accounts import services as accounts
 from orders.models import Order, OrderStatus
+from orders.services import guest
 from store.services import history
 from store.services.cart import MergeNoticeReason
 
 from .. import cart as web_cart
-from .. import ratelimit, theme
+from .. import guest_links, ratelimit, theme
 from ..forms import (
     AvatarForm,
     DeleteAccountForm,
@@ -52,7 +53,10 @@ def _apply_errors(form, exc: ValidationError) -> None:
 def _login_with_cart(request, user) -> None:
     """Вход + перенос гостевой корзины в корзину аккаунта, с объяснением пропущенного."""
     lines = web_cart.take_guest_lines(request)
+    guest_hashes = guest_links.take(request)
     login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    if guest.claim_hashes(user, guest_hashes):
+        messages.info(request, "Заказы, оформленные без входа, теперь в вашем аккаунте.")
     notices = web_cart.merge_into_account(request, lines)
     reasons = {notice.reason for notice in notices}
     if MergeNoticeReason.QUANTITY_LIMITED in reasons:

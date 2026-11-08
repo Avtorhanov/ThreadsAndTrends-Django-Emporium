@@ -31,10 +31,11 @@ export default function AppLayout() {
             contentStyle: { backgroundColor: "transparent" },
           }}
         />
+        {/* Оформление и заказ доступны и гостю (заказ — по токену на устройстве). */}
+        <Stack.Screen name="checkout" options={{ title: "Оформление" }} />
+        <Stack.Screen name="orders/[number]" options={{ title: "Заказ" }} />
         <Stack.Protected guard={status === "signedIn"}>
-          <Stack.Screen name="checkout" options={{ title: "Оформление" }} />
           <Stack.Screen name="orders/index" options={{ title: "Мои заказы" }} />
-          <Stack.Screen name="orders/[number]" options={{ title: "Заказ" }} />
           <Stack.Screen name="change-password" options={{ title: "Смена пароля" }} />
           <Stack.Screen name="delete-account" options={{ title: "Удаление аккаунта" }} />
         </Stack.Protected>

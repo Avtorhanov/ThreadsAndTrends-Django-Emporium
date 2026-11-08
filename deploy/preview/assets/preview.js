@@ -390,6 +390,31 @@
     return parseInt(m[1], 10) * 100 + parseInt((m[2] || "0").padEnd(2, "0"), 10);
   }
 
+  // Группы размеров — копия store/sizes.py (size_group, sort_sizes).
+  var CLOTHING_ORDER = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
+  function sizeGroup(size) { return String(size || "").split(" · ")[0].trim(); }
+
+  function stockedGroups(p) {
+    var full = sim.productById(p.id);
+    return (full ? full.variants : []).filter(function (v) { return v.stock > 0 && v.size; })
+      .map(function (v) { return sizeGroup(v.size); });
+  }
+
+  function sizeRank(size) {
+    var at = CLOTHING_ORDER.indexOf(size);
+    if (at >= 0) return [0, at];
+    var m = /^(\d+(?:[.,]\d+)?)( US)?$/.exec(size);
+    return m ? [m[2] ? 2 : 1, parseFloat(m[1].replace(",", "."))] : [3, 0];
+  }
+
+  function sortSizes(sizes) {
+    return sizes.sort(function (a, b) {
+      var x = sizeRank(a), y = sizeRank(b);
+      return x[0] - y[0] || x[1] - y[1] || a.localeCompare(b, "ru");
+    });
+  }
+
   function renderListing(kind) {
     var feed = document.querySelector(".feed");
     if (!feed) return;
@@ -398,6 +423,7 @@
     var priceMin = parseRubles(query.get("price_min"));
     var priceMax = parseRubles(query.get("price_max"));
     var inStock = query.get("in_stock") === "1";
+    var selectedSizes = query.getAll("size").map(sizeGroup).filter(Boolean);
     var list = sim.liveProducts();
     var cat = null;
     if (kind === "category") {
@@ -435,6 +461,17 @@
         }
         score[p.id] = s;
         return true;
+      });
+    }
+    // Как store.services.storefront: чипы считаются по выборке без учёта выбранных размеров.
+    var sizeOptions = {};
+    selectedSizes.forEach(function (s) { sizeOptions[s] = true; });
+    list.forEach(function (p) {
+      stockedGroups(p).forEach(function (s) { sizeOptions[s] = true; });
+    });
+    if (selectedSizes.length) {
+      list = list.filter(function (p) {
+        return stockedGroups(p).some(function (s) { return selectedSizes.indexOf(s) >= 0; });
       });
     }
     var byPrice = function (dir) {
@@ -483,8 +520,17 @@
       set("price_max", query.get("price_max") || "");
       var check = form.querySelector('[name="in_stock"]');
       if (check) check.checked = inStock;
+      var sizeBox = form.querySelector("[data-size-filter]");
+      if (sizeBox) {
+        var names = sortSizes(Object.keys(sizeOptions));
+        sizeBox.hidden = !names.length;
+        sizeBox.querySelector(".size-filter__chips").innerHTML = names.map(function (s) {
+          return '<label class="size-chip"><input type="checkbox" name="size" value="' + esc(s) + '"' +
+            (selectedSizes.indexOf(s) >= 0 ? " checked" : "") + "><span>" + esc(s) + "</span></label>";
+        }).join("");
+      }
       var details = form.querySelector(".filters__panel");
-      if (details && (sort || priceMin !== null || priceMax !== null || inStock || query.get("filters") === "1")) details.open = true;
+      if (details && (sort || priceMin !== null || priceMax !== null || inStock || selectedSizes.length || query.get("filters") === "1")) details.open = true;
       var reset = form.querySelector(".filters__actions a");
       if (reset) reset.setAttribute("href", location.pathname + (kind === "search" && q ? "?q=" + encodeURIComponent(q) : ""));
     }
@@ -497,6 +543,29 @@
 
   // --- Карточка товара (web/catalog/product.html) ---
 
+  // Условия у кнопок — как web/catalog/_terms.html.
+  function termsHTML(withPayment) {
+    var s = sim.settings();
+    var pay = [s.online && "онлайн картой или СБП", (s.agreement || (!s.online && !s.cash)) && "по согласованию с продавцом", s.cash && "при получении"]
+      .filter(Boolean).map(function (x) { return "<span>" + x + "</span>"; }).join("");
+    return '<ul class="rise r4 terms"><li>Доставка курьером — ' + money(s.courier) + ", бесплатно от " + money(s.free_from) +
+      (s.pickup_enabled && s.pickup_address ? "; самовывоз бесплатно" : "") + "</li>" +
+      (withPayment ? '<li>Оплата: <span class="terms__pay">' + pay + "</span></li>" : "") +
+      '<li>Возврат в течение 7 дней — <a href="' + link("/legal/delivery/") + '">Доставка и оплата</a></li></ul>';
+  }
+
+  // «Доставка и оплата»: страница статична, собрана со всеми способами — оставляем активные.
+  function renderDelivery() {
+    var s = sim.settings();
+    var active = { online: s.online, agreement: s.agreement || (!s.online && !s.cash), cash: s.cash };
+    document.querySelectorAll("[data-pay-method]").forEach(function (el) {
+      if (!active[el.getAttribute("data-pay-method")]) el.remove();
+    });
+    var values = { courier: rub(s.courier), free_from: rub(s.free_from), timeout: s.timeout, agreement_hours: s.agreement_hours, pickup: s.pickup_address };
+    document.querySelectorAll("[data-shop]").forEach(function (el) { el.textContent = values[el.getAttribute("data-shop")]; });
+    if (!s.pickup_enabled || !s.pickup_address) document.querySelectorAll("[data-shop-pickup]").forEach(function (el) { el.remove(); });
+  }
+
   function askHTML(p, ask) {
     var message = "Здравствуйте! Подскажите цену: " + p.name + " — " + location.origin + link("/product/" + p.slug + "/");
     var links = (ask || []).map(function (a) {
@@ -504,7 +573,7 @@
       return '<a class="ask__link ask__link--' + esc(a.kind) + '" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer"><span class="channel__icon" aria-hidden="true">' +
         icon(a.kind === "telegram" ? "send" : "chat", 20) + "</span><span>" + esc(a.title) + "</span></a>";
     }).join("") || '<a class="ask__link" href="' + link("/contacts/") + '"><span>Контакты магазина</span></a>';
-    return '<details class="rise r4 ask" data-ask><summary class="cta ask__toggle"><span class="cta__label">Узнать</span>' +
+    return '<details class="rise r4 ask" data-ask><summary class="cta ask__toggle"><span class="cta__label">Узнать цену</span>' +
       '<svg class="ic ask__chev" width="20" height="20" aria-hidden="true"><use href="#i-chevron"/></svg></summary><div class="ask__body">' + links + "</div></details>";
   }
 
@@ -602,13 +671,23 @@
       head += '<s class="price__old"><span class="sr">Старая цена </span>' + rub(p.compare_at_kopecks) + "&nbsp;₽</s>" +
         (off ? '<span class="sale sale--inline">−' + off + "%</span>" : "");
     }
-    head += "</p></div>";
+    head += "</p>";
+    var colors = sim.colorOptions(full);
+    if (colors.length) {
+      head += '<div class="colors"><p class="label">Цвет: <span class="colors__name">' + esc(p.color_name) + '</span></p><ul class="colors__list">' +
+        colors.map(function (c) {
+          var on = c.slug === p.slug;
+          return '<li><a class="color tone-' + tone(c.slug) + (on ? " is-on" : "") + (c.in_stock ? "" : " is-off") + '" href="' + link("/product/" + c.slug + "/") + '" aria-label="' +
+            esc(c.color_name) + (c.in_stock ? "" : ", нет в наличии") + '"' + (on ? ' aria-current="true"' : "") + ">" + (c.cover_url ? img(c.cover_url, "56px", "color__photo", false, "") : "") + "</a></li>";
+        }).join("") + "</ul></div>";
+    }
+    head += "</div>";
 
     var desc = paragraphs(full.description);
     var descHTML = desc.length ? '<div class="rise r3 pd__desc">' + desc.map(function (x) { return "<p>" + esc(x).replace(/\n/g, "<br>") + "</p>"; }).join("") + "</div>" : "";
     var buy;
     if (p.price_on_request) {
-      buy = '<div class="buy">' + descHTML + askHTML(p, data.ask) + "</div>";
+      buy = '<div class="buy">' + askHTML(p, data.ask) + termsHTML(false) + descHTML + "</div>";
     } else {
       buy = '<form class="buy" method="post" action="' + link("/cart/add/") + '" data-buy>';
       if (single) buy += '<input type="hidden" name="variant" value="' + single.id + '">';
@@ -616,24 +695,24 @@
         buy += '<fieldset class="rise r2 sizes"><legend class="label">Размер</legend><div class="sizes__list">' + sizes.map(function (s) {
           return '<label class="sz' + (s.available ? "" : " is-off") + '"><input type="radio" name="variant" value="' + s.v.id + '"' +
             (s.available ? "" : " disabled") + (s.v.id === chosen ? " checked" : "") + ' required><span>' + esc(s.v.size || "Без размера") + "</span></label>";
-        }).join("") + "</div>" + (sizes.some(function (s) { return / US$/.test(s.v.size || ""); }) ? sizeChartHTML() : "") + "</fieldset>";
+        }).join("") + "</div>" + (sizes.some(function (s) { return / US$/.test(s.v.size || ""); }) ? sizeChartHTML() : "") + '<p class="sizes__error" data-size-error role="alert" hidden>Выберите размер</p></fieldset>';
       }
-      buy += descHTML + '<div class="rise r4 buy__bar">';
+      buy += '<div class="rise r4 buy__bar">';
       if (inStock) {
         var q = chosenState ? chosenState.q : 0;
-        buy += '<div class="incart-row" data-incart data-line-url="' + link("/cart/line/0/") + '"' + (inCartTotal ? "" : " hidden") + '>' +
+        buy += '<div class="buy__sticky"><div class="incart-row" data-incart data-line-url="' + link("/cart/line/0/") + '"' + (inCartTotal ? "" : " hidden") + '>' +
           '<a class="incart" href="' + link("/cart/") + '">' + icon("bag", 16) + '<span data-incart-text>В корзине · ' + (q || inCartTotal) + ' шт.</span></a>' +
           '<div class="stepper" role="group" aria-label="Количество в корзине" data-incart-stepper' + (q ? "" : " hidden") + '>' +
           '<button class="stepper__btn" type="button" data-incart-step="-1" aria-label="Убрать одну">' + icon("minus", 18) + '</button>' +
           '<span class="stepper__value" data-incart-qty aria-live="polite">' + q + '</span>' +
           '<button class="stepper__btn" type="button" data-incart-step="1" aria-label="Добавить ещё одну"' + (q && q >= chosenState.max ? " disabled" : "") + '>' + icon("plus", 18) + '</button>' +
           '</div></div><script id="incart-state" type="application/json">' + JSON.stringify(state).replace(/</g, "\\u003c") + "</script>";
-        buy += '<button class="cta" type="submit" data-cta><span class="cta__label" data-cta-label>' + (q ? "Добавить ещё" : "В корзину") + '</span><span class="cta__price">' + rub(p.price_kopecks) + "&nbsp;₽</span></button>" +
+        buy += '<button class="cta" type="submit" data-cta><span class="cta__label" data-cta-label>' + (q ? "Добавить ещё" : "В корзину") + '</span><span class="cta__price">' + rub(p.price_kopecks) + "&nbsp;₽</span></button></div>" +
           '<button class="cta cta--alt" type="submit" data-buy-now><span class="cta__label">Купить сейчас</span></button>';
       } else {
         buy += '<button class="cta" type="button" disabled><span class="cta__label">Нет в наличии</span></button>';
       }
-      buy += '<div id="buy-result" class="buy__result" aria-live="polite"></div></div></form>';
+      buy += '<div id="buy-result" class="buy__result" aria-live="polite"></div></div>' + (inStock ? termsHTML(true) : "") + descHTML + "</form>";
     }
     pd.innerHTML = gallery + '<div class="pd__info">' + head + buy + "</div>";
     document.title = p.price_on_request ? p.name + " — цена по запросу в DiDi-shop" : p.name + " — купить за " + rub(p.price_kopecks) + " ₽ в DiDi-shop";
@@ -674,7 +753,7 @@
         return;
       }
       var target = "/checkout/?variant=" + input.value + "&qty=1";
-      go(TREE === "me" ? ME + target : BASE + "/login/?next=" + encodeURIComponent(target));
+      go(link(target));
       return;
     }
     var res = sim.cartAdd(input.value, 1);
@@ -705,8 +784,14 @@
       html += '<a class="line__img tone-' + (p ? tone(p.slug) : "lime") + '"' + (href ? ' href="' + href + '"' : "") + ' tabindex="-1" aria-hidden="true">' +
         (p ? img(p.cover_url, "96px", "line__photo", false, "") : "") + "</a>";
       html += '<div class="line__body"><p class="line__title">' + (available ? '<a href="' + href + '">' + esc(p.name) + "</a>" : p ? esc(p.name) : "Товар снят с продажи") + "</p>";
-      if (line.size) html += '<p class="line__meta">Размер ' + esc(line.size) + "</p>";
-      if (p && p.status && available) html += '<p class="status status--' + esc(p.status.tone) + '">' + esc(p.status.name) + "</p>";
+      var lineMeta = [];
+      if (p && p.color_name) lineMeta.push("Цвет " + esc(p.color_name));
+      if (line.size) lineMeta.push("Размер " + esc(line.size));
+      if (lineMeta.length) html += '<p class="line__meta">' + lineMeta.join(" · ") + "</p>";
+      if (p && p.status && available) {
+        html += '<p class="status status--' + esc(p.status.tone) + '">' + esc(p.status.name) + "</p>";
+        if (p.status.hint && line.status !== "out_of_stock") html += '<p class="line__meta">' + esc(p.status.hint) + "</p>";
+      }
       html += '<div class="line__parts">';
       if (line.status === "unavailable") html += '<p class="pill pill--neutral">Недоступен</p>';
       else if (line.status === "out_of_stock") html += '<p class="pill pill--danger">Нет в наличии</p>';
@@ -730,7 +815,7 @@
       '<p class="summary__hint">Доставка курьером — при оформлении, бесплатно от ' + money(free) + ".</p>" +
       '<p class="summary__row summary__total"><span>Итого</span><span>' + money(cart.total_kopecks) + "</span></p>";
     if (cart.can_checkout) {
-      html += '<a class="cta cta--link" href="' + (TREE === "me" ? ME + "/checkout/" : BASE + "/login/?next=" + encodeURIComponent("/checkout/")) + '"><span class="cta__label">Оформить заказ</span><span class="cta__price">' + money(cart.total_kopecks) + "</span></a>";
+      html += '<a class="cta cta--link" href="' + link("/checkout/") + '"><span class="cta__label">Оформить заказ</span><span class="cta__price">' + money(cart.total_kopecks) + "</span></a>";
       if (TREE !== "me") html += '<p class="summary__hint">Для оформления нужно войти — корзина сохранится.</p>';
     } else {
       html += '<button class="cta" type="button" disabled><span class="cta__label">Уберите недоступные товары</span></button>';
@@ -811,6 +896,7 @@
     if (!payment) {
       var first = Array.prototype.filter.call(form.querySelectorAll('input[name="payment_method"]'), function (i) { return !i.closest(".choice").hidden; })[0];
       if (first) first.checked = true;
+      else if (TREE !== "me") { location.replace(BASE + "/login/?next=" + encodeURIComponent("/checkout/")); return; }
     }
     var last = sim.lastRecipient();
     var fill = function (name, value) { var el = form.querySelector('[name="' + name + '"]'); if (el && !el.value && value) el.value = value; };
@@ -891,7 +977,7 @@
     flash(res.order.payment_method === "online" ? "Заказ оформлен — оплатите его, чтобы мы начали сборку." :
       res.order.payment_method === "agreement" ? "Заказ " + res.order.number + " создан — напишите продавцу, чтобы его согласовать." :
       "Заказ " + res.order.number + " оформлен. Мы скоро свяжемся с вами.");
-    go(ME + "/orders/" + res.order.number + "/");
+    go(res.order.guest_token ? BASE + "/order/g/" + res.order.guest_token + "/" : ME + "/orders/" + res.order.number + "/");
   }
 
   // --- Заказы (web/orders/list.html, detail.html) ---
@@ -945,12 +1031,20 @@
       '<button class="btn btn--ghost btn--sm" type="button" data-copy-text="' + esc(a.message) + '">Скопировать</button></details></div>';
   }
 
-  function renderOrder() {
+  function renderOrder(guestToken) {
     var number = HERE.split("/")[2];
-    sim.markSeen(number); // покупатель открыл заказ — значок «есть новости» гаснет
-    var o = sim.myOrder(number);
+    if (!guestToken) sim.markSeen(number); // покупатель открыл заказ — значок «есть новости» гаснет
+    var o = guestToken ? sim.guestOrder(guestToken) : sim.myOrder(number);
     var page = document.querySelector("#main .page");
+    if (!page && guestToken) { // адрес гостевого заказа — страница 404 с заказом внутри <main>
+      document.getElementById("main").innerHTML = '<section class="page"></section>';
+      page = document.querySelector("#main .page");
+    }
     if (!page) return;
+    if (!o && guestToken) {
+      page.innerHTML = emptyHTML("Заказ не найден", "Ссылка неверна или заказ уже привязан к аккаунту.", "box", '<a class="btn btn--dark" href="' + BASE + '/">В каталог</a>');
+      return;
+    }
     if (!o) {
       page.innerHTML = emptyHTML("Заказ не найден", "Проверьте номер или откройте список заказов.", "box", '<a class="btn btn--dark" href="' + ME + '/orders/">Мои заказы</a>');
       return;
@@ -958,9 +1052,14 @@
     document.title = "Заказ " + o.number + " — DiDi-shop";
     var payment = o.payments[o.payments.length - 1] || null;
     var refund = payment && payment.refunds[payment.refunds.length - 1];
-    var html = '<a class="back-link" href="' + ME + '/orders/">' + icon("chevron", 16, "flip") + "Мои заказы</a>" +
+    var html = (guestToken ? "" : '<a class="back-link" href="' + ME + '/orders/">' + icon("chevron", 16, "flip") + "Мои заказы</a>") +
       '<header class="section-head section-head--row"><div><p class="overline">' + date(o.created_at, true, true) + '</p><h1 class="h1">Заказ <span class="nowrap">' + esc(o.number) + "</span></h1></div>" +
       '<span class="status status--' + STATUS_TONES[o.status] + '">' + esc(sim.statusLabel(o.status)) + "</span></header>";
+    if (guestToken) {
+      html += '<div class="panel guest-link"><p class="panel__title">Сохраните ссылку на заказ</p><p class="agree__text">Без аккаунта заказ открывается только по этой ссылке. Писем о статусе не будет — проверяйте его здесь.</p>' +
+        '<button class="btn btn--ghost btn--sm" type="button" data-copy-text="' + esc(location.href) + '">Скопировать ссылку</button>' +
+        '<p class="muted">Чтобы заказ был в профиле, <a href="' + BASE + '/register/">создайте аккаунт</a> или <a href="' + BASE + '/login/">войдите</a> — он привяжется сам.</p></div>';
+    }
     html += agreementHTML(o);
     if (o.payment_method === "online") {
       html += '<div class="panel pay">';
@@ -979,7 +1078,7 @@
     }
     html += '<ul class="lines lines--static">' + o.items.map(function (item) {
       return '<li class="line"><span class="line__img tone-' + tone(item.product_slug) + '" aria-hidden="true">' + img(item.cover_url, "96px", "line__photo", false, "") + "</span>" +
-        '<div class="line__body"><p class="line__title">' + esc(item.product_name) + '</p><p class="line__meta">' + (item.size ? "Размер " + esc(item.size) + " · " : "") +
+        '<div class="line__body"><p class="line__title">' + esc(item.product_name) + '</p><p class="line__meta">' + (item.color_name ? "Цвет " + esc(item.color_name) + " · " : "") + (item.size ? "Размер " + esc(item.size) + " · " : "") +
         (item.status_name ? esc(item.status_name) + " · " : "") + item.quantity + " × " + money(item.price_kopecks) + "</p></div>" +
         '<p class="line__price">' + money(item.line_total_kopecks) + "</p></li>";
     }).join("") + "</ul>";
@@ -1274,7 +1373,7 @@
     if ((form.method || "get").toLowerCase() === "get") {
       // Поиск и фильтры: адрес с параметрами, выборку делает renderListing.
       var params = new URLSearchParams();
-      new FormData(form).forEach(function (v, k) { if (String(v).trim()) params.set(k, String(v).trim()); });
+      new FormData(form).forEach(function (v, k) { if (String(v).trim()) params.append(k, String(v).trim()); });
       if (submitter && submitter.name) params.set(submitter.name, submitter.value);
       var target = action === "/search/" || form.hasAttribute("data-quick") || form.hasAttribute("data-drop") ? link("/search/") : location.pathname;
       var s = params.toString();
@@ -1494,12 +1593,14 @@
     else if (/^\/category\/[^/]+\/$/.test(HERE)) renderListing("category");
     else if (/^\/product\/[^/]+\/$/.test(HERE)) renderProduct(data);
     else if (HERE === "/cart/") renderCart();
-    else if (HERE === "/checkout/" && TREE === "me") renderCheckout();
+    else if (HERE === "/checkout/") renderCheckout();
+    else if ((m = HERE.match(/^\/order\/g\/([^/]+)\/$/))) renderOrder(m[1]);
     else if (HERE === "/orders/" && TREE === "me") renderOrders();
     else if ((m = HERE.match(/^\/orders\/([^/]+)\/$/)) && TREE === "me") renderOrder();
     else if (HERE === "/profile/" && TREE === "me") renderProfile();
     else if (HERE === "/profile/data/" && TREE === "me") renderProfileData();
     else if (HERE === "/contacts/") renderContacts();
+    else if (HERE === "/legal/delivery/") renderDelivery();
     else if (/^\/articles\/[^/]+\/$/.test(HERE)) renderArticle();
     renderNews();
     // Email из адреса: «Забыли пароль?» на входе панели и шаг «код» сброса.

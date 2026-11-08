@@ -454,7 +454,7 @@
     return {
       id: p.id, name: p.name, slug: p.slug, category: p.category, category_name: c ? c.name : "",
       price_kopecks: p.price_kopecks, compare_at_kopecks: p.compare_at_kopecks, status: p.status || null,
-      is_active: p.is_active, is_draft: !!p.is_draft, deleted_at: p.deleted_at, total_stock: totalStock(p), cover_url: coverUrl(p),
+      is_active: p.is_active, is_draft: !!p.is_draft, color_group: p.color_group || null, color_name: p.color_name || "", deleted_at: p.deleted_at, total_stock: totalStock(p), cover_url: coverUrl(p),
       created_at: p.created_at, updated_at: p.updated_at
     };
   }
@@ -462,6 +462,11 @@
     var row = productRow(db, p);
     row.description = p.description || "";
     row.agreement_channel = p.agreement_channel || "";
+    row.color_siblings = p.color_group ? db.products.filter(function (o) {
+      return o.color_group === p.color_group && o.id !== p.id && !o.deleted_at;
+    }).sort(function (a, b) { return a.id - b.id; }).map(function (o) {
+      return { id: o.id, name: o.name, color_name: o.color_name, is_active: o.is_active, is_draft: !!o.is_draft, cover_url: coverUrl(o) };
+    }) : [];
     row.variants = p.variants.slice().sort(function (a, b) { return a.position - b.position || a.id - b.id; }).map(function (v) {
       return { id: v.id, size: v.size, sku: v.sku, stock: v.stock, position: v.position };
     });
@@ -475,7 +480,7 @@
     var c = category(db, p.category);
     var s = status(db, p.status);
     return {
-      id: p.id, slug: p.slug, name: p.name, price_kopecks: p.price_kopecks, price_on_request: p.price_kopecks === null,
+      id: p.id, slug: p.slug, name: p.name, color_name: p.color_name || "", price_kopecks: p.price_kopecks, price_on_request: p.price_kopecks === null,
       compare_at_kopecks: p.compare_at_kopecks, in_stock: totalStock(p) > 0, cover_url: coverUrl(p),
       category: c ? { id: c.id, slug: c.slug, name: c.name } : null,
       status: s ? { id: s.id, name: s.name, hint: s.hint, tone: s.tone } : null,
@@ -821,7 +826,7 @@
     var row = clone(c);
     delete row.password;
     var db = load();
-    row.orders_count = db ? db.orders.filter(function (o) { return o.customer.id === c.id; }).length : 0;
+    row.orders_count = db ? db.orders.filter(function (o) { return !!o.customer && o.customer.id === c.id; }).length : 0;
     return row;
   }
 
@@ -911,12 +916,12 @@
     if (s) {
       var d = digits(s);
       list = list.filter(function (o) {
-        return lower(o.number).indexOf(s) >= 0 || lower(o.customer.email).indexOf(s) >= 0 ||
+        return lower(o.number).indexOf(s) >= 0 || (!!o.customer && lower(o.customer.email).indexOf(s) >= 0) ||
           lower(o.recipient_name).indexOf(s) >= 0 || (d.length >= 3 && digits(o.recipient_phone).indexOf(d) >= 0);
       });
     }
     if (q.get("status")) list = list.filter(function (o) { return o.status === q.get("status"); });
-    if (q.get("customer")) list = list.filter(function (o) { return o.customer.id === Number(q.get("customer")); });
+    if (q.get("customer")) list = list.filter(function (o) { return !!o.customer && o.customer.id === Number(q.get("customer")); });
     if (q.get("unfinished") === "true") list = list.filter(function (o) { return UNFINISHED.indexOf(o.status) >= 0; });
     if (q.get("payment_method")) list = list.filter(function (o) { return o.payment_method === q.get("payment_method"); });
     if (q.get("delivery_method")) list = list.filter(function (o) { return o.delivery_method === q.get("delivery_method"); });
@@ -1083,7 +1088,7 @@
     var c = byId(db.customers, m[1]);
     if (!c) return fail(404, { detail: "Не найдено." });
     if (m[2] === "delete") {
-      var open = db.orders.some(function (o) { return o.customer.id === c.id && UNFINISHED.indexOf(o.status) >= 0; });
+      var open = db.orders.some(function (o) { return !!o.customer && o.customer.id === c.id && UNFINISHED.indexOf(o.status) >= 0; });
       if (open) return bad("У клиента есть незавершённые заказы — удалить нельзя.");
       c.status = "deleted";
       c.deleted_at = now();
@@ -1091,7 +1096,7 @@
       c.first_name = "";
       c.last_name = "";
       db.orders.forEach(function (o) {
-        if (o.customer.id === c.id) { o.customer.is_deleted = true; o.customer.email = c.email; }
+        if (o.customer && o.customer.id === c.id) { o.customer.is_deleted = true; o.customer.email = c.email; }
       });
     } else {
       c.status = m[2] === "block" ? "blocked" : "active";
@@ -1278,6 +1283,36 @@
       updated++;
     });
     return { status: 200, body: { updated: updated }, save: true };
+  });
+  // Цвета (store.services.catalog.link_colors / unlink_color).
+  route("POST", "/catalog/products/colors/", function (db, m, q, body) {
+    var items = body.items || [];
+    if (items.length < 2) return fields({ items: ["Отметьте хотя бы два товара."] });
+    var chosen = items.map(function (it) { return db.products.filter(function (p) { return p.id === Number(it.id) && !p.deleted_at; })[0]; });
+    if (chosen.some(function (p) { return !p; })) return fields({ items: ["Часть товаров не найдена."] });
+    var groups = {};
+    chosen.forEach(function (p) { if (p.color_group) groups[p.color_group] = true; });
+    var keys = Object.keys(groups);
+    if (keys.length > 1) return fields({ items: ["Часть товаров уже связана с другими цветами. Сначала отвяжите их."] });
+    var group = keys[0] || "demo-" + Date.now();
+    var names = items.map(function (it) { return String(it.color_name || "").trim(); });
+    if (names.some(function (n) { return !n; })) return fields({ items: ["Укажите название каждого цвета."] });
+    db.products.forEach(function (p) {
+      if (p.color_group === group && !p.deleted_at && chosen.indexOf(p) < 0) names.push(p.color_name);
+    });
+    var seen = {};
+    if (names.some(function (n) { var k = n.toLowerCase(); var dup = seen[k]; seen[k] = true; return dup; })) {
+      return fields({ items: ["Названия цветов одной модели не должны повторяться."] });
+    }
+    chosen.forEach(function (p, i) { p.color_group = group; p.color_name = String(items[i].color_name).trim(); p.updated_at = now(); });
+    return { status: 200, body: { color_group: group, updated: chosen.length }, save: true };
+  });
+  route("POST", "/catalog/products/(\\d+)/colors/unlink/", function (db, m) {
+    var p = db.products.filter(function (o) { return o.id === Number(m[1]); })[0];
+    if (!p) return { status: 404, body: { detail: "Не найдено." } };
+    var members = db.products.filter(function (o) { return p.color_group && o.color_group === p.color_group; });
+    (members.length <= 2 ? members : [p]).forEach(function (o) { o.color_group = null; o.color_name = ""; o.updated_at = now(); });
+    return { status: 200, body: productDetail(db, p), save: true };
   });
   route("POST", "/catalog/products/(\\d+)/variants/", function (db, m, q, body) {
     var p = byId(db.products, m[1]);
@@ -1791,6 +1826,7 @@
     db.session = { id: c.id, email: c.email };
     db.loggedOut = false;
     mergeCart(db, "guest", cartKey(db));
+    claimGuestOrders(db);
     save(db);
     return { ok: true };
   }
@@ -1830,6 +1866,7 @@
     db.session = { id: c.id, email: c.email };
     db.loggedOut = false;
     mergeCart(db, "guest", cartKey(db));
+    claimGuestOrders(db);
     save(db);
     return { ok: true };
   }
@@ -1848,6 +1885,7 @@
     if (!anna) return null;
     db.session = { id: anna.id, email: anna.email };
     mergeCart(db, "guest", cartKey(db));
+    claimGuestOrders(db);
     save(db);
     return db.session;
   }
@@ -1927,7 +1965,7 @@
     var db = load();
     var c = db.session && customerByEmail(db, db.session.email);
     if (!c) return { error: "Нужно войти." };
-    if (db.orders.some(function (o) { return o.customer.id === c.id && UNFINISHED.indexOf(o.status) >= 0; })) {
+    if (db.orders.some(function (o) { return !!o.customer && o.customer.id === c.id && UNFINISHED.indexOf(o.status) >= 0; })) {
       return { error: "Есть незавершённые заказы — удалить аккаунт можно после их получения или отмены." };
     }
     c.status = "deleted";
@@ -1998,6 +2036,15 @@
     if (c) { c.viewed = []; save(db); }
   }
 
+  // Цвета модели на витрине (store.services.storefront.color_options).
+  function colorOptions(p) {
+    if (!p.color_group) return [];
+    var db = load();
+    var options = db.products.filter(function (o) { return o.color_group === p.color_group && isLive(db, o); })
+      .sort(function (a, b) { return a.id - b.id; })
+      .map(function (o) { return { slug: o.slug, color_name: o.color_name, cover_url: coverUrl(o), in_stock: totalStock(o) > 0 }; });
+    return options.length >= 2 ? options : [];
+  }
   // «Похожие» (store.services.storefront.similar_products): та же категория, затем соседние
   // подкатегории того же корня; в наличии — первыми, затем новые.
   function similar(slug, limit) {
@@ -2018,10 +2065,31 @@
       .map(function (e) { return publicProduct(db, e.x); });
   }
 
+  // Гостевые заказы: в демо ссылка живёт в одной «базе» браузера, срока у неё нет.
+  var GUEST_MAX_OPEN = 2;
+  function guestToken() {
+    var bytes = crypto.getRandomValues(new Uint8Array(32));
+    return Array.prototype.map.call(bytes, function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+  }
+  function guestOrder(token) {
+    return load().orders.filter(function (o) { return !o.customer && o.guest_token === token; })[0] || null;
+  }
+  function claimGuestOrders(db) {
+    var c = db.session && customerByEmail(db, db.session.email);
+    if (!c) return;
+    db.orders.forEach(function (o) {
+      if (!o.customer && (db.guestTokens || []).indexOf(o.guest_token) >= 0) {
+        o.customer = { id: c.id, email: c.email, is_deleted: false };
+        delete o.guest_token;
+      }
+    });
+    db.guestTokens = [];
+  }
+
   function myOrders() {
     var db = load();
     if (!db.session) return [];
-    return db.orders.filter(function (o) { return o.customer.id === db.session.id; })
+    return db.orders.filter(function (o) { return !!o.customer && o.customer.id === db.session.id; })
       .sort(function (a, b) { return a.created_at < b.created_at ? 1 : -1; });
   }
   function myOrder(number) {
@@ -2032,7 +2100,6 @@
   function checkout(form, buyNow) {
     var db = load();
     var c = db.session && customerByEmail(db, db.session.email);
-    if (!c) return { error: "Войдите, чтобы оформить заказ." };
     var lines = buyNow ? [[Number(buyNow.variant), Number(buyNow.quantity) || 1]] : cartLines(db);
     var cart = cartSummary(db, lines);
     if (!cart.lines.length) return { error: "Корзина пуста." };
@@ -2056,11 +2123,17 @@
     else if (payment === "online" && !s.online) errors.payment_method = "Онлайн-оплата сейчас недоступна.";
     else if (payment === "agreement" && !agreementOn) errors.payment_method = "Согласование с продавцом сейчас недоступно.";
     else if (payment === "on_delivery" && !s.cash) errors.payment_method = "Оплата при получении сейчас недоступна.";
+    if (!c) { // без аккаунта (orders.services.checkout.guest_checkout)
+      if (payment !== "agreement") errors.payment_method = "Без аккаунта заказ оформляется только по согласованию.";
+      if (!form.consent) errors.consent = "Нужно согласие на обработку персональных данных.";
+      var openOnPhone = db.orders.filter(function (o) { return o.status === "awaiting_agreement" && digits(o.recipient_phone) === phone; }).length;
+      if (!Object.keys(errors).length && openOnPhone >= GUEST_MAX_OPEN) return { error: "На этот номер уже " + openOnPhone + " заказа ждут согласования — напишите продавцу по ним или отмените лишние." };
+    }
     if (Object.keys(errors).length) return { errors: errors };
 
     var created = now();
     var order = {
-      id: next(db, "order"), customer: { id: c.id, email: c.email, is_deleted: false }, number: "DD-" + next(db, "number"),
+      id: next(db, "order"), customer: c ? { id: c.id, email: c.email, is_deleted: false } : null, number: "DD-" + next(db, "number"),
       status: payment === "online" ? "awaiting_payment" : payment === "agreement" ? "awaiting_agreement" : "confirmed",
       payment_method: payment, agreement_channel: payment === "agreement" ? orderChannel(db, cart.lines, s.channel) : "",
       payment_method_display: PAYMENT_LABELS[payment], delivery_method: delivery.method,
@@ -2078,7 +2151,7 @@
       found.variant.stock -= line.quantity;
       var st = status(db, found.product.status);
       order.items.push({
-        id: next(db, "item"), product_slug: found.product.slug, product_name: found.product.name, size: found.variant.size,
+        id: next(db, "item"), product_slug: found.product.slug, product_name: found.product.name, color_name: found.product.color_name || "", size: found.variant.size,
         sku: found.variant.sku, status_name: st ? st.name : "", price_kopecks: line.unit_price_kopecks, quantity: line.quantity,
         line_total_kopecks: line.line_total_kopecks, cover_url: coverUrl(found.product), product_id: found.product.id,
         variant_id: found.variant.id
@@ -2086,8 +2159,12 @@
     });
     order.status_history.push({
       from_status: "", to_status: order.status, to_status_display: STATUS_LABELS[order.status], changed_by: "customer",
-      comment: "", created_at: created, actor_email: c.email, notified: true
+      comment: "", created_at: created, actor_email: c ? c.email : null, notified: !!c
     });
+    if (!c) {
+      order.guest_token = guestToken();
+      db.guestTokens = (db.guestTokens || []).concat(order.guest_token);
+    }
     if (payment === "online") {
       order.payments.push({
         id: next(db, "payment"), amount_kopecks: order.total_kopecks, status: "pending", status_display: "Ожидает оплаты",
@@ -2151,7 +2228,7 @@
     var site = location.origin + BASE;
     var lines = ["Здравствуйте! Хочу оформить заказ " + o.number + ".", ""];
     o.items.forEach(function (item, i) {
-      lines.push((i + 1) + ". " + item.product_name + (item.size ? ", " + item.size : "") + " × " + item.quantity + " — " +
+      lines.push((i + 1) + ". " + item.product_name + (item.color_name ? ", " + item.color_name : "") + (item.size ? ", " + item.size : "") + " × " + item.quantity + " — " +
         rub(item.price_kopecks * item.quantity));
       lines.push(site + "/product/" + item.product_slug + "/");
     });
@@ -2170,7 +2247,7 @@
     var db = load();
     var o = db.orders.filter(function (x) { return x.number === number; })[0];
     if (!o || CUSTOMER_CANCEL.indexOf(o.status) < 0) return null;
-    setStatus(db, o, "cancelled", "customer", o.customer.email, "", true);
+    setStatus(db, o, "cancelled", "customer", o.customer ? o.customer.email : null, "", true);
     save(db);
     return o;
   }
@@ -2245,6 +2322,7 @@
     checkout: checkout,
     payOrder: payOrder,
     cancelOrder: cancelOrder,
+    guestOrder: guestOrder,
     canCancel: canCancel,
     agreementLink: function (o) { return agreementLink(load(), o); },
     lastRecipient: lastRecipient,
@@ -2254,6 +2332,7 @@
     viewed: viewed,
     clearViewed: clearViewed,
     similar: similar,
+    colorOptions: colorOptions,
     adminSignedIn: signedIn,
     /** Каналы связи для вкладки «Контакты» магазина (как content.contacts.get_contacts). */
     contacts: function () {

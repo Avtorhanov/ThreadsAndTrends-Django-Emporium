@@ -224,12 +224,11 @@ def test_buy_now_unavailable_returns_to_product(customer_client, shop):
     assert response["Location"] == reverse("web:product", args=["hudi"])
 
 
-def test_buy_now_guest_goes_to_login_and_back(client, shop):
+def test_buy_now_guest_checks_out_without_login(client, shop):
     cap = shop["cap"].variants.get()
     url = f"{reverse('web:checkout')}?variant={cap.pk}&qty=1"
     response = client.get(url)
-    assert response.status_code == 302 and "next=" in response["Location"]
-    assert "variant" in response["Location"]
+    assert response.status_code == 200 and 'name="consent"' in response.content.decode()
 
 
 def test_buy_now_bad_params_404(customer_client, shop):

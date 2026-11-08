@@ -1,4 +1,4 @@
-"""Витрина: товар с ценой по запросу — «По запросу» в ленте, «Узнать» вместо корзины."""
+"""Витрина: товар с ценой по запросу — «По запросу» в ленте, «Узнать цену» вместо корзины."""
 
 import json
 import re
@@ -28,7 +28,7 @@ def test_product_page_offers_messengers_instead_of_cart(client, settings, luxe):
     settings.CONTACT_WHATSAPP = "+7 900 123-45-67"
     html = client.get(reverse("web:product", args=[luxe.slug])).content.decode()
     assert "Цена по запросу" in html
-    assert "data-ask" in html and ">Узнать<" in html
+    assert "data-ask" in html and "Узнать цену" in html
     assert 'href="https://t.me/didishop"' in html
     # В WhatsApp вопрос подставляется в чат: название и ссылка на товар.
     wa = re.search(r'href="(https://wa\.me/79001234567\?text=[^"]+)"', html)

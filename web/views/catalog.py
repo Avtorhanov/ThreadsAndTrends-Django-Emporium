@@ -4,6 +4,7 @@
 кэшируются (web.catalog_cache) — в них нет форм и данных пользователя.
 """
 
+import json
 from dataclasses import dataclass
 
 from django.conf import settings
@@ -17,6 +18,7 @@ from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 
 from content import home as home_page
+from content import shop as shop_settings
 from content.contacts import ask_links
 from store.models import Category, Product, ProductImage, ProductVariant
 from store.services import history
@@ -25,10 +27,12 @@ from store.services.storefront import (
     ProductFilters,
     Sort,
     active_categories,
+    available_sizes,
+    color_options,
     filter_products,
     similar_products,
 )
-from store.sizes import SHOE_CHART, has_shoe_sizes
+from store.sizes import SHOE_CHART, has_shoe_sizes, sort_sizes
 
 from .. import cart as web_cart
 from .. import catalog_cache
@@ -61,13 +65,14 @@ def _params(values: dict, **changes) -> dict:
         "price_max": _rubles_param(values["price_max"]),
         "in_stock": "1" if values["in_stock"] else "",
         "sort": values["sort"],
+        "size": list(values["sizes"]),
     }
     params.update(changes)
-    return {key: value for key, value in params.items() if value not in ("", None)}
+    return {key: value for key, value in params.items() if value not in ("", None, [])}
 
 
 def _url(path: str, params: dict) -> str:
-    return f"{path}?{urlencode(params)}" if params else path
+    return f"{path}?{urlencode(params, doseq=True)}" if params else path
 
 
 def _page_links(page, path: str, values: dict) -> list[PageLink]:
@@ -131,7 +136,29 @@ def _grid(
 
 
 def _filtered(values: dict) -> bool:
-    return any(values[name] for name in ("q", "price_min", "price_max", "in_stock", "sort"))
+    names = ("q", "price_min", "price_max", "in_stock", "sort", "sizes")
+    return any(values[name] for name in names)
+
+
+def _size_options(filters: ProductFilters, search: bool) -> list[dict]:
+    """Чипы размеров. Отмеченный остаётся, даже если другой фильтр убрал его из выборки:
+    иначе его нельзя было бы снять."""
+    cache_key = catalog_cache.key(
+        "sizes",
+        filters.category.pk if filters.category else "",
+        search,
+        filters.q,
+        filters.price_min,
+        filters.price_max,
+        filters.in_stock,
+    )
+    found = catalog_cache.get_or_render(
+        cache_key, lambda: json.dumps(available_sizes(filters), ensure_ascii=False)
+    )
+    return [
+        {"value": size, "selected": size in filters.sizes}
+        for size in sort_sizes({*json.loads(found), *filters.sizes})
+    ]
 
 
 def _page_number(request) -> int:
@@ -150,8 +177,15 @@ def home(request):
         values=values,
         pages=False,
     )
+    blocks = _home_blocks()
     return render(
-        request, "web/catalog/home.html", {"grid": grid, "blocks": _home_blocks(), "tab": "catalog"}
+        request,
+        "web/catalog/home.html",
+        {
+            "grid": grid,
+            "blocks": blocks,
+            "tab": "catalog",
+        },
     )
 
 
@@ -199,6 +233,7 @@ def _listing(request, *, category: Category | None, search: bool):
             "values": values,
             "price_min": _rubles_param(values["price_min"]),
             "price_max": _rubles_param(values["price_max"]),
+            "size_options": _size_options(filters, search),
             # Пустое значение — сортировка по умолчанию (с поиском — релевантность, без — новые).
             "default_sort": "По релевантности" if values["q"] else "Сначала новые",
             "sort_choices": [
@@ -284,6 +319,8 @@ def product(request, slug: str):
         "web/catalog/product.html",
         {
             "product": found,
+            "colors": color_options(found),
+            "shop": shop_settings.current(),
             "ask_links": ask,
             "in_cart_total": sum(in_cart.values()),
             "cart_state": cart_state,
