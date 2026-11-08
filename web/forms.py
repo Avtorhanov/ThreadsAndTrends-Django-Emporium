@@ -224,8 +224,16 @@ class CheckoutForm(forms.Form):
     expected_total = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
     idempotency_key = forms.RegexField(regex=r"^[A-Za-z0-9_-]{8,64}$", widget=forms.HiddenInput)
 
-    def __init__(self, *args, delivery_methods=(), payment_methods=(), **kwargs):
+    # 152-ФЗ: гость не проходил регистрацию — согласие отдельной отметкой при оформлении.
+    consent = forms.BooleanField(
+        label="Согласен на обработку персональных данных",
+        error_messages={"required": "Нужно согласие на обработку персональных данных."},
+    )
+
+    def __init__(self, *args, delivery_methods=(), payment_methods=(), guest=False, **kwargs):
         super().__init__(*args, **kwargs)
+        if not guest:
+            del self.fields["consent"]
         # Только доступные сейчас способы (самовывоз — если задан адрес пункта, онлайн — если
         # включена оплата).
         self.fields["delivery_method"].choices = [

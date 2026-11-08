@@ -145,7 +145,7 @@ function RecentWidget() {
               <span className="dash-row-main">
                 <strong>{order.number}</strong>
                 <span className="muted small">
-                  {dateFormat.format(new Date(order.created_at))} · {order.recipient_name || order.customer.email}
+                  {dateFormat.format(new Date(order.created_at))} · {order.recipient_name || order.customer?.email || "Гость"}
                 </span>
               </span>
               <span className="dash-row-end">

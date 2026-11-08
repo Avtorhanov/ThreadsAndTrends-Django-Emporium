@@ -12,7 +12,8 @@ from orders.models import Order, OrderStatus, PaymentMethod
 
 def can_notify(order: Order) -> bool:
     owner = order.owner
-    return owner.deleted_at is None and bool(owner.email)
+    # Гостевой заказ: email не собираем, покупатель следит за заказом по ссылке.
+    return owner is not None and owner.deleted_at is None and bool(owner.email)
 
 
 def subject_for(order: Order, status: str, *, created: bool = False) -> str:

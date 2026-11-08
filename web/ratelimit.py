@@ -25,15 +25,19 @@ class _Limit(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": ident}
 
 
-def allow(request, scope: str, *, email: str | None = None, user=None) -> bool:
+def allow(
+    request, scope: str, *, email: str | None = None, user=None, phone: str | None = None
+) -> bool:
     """Засчитать попытку. False — лимит исчерпан (попытка не засчитывается).
 
-    Ключ: email (sha256, как у API) → пользователь → IP клиента."""
+    Ключ: email или телефон (sha256, как у API) → пользователь → IP клиента."""
     if email is not None:
         normalized = normalize_email(email)
         if not normalized:
             return True
         ident = hashlib.sha256(normalized.encode()).hexdigest()
+    elif phone is not None:
+        ident = hashlib.sha256(phone.encode()).hexdigest()
     elif user is not None:
         ident = str(user.pk)
     else:

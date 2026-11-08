@@ -25,6 +25,35 @@ export function newIdempotencyKey(): string {
 
 export type BuyNow = { variant_id: number; quantity: number };
 
+export type GuestLine = Schemas["GuestLineRequest"];
+export type GuestCheckoutInput = Omit<Schemas["GuestCheckoutInputRequest"], "lines" | "consent">;
+
+const tokenHeader = (token: string) => ({ header: { "X-Order-Token": token } });
+
+/** Заказ без аккаунта: доступ только по токену из ответа оформления. */
+export const guestOrderService = {
+  preview(lines: GuestLine[]): Promise<CheckoutPreview> {
+    return unwrap(api.POST("/api/v1/orders/guest/preview/", { body: { lines } }));
+  },
+  create(body: GuestCheckoutInput, lines: GuestLine[], idempotencyKey: string) {
+    return unwrap(
+      api.POST("/api/v1/orders/guest/", {
+        params: { header: { "Idempotency-Key": idempotencyKey } },
+        body: { ...body, lines, consent: true },
+      }),
+    );
+  },
+  get(token: string): Promise<OrderDetail> {
+    return unwrap(api.GET("/api/v1/orders/guest/order/", { params: tokenHeader(token) }));
+  },
+  cancel(token: string): Promise<OrderDetail> {
+    return unwrap(api.POST("/api/v1/orders/guest/order/cancel/", { params: tokenHeader(token) }));
+  },
+  claim(tokens: string[]) {
+    return unwrap(api.POST("/api/v1/orders/guest/claim/", { body: { tokens } }));
+  },
+};
+
 /** Заказы клиента. Расчёт сумм, доставка и проверки — на сервере. */
 export const orderService = {
   /** buyNow — «Купить сейчас»: одна позиция вместо корзины (корзина не меняется). */

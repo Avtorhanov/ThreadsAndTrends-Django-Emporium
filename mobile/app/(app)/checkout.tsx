@@ -1,7 +1,9 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Linking, Switch, Text, View } from "react-native";
 
 import { ApiError } from "../../src/api/errors";
+import { API_URL } from "../../src/config";
 import { useAuth } from "../../src/auth/AuthProvider";
 import { useCart } from "../../src/cart/CartProvider";
 import {
@@ -19,10 +21,13 @@ import {
 } from "../../src/components/ui";
 import { useSubmit } from "../../src/hooks/useSubmit";
 import { formatKopecks } from "../../src/lib/money";
+import { guestCartStorage } from "../../src/cart/guestCartStorage";
 import { ChoiceList } from "../../src/orders/components";
+import { guestOrderStorage } from "../../src/orders/guestOrderStorage";
 import {
   type CheckoutPreview,
   type DeliveryMethod,
+  guestOrderService,
   newIdempotencyKey,
   orderService,
   PAYMENT_TITLES,
@@ -37,8 +42,10 @@ export default function CheckoutScreen() {
     if (!Number.isInteger(variant) || variant <= 0) return undefined;
     return { variant_id: variant, quantity: Math.max(1, Number(params.qty) || 1) };
   }, [params.variant, params.qty]);
-  const { user } = useAuth();
-  const { refresh: refreshCart } = useCart();
+  const { user, status } = useAuth();
+  const signedIn = status === "signedIn";
+  const { refresh: refreshCart, clearGuest } = useCart();
+  const [consent, setConsent] = useState(false);
   const [preview, setPreview] = useState<CheckoutPreview | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -55,7 +62,9 @@ export default function CheckoutScreen() {
   const load = useCallback(async () => {
     setLoadError(null);
     try {
-      const data = await orderService.preview(buyNow);
+      const data = signedIn
+        ? await orderService.preview(buyNow)
+        : await guestOrderService.preview(await guestLines(buyNow));
       setPreview(data);
       setDelivery((current) => current ?? data.delivery_options[0]?.method ?? null);
       setPayment((current) => current ?? data.payment_methods[0] ?? null);
@@ -69,7 +78,7 @@ export default function CheckoutScreen() {
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : "Не удалось загрузить данные заказа.");
     }
-  }, [user, buyNow]);
+  }, [user, buyNow, signedIn]);
 
   useEffect(() => {
     void load();
@@ -85,6 +94,28 @@ export default function CheckoutScreen() {
   const submit = useSubmit(async () => {
     if (!delivery || !payment) return;
     try {
+      if (!signedIn) {
+        const { order, access_token } = await guestOrderService.create(
+          {
+            delivery_method: delivery,
+            payment_method: payment,
+            recipient_name: name,
+            recipient_phone: phone,
+            delivery_address: delivery === "courier" ? address : "",
+            comment,
+            expected_total_kopecks: total,
+          },
+          await guestLines(buyNow),
+          idempotencyKey.current,
+        );
+        await guestOrderStorage.add(order.number, access_token);
+        if (!buyNow) await clearGuest();
+        router.replace({
+          pathname: "/orders/[number]",
+          params: { number: order.number, created: "1" },
+        });
+        return;
+      }
       const order = await orderService.create(
         {
           delivery_method: delivery,
@@ -124,6 +155,15 @@ export default function CheckoutScreen() {
           <Loading />
         )}
       </Centered>
+    );
+  }
+
+  if (!signedIn && preview.payment_methods.length === 0) {
+    return (
+      <Screen>
+        <Message text="Сейчас заказ можно оформить только из аккаунта." />
+        <Button title="Войти" onPress={() => router.push("/sign-in")} />
+      </Screen>
     );
   }
 
@@ -224,15 +264,31 @@ export default function CheckoutScreen() {
         <Hint>Цены на некоторые товары изменились — итог посчитан по новым ценам.</Hint>
       ) : null}
 
+      {!signedIn ? (
+        <View style={consentStyle}>
+          <Switch value={consent} onValueChange={setConsent} accessibilityLabel="Согласие на обработку персональных данных" />
+          <Text style={consentText} onPress={() => void Linking.openURL(`${API_URL}/legal/privacy/`)}>
+            Согласен на обработку персональных данных по политике магазина (открыть)
+          </Text>
+        </View>
+      ) : null}
       <Message text={submit.error} />
       <Button
         title={`Подтвердить заказ · ${formatKopecks(total)}`}
         onPress={() => void submit.submit()}
         loading={submit.loading}
-        disabled={!delivery || !payment}
+        disabled={!delivery || !payment || (!signedIn && !consent)}
       />
     </Screen>
   );
 }
 
 const summaryStyle = { gap: 12, padding: 18, marginTop: 8 };
+const consentStyle = { flexDirection: "row", alignItems: "center", gap: 12 } as const;
+const consentText = { flex: 1, fontSize: 14 } as const;
+
+async function guestLines(buyNow?: { variant_id: number; quantity: number }) {
+  if (buyNow) return [buyNow];
+  const lines = await guestCartStorage.load();
+  return lines.map(({ variant_id, quantity }) => ({ variant_id, quantity }));
+}

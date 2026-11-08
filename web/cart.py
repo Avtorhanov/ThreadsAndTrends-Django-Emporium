@@ -147,6 +147,15 @@ def ack_prices(request) -> None:
         _write_session(request, cart_service.guest_ack_prices(_read_session(request)))
 
 
+def guest_lines(request) -> list[LineInput]:
+    """Позиции гостевой корзины для оформления (сессия не меняется)."""
+    return _read_session(request)
+
+
+def clear_guest(request) -> None:
+    _write_session(request, [])
+
+
 def take_guest_lines(request) -> list[LineInput]:
     """Позиции гостя до входа: вызывать до login() — после него request.user уже клиент."""
     return _read_session(request)

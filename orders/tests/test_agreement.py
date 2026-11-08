@@ -110,6 +110,15 @@ def test_product_channel_overrides_shop_channel(customer):
     assert place(customer, "agree-key-0002").agreement_channel == "whatsapp"
 
 
+def test_color_snapshot_goes_to_order_and_message(filled_cart, shirt):
+    shirt.color_name = "Зелёный"
+    shirt.save(update_fields=["color_name"])
+    order = place(filled_cart)
+
+    assert order.items.get(product=shirt).color_name == "Зелёный"
+    assert "Футболка, Зелёный, M × 2" in agreement.message(order, BASE)
+
+
 def test_whatsapp_link_carries_message(filled_cart, shirt):
     order = place(filled_cart)
     found = agreement.link(order, BASE)

@@ -177,7 +177,8 @@ def shopper(browser, base: str, report: Report, errors: list[str]) -> None:
     page.click("[data-to-top]")
     wait_until(page, "() => scrollY === 0", what="возврат наверх по логотипу")
 
-    page.locator(".cats .seg").nth(1).click()
+    # На главной с блоком «Категории» полоса шапки скрыта — переход из блока.
+    page.locator(".hblock-cats__item").nth(1).click()
     page.wait_for_url(re.compile(r"/category/"))
     report.shot(page, "phone-category")
     in_stock_product(page)
@@ -195,9 +196,8 @@ def shopper(browser, base: str, report: Report, errors: list[str]) -> None:
     expect(page.locator(".stepper__value")).to_have_text("2")
     report.shot(page, "phone-cart-guest")
 
-    # Гость → вход → регистрация (корзина переносится) → оформление.
-    page.click("a.cta[href='/checkout/']")
-    page.wait_for_url(re.compile(r"/login/\?next="))
+    # Гость заходит в аккаунт: регистрация (корзина переносится) → оформление.
+    page.goto(page.url.split("/cart/")[0] + "/login/?next=/checkout/")
     page.get_by_role("link", name="Регистрация").click()
     email = f"web-{uuid.uuid4().hex[:8]}@example.com"
     page.get_by_label("Имя").fill("Покупатель")

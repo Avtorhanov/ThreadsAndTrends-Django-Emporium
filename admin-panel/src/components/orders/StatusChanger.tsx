@@ -32,7 +32,7 @@ export function StatusChanger({ order, busy, onSubmit }: Props) {
   const [comment, setComment] = useState("");
   const [notify, setNotify] = useState(true);
   const [cancelling, setCancelling] = useState(false);
-  const canNotify = !order.customer.is_deleted;
+  const canNotify = order.customer !== null && !order.customer.is_deleted;
   const sendMail = notify && canNotify;
   const steps = orderSteps(order.delivery_method);
   const pending = isAwaitingAgreement(order.status);
@@ -104,7 +104,11 @@ export function StatusChanger({ order, busy, onSubmit }: Props) {
                 disabled={!canNotify || busy}
                 onChange={(event) => setNotify(event.target.checked)}
               />
-              {canNotify ? `Письмо на ${order.customer.email}` : "Аккаунт удалён — письмо не отправить"}
+              {order.customer === null
+                ? "Гость — email нет, письмо не отправить"
+                : canNotify
+                  ? `Письмо на ${order.customer.email}`
+                  : "Аккаунт удалён — письмо не отправить"}
             </label>
 
             <label className="field">

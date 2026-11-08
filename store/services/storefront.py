@@ -207,3 +207,17 @@ def category_tree() -> list[dict]:
 
 def invalidate_category_tree() -> None:
     cache.delete(CATEGORY_TREE_CACHE_KEY)
+
+
+def color_options(product: Product) -> list[Product]:
+    """Цвета модели на витрине, включая сам товар. Меньше двух опубликованных — выбирать нечего."""
+    if product.color_group is None:
+        return []
+    options = list(
+        Product.objects.live()
+        .filter(color_group=product.color_group)
+        .with_stock()
+        .prefetch_related("images")
+        .order_by("pk")
+    )
+    return options if len(options) >= 2 else []
