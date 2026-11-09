@@ -16,6 +16,8 @@ type Props = {
   onChanged: () => void;
   /** Несохранённые строки — наверх: их сохраняет и общая кнопка «Сохранить» товара. */
   onPendingChange?: (edits: VariantEdits) => void;
+  /** Есть строка с неверным остатком: сохранять товар нельзя, иначе значение пропадёт молча. */
+  onInvalidChange?: (invalid: boolean) => void;
 };
 
 function message(error: unknown): string {
@@ -27,13 +29,13 @@ function draftOf(variant: Variant): Draft {
   return { size: variant.size ?? "", sku: variant.sku ?? "", stock: String(variant.stock ?? 0) };
 }
 
-function validStock(value: string): boolean {
+export function validStock(value: string): boolean {
   const number = Number(value);
   return value.trim() !== "" && Number.isInteger(number) && number >= 0;
 }
 
 /** Остаток: поле и «−/+» по краям — на телефоне не нужно вызывать цифровую клавиатуру ради ±1. */
-function StockInput({ value, onChange, label }: { value: string; onChange: (value: string) => void; label: string }) {
+export function StockInput({ value, onChange, label }: { value: string; onChange: (value: string) => void; label: string }) {
   const number = Number(value);
   const step = (delta: number) => onChange(String(Math.max(0, (Number.isInteger(number) ? number : 0) + delta)));
   return (
@@ -47,6 +49,7 @@ function StockInput({ value, onChange, label }: { value: string; onChange: (valu
         min={0}
         value={value}
         aria-label={label}
+        aria-invalid={!validStock(value)}
         onChange={(event) => onChange(event.target.value)}
       />
       <button type="button" aria-label={`${label}: больше`} onClick={() => step(1)}>
@@ -66,7 +69,7 @@ function onEnter(action: () => void) {
   };
 }
 
-export function VariantsEditor({ productId, variants, onChanged, onPendingChange }: Props) {
+export function VariantsEditor({ productId, variants, onChanged, onPendingChange, onInvalidChange }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
@@ -104,6 +107,12 @@ export function VariantsEditor({ productId, variants, onChanged, onPendingChange
     onPendingChange(edits);
     // rows пересчитываются каждый рендер; меняется только содержимое — pendingKey.
   }, [pendingKey]);
+
+  const invalid = rows.filter((row) => !row.valid);
+  const hasInvalid = invalid.length > 0;
+  useEffect(() => {
+    onInvalidChange?.(hasInvalid);
+  }, [hasInvalid, onInvalidChange]);
 
   function edit(id: number, base: Draft, patch: Partial<Draft>) {
     setDrafts((current) => ({ ...current, [id]: { ...(current[id] ?? base), ...patch } }));
@@ -171,7 +180,11 @@ export function VariantsEditor({ productId, variants, onChanged, onPendingChange
         </div>
       ) : null}
       {error ? <p className="alert">{error}</p> : null}
-      {anyDirty ? (
+      {hasInvalid ? (
+        <p className="alert" role="alert">
+          Остаток — целое число от 0: {invalid.map((row) => row.variant.size || "без размера").join(", ")}.
+        </p>
+      ) : anyDirty ? (
         <p className="note note-warning small" role="status">
           Остатки изменены — нажмите «Сохранить».
         </p>

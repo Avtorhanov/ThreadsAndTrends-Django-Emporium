@@ -13,6 +13,7 @@ import { storeUrl } from "../lib/site";
 import { BackLink } from "../components/BackLink";
 import { Icon } from "../components/Icon";
 import { PageTools, ToolButton } from "../components/PageTools";
+import { Editable, useViewOnly } from "../components/ViewOnly";
 
 // photosFailed — после создания с фото; drafts — порядок черновиков для листания;
 // photos и category — из «Добавить товар»: фото одного товара (и категория из раскладки).
@@ -39,17 +40,20 @@ export function ProductEditPage() {
   const [uploading, setUploading] = useState<string | null>(null);
   // Несохранённые строки вариантов (остатки, размеры): общая «Сохранить» сохраняет и их.
   const [variantEdits, setVariantEdits] = useState<VariantEdits>(new Map());
+  const [variantsInvalid, setVariantsInvalid] = useState(false);
+  const viewOnly = useViewOnly();
   const failed = (location.state as CreatedState)?.photosFailed ?? [];
   const draftOrder = (location.state as CreatedState)?.drafts ?? [];
   const draftIndex = productId === null ? -1 : draftOrder.indexOf(productId);
   const prevDraft = draftIndex > 0 ? draftOrder[draftIndex - 1] : undefined;
   const nextDraft = draftIndex >= 0 ? draftOrder[draftIndex + 1] : undefined;
 
-  async function save({ sizes, ...values }: ProductFormValues) {
+  async function save({ sizes, stock, ...values }: ProductFormValues) {
     if (productId === null) {
       const created = await productsService.create({
         ...values,
-        variants: sizes.length ? sizes.map((size) => ({ size })) : undefined,
+        // Без размеров — один вариант «Без размера»: остаток нужен и ему.
+        variants: (sizes.length ? sizes : [""]).map((size) => ({ size, stock })),
       });
       // Фото — после создания, по одному: порядок загрузки = порядок в галерее, ошибка одного
       // файла не теряет остальные и уже введённые данные (товар создан).
@@ -111,7 +115,7 @@ export function ProductEditPage() {
             {!product.data.deleted_at && product.data.is_active ? (
               <ToolButton icon="external" label="На сайте" href={storeUrl(`product/${product.data.slug}/`)} />
             ) : null}
-            {product.data.deleted_at ? (
+            {viewOnly ? null : product.data.deleted_at ? (
               <ToolButton icon="undo" label="Восстановить" onClick={() => void toggleDeleted()} />
             ) : (
               <ToolButton icon="trash" label="Удалить" tone="danger" onClick={() => void toggleDeleted()} />
@@ -164,44 +168,52 @@ export function ProductEditPage() {
       {loading && !ready ? <p className="muted">Загрузка…</p> : null}
 
       {ready && categories.data && labels.data ? (
-        <ProductForm
-          // Новый ключ после сохранения/восстановления — форма берёт свежие значения.
-          key={product.data ? `${product.data.id}:${product.data.updated_at}` : "new"}
-          product={product.data}
-          initialCategory={initialCategory}
-          categories={categories.data}
-          labels={labels.data}
-          extraDirty={pending.length > 0 || variantEdits.size > 0}
-          onSubmit={save}
-          photos={
-            current ? (
-              <ImagesEditor
-                images={current.images}
-                hint={`Первое фото — обложка в каталоге. JPEG, PNG или WebP до 5 МБ, не больше ${MAX_PRODUCT_IMAGES} штук.`}
-                service={{
-                  upload: (file) => imagesService.upload(current.id, file),
-                  reorder: (ids) => imagesService.reorder(current.id, ids),
-                  remove: (id) => imagesService.remove(id),
-                }}
-                onChanged={product.reload}
-              />
-            ) : (
-              <PendingPhotos files={pending} onChange={setPending} />
-            )
-          }
-          stock={
-            current ? (
-              <VariantsEditor
-                productId={current.id}
-                variants={current.variants}
-                onChanged={product.reload}
-                onPendingChange={setVariantEdits}
-              />
-            ) : null
-          }
-        />
+        <Editable>
+          <ProductForm
+            // Новый ключ после сохранения/восстановления — форма берёт свежие значения.
+            key={product.data ? `${product.data.id}:${product.data.updated_at}` : "new"}
+            product={product.data}
+            initialCategory={initialCategory}
+            categories={categories.data}
+            labels={labels.data}
+            extraDirty={pending.length > 0 || variantEdits.size > 0 || variantsInvalid}
+            blocked={variantsInvalid ? "Исправьте остатки: целое число от 0." : null}
+            onSubmit={save}
+            photos={
+              current ? (
+                <ImagesEditor
+                  images={current.images}
+                  hint={`Первое фото — обложка в каталоге. JPEG, PNG или WebP до 5 МБ, не больше ${MAX_PRODUCT_IMAGES} штук.`}
+                  service={{
+                    upload: (file) => imagesService.upload(current.id, file),
+                    reorder: (ids) => imagesService.reorder(current.id, ids),
+                    remove: (id) => imagesService.remove(id),
+                  }}
+                  onChanged={product.reload}
+                />
+              ) : (
+                <PendingPhotos files={pending} onChange={setPending} />
+              )
+            }
+            stock={
+              current ? (
+                <VariantsEditor
+                  productId={current.id}
+                  variants={current.variants}
+                  onChanged={product.reload}
+                  onPendingChange={setVariantEdits}
+                  onInvalidChange={setVariantsInvalid}
+                />
+              ) : null
+            }
+          />
+        </Editable>
       ) : null}
-      {current?.color_group ? <ProductColors product={current} onChanged={product.reload} /> : null}
+      {current?.color_group ? (
+        <Editable>
+          <ProductColors product={current} onChanged={product.reload} />
+        </Editable>
+      ) : null}
     </section>
   );
 }

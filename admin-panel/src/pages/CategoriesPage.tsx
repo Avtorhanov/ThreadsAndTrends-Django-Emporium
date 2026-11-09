@@ -5,6 +5,7 @@ import { ApiError } from "../api/errors";
 import { sortCategoryTree, useCategories } from "../hooks/useCatalog";
 import { Icon } from "../components/Icon";
 import { Table } from "../components/Table";
+import { Editable } from "../components/ViewOnly";
 
 function message(error: unknown): string {
   if (!(error instanceof ApiError)) return "Действие не выполнено.";
@@ -67,107 +68,111 @@ export function CategoriesPage() {
         <span className="muted">Два уровня; товары — только в категориях без подкатегорий</span>
       </div>
 
-      <form className="filters" onSubmit={onCreate}>
-        <input
-          placeholder="Название новой категории"
-          value={name}
-          maxLength={100}
-          onChange={(event) => setName(event.target.value)}
-        />
-        <select value={parent} onChange={(event) => setParent(event.target.value)}>
-          <option value="">Корневая категория</option>
-          {roots.map((root) => (
-            <option key={root.id} value={root.id}>
-              Внутри «{root.name}»
-            </option>
-          ))}
-        </select>
-        <button type="submit" className="button" disabled={busy || !name.trim()}>
-          Добавить
-        </button>
-      </form>
+      <Editable>
+        <form className="filters" onSubmit={onCreate}>
+          <input
+            placeholder="Название новой категории"
+            value={name}
+            maxLength={100}
+            onChange={(event) => setName(event.target.value)}
+          />
+          <select value={parent} onChange={(event) => setParent(event.target.value)}>
+            <option value="">Корневая категория</option>
+            {roots.map((root) => (
+              <option key={root.id} value={root.id}>
+                Внутри «{root.name}»
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="button" disabled={busy || !name.trim()}>
+            Добавить
+          </button>
+        </form>
+      </Editable>
 
       {error ? <p className="alert">{error}</p> : null}
       {actionError ? <p className="alert">{actionError}</p> : null}
 
-      <Table loading={loading || busy} className="table-categories">
-        <thead>
-          <tr>
-            <th>Название</th>
-            <th>Адрес (slug)</th>
-            <th>Товаров</th>
-            <th>Порядок</th>
-            <th>Видимость</th>
-            <th aria-label="Действия" />
-          </tr>
-        </thead>
-        <tbody>
-          {tree.map((category) => (
-            <tr key={category.id}>
-              <td className={category.depth ? "indent" : "strong"}>{category.name}</td>
-              <td className="muted">{category.slug}</td>
-              <td>{category.products_count}</td>
-              <td>
-                <input
-                  className="input-narrow"
-                  type="number"
-                  aria-label={`Порядок: ${category.name}`}
-                  min={0}
-                  defaultValue={category.position ?? 0}
-                  disabled={busy}
-                  onBlur={(event) => {
-                    const position = Number(event.target.value);
-                    if (Number.isInteger(position) && position >= 0 && position !== category.position) {
-                      void run(() => categoriesService.update(category.id, { position }));
-                    }
-                  }}
-                />
-              </td>
-              <td>
-                <span className={`badge ${category.is_active ? "badge-active" : "badge-deleted"}`}>
-                  {category.is_active ? "Показана" : "Скрыта"}
-                </span>
-              </td>
-              <td className="actions">
-                <button type="button" className="button button-ghost" disabled={busy} onClick={() => rename(category)}>
-                  <Icon name="pencil" size={18} />
-                  <span className="cat-action-label">Переименовать</span>
-                </button>
-                <button
-                  type="button"
-                  className="button button-ghost"
-                  disabled={busy}
-                  onClick={() =>
-                    void run(() =>
-                      categoriesService.update(category.id, { is_active: !category.is_active }),
-                    )
-                  }
-                >
-                  <Icon name={category.is_active ? "eyeOff" : "eye"} size={18} />
-                  <span className="cat-action-label">{category.is_active ? "Скрыть" : "Показать"}</span>
-                </button>
-                <button
-                  type="button"
-                  className="button button-danger"
-                  disabled={busy || category.children_count > 0}
-                  title={category.children_count > 0 ? "Сначала удалите подкатегории" : undefined}
-                  onClick={() => remove(category)}
-                >
-                  <Icon name="trash" size={18} />
-                  <span className="cat-action-label">Удалить</span>
-                </button>
-              </td>
-            </tr>
-          ))}
-          {data && data.length === 0 ? (
+      <Editable>
+        <Table loading={loading || busy} className="table-categories">
+          <thead>
             <tr>
-              <td colSpan={6} className="empty">
-                Категорий пока нет
-              </td>
+              <th>Название</th>
+              <th>Адрес (slug)</th>
+              <th>Товаров</th>
+              <th>Порядок</th>
+              <th>Видимость</th>
+              <th aria-label="Действия" />
             </tr>
-          ) : null}
-        </tbody>
-        </Table>
+          </thead>
+          <tbody>
+            {tree.map((category) => (
+              <tr key={category.id}>
+                <td className={category.depth ? "indent" : "strong"}>{category.name}</td>
+                <td className="muted">{category.slug}</td>
+                <td>{category.products_count}</td>
+                <td>
+                  <input
+                    className="input-narrow"
+                    type="number"
+                    aria-label={`Порядок: ${category.name}`}
+                    min={0}
+                    defaultValue={category.position ?? 0}
+                    disabled={busy}
+                    onBlur={(event) => {
+                      const position = Number(event.target.value);
+                      if (Number.isInteger(position) && position >= 0 && position !== category.position) {
+                        void run(() => categoriesService.update(category.id, { position }));
+                      }
+                    }}
+                  />
+                </td>
+                <td>
+                  <span className={`badge ${category.is_active ? "badge-active" : "badge-deleted"}`}>
+                    {category.is_active ? "Показана" : "Скрыта"}
+                  </span>
+                </td>
+                <td className="actions">
+                  <button type="button" className="button button-ghost" disabled={busy} onClick={() => rename(category)}>
+                    <Icon name="pencil" size={18} />
+                    <span className="cat-action-label">Переименовать</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-ghost"
+                    disabled={busy}
+                    onClick={() =>
+                      void run(() =>
+                        categoriesService.update(category.id, { is_active: !category.is_active }),
+                      )
+                    }
+                  >
+                    <Icon name={category.is_active ? "eyeOff" : "eye"} size={18} />
+                    <span className="cat-action-label">{category.is_active ? "Скрыть" : "Показать"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-danger"
+                    disabled={busy || category.children_count > 0}
+                    title={category.children_count > 0 ? "Сначала удалите подкатегории" : undefined}
+                    onClick={() => remove(category)}
+                  >
+                    <Icon name="trash" size={18} />
+                    <span className="cat-action-label">Удалить</span>
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {data && data.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="empty">
+                  Категорий пока нет
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+          </Table>
+      </Editable>
     </section>
   );
 }

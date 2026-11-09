@@ -5,6 +5,7 @@ import { type ProductRow, productsService } from "../api/catalog";
 import { ApiError } from "../api/errors";
 import { BackLink } from "../components/BackLink";
 import { PageTools, ToolButton } from "../components/PageTools";
+import { useViewOnly } from "../components/ViewOnly";
 import { Icon } from "../components/Icon";
 import { type BatchCategory, batchCategories, categoryLabel, drafts as draftsText, isReady } from "../components/catalog/batch";
 import { CategorySheet } from "../components/catalog/CategorySheet";
@@ -37,6 +38,7 @@ export function ProductDraftsPage() {
   const location = useLocation();
   const result = location.state as BatchResult | null;
   const categories = useCategories();
+  const viewOnly = useViewOnly();
   const labels = useLabels();
   const list = useLoader(loadDrafts, "drafts", "Не удалось загрузить черновики.");
   const [filter, setFilter] = useState<Filter>("all");
@@ -166,9 +168,11 @@ export function ProductDraftsPage() {
       <div className="page-header">
         <BackLink to="/catalog/products" />
         <h1>Черновики</h1>
-        <PageTools>
-          <ToolButton icon="plus" label="Добавить" to="/catalog/products/batch" />
-        </PageTools>
+        {viewOnly ? null : (
+          <PageTools>
+            <ToolButton icon="plus" label="Добавить" to="/catalog/products/batch" />
+          </PageTools>
+        )}
         {rows.length ? (
           <span className="muted page-sub">
             Готово {readyRows.length} из {rows.length}
@@ -197,9 +201,11 @@ export function ProductDraftsPage() {
         <div className="card batch-empty-list">
           <h2>Черновиков нет</h2>
           <p className="muted">Добавьте сразу несколько товаров по фото — они появятся здесь до публикации.</p>
-          <Link to="/catalog/products/batch" className="button button-accent">
-            Добавить товары
-          </Link>
+          {viewOnly ? null : (
+            <Link to="/catalog/products/batch" className="button button-accent">
+              Добавить товары
+            </Link>
+          )}
         </div>
       ) : null}
 
@@ -227,7 +233,7 @@ export function ProductDraftsPage() {
             <strong className="batch-toolbar-text" aria-live="polite">
               {checked.length ? `Выбрано: ${checked.length}` : draftsText(shown.length)}
             </strong>
-            {shown.length && !shown.every((row) => selected.has(row.id)) ? (
+            {!viewOnly && shown.length && !shown.every((row) => selected.has(row.id)) ? (
               <button type="button" className="button button-ghost button-small" onClick={() => setSelected(new Set(order))}>
                 Выбрать все
               </button>
@@ -270,6 +276,7 @@ export function ProductDraftsPage() {
                     <input
                       type="checkbox"
                       checked={isChecked}
+                      disabled={viewOnly}
                       aria-label={`Выбрать ${row.name}`}
                       onChange={() => toggle(row.id)}
                     />
@@ -387,7 +394,7 @@ export function ProductDraftsPage() {
               <button
                 type="button"
                 className="button button-accent batch-cta"
-                disabled={busy || readyRows.length === 0}
+                disabled={busy || viewOnly || readyRows.length === 0}
                 onClick={() => publish(readyRows.map((row) => row.id))}
               >
                 {readyRows.length ? `Опубликовать готовые · ${readyRows.length}` : "Нет готовых к публикации"}

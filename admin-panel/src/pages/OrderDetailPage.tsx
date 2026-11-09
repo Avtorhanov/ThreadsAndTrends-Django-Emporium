@@ -9,6 +9,7 @@ import { StatusChanger } from "../components/orders/StatusChanger";
 import { useOrder } from "../hooks/useOrders";
 import { formatKopecks } from "../lib/money";
 import { BackLink } from "../components/BackLink";
+import { Editable } from "../components/ViewOnly";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
@@ -74,17 +75,19 @@ export function OrderDetailPage() {
       {data ? (
         <div className="order-layout">
           <div className="order-col">
-            <StatusChanger order={data} busy={busy} onSubmit={move} />
+            <Editable>
+              <StatusChanger order={data} busy={busy} onSubmit={move} />
 
-            {data.payment_method === "online" ? (
-              <PaymentsCard
-                payments={data.payments}
-                canRetryRefund={data.can_retry_refund}
-                busy={busy}
-                onRetryRefund={retryRefund}
-                onSync={() => void run((id) => ordersService.syncPayment(id), "Не удалось проверить.")}
-              />
-            ) : null}
+              {data.payment_method === "online" ? (
+                <PaymentsCard
+                  payments={data.payments}
+                  canRetryRefund={data.can_retry_refund}
+                  busy={busy}
+                  onRetryRefund={retryRefund}
+                  onSync={() => void run((id) => ordersService.syncPayment(id), "Не удалось проверить.")}
+                />
+              ) : null}
+            </Editable>
 
             <div className="card">
               <h2>История</h2>

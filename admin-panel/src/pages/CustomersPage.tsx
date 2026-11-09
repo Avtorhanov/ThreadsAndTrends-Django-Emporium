@@ -10,6 +10,7 @@ import { ApiError } from "../api/errors";
 import { useCustomers } from "../hooks/useCustomers";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { Table } from "../components/Table";
+import { Editable } from "../components/ViewOnly";
 import { useAuth } from "../auth/AuthProvider";
 import { CustomerOrders } from "../components/customers/CustomerOrders";
 
@@ -146,36 +147,38 @@ export function CustomersPage() {
                 )}
               </td>
               <td className="actions">
-                {customer.status === "active" ? (
-                  <button
-                    type="button"
-                    className="button button-ghost"
-                    disabled={busyId === customer.id}
-                    onClick={() => void run("block", customer)}
-                  >
-                    Заблокировать
-                  </button>
-                ) : null}
-                {customer.status === "blocked" ? (
-                  <button
-                    type="button"
-                    className="button button-ghost"
-                    disabled={busyId === customer.id}
-                    onClick={() => void run("unblock", customer)}
-                  >
-                    Разблокировать
-                  </button>
-                ) : null}
-                {customer.status !== "deleted" ? (
-                  <button
-                    type="button"
-                    className="button button-danger"
-                    disabled={busyId === customer.id}
-                    onClick={() => void run("remove", customer)}
-                  >
-                    Удалить
-                  </button>
-                ) : null}
+                <Editable>
+                  {customer.status === "active" ? (
+                    <button
+                      type="button"
+                      className="button button-ghost"
+                      disabled={busyId === customer.id}
+                      onClick={() => void run("block", customer)}
+                    >
+                      Заблокировать
+                    </button>
+                  ) : null}
+                  {customer.status === "blocked" ? (
+                    <button
+                      type="button"
+                      className="button button-ghost"
+                      disabled={busyId === customer.id}
+                      onClick={() => void run("unblock", customer)}
+                    >
+                      Разблокировать
+                    </button>
+                  ) : null}
+                  {customer.status !== "deleted" ? (
+                    <button
+                      type="button"
+                      className="button button-danger"
+                      disabled={busyId === customer.id}
+                      onClick={() => void run("remove", customer)}
+                    >
+                      Удалить
+                    </button>
+                  ) : null}
+                </Editable>
               </td>
             </tr>
             {openOrders === customer.id ? (

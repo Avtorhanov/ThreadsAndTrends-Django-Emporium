@@ -1,10 +1,11 @@
 import { type ChangeEvent, type DragEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 
 import { imagesService, productsService } from "../api/catalog";
 import { ApiError } from "../api/errors";
 import { BackLink } from "../components/BackLink";
 import { Icon } from "../components/Icon";
+import { useViewOnly } from "../components/ViewOnly";
 import {
   type BatchCategory,
   MAX_BATCH_PHOTOS,
@@ -20,6 +21,7 @@ import { SizeChartSheet } from "../components/catalog/SizeChartSheet";
 import { SIZE_TYPES, type SizeType } from "../components/catalog/sizes";
 import { MAX_PRODUCT_IMAGES } from "../components/catalog/PendingPhotos";
 import { useCategories, useLabels } from "../hooks/useCatalog";
+import { useUnsavedGuard } from "../hooks/useUnsavedGuard";
 import { parseRublesToKopecks } from "../lib/money";
 
 const ACCEPT = "image/jpeg,image/png,image/webp";
@@ -86,13 +88,8 @@ export function ProductBatchPage() {
   useEffect(() => () => photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.url)), []);
 
   // Разложенные фото живут только в браузере: уход со страницы их теряет.
-  const unsaved = photos.length > 0 && progress === null;
-  useEffect(() => {
-    if (!unsaved) return;
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [unsaved]);
+  const allowLeave = useUnsavedGuard(photos.length > 0 && progress === null);
+  const viewOnly = useViewOnly();
 
   const all = categories.data ?? [];
   const leaf = useMemo(() => batchCategories(all), [all]);
@@ -194,6 +191,7 @@ export function ProductBatchPage() {
       .map((key) => photos.find((photo) => photo.key === key)?.file)
       .filter((file): file is File => file !== undefined)
       .slice(0, MAX_PRODUCT_IMAGES);
+    allowLeave(); // фото уходят в карточку товара вместе с переходом
     navigate("/catalog/products/new", { state: { photos: files, category } });
   }
 
@@ -410,6 +408,8 @@ export function ProductBatchPage() {
         ? { keys: [photos[0].key], category: null }
         : null;
   const statusOptions = [{ id: "", name: "Без статуса" }, ...(labels.data ?? []).map((item) => ({ id: String(item.id), name: item.name }))];
+
+  if (viewOnly) return <Navigate to="/catalog/products" replace />;
 
   return (
     <section

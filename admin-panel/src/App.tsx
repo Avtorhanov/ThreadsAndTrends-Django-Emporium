@@ -1,5 +1,12 @@
 import { type ReactNode, Suspense, useEffect } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router";
+import {
+  Navigate,
+  Outlet,
+  Route,
+  RouterProvider,
+  createBrowserRouter,
+  createRoutesFromElements,
+} from "react-router";
 
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { Layout } from "./components/Layout";
@@ -54,53 +61,63 @@ function Gate({ children }: { children: ReactNode }) {
   return children;
 }
 
-export function App() {
+/** Общая оболочка всех адресов. Роутер с данными нужен для useBlocker (несохранённые правки). */
+function Root() {
   return (
-    <BrowserRouter basename={BASENAME}>
-      <AuthProvider>
-        <Gate>
-          <Suspense fallback={<div className="centered">Загрузка…</div>}>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route
-                element={
-                  <RequireStaff>
-                    <Layout />
-                  </RequireStaff>
-                }
-              >
-                <Route index element={<SummaryPage />} />
-                <Route path="/orders" element={<OrdersPage />} />
-                <Route path="/orders/:id" element={<OrderDetailPage />} />
-                <Route path="/customers" element={<CustomersPage />} />
-                <Route path="/catalog" element={<Navigate to="/catalog/products" replace />} />
-                <Route path="/catalog/products" element={<ProductsPage />} />
-                <Route path="/catalog/products/new" element={<ProductEditPage />} />
-                <Route path="/catalog/products/batch" element={<ProductBatchPage />} />
-                <Route path="/catalog/products/drafts" element={<ProductDraftsPage />} />
-                <Route path="/catalog/products/:id" element={<ProductEditPage />} />
-                <Route path="/catalog/categories" element={<CategoriesPage />} />
-                <Route path="/content/articles" element={<ArticlesPage />} />
-                <Route path="/content/articles/new" element={<ArticleEditPage />} />
-                <Route path="/content/articles/:id" element={<ArticleEditPage />} />
-                <Route path="/look" element={<LookSection />}>
-                  <Route index element={null} />
-                  <Route path="home" element={<HomeEditorPage />} />
-                  <Route path="theme" element={<ThemePage />} />
-                  <Route path="panel" element={<PanelLookPage />} />
-                </Route>
-                {/* Прежние адреса разделов — в «Внешний вид». */}
-                <Route path="/home" element={<Navigate to="/look/home" replace />} />
-                <Route path="/theme" element={<Navigate to="/look/theme" replace />} />
-                <Route path="/staff" element={<StaffPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/account" element={<AccountPage />} />
-              </Route>
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </Gate>
-      </AuthProvider>
-    </BrowserRouter>
+    <AuthProvider>
+      <Gate>
+        <Suspense fallback={<div className="centered">Загрузка…</div>}>
+          <Outlet />
+        </Suspense>
+      </Gate>
+    </AuthProvider>
   );
+}
+
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route element={<Root />}>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        element={
+          <RequireStaff>
+            <Layout />
+          </RequireStaff>
+        }
+      >
+        <Route index element={<SummaryPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/orders/:id" element={<OrderDetailPage />} />
+        <Route path="/customers" element={<CustomersPage />} />
+        <Route path="/catalog" element={<Navigate to="/catalog/products" replace />} />
+        <Route path="/catalog/products" element={<ProductsPage />} />
+        <Route path="/catalog/products/new" element={<ProductEditPage />} />
+        <Route path="/catalog/products/batch" element={<ProductBatchPage />} />
+        <Route path="/catalog/products/drafts" element={<ProductDraftsPage />} />
+        <Route path="/catalog/products/:id" element={<ProductEditPage />} />
+        <Route path="/catalog/categories" element={<CategoriesPage />} />
+        <Route path="/content/articles" element={<ArticlesPage />} />
+        <Route path="/content/articles/new" element={<ArticleEditPage />} />
+        <Route path="/content/articles/:id" element={<ArticleEditPage />} />
+        <Route path="/look" element={<LookSection />}>
+          <Route index element={null} />
+          <Route path="home" element={<HomeEditorPage />} />
+          <Route path="theme" element={<ThemePage />} />
+          <Route path="panel" element={<PanelLookPage />} />
+        </Route>
+        {/* Прежние адреса разделов — в «Внешний вид». */}
+        <Route path="/home" element={<Navigate to="/look/home" replace />} />
+        <Route path="/theme" element={<Navigate to="/look/theme" replace />} />
+        <Route path="/staff" element={<StaffPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/account" element={<AccountPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Route>,
+  ),
+  { basename: BASENAME },
+);
+
+export function App() {
+  return <RouterProvider router={router} />;
 }

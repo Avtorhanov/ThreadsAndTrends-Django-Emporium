@@ -8,6 +8,7 @@ import { THEME_LABELS, type ThemeChoice, useTheme } from "../theme/theme";
 import { useWordmark } from "../theme/wordmark";
 import { Icon, type IconName } from "./Icon";
 import { PullToRefresh } from "./PullToRefresh";
+import { ViewOnlyProvider } from "./ViewOnly";
 
 type Access = keyof StaffUser["permissions"];
 
@@ -205,7 +206,9 @@ export function Layout() {
             <div key={refreshKey} className="screen">
               {/* Экран грузится отдельным куском (lib/lazyPage.ts): меню и шапка остаются на месте. */}
               <Suspense fallback={<div className="centered">Загрузка…</div>}>
-                <Outlet />
+                <ViewOnlyProvider value={level === "view"}>
+                  <Outlet />
+                </ViewOnlyProvider>
               </Suspense>
             </div>
           </>

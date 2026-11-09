@@ -18,6 +18,7 @@ import { FiltersToggle } from "../components/FiltersToggle";
 import { PageTools, ToolButton } from "../components/PageTools";
 import { PickSheet } from "../components/PickSheet";
 import { Table } from "../components/Table";
+import { Editable, useViewOnly } from "../components/ViewOnly";
 import { sortCategoryTree, useCategories, useLabels, useProducts } from "../hooks/useCatalog";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { formatKopecks } from "../lib/money";
@@ -58,6 +59,7 @@ export function ProductsPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const debouncedSearch = useDebouncedValue(search.trim());
+  const viewOnly = useViewOnly();
   const categories = useCategories();
   const labels = useLabels();
   const query = { search: debouncedSearch, status: visibility, label, category, stock, page };
@@ -119,9 +121,11 @@ export function ProductsPage() {
       <div className="page-header">
         <h1>Товары</h1>
         {/* Одна кнопка: фото → один товар (обычная карточка) или сразу много (черновики). */}
-        <PageTools>
-          <ToolButton icon="plus" label="Добавить товар" tone="accent" to="/catalog/products/batch" />
-        </PageTools>
+        {viewOnly ? null : (
+          <PageTools>
+            <ToolButton icon="plus" label="Добавить товар" tone="accent" to="/catalog/products/batch" />
+          </PageTools>
+        )}
         {data ? <span className="muted page-sub">Всего: {data.count}</span> : null}
       </div>
 
@@ -222,6 +226,7 @@ export function ProductsPage() {
               <input
                 type="checkbox"
                 aria-label="Отметить все на странице"
+                disabled={viewOnly}
                 checked={allChecked}
                 onChange={() => setSelected(allChecked ? new Set() : new Set(rows.map((row) => row.id)))}
               />
@@ -244,6 +249,7 @@ export function ProductsPage() {
                     <input
                       type="checkbox"
                       aria-label={`Отметить ${product.name}`}
+                      disabled={viewOnly}
                       checked={selected.has(product.id)}
                       onChange={() => toggle(product.id)}
                     />
@@ -272,7 +278,7 @@ export function ProductsPage() {
                   <select
                     className={`label-select label-${current?.tone ?? "none"}`}
                     value={product.status ?? "none"}
-                    disabled={busy || Boolean(product.deleted_at)}
+                    disabled={busy || viewOnly || Boolean(product.deleted_at)}
                     aria-label={`Статус: ${product.name}`}
                     onChange={(e) =>
                       void apply({ status: labelValue(e.target.value) }, "Статус изменён у товаров", [product.id])
@@ -293,7 +299,7 @@ export function ProductsPage() {
                       <button
                         type="button"
                         className="row-tool"
-                        disabled={busy}
+                        disabled={busy || viewOnly}
                         aria-label={`Восстановить ${product.name}`}
                         title="Восстановить"
                         onClick={() => void apply({ deleted: false }, "Восстановлено товаров", [product.id])}
@@ -304,7 +310,7 @@ export function ProductsPage() {
                       <button
                         type="button"
                         className="row-tool row-tool-danger"
-                        disabled={busy}
+                        disabled={busy || viewOnly}
                         aria-label={`Удалить ${product.name}`}
                         title="Удалить"
                         onClick={() => removeProducts([product.id], product.name)}
@@ -460,7 +466,11 @@ export function ProductsPage() {
         />
       ) : null}
 
-      {labels.data ? <LabelsManager labels={labels.data} onChanged={labels.reload} /> : null}
+      {labels.data ? (
+        <Editable>
+          <LabelsManager labels={labels.data} onChanged={labels.reload} />
+        </Editable>
+      ) : null}
     </section>
   );
 }

@@ -19,6 +19,7 @@ import { useOrders } from "../hooks/useOrders";
 import { formatKopecks } from "../lib/money";
 import { ADMIN_TARGETS, TARGET_LABELS } from "../lib/orderFlow";
 import { Table } from "../components/Table";
+import { useViewOnly } from "../components/ViewOnly";
 import { Icon } from "../components/Icon";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" });
@@ -57,6 +58,7 @@ export function OrdersPage() {
     customer: customerId,
     page,
   };
+  const viewOnly = useViewOnly();
   const orders = useOrders(query);
   const { data, loading, error } = orders;
   const pages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1;
@@ -222,6 +224,7 @@ export function OrdersPage() {
               <input
                 type="checkbox"
                 aria-label="Отметить все на странице"
+                disabled={viewOnly}
                 checked={allChecked}
                 onChange={() => setSelected(allChecked ? new Set() : new Set(rows.map((row) => row.id)))}
               />
@@ -242,6 +245,7 @@ export function OrdersPage() {
                   <input
                     type="checkbox"
                     aria-label={`Отметить заказ ${order.number}`}
+                    disabled={viewOnly}
                     checked={selected.has(order.id)}
                     onChange={() => toggle(order.id)}
                   />

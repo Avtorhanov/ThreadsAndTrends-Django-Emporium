@@ -5,6 +5,7 @@ import { type ShopSettings, sellerParts, shopSettingsService } from "../api/sett
 import { Icon } from "../components/Icon";
 import { ContactsSettings } from "../components/settings/ContactsSettings";
 import { useShopSettings } from "../hooks/useContent";
+import { useUnsavedGuard } from "../hooks/useUnsavedGuard";
 import { AGREEMENT_CHANNELS, type AgreementChannel, agreementChannel } from "../lib/agreement";
 import { formatKopecks, kopecksToInput, parseRublesToKopecks } from "../lib/money";
 
@@ -178,6 +179,7 @@ function SettingsForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(justSaved);
+  useUnsavedGuard(!saving && JSON.stringify(draft) !== JSON.stringify(toDraft(settings)));
   const defaults = settings.defaults;
   const set = (patch: Partial<Draft>) => {
     setDraft((prev) => ({ ...prev, ...patch }));

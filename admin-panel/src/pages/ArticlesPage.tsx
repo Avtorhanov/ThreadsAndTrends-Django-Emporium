@@ -6,6 +6,7 @@ import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useArticles } from "../hooks/useContent";
 import { Table } from "../components/Table";
 import { PageTools, ToolButton } from "../components/PageTools";
+import { useViewOnly } from "../components/ViewOnly";
 
 const STATUS_LABELS: Record<ArticleStatus, string> = {
   published: "Опубликованные",
@@ -27,6 +28,7 @@ export function ArticlesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<ArticleStatus | "">("");
   const [page, setPage] = useState(1);
+  const viewOnly = useViewOnly();
   const debouncedSearch = useDebouncedValue(search.trim());
   const { data, loading, error } = useArticles({ search: debouncedSearch, status, page });
   const pages = data ? Math.max(1, Math.ceil(data.count / ARTICLES_PAGE_SIZE)) : 1;
@@ -35,9 +37,11 @@ export function ArticlesPage() {
     <section>
       <div className="page-header">
         <h1>Статьи</h1>
-        <PageTools>
-          <ToolButton icon="plus" label="Написать статью" tone="accent" to="/content/articles/new" />
-        </PageTools>
+        {viewOnly ? null : (
+          <PageTools>
+            <ToolButton icon="plus" label="Написать статью" tone="accent" to="/content/articles/new" />
+          </PageTools>
+        )}
         {data ? <span className="muted page-sub">Всего: {data.count}</span> : null}
       </div>
       <p className="muted">

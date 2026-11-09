@@ -1,6 +1,7 @@
 import { Navigate, NavLink, Outlet, useLocation } from "react-router";
 
 import { useAuth } from "../auth/AuthProvider";
+import { ViewOnlyProvider } from "./ViewOnly";
 
 /** Раздел «Внешний вид»: всё, что меняет вид магазина и панели, — в одном месте.
  * «Главная витрины» и «Тема витрины» — по праву «Главная и тема»; «Оформление панели» —
@@ -33,7 +34,9 @@ export function LookSection() {
       {current.shop && shopLevel === "view" ? (
         <p className="note note-info view-only">Только просмотр: изменения в этом разделе вам недоступны.</p>
       ) : null}
-      <Outlet />
+      <ViewOnlyProvider value={Boolean(current.shop) && shopLevel === "view"}>
+        <Outlet />
+      </ViewOnlyProvider>
     </div>
   );
 }
