@@ -21,6 +21,7 @@ import {
 import { sortCategoryTree } from "../../hooks/useCatalog";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { formatKopecks } from "../../lib/money";
+import { Editable, useViewOnly } from "../ViewOnly";
 
 const HEADINGS: Record<HomeBlock["kind"], string> = {
   banner: "Баннер",
@@ -52,6 +53,7 @@ function Counter({ value, max }: { value: string; max: number }) {
 /** Настройки выбранного блока. Правки сохраняются в черновик сами — покупатель их не видит. */
 export function BlockSettings(props: Props) {
   const { block, categories, error, busy, onChange, onDelete, onBack } = props;
+  const viewOnly = useViewOnly();
   const [confirming, setConfirming] = useState(false);
   const tree = sortCategoryTree(categories);
   useEffect(() => setConfirming(false), [block.id]);
@@ -66,6 +68,7 @@ export function BlockSettings(props: Props) {
         <label className="check he-visible">
           <input
             type="checkbox"
+            disabled={viewOnly}
             checked={block.is_visible}
             onChange={(event) => onChange({ is_visible: event.target.checked }, 0)}
           />
@@ -74,6 +77,7 @@ export function BlockSettings(props: Props) {
       </div>
       {error ? <p className="alert">Не сохранено: {error}</p> : null}
 
+      <Editable>
 
       <label className="field">
         <span className="field-head">
@@ -129,6 +133,7 @@ export function BlockSettings(props: Props) {
           </button>
         )}
       </div>
+      </Editable>
     </div>
   );
 }

@@ -1,14 +1,17 @@
-import { type KeyboardEvent, type ReactNode, useEffect, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useState } from "react";
 
 import type { Category, Product, ProductCreate, ProductLabel } from "../../api/catalog";
 import { ApiError, type FieldErrors } from "../../api/errors";
 import { isLeaf, sortCategoryTree } from "../../hooks/useCatalog";
+import { useUnsavedGuard } from "../../hooks/useUnsavedGuard";
 import { kopecksToInput, parseRublesToKopecks } from "../../lib/money";
 import { SizeChartSheet } from "./SizeChartSheet";
 import { AGREEMENT_CHANNELS, type AgreementChannel } from "../../lib/agreement";
 import { SIZE_TYPES, hasShoeSizes } from "./sizes";
+import { StockInput, validStock } from "./VariantsEditor";
 
-export type ProductFormValues = Omit<ProductCreate, "variants"> & { sizes: string[] };
+/** stock — остаток каждого размера нового товара; у существующего остатки в VariantsEditor. */
+export type ProductFormValues = Omit<ProductCreate, "variants"> & { sizes: string[]; stock: number };
 
 type Props = {
   product: Product | null;
@@ -22,6 +25,8 @@ type Props = {
   stock: ReactNode;
   /** Есть выбранные, но ещё не загруженные фото — это тоже несохранённое. */
   extraDirty?: boolean;
+  /** Почему сохранять нельзя (ошибка вне полей формы). */
+  blocked?: string | null;
   onSubmit: (values: ProductFormValues) => Promise<void>;
 };
 
@@ -127,6 +132,7 @@ export function ProductForm({
   photos,
   stock,
   extraDirty = false,
+  blocked = null,
   onSubmit,
 }: Props) {
   const [name, setName] = useState(product?.name ?? "");
@@ -144,24 +150,25 @@ export function ProductForm({
   const [description, setDescription] = useState(product?.description ?? "");
   const [isActive, setIsActive] = useState(product?.is_active ?? true);
   const [sizes, setSizes] = useState<string[]>([]);
+  const [newStock, setNewStock] = useState("1");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   // Несохранённые изменения: сравнение с тем, что пришло с сервера.
-  const snapshot = JSON.stringify([name, slug, category, status, channel, price, onRequest, compareAt, description, isActive, sizes]);
+  const snapshot = JSON.stringify([name, slug, category, status, channel, price, onRequest, compareAt, description, isActive, sizes, newStock]);
   const [initial] = useState(snapshot);
   const dirty = !saving && (snapshot !== initial || extraDirty);
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  useUnsavedGuard(dirty);
 
   async function submit(event: { preventDefault: () => void }, publish?: boolean) {
     event.preventDefault();
+    if (blocked) {
+      setSaved(false);
+      setFormError(blocked);
+      return;
+    }
     const priceKopecks = onRequest ? null : parseRublesToKopecks(price);
     const compareKopecks = !onRequest && compareAt.trim() ? parseRublesToKopecks(compareAt) : null;
     const local: FieldErrors = {};
@@ -173,6 +180,7 @@ export function ProductForm({
       local.compare_at_kopecks = ["Неверный формат суммы."];
     }
     if (!category) local.category = ["Выберите категорию."];
+    if (!product && !validStock(newStock)) local.stock = ["Остаток — целое число от 0."];
     setErrors(local);
     setFormError(null);
     setSaved(false);
@@ -195,6 +203,7 @@ export function ProductForm({
         description,
         is_active: active,
         sizes,
+        stock: Number(newStock),
       });
       setIsActive(active);
       setSaved(true);
@@ -380,7 +389,12 @@ export function ProductForm({
             <div className="field">
               Размеры
               <SizesInput sizes={sizes} onChange={setSizes} />
-              <span className="muted">Остатки и артикулы — после сохранения, здесь же.</span>
+              <div className="pf-stock">
+                <span>{sizes.length ? "Остаток каждого размера" : "Остаток"}</span>
+                <StockInput value={newStock} onChange={setNewStock} label="Остаток нового товара" />
+              </div>
+              <span className="muted">Разные остатки и артикулы — после сохранения, здесь же.</span>
+              <FieldError errors={errors} name="stock" />
               <FieldError errors={errors} name="variants" />
             </div>
           )}

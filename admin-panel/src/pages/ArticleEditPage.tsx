@@ -5,9 +5,11 @@ import { type Article, articleImagesService, articlesService, MAX_ARTICLE_IMAGES
 import { ApiError, type FieldErrors } from "../api/errors";
 import { ImagesEditor } from "../components/catalog/ImagesEditor";
 import { useArticle } from "../hooks/useContent";
+import { useUnsavedGuard } from "../hooks/useUnsavedGuard";
 import { storeUrl } from "../lib/site";
 import { BackLink } from "../components/BackLink";
 import { PageTools, ToolButton } from "../components/PageTools";
+import { Editable, useViewOnly } from "../components/ViewOnly";
 
 function FieldError({ errors, name }: { errors: FieldErrors; name: string }) {
   const message = errors[name]?.[0];
@@ -27,6 +29,13 @@ function ArticleForm({ article, onSubmit }: FormProps) {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  useUnsavedGuard(
+    !saving &&
+      (title !== (article?.title ?? "") ||
+        excerpt !== (article?.excerpt ?? "") ||
+        body !== (article?.body ?? "") ||
+        published !== (article?.is_published ?? false)),
+  );
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -91,6 +100,7 @@ export function ArticleEditPage() {
   const article = useArticle(articleId);
   const [actionError, setActionError] = useState<string | null>(null);
   const current = article.data;
+  const viewOnly = useViewOnly();
 
   async function save(values: { title: string; excerpt: string; body: string; is_published: boolean }) {
     if (articleId === null) {
@@ -130,7 +140,7 @@ export function ArticleEditPage() {
             {current.is_published && !current.deleted_at ? (
               <ToolButton icon="external" label="На сайте" href={storeUrl(`articles/${current.slug}/`)} />
             ) : null}
-            {current.deleted_at ? (
+            {viewOnly ? null : current.deleted_at ? (
               <ToolButton icon="undo" label="Восстановить" onClick={() => void toggleDeleted()} />
             ) : (
               <ToolButton icon="trash" label="Удалить" tone="danger" onClick={() => void toggleDeleted()} />
@@ -144,25 +154,29 @@ export function ArticleEditPage() {
       {article.loading && !ready ? <p className="muted">Загрузка…</p> : null}
 
       {ready && !current?.deleted_at ? (
-        <ArticleForm
-          // Новый ключ после сохранения — форма берёт свежие значения.
-          key={current ? `${current.id}:${current.updated_at}` : "new"}
-          article={current ?? null}
-          onSubmit={save}
-        />
+        <Editable>
+          <ArticleForm
+            // Новый ключ после сохранения — форма берёт свежие значения.
+            key={current ? `${current.id}:${current.updated_at}` : "new"}
+            article={current ?? null}
+            onSubmit={save}
+          />
+        </Editable>
       ) : null}
 
       {current && !current.deleted_at ? (
-        <ImagesEditor
-          images={current.images}
-          hint={`Первое фото — обложка статьи, остальные показываются под текстом. JPEG, PNG или WebP до 5 МБ, не больше ${MAX_ARTICLE_IMAGES}.`}
-          service={{
-            upload: (file) => articleImagesService.upload(current.id, file),
-            reorder: (ids) => articleImagesService.reorder(current.id, ids),
-            remove: (id) => articleImagesService.remove(id),
-          }}
-          onChanged={article.reload}
-        />
+        <Editable>
+          <ImagesEditor
+            images={current.images}
+            hint={`Первое фото — обложка статьи, остальные показываются под текстом. JPEG, PNG или WebP до 5 МБ, не больше ${MAX_ARTICLE_IMAGES}.`}
+            service={{
+              upload: (file) => articleImagesService.upload(current.id, file),
+              reorder: (ids) => articleImagesService.reorder(current.id, ids),
+              remove: (id) => articleImagesService.remove(id),
+            }}
+            onChanged={article.reload}
+          />
+        </Editable>
       ) : null}
     </section>
   );

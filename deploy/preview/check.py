@@ -341,6 +341,67 @@ def panel_shots(site: Path) -> list[tuple[str, str]]:
     ]
 
 
+def check_panel_guards(page_for, site: Path, origin: str) -> None:
+    """Панель: остаток нового товара, предупреждение о несохранённом, режим «Смотреть»."""
+    page = page_for(DESKTOP, pages_404=True)
+    asked: list[str] = []
+    page.on("dialog", lambda dialog: asked.append(dialog.message))
+    page.add_init_script("localStorage.setItem('didi-preview-admin', '1')")
+
+    page.goto(origin + BASE + "/panel/catalog/products/new/", wait_until="load")
+    page.fill("main input.pf-title", "Проверка остатка")
+    page.locator("main select").first.select_option(index=1)
+    page.get_by_label("Цена, ₽", exact=True).fill("1000")
+    page.get_by_role("button", name="+ Одежда").click()
+    assert page.get_by_label("Остаток нового товара", exact=True).input_value() == "1"
+    page.get_by_role("button", name="Опубликовать").click()
+    page.get_by_label("Остаток: S", exact=True).wait_for()
+    assert page.get_by_label("Остаток: S", exact=True).input_value() == "1"
+    assert not asked, f"создание товара спросило о несохранённом: {asked}"
+
+    page.fill("main input.pf-title", "Проверка остатка 2")
+    page.locator("nav.nav a", has_text="Заказы").click()
+    page.locator("main h1", has_text="Заказы").wait_for()
+    assert any("несохранённые" in text for text in asked), "переход не предупредил о несохранённом"
+
+    page.go_back()
+    size = page.get_by_label("Остаток: S", exact=True)
+    size.wait_for()
+    size.fill("-3")
+    page.get_by_role("button", name="Сохранить", exact=True).click()
+    page.locator("main .alert", has_text="Исправьте остатки").wait_for()
+    size.fill("1")
+
+    snapshot = json.loads((site / "panel/preview-api.json").read_text(encoding="utf-8"))
+    orders = snapshot[f"{PANEL_API}/orders/"]["results"]
+    pending = next(order["id"] for order in orders if order["status"] == "awaiting_agreement")
+    viewer = page_for(DESKTOP)
+    viewer.add_init_script("localStorage.setItem('didi-preview-admin', '1')")
+    viewer.goto(origin + BASE + "/panel/", wait_until="load")
+    viewer.locator("main h1").wait_for()
+    viewer.evaluate(
+        """() => {
+          const key = "didi-sim-db-v2";
+          const db = JSON.parse(localStorage.getItem(key));
+          db.me.is_owner = false;
+          for (const section in db.me.permissions) db.me.permissions[section] = "view";
+          localStorage.setItem(key, JSON.stringify(db));
+        }"""
+    )
+    viewer.goto(origin + BASE + f"/panel/orders/{pending}/", wait_until="load")
+    cancel = viewer.get_by_role("button", name="Отменить заказ")
+    cancel.wait_for()
+    assert cancel.is_disabled(), "«Смотреть»: действие с заказом доступно"
+    assert viewer.get_by_role("button", name="Назад").is_enabled(), "«Смотреть»: «Назад» отключена"
+    viewer.goto(origin + BASE + "/panel/orders/", wait_until="load")
+    box = viewer.locator("main tbody input[type=checkbox]").first
+    box.wait_for(state="attached")
+    assert box.is_disabled(), "«Смотреть»: заказы можно отметить"
+    assert viewer.locator("main select").first.is_enabled(), "«Смотреть»: фильтр отключён"
+    viewer.context.close()
+    page.context.close()
+
+
 def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[str]) -> None:
     # Вход администратора на странице «Вход» витрины → сводка панели.
     data = json.loads((site / "static/preview/data.json").read_text(encoding="utf-8"))
@@ -484,6 +545,8 @@ def check_panel(page_for, site: Path, origin: str, shots: Path, problems: list[s
     assert page.locator(".draft-card").count() == 1, "опубликованный остался в черновиках"
     page.screenshot(path=shots / "panel-batch-drafts-iphone.png")
     print("Товары пачкой: раскладка, категории, типы размеров, черновики, цена и публикация: ок")
+
+    check_panel_guards(page_for, site, origin)
 
     screens = panel_shots(site)
     for theme in ("light", "dark"):

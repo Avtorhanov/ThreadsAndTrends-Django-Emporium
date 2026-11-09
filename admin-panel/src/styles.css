@@ -6775,3 +6775,24 @@ a.dash-tile:active {
 .agree-settings p {
   margin: 0;
 }
+
+/* Обёртка действий в режиме «Смотреть»: только свойство disabled, на вёрстку не влияет. */
+.editable {
+  display: contents;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pf-stock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.stock-input:has(input[aria-invalid="true"]) {
+  border-color: var(--danger);
+}

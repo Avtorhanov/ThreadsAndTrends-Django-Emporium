@@ -21,6 +21,7 @@ import {
 } from "../api/theme";
 import { useLoader } from "../hooks/useCatalog";
 import { setWordmark } from "../theme/wordmark";
+import { Editable } from "../components/ViewOnly";
 
 function message(error: unknown): string {
   if (!(error instanceof ApiError)) return "Не сохранено.";
@@ -125,206 +126,208 @@ export function ThemePage() {
   const shown = state?.palettes.find((item) => item.key === view) ?? null;
 
   return (
-    <section className="stack">
-      <div className="page-header">
-        <h1>Тема для покупателей</h1>
-        <span className="muted small">{busy ? "Сохраняем…" : saved ? "Сохранено" : "Изменения сохраняются сразу"}</span>
-      </div>
-      {loader.error ? <p className="alert">{loader.error}</p> : null}
-      {error ? <p className="alert">{error}</p> : null}
-      {loader.loading && !state ? <p className="muted">Загрузка…</p> : null}
+    <Editable>
+      <section className="stack">
+        <div className="page-header">
+          <h1>Тема для покупателей</h1>
+          <span className="muted small">{busy ? "Сохраняем…" : saved ? "Сохранено" : "Изменения сохраняются сразу"}</span>
+        </div>
+        {loader.error ? <p className="alert">{loader.error}</p> : null}
+        {error ? <p className="alert">{error}</p> : null}
+        {loader.loading && !state ? <p className="muted">Загрузка…</p> : null}
 
-      {state ? (
-        <div className="theme-grid">
-          <div className="stack">
-            <div className="card">
-              <h2>Палитры</h2>
-              <p className="muted small">
-                Выключенная палитра пропадает из профиля покупателя; у тех, кто её выбрал, — палитра по умолчанию.
-              </p>
-              {groups.map(({ group, items }) => (
-                <div key={group} className="theme-group">
-                  <h3>{GROUP_TITLES[group]}</h3>
-                  <ul className="theme-rows">
-                    {items.map((item) => (
-                      <PaletteRow
-                        key={item.key}
-                        palette={item}
-                        enabled={state.enabled.includes(item.key)}
-                        isDefault={item.key === state.default_palette}
-                        viewing={item.key === view}
-                        busy={busy}
-                        onView={() => setView(item.key)}
-                        onToggle={() => toggle(item.key)}
-                        onDefault={() => {
-                          setView(item.key);
-                          void save({
-                            default_palette: item.key,
-                            palettes: state.enabled.includes(item.key) ? state.enabled : [...state.enabled, item.key],
-                          });
-                        }}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-
-            <div className="card form-card">
-              <h2>Для нового посетителя</h2>
-              <div className="field">
-                <span>Тема</span>
-                <div className="seg-switch seg-switch-3" role="radiogroup" aria-label="Тема по умолчанию">
-                  {(Object.entries(MODE_LABELS) as [ThemeMode, string][]).map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      role="radio"
-                      aria-checked={state.default_mode === value}
-                      className={state.default_mode === value ? "is-on" : undefined}
-                      disabled={busy}
-                      onClick={() => void save({ default_mode: value })}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="field">
-                <span>Углы</span>
-                <div className="seg-switch seg-switch-3" role="radiogroup" aria-label="Углы по умолчанию">
-                  {(Object.entries(RADIUS_LABELS) as [ThemeRadius, string][]).map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      role="radio"
-                      aria-checked={state.default_radius === value}
-                      className={state.default_radius === value ? "is-on" : undefined}
-                      disabled={busy}
-                      onClick={() => void save({ default_radius: value })}
-                    >
-                      <i className={`corner-mark corner-${value}`} aria-hidden="true" />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="field">
-                <span>Масштаб, %</span>
-                <ScalePicker
-                  label="Масштаб по умолчанию"
-                  values={TEXT_VALUES}
-                  value={state.default_text}
-                  disabled={busy}
-                  onChange={(value) => void save({ default_text: value })}
-                />
-              </div>
-              <p className="muted small">
-                Действует у всех, кто не менял оформление в профиле. Ваш личный выбор в этом браузере
-                сбрасывается при сохранении — витрина сразу показывает настройки магазина.
-              </p>
-            </div>
-
-            <div className="card form-card">
-              <h2>Логотип</h2>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={state.show_wordmark}
-                  disabled={busy}
-                  onChange={(event) => void save({ show_wordmark: event.target.checked })}
-                />
-                <span className="switch-track" aria-hidden="true" />
-                Слово рядом с «DiDi»
-              </label>
-              {state.show_wordmark ? (
-                <form
-                  className="wordmark-form"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    const word = wordDraft.trim().replace(/\s+/g, " ");
-                    if (word !== state.wordmark) void save({ wordmark: word });
-                  }}
-                >
-                  <span className="wordmark-input">
-                    <input
-                      value={wordDraft}
-                      maxLength={WORDMARK_MAX}
-                      aria-label="Слово рядом с «DiDi»"
-                      placeholder="Пусто — только «DiDi»"
-                      aria-describedby="wordmark-hint"
-                      onChange={(event) => setWordDraft(event.target.value)}
-                    />
-                    <span className="muted small" aria-hidden="true">
-                      {wordDraft.length}/{WORDMARK_MAX}
-                    </span>
-                  </span>
-                  <button
-                    type="submit"
-                    className="button button-accent"
-                    disabled={busy || wordDraft.trim().replace(/\s+/g, " ") === state.wordmark}
-                  >
-                    Сохранить
-                  </button>
-                </form>
-              ) : null}
-              <p id="wordmark-hint" className="muted small">
-                {state.show_wordmark && wordDraft.trim() && !wordmarkFits(wordDraft.trim())
-                  ? "Широкие буквы: на узком телефоне слово обрежется — короче или уже буквы будет аккуратнее."
-                  : `До ${WORDMARK_MAX} символов: буквы, цифры, пробел, дефис, точка, «&». В шапке сайта, в приложении и в панели; пусто или выключено — только плашка «DiDi».`}
-              </p>
-            </div>
-
-            <div className="card form-card">
-              <h2>Нижнее меню витрины</h2>
-              <p className="muted small">
-                Вкладки «Каталог · Контакты · Корзина · Профиль» на телефоне. Это вид для нового посетителя:
-                покупатель может выбрать свой в профиле → «Оформление».
-              </p>
-              <div className="nav-options" role="radiogroup" aria-label="Вид нижнего меню">
-                {(Object.keys(NAV_LABELS) as ThemeNav[]).map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="radio"
-                    aria-checked={state.nav_style === value}
-                    className={state.nav_style === value ? "nav-option is-on" : "nav-option"}
-                    disabled={busy}
-                    onClick={() => void save({ nav_style: value })}
-                  >
-                    <NavSketch kind={value} />
-                    <strong>{NAV_LABELS[value]}</strong>
-                    <span className="muted small">{NAV_HINTS[value]}</span>
-                  </button>
+        {state ? (
+          <div className="theme-grid">
+            <div className="stack">
+              <div className="card">
+                <h2>Палитры</h2>
+                <p className="muted small">
+                  Выключенная палитра пропадает из профиля покупателя; у тех, кто её выбрал, — палитра по умолчанию.
+                </p>
+                {groups.map(({ group, items }) => (
+                  <div key={group} className="theme-group">
+                    <h3>{GROUP_TITLES[group]}</h3>
+                    <ul className="theme-rows">
+                      {items.map((item) => (
+                        <PaletteRow
+                          key={item.key}
+                          palette={item}
+                          enabled={state.enabled.includes(item.key)}
+                          isDefault={item.key === state.default_palette}
+                          viewing={item.key === view}
+                          busy={busy}
+                          onView={() => setView(item.key)}
+                          onToggle={() => toggle(item.key)}
+                          onDefault={() => {
+                            setView(item.key);
+                            void save({
+                              default_palette: item.key,
+                              palettes: state.enabled.includes(item.key) ? state.enabled : [...state.enabled, item.key],
+                            });
+                          }}
+                        />
+                      ))}
+                    </ul>
+                  </div>
                 ))}
               </div>
-            </div>
-          </div>
 
-          {shown ? (
-            <div className="card theme-preview-card">
-              <h2>Предпросмотр: {shown.name}</h2>
-              <div className="theme-previews">
-                <ThemePreview palette={shown} dark={false} radius={state.default_radius} nav={state.nav_style} wordmark={state.show_wordmark && state.wordmark ? state.wordmark : null} />
-                <ThemePreview palette={shown} dark radius={state.default_radius} nav={state.nav_style} wordmark={state.show_wordmark && state.wordmark ? state.wordmark : null} />
+              <div className="card form-card">
+                <h2>Для нового посетителя</h2>
+                <div className="field">
+                  <span>Тема</span>
+                  <div className="seg-switch seg-switch-3" role="radiogroup" aria-label="Тема по умолчанию">
+                    {(Object.entries(MODE_LABELS) as [ThemeMode, string][]).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        role="radio"
+                        aria-checked={state.default_mode === value}
+                        className={state.default_mode === value ? "is-on" : undefined}
+                        disabled={busy}
+                        onClick={() => void save({ default_mode: value })}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="field">
+                  <span>Углы</span>
+                  <div className="seg-switch seg-switch-3" role="radiogroup" aria-label="Углы по умолчанию">
+                    {(Object.entries(RADIUS_LABELS) as [ThemeRadius, string][]).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        role="radio"
+                        aria-checked={state.default_radius === value}
+                        className={state.default_radius === value ? "is-on" : undefined}
+                        disabled={busy}
+                        onClick={() => void save({ default_radius: value })}
+                      >
+                        <i className={`corner-mark corner-${value}`} aria-hidden="true" />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="field">
+                  <span>Масштаб, %</span>
+                  <ScalePicker
+                    label="Масштаб по умолчанию"
+                    values={TEXT_VALUES}
+                    value={state.default_text}
+                    disabled={busy}
+                    onChange={(value) => void save({ default_text: value })}
+                  />
+                </div>
+                <p className="muted small">
+                  Действует у всех, кто не менял оформление в профиле. Ваш личный выбор в этом браузере
+                  сбрасывается при сохранении — витрина сразу показывает настройки магазина.
+                </p>
               </div>
-              {shown.key === "custom" ? (
-                <p className="muted small">«Своя»: покупатель выбирает акцент из {state.accents.length} проверенных цветов.</p>
-              ) : null}
-              <div className="theme-accents" aria-hidden={shown.key !== "custom"}>
-                {shown.key === "custom"
-                  ? state.accents.map((accent) => (
-                      <span key={accent.key} title={accent.name} style={{ background: accent.color, color: accent.on }}>
-                        Aa
+
+              <div className="card form-card">
+                <h2>Логотип</h2>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={state.show_wordmark}
+                    disabled={busy}
+                    onChange={(event) => void save({ show_wordmark: event.target.checked })}
+                  />
+                  <span className="switch-track" aria-hidden="true" />
+                  Слово рядом с «DiDi»
+                </label>
+                {state.show_wordmark ? (
+                  <form
+                    className="wordmark-form"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      const word = wordDraft.trim().replace(/\s+/g, " ");
+                      if (word !== state.wordmark) void save({ wordmark: word });
+                    }}
+                  >
+                    <span className="wordmark-input">
+                      <input
+                        value={wordDraft}
+                        maxLength={WORDMARK_MAX}
+                        aria-label="Слово рядом с «DiDi»"
+                        placeholder="Пусто — только «DiDi»"
+                        aria-describedby="wordmark-hint"
+                        onChange={(event) => setWordDraft(event.target.value)}
+                      />
+                      <span className="muted small" aria-hidden="true">
+                        {wordDraft.length}/{WORDMARK_MAX}
                       </span>
-                    ))
-                  : null}
+                    </span>
+                    <button
+                      type="submit"
+                      className="button button-accent"
+                      disabled={busy || wordDraft.trim().replace(/\s+/g, " ") === state.wordmark}
+                    >
+                      Сохранить
+                    </button>
+                  </form>
+                ) : null}
+                <p id="wordmark-hint" className="muted small">
+                  {state.show_wordmark && wordDraft.trim() && !wordmarkFits(wordDraft.trim())
+                    ? "Широкие буквы: на узком телефоне слово обрежется — короче или уже буквы будет аккуратнее."
+                    : `До ${WORDMARK_MAX} символов: буквы, цифры, пробел, дефис, точка, «&». В шапке сайта, в приложении и в панели; пусто или выключено — только плашка «DiDi».`}
+                </p>
+              </div>
+
+              <div className="card form-card">
+                <h2>Нижнее меню витрины</h2>
+                <p className="muted small">
+                  Вкладки «Каталог · Контакты · Корзина · Профиль» на телефоне. Это вид для нового посетителя:
+                  покупатель может выбрать свой в профиле → «Оформление».
+                </p>
+                <div className="nav-options" role="radiogroup" aria-label="Вид нижнего меню">
+                  {(Object.keys(NAV_LABELS) as ThemeNav[]).map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      role="radio"
+                      aria-checked={state.nav_style === value}
+                      className={state.nav_style === value ? "nav-option is-on" : "nav-option"}
+                      disabled={busy}
+                      onClick={() => void save({ nav_style: value })}
+                    >
+                      <NavSketch kind={value} />
+                      <strong>{NAV_LABELS[value]}</strong>
+                      <span className="muted small">{NAV_HINTS[value]}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          ) : null}
-        </div>
-      ) : null}
-    </section>
+
+            {shown ? (
+              <div className="card theme-preview-card">
+                <h2>Предпросмотр: {shown.name}</h2>
+                <div className="theme-previews">
+                  <ThemePreview palette={shown} dark={false} radius={state.default_radius} nav={state.nav_style} wordmark={state.show_wordmark && state.wordmark ? state.wordmark : null} />
+                  <ThemePreview palette={shown} dark radius={state.default_radius} nav={state.nav_style} wordmark={state.show_wordmark && state.wordmark ? state.wordmark : null} />
+                </div>
+                {shown.key === "custom" ? (
+                  <p className="muted small">«Своя»: покупатель выбирает акцент из {state.accents.length} проверенных цветов.</p>
+                ) : null}
+                <div className="theme-accents" aria-hidden={shown.key !== "custom"}>
+                  {shown.key === "custom"
+                    ? state.accents.map((accent) => (
+                        <span key={accent.key} title={accent.name} style={{ background: accent.color, color: accent.on }}>
+                          Aa
+                        </span>
+                      ))
+                    : null}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+    </Editable>
   );
 }
 
