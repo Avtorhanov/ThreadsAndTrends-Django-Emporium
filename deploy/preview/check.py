@@ -330,7 +330,7 @@ def panel_shots(site: Path) -> list[tuple[str, str]]:
         ("product", f"/panel/catalog/products/{first('catalog/products')}/"),
         ("batch", "/panel/catalog/products/batch/"),
         ("drafts", "/panel/catalog/products/drafts/"),
-        ("categories", "/panel/catalog/categories/"),
+        ("categories", "/panel/look/categories/"),
         ("articles", "/panel/content/articles/"),
         ("customers", "/panel/customers/"),
         ("look-home", "/panel/look/home/"),

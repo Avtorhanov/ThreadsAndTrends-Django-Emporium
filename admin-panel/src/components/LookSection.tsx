@@ -1,26 +1,32 @@
 import { Navigate, NavLink, Outlet, useLocation } from "react-router";
 
+import type { StaffUser } from "../auth/authService";
 import { useAuth } from "../auth/AuthProvider";
 import { ViewOnlyProvider } from "./ViewOnly";
 
+type Access = keyof StaffUser["permissions"];
+
 /** Раздел «Внешний вид»: всё, что меняет вид магазина и панели, — в одном месте.
- * «Главная витрины» и «Тема витрины» — по праву «Главная и тема»; «Оформление панели» —
- * личный выбор каждого сотрудника, доступен всем. */
-const TABS = [
-  { to: "/look/home", label: "Главная", shop: true },
-  { to: "/look/theme", label: "Тема магазина", shop: true },
-  { to: "/look/panel", label: "Панель", shop: false },
-] as const;
+ * «Главная» и «Тема магазина» — по праву «Главная и тема», «Категории» (меню витрины) —
+ * по своему праву «Категории»; «Панель» — личный выбор сотрудника, доступен всем. */
+const TABS: { to: string; label: string; access?: Access }[] = [
+  { to: "/look/home", label: "Главная", access: "storefront" },
+  { to: "/look/categories", label: "Категории", access: "categories" },
+  { to: "/look/theme", label: "Тема магазина", access: "storefront" },
+  { to: "/look/panel", label: "Панель" },
+];
 
 export function LookSection() {
   const { user } = useAuth();
   const { pathname } = useLocation();
-  const shopLevel = user?.permissions ? user.permissions.storefront : "edit";
-  const tabs = TABS.filter((tab) => !tab.shop || shopLevel !== "none");
+  const permissions = user?.permissions;
+  const levelOf = (access?: Access) => (access && permissions ? permissions[access] : "edit");
+  const tabs = TABS.filter((tab) => levelOf(tab.access) !== "none");
   const current = TABS.find((tab) => pathname === tab.to || pathname.startsWith(`${tab.to}/`));
 
   if (!current) return <Navigate to={tabs[0]?.to ?? "/look/panel"} replace />;
-  if (current.shop && shopLevel === "none") return <Navigate to="/look/panel" replace />;
+  const level = levelOf(current.access);
+  if (level === "none") return <Navigate to={tabs[0]?.to ?? "/look/panel"} replace />;
 
   return (
     <div className="look-section">
@@ -31,10 +37,10 @@ export function LookSection() {
           </NavLink>
         ))}
       </nav>
-      {current.shop && shopLevel === "view" ? (
+      {level === "view" ? (
         <p className="note note-info view-only">Только просмотр: изменения в этом разделе вам недоступны.</p>
       ) : null}
-      <ViewOnlyProvider value={Boolean(current.shop) && shopLevel === "view"}>
+      <ViewOnlyProvider value={level === "view"}>
         <Outlet />
       </ViewOnlyProvider>
     </div>

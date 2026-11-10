@@ -52,7 +52,7 @@ export function CategorySheet({ title, note, categories, all, counts, onPick, on
             );
           })}
           {categories.length === 0 ? (
-            <p className="muted">Нет категорий для товаров — создайте их в разделе «Категории».</p>
+            <p className="muted">Нет категорий для товаров — создайте их во «Внешнем виде» → «Категории».</p>
           ) : null}
         </div>
         <button type="button" className="button button-ghost" onClick={onClose}>
