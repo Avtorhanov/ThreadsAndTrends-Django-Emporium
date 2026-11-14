@@ -150,7 +150,10 @@ def test_refund_request(http, provider):
     ("error", "transient"),
     [
         (http_error(400, {"type": "error", "code": "invalid_request"}), False),
-        (http_error(401, {"type": "error", "code": "invalid_credentials"}), False),
+        # Отклонённые ключи — не вердикт по платежу: повторяем после исправления .env.
+        (http_error(401, {"type": "error", "code": "invalid_credentials"}), True),
+        (http_error(403, {"type": "error", "code": "forbidden"}), True),
+        (http_error(404, {"type": "error", "code": "not_found"}), False),
         (http_error(429, {"type": "error", "code": "too_many_requests"}), True),
         (http_error(500, {"type": "error", "code": "internal_server_error"}), True),
         (urllib.error.URLError("timed out"), True),

@@ -130,7 +130,13 @@ class YooKassaProvider:
                 payload = json.loads(response.read().decode() or "{}")
         except urllib.error.HTTPError as exc:
             description = _error_description(exc)
-            transient = exc.code >= 500 or exc.code == 429
+            # 401/403 — отклонены ключи магазина (отозваны, перепутаны тестовые и боевые), а не
+            # платёж: считать это окончательным ответом нельзя — иначе автоотмена отменит
+            # оплаченные заказы, а возвраты пометятся отклонёнными. Повторяем после исправления.
+            credentials = exc.code in (401, 403)
+            if credentials:
+                logger.error("ЮKassa отклонила ключи магазина (HTTP %s): проверьте .env", exc.code)
+            transient = exc.code >= 500 or exc.code in (408, 429) or credentials
             raise ProviderError(
                 f"ЮKassa {method} {path}: HTTP {exc.code} {description}",
                 transient=transient,
