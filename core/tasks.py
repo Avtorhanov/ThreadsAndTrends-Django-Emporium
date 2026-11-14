@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 from smtplib import SMTPException
 
+from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
 from django_tasks import task
@@ -28,3 +29,21 @@ def send_email(subject: str, body: str, recipients: list[str], attempt: int = 0)
         )
         return
     logger.info("Письмо «%s» отправлено (%d получателей)", subject, len(recipients))
+
+
+@task()
+def prune_task_results() -> int:
+    """Удаляет завершённые задачи старше TASK_RESULTS_KEEP_DAYS.
+
+    Таблица очереди иначе только растёт: две периодические задачи в минуту — около 3 000 строк
+    в сутки. Невыполненные (без finished_at) не трогаются.
+    """
+    # При другом бэкенде очереди (Redis) таблицы задач нет.
+    if settings.TASKS["default"]["BACKEND"] != "django_tasks_db.DatabaseBackend":
+        return 0
+    from django_tasks_db.models import DBTaskResult
+
+    cutoff = timezone.now() - timedelta(days=settings.TASK_RESULTS_KEEP_DAYS)
+    deleted, _ = DBTaskResult.objects.filter(finished_at__lt=cutoff).delete()
+    logger.info("Очередь задач: удалено завершённых записей — %d", deleted)
+    return deleted

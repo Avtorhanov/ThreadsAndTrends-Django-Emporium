@@ -49,8 +49,11 @@ def _task_checks() -> dict[str, bool]:
 
 def _backup_fresh(marker: str) -> bool:
     directory = Path(settings.BACKUP_DIR)
-    # Первой копии ещё не было — срок считаем от создания папки при деплое.
-    path = directory / marker if (directory / marker).exists() else directory
+    # Удачной копии ещё не было — срок считаем от первой попытки (.first-run ставит backup.sh),
+    # а до неё — от создания папки при деплое. Время самой папки после первой попытки не годится:
+    # его обновляет каждый локальный бэкап, и ни разу не удавшаяся выгрузка выглядела бы свежей.
+    candidates = (directory / marker, directory / ".first-run")
+    path = next((p for p in candidates if p.exists()), directory)
     try:
         age = time.time() - path.stat().st_mtime
     except OSError:
@@ -72,16 +75,31 @@ def service_checks() -> dict[str, bool]:
     return checks
 
 
+def _alert_key(name: str) -> str:
+    return f"monitoring:alert:{name}"
+
+
 def _should_alert(name: str) -> bool:
     try:
-        return cache.add(f"monitoring:alert:{name}", 1, timeout=ALERT_REPEAT_SECONDS)
+        return cache.get(_alert_key(name)) is None
     except Exception:  # кэш — в той же базе: при её сбое лучше лишнее письмо, чем никакого
         logger.exception("Мониторинг: кэш недоступен")
         return True
 
 
+def _mark_alerted(names: list[str]) -> None:
+    try:
+        cache.set_many({_alert_key(name): 1 for name in names}, timeout=ALERT_REPEAT_SECONDS)
+    except Exception:
+        logger.exception("Мониторинг: кэш недоступен")
+
+
 def check_and_alert() -> list[str]:
-    """Письмо о новых сбоях (об одном и том же — не чаще раза в 6 часов)."""
+    """Письмо о новых сбоях (об одном и том же — не чаще раза в 6 часов).
+
+    Пауза ставится после отправки: если письмо не ушло (сбой почты), следующая проверка
+    через 10 минут попробует снова.
+    """
     failed = [name for name, ok in service_checks().items() if not ok and _should_alert(name)]
     if not failed:
         return []
@@ -94,4 +112,5 @@ def check_and_alert() -> list[str]:
             from_email=None,
             recipient_list=[settings.ALERT_EMAIL],
         )
+    _mark_alerted(failed)
     return failed

@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
@@ -45,3 +47,10 @@ def test_run_scheduler_once(settings):
     settings.PERIODIC_TASKS = [{"task": TASK_PATH, "every": 60}]
     call_command("run_scheduler", "--once")
     assert tasks_for_tests.CALLS == ["called"]
+
+
+def test_run_scheduler_once_reports_enqueue_failure(settings):
+    settings.PERIODIC_TASKS = [{"task": TASK_PATH, "every": 60}]
+    with mock.patch("core.management.commands.run_scheduler.enqueue_due", side_effect=RuntimeError):
+        with pytest.raises(RuntimeError):
+            call_command("run_scheduler", "--once")
