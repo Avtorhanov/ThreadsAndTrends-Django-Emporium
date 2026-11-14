@@ -205,6 +205,29 @@ def test_variant_rules():
         catalog.delete_variant(default)  # последний вариант
 
 
+def test_update_variant_keeps_stock_changed_after_read():
+    # Панель прочитала вариант, покупатель купил, затем панель меняет только артикул.
+    product = make_product(sizes=("S",), stock=5)
+    stale = product.variants.get()
+    ProductVariant.objects.filter(pk=stale.pk).update(stock=2)
+
+    catalog.update_variant(stale, sku="NEW-SKU")
+
+    fresh = ProductVariant.objects.get(pk=stale.pk)
+    assert (fresh.sku, fresh.stock) == ("NEW-SKU", 2)
+    assert stale.stock == 2
+
+
+def test_update_variant_does_not_revive_deleted():
+    product = make_product(sizes=("S", "M"), stock=1)
+    stale = product.variants.get(size="M")
+    catalog.delete_variant(ProductVariant.objects.get(pk=stale.pk))
+
+    with pytest.raises(ValidationError):
+        catalog.update_variant(stale, sku="NEW-SKU")
+    assert ProductVariant.all_objects.get(pk=stale.pk).deleted_at is not None
+
+
 def test_in_stock_ignores_deleted_variants():
     product = make_product(sizes=("S", "M"), stock=0)
     _small, medium = product.variants.all()

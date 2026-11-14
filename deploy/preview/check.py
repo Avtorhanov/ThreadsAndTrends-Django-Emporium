@@ -106,7 +106,14 @@ def main(site: Path, shots: Path) -> None:
 
             page.on("dialog", lambda dialog: dialog.accept())
             page.on("console", on_console)
-            page.on("pageerror", lambda exc: problems.append(f"{page.url}: {exc}"))
+
+            def on_page_error(exc) -> None:
+                # Страница перенаправила раньше, чем закончился переход между страницами
+                # (@view-transition): браузер отменяет анимацию — это не ошибка магазина.
+                if "Transition was skipped" not in str(exc):
+                    problems.append(f"{page.url}: {exc}")
+
+            page.on("pageerror", on_page_error)
             page.on("response", on_response)
             return page
 

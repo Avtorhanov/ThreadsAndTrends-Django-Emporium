@@ -223,6 +223,13 @@ def _clean_input(data: CheckoutInput) -> dict:
     return cleaned
 
 
+def _advisory_lock(name: str) -> None:
+    """Блокировка по имени до конца транзакции: сериализует проверки «не больше N»,
+    когда блокировать строку не на чем (buy_now без корзины, гость)."""
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", [name])
+
+
 def _check_open_agreements(user) -> None:
     open_count = Order.objects.filter(owner=user, status=OrderStatus.AWAITING_AGREEMENT).count()
     if open_count >= MAX_OPEN_AGREEMENTS:
@@ -360,11 +367,16 @@ def checkout(
 
     try:
         with transaction.atomic():
+            if data.payment_method == PaymentMethod.AGREEMENT:
+                # buy_now корзину не блокирует: без этого параллельные запросы обходят лимит.
+                _advisory_lock(f"orders.user:{user.pk}")
             cart = Cart.objects.select_for_update().filter(owner=user).first()
             # Параллельный запрос с тем же ключом ждал блокировку корзины и видит готовый заказ.
             existing = _find_existing(user, idempotency_key)
             if existing is not None:
                 return existing, False
+            if data.payment_method == PaymentMethod.AGREEMENT:
+                _check_open_agreements(user)  # повтор под блокировкой
             if buy_now is not None:
                 variant_ids = [buy_now.variant_id]
             else:
@@ -528,10 +540,9 @@ def guest_checkout(
 
     try:
         with transaction.atomic():
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "SELECT pg_advisory_xact_lock(hashtext(%s))", [f"orders.guest:{phone}"]
-                )
+            _advisory_lock(f"orders.guest:{phone}")
+            # Общий потолок гостевых заказов считается по всем номерам — своя блокировка.
+            _advisory_lock("orders.guest-total")
             # Параллельный запрос с тем же ключом ждал блокировку и видит готовый заказ.
             replay = _guest_replay(idempotency_key, phone)
             if replay is not None:

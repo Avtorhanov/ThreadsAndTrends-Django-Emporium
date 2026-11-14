@@ -394,10 +394,10 @@ def _validate_variant_set(product: Product, *, size: str, sku: str, exclude_pk=N
         raise ValidationError({"sku": "Такой артикул уже используется."})
 
 
-def _save_variant(variant: ProductVariant):
+def _save_variant(variant: ProductVariant, update_fields: list[str] | None = None):
     try:
         with transaction.atomic():
-            variant.save()
+            variant.save(update_fields=update_fields)
     except IntegrityError as exc:
         # Параллельное создание того же размера/артикула упирается в уникальный индекс.
         raise ValidationError("Размер или артикул уже заняты.") from exc
@@ -426,13 +426,19 @@ def update_variant(variant: ProductVariant, **changes) -> ProductVariant:
     if unknown:
         raise ValueError(f"Неизвестные поля варианта: {sorted(unknown)}")
     _lock_product(variant.product)
+    # Вариант прочитан до блокировки: оформление заказа блокирует именно его строку и могло
+    # списать остаток. Перечитываем под блокировкой и пишем только изменённые поля —
+    # правка артикула не возвращает старый остаток и не воскрешает удалённый вариант.
+    if not ProductVariant.objects.select_for_update().filter(pk=variant.pk).exists():
+        raise ValidationError("Вариант уже удалён.")
+    variant.refresh_from_db(fields=["size", "sku", "stock", "position", "deleted_at"])
     size = changes.get("size", variant.size).strip()
     sku = changes.get("sku", variant.sku).strip() or variant.sku
     _validate_variant_set(variant.product, size=size, sku=sku, exclude_pk=variant.pk)
     changes.update(size=size, sku=sku)
     for field, value in changes.items():
         setattr(variant, field, value)
-    return _save_variant(variant)
+    return _save_variant(variant, update_fields=[*changes, "updated_at"])
 
 
 @transaction.atomic
