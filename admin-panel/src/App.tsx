@@ -9,6 +9,7 @@ import {
 } from "react-router";
 
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
+import { ErrorScreen } from "./components/ErrorScreen";
 import { Layout } from "./components/Layout";
 import { lazyPage, prefetchPages } from "./lib/lazyPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -76,7 +77,7 @@ function Root() {
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route element={<Root />}>
+    <Route element={<Root />} errorElement={<ErrorScreen />}>
       <Route path="/login" element={<LoginPage />} />
       <Route
         element={

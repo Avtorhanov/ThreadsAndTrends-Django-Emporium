@@ -816,7 +816,7 @@
       '<p class="summary__row summary__total"><span>Итого</span><span>' + money(cart.total_kopecks) + "</span></p>";
     if (cart.can_checkout) {
       html += '<a class="cta cta--link" href="' + link("/checkout/") + '"><span class="cta__label">Оформить заказ</span><span class="cta__price">' + money(cart.total_kopecks) + "</span></a>";
-      if (TREE !== "me") html += '<p class="summary__hint">Для оформления нужно войти — корзина сохранится.</p>';
+      if (TREE !== "me") html += '<p class="summary__hint">Можно без аккаунта. Войдите, чтобы заказ был в профиле.</p>';
     } else {
       html += '<button class="cta" type="button" disabled><span class="cta__label">Уберите недоступные товары</span></button>';
     }

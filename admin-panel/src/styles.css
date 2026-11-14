@@ -6796,3 +6796,15 @@ a.dash-tile:active {
 .stock-input:has(input[aria-invalid="true"]) {
   border-color: var(--danger);
 }
+
+/* Экран ошибки панели (components/ErrorScreen) */
+.error-screen-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.error-screen-actions a.button {
+  text-decoration: none;
+}

@@ -3,5 +3,6 @@
 !openapi/
 !admin-panel/
 !deploy/Caddyfile
+!deploy/maintenance.html
 **/node_modules
 **/dist
