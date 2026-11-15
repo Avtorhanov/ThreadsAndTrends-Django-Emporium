@@ -400,8 +400,9 @@ a { color: var(--brand); }
 .filters__panel { border-radius: calc(16px * var(--radius-scale)); background: var(--card); box-shadow: var(--shadow-card); }
 .filters__toggle { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 16px; font: 800 15px var(--font-text); list-style: none; cursor: pointer; }
 .filters__toggle::-webkit-details-marker { display: none; }
-.filters__body { display: grid; gap: 4px; padding: 0 16px 16px; }
-.filters__actions { display: flex; gap: 10px; }
+.filters__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 0 16px 16px; }
+.filters__body .input { min-width: 0; }
+.filters__actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .size-filter { min-width: 0; margin: 0 0 8px; padding: 0; border: 0; }
 .size-filter[hidden] { display: none; }
 .size-filter__chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -418,7 +419,8 @@ a { color: var(--brand); }
 /* --- Формы --- */
 .field { display: grid; gap: 6px; margin-bottom: 14px; }
 .field__label { color: var(--muted); font: 700 13px var(--font-text); }
-.field--pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field--pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.field--pair .input { min-width: 0; width: 100%; }
 .field--pair label { display: grid; gap: 6px; }
 .input {
   display: block; width: 100%; height: 50px; padding: 0 14px;
@@ -461,7 +463,7 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .icon-btn { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 44px; height: 44px; border: 0; border-radius: calc(11px * var(--radius-scale)); background: transparent; color: var(--muted); }
 .icon-btn:hover { color: var(--danger); }
 .link-btn { padding: 0; border: 0; background: none; cursor: pointer; }
-.danger-link { display: block; margin-top: 14px; text-align: center; color: var(--danger); font: 700 14px var(--font-text); }
+.danger-link { display: block; margin-top: 2px; padding-block: 12px; text-align: center; color: var(--danger); font: 700 14px var(--font-text); }
 
 /* «В корзину»: лаймовая заливка слева направо за 550 мс. */
 .cta {
@@ -1370,5 +1372,21 @@ a.hblock-photo__frame:active { transform: scale(.985); }
 @media (max-width: 431px) { :root[data-text="130"] .brand .word { display: none; } }
 @media (max-width: 464px) { :root[data-text="140"] .brand .word { display: none; } }
 @media (max-width: 497px) { :root[data-text="150"] .brand .word { display: none; } }
+/* Крупный масштаб на телефоне: карточке ленты (~95 px при 150 %) не хватает ширины на цену и
+   название — в ленте помещается меньше карточек, цена в сетке каталога чуть мельче. */
+@media (max-width: 599px) {
+  :root:is([data-text="130"], [data-text="140"], [data-text="150"]) .hblock-rail__track { grid-auto-columns: calc((100% - var(--space-grid-gap)) / 1.6); }
+  :root:is([data-text="140"], [data-text="150"]) .card .price__now { font-size: 15px; }
+  :root:is([data-text="130"], [data-text="140"], [data-text="150"]) .card .price__now--ask { font-size: 13px; }
+}
 /* Фото на весь экран (PhotoSwipe, в <body>) считает размеры по окну — без масштаба. */
 :root[data-text] .pswp { zoom: calc(1 / var(--text-scale)); }
+
+/* Плашки в строке корзины («Цена изменилась», «Доступно только 1 шт.») переносятся, а не выходят
+   за карточку при крупном масштабе. */
+.line .pill { white-space: normal; }
+/* Цели нажатия: видимый размер прежний, зона — не меньше 44 px по высоте. */
+.tag { position: relative; }
+.tag::after { content: ""; position: absolute; inset: -8px 0; }
+.form__links a { display: inline-flex; align-items: center; min-height: 44px; }
+.agree__msg summary { padding-block: 12px; }

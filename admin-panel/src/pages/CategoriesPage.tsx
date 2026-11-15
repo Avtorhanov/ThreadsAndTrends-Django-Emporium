@@ -19,6 +19,7 @@ export function CategoriesPage() {
   const [parent, setParent] = useState("");
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ id: number; name: string } | null>(null);
 
   const tree = data ? sortCategoryTree(data) : [];
   const roots = tree.filter((category) => category.depth === 0);
@@ -48,11 +49,33 @@ export function CategoriesPage() {
     });
   }
 
-  function rename(category: Category) {
-    const next = window.prompt("Новое название (адрес страницы не изменится)", category.name);
-    if (next && next.trim() && next.trim() !== category.name) {
-      void run(() => categoriesService.update(category.id, { name: next.trim() }));
+  function saveName() {
+    if (!editing) return;
+    const next = editing.name.trim();
+    const current = tree.find((category) => category.id === editing.id);
+    setEditing(null);
+    if (current && next && next !== current.name) {
+      void run(() => categoriesService.update(current.id, { name: next }));
     }
+  }
+
+  /** Стрелки меняют место среди соседей (корневые — между собой, подкатегории — внутри своей).
+   * Номера записываются заново всем, у кого изменились: одинаковые «0» у старых категорий
+   * не мешают. */
+  function move(category: Category, step: -1 | 1) {
+    const siblings = tree.filter((item) => (item.parent ?? null) === (category.parent ?? null));
+    const from = siblings.findIndex((item) => item.id === category.id);
+    const to = from + step;
+    const moved = siblings[from];
+    if (!moved || to < 0 || to >= siblings.length) return;
+    const next = [...siblings];
+    next.splice(from, 1);
+    next.splice(to, 0, moved);
+    void run(async () => {
+      for (const [position, item] of next.entries()) {
+        if (item.position !== position) await categoriesService.update(item.id, { position });
+      }
+    });
   }
 
   function remove(category: Category) {
@@ -71,12 +94,13 @@ export function CategoriesPage() {
       <Editable>
         <form className="filters" onSubmit={onCreate}>
           <input
+            aria-label="Название новой категории"
             placeholder="Название новой категории"
             value={name}
             maxLength={100}
             onChange={(event) => setName(event.target.value)}
           />
-          <select value={parent} onChange={(event) => setParent(event.target.value)}>
+          <select aria-label="Где создать" value={parent} onChange={(event) => setParent(event.target.value)}>
             <option value="">Корневая категория</option>
             {roots.map((root) => (
               <option key={root.id} value={root.id}>
@@ -106,63 +130,106 @@ export function CategoriesPage() {
             </tr>
           </thead>
           <tbody>
-            {tree.map((category) => (
-              <tr key={category.id}>
-                <td className={category.depth ? "indent" : "strong"}>{category.name}</td>
-                <td className="muted">{category.slug}</td>
-                <td>{category.products_count}</td>
-                <td>
-                  <input
-                    className="input-narrow"
-                    type="number"
-                    aria-label={`Порядок: ${category.name}`}
-                    min={0}
-                    defaultValue={category.position ?? 0}
-                    disabled={busy}
-                    onBlur={(event) => {
-                      const position = Number(event.target.value);
-                      if (Number.isInteger(position) && position >= 0 && position !== category.position) {
-                        void run(() => categoriesService.update(category.id, { position }));
-                      }
-                    }}
-                  />
-                </td>
-                <td>
-                  <span className={`badge ${category.is_active ? "badge-active" : "badge-deleted"}`}>
-                    {category.is_active ? "Показана" : "Скрыта"}
-                  </span>
-                </td>
-                <td className="actions">
-                  <button type="button" className="button button-ghost" disabled={busy} onClick={() => rename(category)}>
-                    <Icon name="pencil" size={18} />
-                    <span className="cat-action-label">Переименовать</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="button button-ghost"
-                    disabled={busy}
-                    onClick={() =>
-                      void run(() =>
-                        categoriesService.update(category.id, { is_active: !category.is_active }),
-                      )
-                    }
-                  >
-                    <Icon name={category.is_active ? "eyeOff" : "eye"} size={18} />
-                    <span className="cat-action-label">{category.is_active ? "Скрыть" : "Показать"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="button button-danger"
-                    disabled={busy || category.children_count > 0}
-                    title={category.children_count > 0 ? "Сначала удалите подкатегории" : undefined}
-                    onClick={() => remove(category)}
-                  >
-                    <Icon name="trash" size={18} />
-                    <span className="cat-action-label">Удалить</span>
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {tree.map((category) => {
+              const siblings = tree.filter((item) => (item.parent ?? null) === (category.parent ?? null));
+              const index = siblings.findIndex((item) => item.id === category.id);
+              return (
+                <tr key={category.id}>
+                  <td className={category.depth ? "indent" : "strong"}>
+                    {editing?.id === category.id ? (
+                      <span className="cat-rename">
+                        <input
+                          autoFocus
+                          aria-label={`Новое название: ${category.name}`}
+                          value={editing.name}
+                          maxLength={100}
+                          onChange={(event) => setEditing({ id: category.id, name: event.target.value })}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") saveName();
+                            if (event.key === "Escape") setEditing(null);
+                          }}
+                        />
+                        <button type="button" className="row-tool" aria-label="Сохранить название" title="Сохранить" onClick={saveName}>
+                          <Icon name="check" size={18} />
+                        </button>
+                        <button type="button" className="row-tool" aria-label="Не менять" title="Не менять" onClick={() => setEditing(null)}>
+                          <Icon name="close" size={18} />
+                        </button>
+                      </span>
+                    ) : (
+                      category.name
+                    )}
+                  </td>
+                  <td className="muted">{category.slug}</td>
+                  <td>{category.products_count}</td>
+                  <td>
+                    <span className="order-arrows">
+                      <button
+                        type="button"
+                        className="row-tool"
+                        aria-label={`Выше: ${category.name}`}
+                        title="Выше"
+                        disabled={busy || index === 0}
+                        onClick={() => move(category, -1)}
+                      >
+                        <Icon name="up" size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        className="row-tool"
+                        aria-label={`Ниже: ${category.name}`}
+                        title="Ниже"
+                        disabled={busy || index === siblings.length - 1}
+                        onClick={() => move(category, 1)}
+                      >
+                        <Icon name="down" size={18} />
+                      </button>
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`badge ${category.is_active ? "badge-active" : "badge-deleted"}`}>
+                      {category.is_active ? "Показана" : "Скрыта"}
+                    </span>
+                  </td>
+                  <td className="actions">
+                    <span className="row-tools">
+                      <button
+                        type="button"
+                        className="row-tool"
+                        disabled={busy}
+                        aria-label={`Переименовать ${category.name}`}
+                        title="Переименовать (адрес страницы не изменится)"
+                        onClick={() => setEditing({ id: category.id, name: category.name })}
+                      >
+                        <Icon name="pencil" size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        className="row-tool"
+                        disabled={busy}
+                        aria-label={`${category.is_active ? "Скрыть" : "Показать"} ${category.name}`}
+                        title={category.is_active ? "Скрыть" : "Показать"}
+                        onClick={() =>
+                          void run(() => categoriesService.update(category.id, { is_active: !category.is_active }))
+                        }
+                      >
+                        <Icon name={category.is_active ? "eyeOff" : "eye"} size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        className="row-tool row-tool-danger"
+                        disabled={busy || category.children_count > 0}
+                        aria-label={`Удалить ${category.name}`}
+                        title={category.children_count > 0 ? "Сначала удалите подкатегории" : "Удалить"}
+                        onClick={() => remove(category)}
+                      >
+                        <Icon name="trash" size={18} />
+                      </button>
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
             {data && data.length === 0 ? (
               <tr>
                 <td colSpan={6} className="empty">

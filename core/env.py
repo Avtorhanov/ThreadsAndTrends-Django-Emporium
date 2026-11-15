@@ -84,7 +84,13 @@ def cache_from_url(url: str) -> dict:
 
     if scheme == "db":
         table = parsed.netloc or parsed.path.lstrip("/") or "django_cache"
-        config.update(BACKEND="django.core.cache.backends.db.DatabaseCache", LOCATION=table)
+        # По умолчанию в таблице 300 записей: при переполнении удаляется треть по порядку ключей —
+        # вместе со счётчиками попыток входа и замками периодических задач.
+        config.update(
+            BACKEND="django.core.cache.backends.db.DatabaseCache",
+            LOCATION=table,
+            OPTIONS={"MAX_ENTRIES": 50_000},
+        )
     elif scheme in ("redis", "rediss"):
         # Экранирование в пароле не трогаем: redis-py сам раскодирует URL.
         location = parsed._replace(query="").geturl()

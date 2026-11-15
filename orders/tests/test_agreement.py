@@ -272,3 +272,40 @@ def test_summary_counts_agreement_orders_outside_turnover(filled_cart):
     summary = build_summary()
     assert summary["awaiting_agreement"] == 1
     assert summary["today"]["turnover_kopecks"] == 0
+
+
+def test_open_agreements_limit_is_rechecked_under_lock(customer, shirt):
+    # Параллельные buy_now проходят проверку до транзакции одновременно:
+    # решает повтор под блокировкой.
+    from unittest import mock
+
+    from django.core.exceptions import ValidationError
+
+    from orders.services.checkout import MAX_OPEN_AGREEMENTS
+
+    variant = shirt.variants.get(size="S")
+    for n in range(MAX_OPEN_AGREEMENTS):
+        checkout_service.checkout(
+            customer,
+            agreement_input(),
+            f"race-key-{n:04d}",
+            buy_now=cart_service.LineInput(variant.pk, 1),
+        )
+    real = checkout_service._check_open_agreements
+    calls = []
+
+    def first_call_passes(user):
+        calls.append(user)
+        if len(calls) > 1:
+            real(user)
+
+    with mock.patch.object(checkout_service, "_check_open_agreements", first_call_passes):
+        with pytest.raises(ValidationError) as error:
+            checkout_service.checkout(
+                customer,
+                agreement_input(),
+                "race-key-9999",
+                buy_now=cart_service.LineInput(variant.pk, 1),
+            )
+    assert error.value.code == "too_many_agreements"
+    assert len(calls) == 2

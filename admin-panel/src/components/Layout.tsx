@@ -18,7 +18,6 @@ const SECTIONS: { to: string; label: string; icon: IconName; access?: Access; en
   { to: "/", label: "Сводка", icon: "summary", access: "summary", end: true },
   { to: "/orders", label: "Заказы", icon: "orders", access: "orders" },
   { to: "/catalog/products", label: "Товары", icon: "products", access: "products" },
-  { to: "/catalog/categories", label: "Категории", icon: "categories", access: "categories" },
   { to: "/content/articles", label: "Статьи", icon: "articles", access: "articles" },
   { to: "/customers", label: "Клиенты", icon: "customers", access: "customers" },
   { to: "/look", label: "Внешний вид", icon: "palette" },
@@ -34,7 +33,7 @@ function sectionFor(pathname: string) {
 }
 
 // Экраны с формами: жест «потянуть, чтобы обновить» сбросил бы несохранённые правки.
-const FORM_SCREEN = /^\/(catalog\/products|content\/articles)\/[^/]+$|^\/(settings|look|account)(\/|$)/;
+const FORM_SCREEN = /^\/(catalog\/products|content\/articles)\/[^/]+$|^\/(settings|account)(\/|$)|^\/look(\/(home|theme|panel))?(\/|$)/;
 
 const THEME_ICONS: Record<ThemeChoice, IconName> = { system: "system", light: "sun", dark: "moon" };
 

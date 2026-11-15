@@ -21,9 +21,21 @@ pytestmark = pytest.mark.django_db
 
 def test_category_slug_is_transliterated_and_unique():
     first = catalog.create_category(name="Женская одежда")
-    second = catalog.create_category(name="Женская одежда")
+    other_root = catalog.create_category(name="Распродажа")
+    second = catalog.create_category(name="Женская одежда", parent=other_root)
     assert first.slug == "zhenskaya-odezhda"
     assert second.slug == "zhenskaya-odezhda-2"
+
+
+def test_category_name_is_unique_among_siblings():
+    first = catalog.create_category(name="Обувь")
+    with pytest.raises(ValidationError):
+        catalog.create_category(name="обувь ")
+    other = catalog.create_category(name="Одежда")
+    with pytest.raises(ValidationError):
+        catalog.update_category(other, name="Обувь")
+    catalog.update_category(first, name="Обувь")  # своё имя не мешает
+    assert (first.position, other.position) == (0, 1)  # новые — в конец уровня
 
 
 def test_category_tree_is_limited_to_two_levels():
@@ -203,6 +215,29 @@ def test_variant_rules():
     default.refresh_from_db()
     with pytest.raises(ValidationError):
         catalog.delete_variant(default)  # последний вариант
+
+
+def test_update_variant_keeps_stock_changed_after_read():
+    # Панель прочитала вариант, покупатель купил, затем панель меняет только артикул.
+    product = make_product(sizes=("S",), stock=5)
+    stale = product.variants.get()
+    ProductVariant.objects.filter(pk=stale.pk).update(stock=2)
+
+    catalog.update_variant(stale, sku="NEW-SKU")
+
+    fresh = ProductVariant.objects.get(pk=stale.pk)
+    assert (fresh.sku, fresh.stock) == ("NEW-SKU", 2)
+    assert stale.stock == 2
+
+
+def test_update_variant_does_not_revive_deleted():
+    product = make_product(sizes=("S", "M"), stock=1)
+    stale = product.variants.get(size="M")
+    catalog.delete_variant(ProductVariant.objects.get(pk=stale.pk))
+
+    with pytest.raises(ValidationError):
+        catalog.update_variant(stale, sku="NEW-SKU")
+    assert ProductVariant.all_objects.get(pk=stale.pk).deleted_at is not None
 
 
 def test_in_stock_ignores_deleted_variants():

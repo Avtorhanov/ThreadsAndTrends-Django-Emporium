@@ -810,7 +810,7 @@ export function ProductBatchPage() {
 
       {ready && leaf.length === 0 ? (
         <p className="note note-warning">
-          Нет категорий для товаров. <Link to="/catalog/categories">Создайте категорию</Link>, чтобы раскладывать товары.
+          Нет категорий для товаров. <Link to="/look/categories">Создайте категорию</Link>, чтобы раскладывать товары.
         </p>
       ) : null}
     </section>

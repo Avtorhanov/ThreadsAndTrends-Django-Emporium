@@ -140,6 +140,7 @@ export function ProductsPage() {
       <div className={moreFilters ? "filters is-open" : "filters"}>
         <input
           type="search"
+          aria-label="Поиск товара"
           placeholder="Название или артикул"
           value={search}
           onChange={(event) => {

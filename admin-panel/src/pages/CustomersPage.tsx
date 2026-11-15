@@ -77,6 +77,7 @@ export function CustomersPage() {
       <div className="filters">
         <input
           type="search"
+          aria-label="Поиск клиента"
           placeholder="Email, имя или фамилия"
           value={search}
           onChange={(event) => {
@@ -85,6 +86,7 @@ export function CustomersPage() {
           }}
         />
         <select
+          aria-label="Статус"
           value={status}
           onChange={(event) => {
             setStatus(event.target.value as CustomerStatus | "");

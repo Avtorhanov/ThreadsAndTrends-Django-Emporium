@@ -52,6 +52,7 @@ export function ArticlesPage() {
       <div className="filters">
         <input
           type="search"
+          aria-label="Поиск статьи"
           placeholder="Заголовок"
           value={search}
           onChange={(event) => {
@@ -60,6 +61,7 @@ export function ArticlesPage() {
           }}
         />
         <select
+          aria-label="Статус"
           value={status}
           onChange={(event) => {
             setStatus(event.target.value as ArticleStatus | "");

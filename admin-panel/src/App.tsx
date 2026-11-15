@@ -9,6 +9,7 @@ import {
 } from "react-router";
 
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
+import { ErrorScreen } from "./components/ErrorScreen";
 import { Layout } from "./components/Layout";
 import { lazyPage, prefetchPages } from "./lib/lazyPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -76,7 +77,7 @@ function Root() {
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route element={<Root />}>
+    <Route element={<Root />} errorElement={<ErrorScreen />}>
       <Route path="/login" element={<LoginPage />} />
       <Route
         element={
@@ -95,13 +96,15 @@ const router = createBrowserRouter(
         <Route path="/catalog/products/batch" element={<ProductBatchPage />} />
         <Route path="/catalog/products/drafts" element={<ProductDraftsPage />} />
         <Route path="/catalog/products/:id" element={<ProductEditPage />} />
-        <Route path="/catalog/categories" element={<CategoriesPage />} />
+        {/* «Категории» — вкладка «Внешнего вида»; прежний адрес перенаправляет. */}
+        <Route path="/catalog/categories" element={<Navigate to="/look/categories" replace />} />
         <Route path="/content/articles" element={<ArticlesPage />} />
         <Route path="/content/articles/new" element={<ArticleEditPage />} />
         <Route path="/content/articles/:id" element={<ArticleEditPage />} />
         <Route path="/look" element={<LookSection />}>
           <Route index element={null} />
           <Route path="home" element={<HomeEditorPage />} />
+          <Route path="categories" element={<CategoriesPage />} />
           <Route path="theme" element={<ThemePage />} />
           <Route path="panel" element={<PanelLookPage />} />
         </Route>

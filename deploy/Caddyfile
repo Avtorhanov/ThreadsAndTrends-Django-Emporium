@@ -60,6 +60,20 @@
 		reverse_proxy app:8000
 	}
 
+	# Приложение перезапускается (обновление, миграции): вместо пустого 502 — страница-заглушка.
+	handle_errors {
+		@down expression `{err.status_code} in [502, 503, 504]`
+		handle @down {
+			root * /srv/errors
+			rewrite * /maintenance.html
+			header Cache-Control "no-store"
+			header Retry-After "30"
+			file_server {
+				status 503
+			}
+		}
+	}
+
 	log {
 		output stdout
 		# Секрет гостевой ссылки в журнал не попадает.

@@ -11,4 +11,5 @@ RUN cd admin-panel && npm run build
 
 FROM caddy:2-alpine
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
+COPY deploy/maintenance.html /srv/errors/maintenance.html
 COPY --from=panel /src/admin-panel/dist /srv/panel

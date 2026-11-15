@@ -145,11 +145,13 @@ export function OrdersPage() {
       <div className={moreFilters ? "filters is-open" : "filters"}>
         <input
           type="search"
+          aria-label="Поиск заказа"
           placeholder="Номер, email, имя или телефон"
           value={search}
           onChange={(event) => filter(setSearch)(event.target.value)}
         />
         <select
+          aria-label="Статус"
           value={status}
           onChange={(event) => filter(setStatus)(event.target.value as typeof status)}
         >
@@ -212,6 +214,9 @@ export function OrdersPage() {
           </label>
         </span>
       </div>
+      {createdFrom && createdTo && createdFrom > createdTo ? (
+        <p className="note note-info">Начало периода позже конца — поменяйте даты местами.</p>
+      ) : null}
 
       {error ? <p className="alert">{error}</p> : null}
       {actionError ? <p className="alert">{actionError}</p> : null}

@@ -45,9 +45,22 @@ fi
 ts=$(date -u +%Y%m%d-%H%M%S)
 mkdir -p "$dir"
 
+# Первая попытка: от неё мониторинг считает срок, пока нет меток .ok-local / .ok-remote.
+[ -f "$dir/.first-run" ] || touch "$dir/.first-run"
+
 # Сначала во временный файл: неполный бэкап никогда не выглядит готовым.
-pg_dump --format=custom --no-owner --file="$dir/.db-$ts.dump" && mv "$dir/.db-$ts.dump" "$dir/db-$ts.dump"
-tar -C /media -czf "$dir/.media-$ts.tar.gz" . && mv "$dir/.media-$ts.tar.gz" "$dir/media-$ts.tar.gz"
+# Каждая команда — отдельной строкой: в списке «a && b» сбой «a» не останавливает скрипт при set -e.
+tmp_db="$dir/.db-$ts.dump"
+tmp_media="$dir/.media-$ts.tar.gz"
+trap 'rm -f "$tmp_db" "$tmp_media"' EXIT
+# Остатки прерванных запусков (отключение питания): trap их не убрал.
+find "$dir" -maxdepth 1 \( -name '.db-*.dump' -o -name '.media-*.tar.gz' \) -mmin +120 -delete
+
+pg_dump --format=custom --no-owner --file="$tmp_db"
+[ -s "$tmp_db" ] || { echo "Бэкап не сделан: дамп базы пуст" >&2; exit 1; }
+mv "$tmp_db" "$dir/db-$ts.dump"
+tar -C /media -czf "$tmp_media" .
+mv "$tmp_media" "$dir/media-$ts.tar.gz"
 
 find "$dir" -maxdepth 1 \( -name 'db-*.dump' -o -name 'media-*.tar.gz' \) -mtime +"$keep" -delete
 touch "$dir/.ok-local"

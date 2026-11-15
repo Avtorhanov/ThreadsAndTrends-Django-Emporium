@@ -74,27 +74,58 @@
       event.stopImmediatePropagation(); // htmx не отправляет каждое нажатие отдельно
       var value = stepper.querySelector(".stepper__value");
       var max = parseInt(stepper.getAttribute("data-max"), 10) || 1;
-      var next = Math.min(max, Math.max(1, parseInt(value.textContent, 10) + step));
-      value.textContent = String(next);
-      var minus = stepper.querySelector('[data-step="-1"] button');
-      var plus = stepper.querySelector('[data-step="1"] button');
-      if (minus) minus.disabled = next <= 1;
-      if (plus) plus.disabled = next >= max;
-      var unit = parseInt(stepper.getAttribute("data-unit"), 10);
-      var price = stepper.parentNode.querySelector(".line__price");
-      if (unit && price) price.textContent = formatRub(unit * next);
+      var shown = parseInt(value.textContent, 10);
+      // Число до первого неотправленного нажатия — к нему вернёмся, если запрос не пройдёт.
+      if (stepper._server == null) stepper._server = shown;
+      var next = Math.min(max, Math.max(1, shown + step));
+      showStep(stepper, next);
       var token = form.querySelector('input[name="csrfmiddlewaretoken"]');
       var values = { quantity: String(next), csrfmiddlewaretoken: token ? token.value : "" };
       var action = form.getAttribute("action");
       clearTimeout(stepper._send);
       pendingSteps[action] = values;
       stepper._send = setTimeout(function () {
+        stepper._send = null;
         delete pendingSteps[action];
         window.htmx.ajax("POST", action, { source: form, swap: "none", values: values });
       }, 300);
     },
     true,
   );
+  function showStep(stepper, quantity) {
+    var max = parseInt(stepper.getAttribute("data-max"), 10) || 1;
+    stepper.querySelector(".stepper__value").textContent = String(quantity);
+    var minus = stepper.querySelector('[data-step="-1"] button');
+    var plus = stepper.querySelector('[data-step="1"] button');
+    if (minus) minus.disabled = quantity <= 1;
+    if (plus) plus.disabled = quantity >= max;
+    var unit = parseInt(stepper.getAttribute("data-unit"), 10);
+    var price = stepper.parentNode.querySelector(".line__price");
+    if (unit && price) price.textContent = formatRub(unit * quantity);
+  }
+  // --- Сбой запроса (нет сети, ошибка сервера, устаревшая страница): покупатель видит причину,
+  // а «+/−» корзины возвращает число, которое знает сервер ---
+  function requestFailed(status) {
+    if (status === 403) toast("Страница устарела — обновите её и повторите");
+    else if (status) toast("Не получилось — попробуйте ещё раз");
+    else toast("Нет связи — проверьте интернет и повторите");
+  }
+  document.addEventListener("htmx:afterRequest", function (event) {
+    var detail = event.detail || {};
+    var stepper = detail.elt && detail.elt.closest && detail.elt.closest("[data-stepper]");
+    if (detail.successful) {
+      if (stepper && !stepper._send) stepper._server = null;
+      return;
+    }
+    if (stepper && stepper._server != null && document.contains(stepper)) {
+      clearTimeout(stepper._send);
+      stepper._send = null;
+      delete pendingSteps[detail.elt.getAttribute("action")];
+      showStep(stepper, stepper._server);
+      stepper._server = null;
+    }
+    requestFailed(detail.xhr ? detail.xhr.status : 0);
+  });
   // Переход сразу после «+/−» (например, «Оформить заказ»): сначала отправить отложенное.
   var pendingSteps = {};
   document.addEventListener(
@@ -865,11 +896,16 @@
     var body = new URLSearchParams({ quantity: String(quantity), csrfmiddlewaretoken: token ? token.value : "" });
     return fetch(url, {
       method: "POST", body: body, credentials: "same-origin", keepalive: true, headers: { Accept: "application/json" }
-    }).then(function (response) { return response.json(); });
+    }).then(function (response) {
+      // 400 — отказ с текстом (остаток закончился); остальное — сбой, обрабатывает catch.
+      if (!response.ok && response.status !== 400) throw response.status;
+      return response.json();
+    });
   }
   // Нажатия копятся: уходит последнее значение, следующий запрос — после ответа на прошлый.
   var incartWanted = {};
   var incartBusy = {};
+  var incartServer = {}; // количество, подтверждённое сервером: к нему откат при сбое
   function flushCartLine(form, id) {
     if (incartBusy[id] || !(id in incartWanted)) return;
     var quantity = incartWanted[id];
@@ -880,6 +916,7 @@
         if (!data) return;
         var state = incartState();
         if (state && state[id] && !(id in incartWanted)) state[id].q = data.quantity;
+        incartServer[id] = data.quantity;
         if (typeof data.count === "number") setCartBadges(data.count);
         var result = form.querySelector("#buy-result");
         if (result) {
@@ -893,7 +930,14 @@
         }
         renderIncart(form);
       })
-      .catch(function () {})
+      .catch(function (status) {
+        // Сбой: отложенные нажатия отменяются, на экране — то, что в корзине на самом деле.
+        delete incartWanted[id];
+        var state = incartState();
+        if (state && state[id] && id in incartServer) state[id].q = incartServer[id];
+        renderIncart(form);
+        requestFailed(typeof status === "number" ? status : 0);
+      })
       .then(function () {
         incartBusy[id] = false;
         flushCartLine(form, id);
@@ -936,6 +980,7 @@
         showStockLimit(form);
         return;
       }
+      if (!(id in incartServer)) incartServer[id] = current.q;
       current.q = Math.max(0, Math.min(current.max, current.q + step));
       incartWanted[id] = current.q;
       renderIncart(form);

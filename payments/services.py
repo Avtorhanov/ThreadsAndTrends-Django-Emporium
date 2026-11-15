@@ -13,6 +13,7 @@
 """
 
 import logging
+import time
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -40,6 +41,9 @@ ABANDONED_CREATE_AFTER = timedelta(minutes=10)
 # Свежие платежи и возвраты периодическая сверка не трогает: их обновит webhook или клиент.
 SYNC_GRACE = timedelta(minutes=1)
 SYNC_BATCH = 200
+# Прогон периодической задачи короче её интервала (60 с): следующий не встаёт в очередь за ним,
+# и единственный воркер не занят сверкой вместо писем.
+RUN_BUDGET_SECONDS = 40
 
 
 class PaymentUnavailable(Exception):
@@ -439,14 +443,21 @@ def sync_stale() -> None:
     payments = Payment.objects.filter(
         status=PaymentStatus.PENDING, created_at__lt=now - SYNC_GRACE
     ).exclude(provider_payment_id=None)
+    deadline = time.monotonic() + RUN_BUDGET_SECONDS
     for payment in payments.order_by("created_at")[:SYNC_BATCH]:
+        if time.monotonic() > deadline:
+            return
         try:
             sync_payment(payment)
         except ProviderError as exc:
             logger.warning("Сверка платежа %s не удалась: %s", payment.pk, exc)
+            if exc.transient:
+                return  # провайдер недоступен — остальные запросы упрутся в тот же таймаут
 
     refunds = Refund.objects.filter(status=RefundStatus.PENDING, created_at__lt=now - SYNC_GRACE)
     for refund_pk in refunds.order_by("created_at").values_list("pk", flat=True)[:SYNC_BATCH]:
+        if time.monotonic() > deadline:
+            return
         execute_refund(refund_pk)
 
 
@@ -479,4 +490,10 @@ def cancel_unpaid_orders() -> int:
     orders = Order.objects.filter(
         status=OrderStatus.AWAITING_PAYMENT, created_at__lt=deadline
     ).order_by("created_at")[:SYNC_BATCH]
-    return sum(1 for order in orders if cancel_if_unpaid(order))
+    deadline = time.monotonic() + RUN_BUDGET_SECONDS
+    cancelled = 0
+    for order in orders:
+        if time.monotonic() > deadline:
+            break
+        cancelled += cancel_if_unpaid(order)
+    return cancelled

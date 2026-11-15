@@ -28,7 +28,12 @@ class Command(BaseCommand):
         signal.signal(signal.SIGINT, self._stop)
 
         while self._running:
-            enqueue_due(tasks)
+            try:
+                enqueue_due(tasks)
+            except Exception:  # сбой базы (перезапуск Postgres) — повторим на следующем круге
+                if once:
+                    raise
+                logger.exception("Планировщик: задачи не поставлены в очередь")
             if once:
                 break
             if time.monotonic() - checked_at >= MONITOR_EVERY:

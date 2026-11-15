@@ -185,6 +185,12 @@ deploy() {
 
   say "Сборка и запуск (первый раз — 5–15 минут)"
   "${COMPOSE[@]}" build
+  # Обновление работающего магазина: копия до миграций, чтобы откат был к состоянию «минуту назад».
+  if [ -n "$("${COMPOSE[@]}" ps -q backup 2>/dev/null)" ] && [ "${SKIP_BACKUP:-0}" != "1" ]; then
+    say "Копия базы и фото перед обновлением"
+    "${COMPOSE[@]}" exec -T backup sh /usr/local/bin/backup.sh \
+      || die "Копия перед обновлением не сделана — обновление остановлено. Без копии: SKIP_BACKUP=1 ./deploy.sh"
+  fi
   "${COMPOSE[@]}" up -d --remove-orphans --wait --wait-timeout 600 \
     || { "${COMPOSE[@]}" ps; "${COMPOSE[@]}" logs --tail 80 app; die "Сервисы не запустились (логи выше)."; }
   docker image prune -f >/dev/null 2>&1 || true

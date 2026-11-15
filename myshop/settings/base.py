@@ -101,6 +101,8 @@ TASKS = {"default": tasks_from_env()}
 # {"task": "app.tasks.func", "every": <секунды>}.
 PERIODIC_TASKS: list[dict] = [
     {"task": "accounts.tasks.cleanup_auth_records", "every": 24 * 60 * 60},
+    # Очистка таблицы очереди от завершённых задач старше TASK_RESULTS_KEEP_DAYS.
+    {"task": "core.tasks.prune_task_results", "every": 24 * 60 * 60},
     # Сверка зависших платежей и возвратов (потерянный webhook, сбой сети).
     {"task": "payments.tasks.sync_pending", "every": 60},
     # Автоотмена онлайн-заказов, не оплаченных за ORDERS_UNPAID_TIMEOUT_MINUTES.
@@ -323,6 +325,7 @@ BACKUP_DIR = env_str("BACKUP_DIR", "")
 BACKUP_MAX_AGE_HOURS = env_int("BACKUP_MAX_AGE_HOURS", 26)
 BACKUP_GDRIVE_TOKEN = env_str("BACKUP_GDRIVE_TOKEN", "")
 DISK_MAX_PERCENT = env_int("DISK_MAX_PERCENT", 90)
+TASK_RESULTS_KEEP_DAYS = env_int("TASK_RESULTS_KEEP_DAYS", 7)
 
 LOG_LEVEL = env_str("LOG_LEVEL", "INFO")
 LOGGING = {
