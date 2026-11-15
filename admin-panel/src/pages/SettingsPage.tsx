@@ -277,7 +277,7 @@ function SettingsForm({
           </button>
         </div>
       </div>
-      <p className="muted settings-lead">Меняются без деплоя. Пустое поле — значение из настроек сервера (.env), оно видно в подсказке.</p>
+      <p className="muted settings-lead">Изменения действуют сразу после «Сохранить». Пустое поле — значение по умолчанию, оно видно в подсказке.</p>
       {formError ? <p className="alert settings-alert" role="alert">{formError}</p> : null}
 
       <div className="settings-grid">

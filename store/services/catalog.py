@@ -83,8 +83,21 @@ def _validate_category_tree(category: Category | None, parent: Category | None):
 
 
 @transaction.atomic
-def create_category(*, name: str, parent=None, slug: str = "", position=0, is_active=True):
+def _check_category_name_free(name: str, parent, exclude_pk=None) -> None:
+    # Две «Обуви» рядом в меню покупатель не различит; в разных разделах — можно.
+    same = Category.objects.filter(parent=parent, name__iexact=name.strip())
+    if exclude_pk is not None:
+        same = same.exclude(pk=exclude_pk)
+    if same.exists():
+        raise ValidationError({"name": ["Такая категория здесь уже есть."]})
+
+
+def create_category(*, name: str, parent=None, slug: str = "", position=None, is_active=True):
     _validate_category_tree(None, parent)
+    _check_category_name_free(name, parent)
+    if position is None:  # новая — в конец своего уровня
+        last = Category.objects.filter(parent=parent).aggregate(m=Max("position"))["m"]
+        position = 0 if last is None else last + 1
     if slug:
         _check_slug_free(Category.objects, slug)
     else:
@@ -105,6 +118,12 @@ def update_category(category: Category, **changes):
         _check_slug_free(Category.objects, changes["slug"], exclude_pk=category.pk)
     elif "slug" in changes and not changes["slug"]:
         changes.pop("slug")  # пустой slug не затирает существующий
+    if "name" in changes or "parent" in changes:
+        _check_category_name_free(
+            changes.get("name", category.name),
+            changes.get("parent", category.parent),
+            exclude_pk=category.pk,
+        )
     for field, value in changes.items():
         setattr(category, field, value)
     category.save()

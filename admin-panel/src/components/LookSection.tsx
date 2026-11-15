@@ -12,7 +12,7 @@ type Access = keyof StaffUser["permissions"];
 const TABS: { to: string; label: string; access?: Access }[] = [
   { to: "/look/home", label: "Главная", access: "storefront" },
   { to: "/look/categories", label: "Категории", access: "categories" },
-  { to: "/look/theme", label: "Тема магазина", access: "storefront" },
+  { to: "/look/theme", label: "Тема", access: "storefront" },
   { to: "/look/panel", label: "Панель" },
 ];
 

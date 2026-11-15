@@ -21,9 +21,21 @@ pytestmark = pytest.mark.django_db
 
 def test_category_slug_is_transliterated_and_unique():
     first = catalog.create_category(name="Женская одежда")
-    second = catalog.create_category(name="Женская одежда")
+    other_root = catalog.create_category(name="Распродажа")
+    second = catalog.create_category(name="Женская одежда", parent=other_root)
     assert first.slug == "zhenskaya-odezhda"
     assert second.slug == "zhenskaya-odezhda-2"
+
+
+def test_category_name_is_unique_among_siblings():
+    first = catalog.create_category(name="Обувь")
+    with pytest.raises(ValidationError):
+        catalog.create_category(name="обувь ")
+    other = catalog.create_category(name="Одежда")
+    with pytest.raises(ValidationError):
+        catalog.update_category(other, name="Обувь")
+    catalog.update_category(first, name="Обувь")  # своё имя не мешает
+    assert (first.position, other.position) == (0, 1)  # новые — в конец уровня
 
 
 def test_category_tree_is_limited_to_two_levels():
