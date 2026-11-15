@@ -1,0 +1,1 @@
+import{n as e}from"./index-DdGEROXH.js";import{c as t,u as n}from"./hooks-jr7xTmt4.js";import{t as r}from"./Icon-D6C84v7d.js";var i=e();function a({to:e}){let a=n(),o=t();return(0,i.jsxs)(`button`,{type:`button`,className:`page-back`,onClick:()=>{o.key!=="default"&&window.history.length>1?a(-1):a(e)},children:[(0,i.jsx)(r,{name:`left`,size:16}),`Назад`]})}export{a as t};

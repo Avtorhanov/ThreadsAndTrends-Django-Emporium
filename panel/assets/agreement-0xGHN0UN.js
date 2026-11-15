@@ -1,0 +1,1 @@
+var e=[{id:`whatsapp`,label:`WhatsApp`,icon:`chat`,button:`Написать в WhatsApp`},{id:`telegram`,label:`Telegram`,icon:`send`,button:`Написать в Telegram`},{id:`vk`,label:`ВКонтакте`,icon:`customers`,button:`Написать ВКонтакте`},{id:`phone`,label:`Телефон`,icon:`phone`,button:`Позвонить продавцу`}];function t(t){return e.find(e=>e.id===t)}export{t as n,e as t};
